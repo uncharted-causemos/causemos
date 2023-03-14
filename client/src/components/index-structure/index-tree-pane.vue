@@ -190,13 +190,16 @@ const selectEdge = (evt: MouseEvent) => {
 
     edgeSelectionClear();
     if (classList.contains(EDGE_CLASS.INCOMING)) {
-      const { interactedId, interactedNodes } = edgeInteractionInput(
+      const { interactedId, firstOutEdgeId, interactedNodes } = edgeInteractionInput(
         targetEl,
         gridCells.value,
         false
       );
       edgeSelection = interactedNodes; // [interactedNodes[0], interactedNodes[1]];
       emit('select-element', interactedId);
+      if (firstOutEdgeId) {
+        emit('select-upstream-element', firstOutEdgeId);
+      }
     } else if (classList.contains(EDGE_CLASS.OUTGOING)) {
       const { interactedId, inEdgeId, interactedNodes } = edgeInteractionOutput(
         // NOTE: inEdgeId and
@@ -209,7 +212,6 @@ const selectEdge = (evt: MouseEvent) => {
       selectedOutEdgeId = interactedId;
 
       edgeSelection = interactedNodes;
-      console.log(`indEdge: ${inEdgeId}, outEdge: ${selectedOutEdgeId}`);
       emit('select-element', inEdgeId);
       emit('select-upstream-element', selectedOutEdgeId);
     }
