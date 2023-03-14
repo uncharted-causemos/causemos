@@ -236,6 +236,7 @@ export const edgeInteractionInput = (
   data: any[],
   isHighlightAction = true
 ) => {
+  const SINGLE_PATH_ONLY = true; // if true, only return the input edge and first adjacent output edge (single path)
   const interactedNodes: HTMLElement[] = [];
   let interactedId = null;
 
@@ -251,7 +252,12 @@ export const edgeInteractionInput = (
         const targetGrid = getGridLocation(gridString);
         if (targetGrid) {
           interactedId = getIdByGridpoints(targetGrid, data);
-          const outEdges = findOutboundConnectedGridpoints(targetGrid, data);
+          let outEdges: any = [];
+          if (SINGLE_PATH_ONLY) {
+            outEdges = [findOutboundConnectedGridpoints(targetGrid, data)[0]];
+          } else {
+            outEdges = findOutboundConnectedGridpoints(targetGrid, data);
+          }
 
           if (outEdges.length > 0) {
             // highlight and add the element that started this interaction
@@ -277,6 +283,11 @@ export const edgeInteractionInput = (
                         anElement.classList.add(
                           isHighlightAction ? EDGE_CLASS.HIGHLIGHTED : EDGE_CLASS.SELECTED
                         );
+                        if (SINGLE_PATH_ONLY) {
+                          anElement.classList.add(
+                            isHighlightAction ? EDGE_CLASS.HIGHLIGHTED_X : EDGE_CLASS.SELECTED_X
+                          );
+                        }
                         interactedNodes.push(anElement); // save the highlighted element reference (output edges)
                       }
                     });
@@ -324,8 +335,12 @@ export const edgeInteractionOutput = (
   let interactedId = null;
   let inEdgeId = null;
 
-  if (target.classList.contains(EDGE_CLASS.OUTGOING)) {
+  if (
+    target.classList.contains(EDGE_CLASS.OUTGOING) ||
+    target.classList.contains(EDGE_CLASS.INCOMING)
+  ) {
     // ensure this is an incoming edge target
+    const IS_INCOMING = target.classList.contains(EDGE_CLASS.INCOMING);
     const targetParent = target.parentElement;
 
     if (targetParent) {
@@ -335,9 +350,21 @@ export const edgeInteractionOutput = (
       if (gridString && treeContainer) {
         const targetGrid = getGridLocation(gridString);
         if (targetGrid) {
-          const inEdgeGrid = findInboundConnectedGridpoint(targetGrid, data);
+          let inEdgeGrid: any = null;
+          if (IS_INCOMING) {
+            inEdgeGrid = targetGrid;
+          } else {
+            inEdgeGrid = findInboundConnectedGridpoint(targetGrid, data); // find in-edge if it isn't the interacted object
+          }
           const outEdges = findOutboundConnectedGridpoints(inEdgeGrid, data);
-          interactedId = getIdByGridpoints(targetGrid, data);
+
+          if (IS_INCOMING) {
+            if (outEdges.length > 0) {
+              interactedId = outEdges[0].id;
+            }
+          } else {
+            interactedId = getIdByGridpoints(targetGrid, data);
+          }
           inEdgeId = getIdByGridpoints(inEdgeGrid, data); // needs to be the inbound edge container (used to select)
 
           if (outEdges.length > 0) {
