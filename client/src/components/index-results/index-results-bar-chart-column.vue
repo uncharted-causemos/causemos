@@ -12,7 +12,7 @@
       <div class="table-header">
         <div class="index-result-table-output-value-column flex">
           <p class="index-result-table-dataset-country-column">Country</p>
-          <p v-if="!isShowingKeyDatasets">Overall priority</p>
+          <p v-if="!isShowingKeyDatasets">{{ props.selectedNodeName }}</p>
         </div>
         <div
           v-if="isShowingKeyDatasets"
@@ -47,6 +47,7 @@ const props = defineProps<{
   isShowingKeyDatasets: boolean;
   indexResultsData: IndexResultsData[];
   indexResultsSettings: IndexResultsSettings;
+  selectedNodeName: string;
 }>();
 
 const emit = defineEmits<{
