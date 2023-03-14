@@ -195,8 +195,10 @@ const selectEdge = (evt: MouseEvent) => {
         gridCells.value,
         false
       );
-      edgeSelection = interactedNodes; // [interactedNodes[0], interactedNodes[1]];
-      emit('select-element', interactedId);
+      edgeSelection = interactedNodes;
+      if (interactedId) {
+        emit('select-element', interactedId);
+      }
       if (firstOutEdgeId) {
         emit('select-upstream-element', firstOutEdgeId);
       }
