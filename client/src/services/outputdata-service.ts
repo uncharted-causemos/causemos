@@ -228,7 +228,7 @@ export const getSparkline = async (
   };
   if (rawRes && rawLatestTimestamp) {
     params.raw_res = rawRes;
-    params.raw_last_ts = rawLatestTimestamp;
+    params.raw_latest_ts = rawLatestTimestamp;
   }
   try {
     const { data } = await API.get('maas/output/sparkline', { params });
