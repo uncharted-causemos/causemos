@@ -220,6 +220,11 @@ export function getOutputs(metadata: Datacube) {
   return metadata.outputs;
 }
 
+export function getOutput(metadata: Datacube, name: string) {
+  const outputs = getOutputs(metadata) || [];
+  return outputs.find((output) => output.name === name);
+}
+
 export function getSelectedOutput(metadata: Datacube, index: number) {
   const outputs = getOutputs(metadata);
   if (index >= 0 && index < outputs.length) {
