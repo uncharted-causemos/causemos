@@ -48,7 +48,9 @@
 </template>
 
 <script setup lang="ts">
+import { searchParagraphs, getDocument } from '@/services/paragraphs-service';
 interface Snippet {
+  documentId: string;
   text: string;
   documentTitle: string;
   documentAuthor: string;
@@ -57,6 +59,7 @@ interface Snippet {
 
 // TODO: remove when we have real data
 const MOCK_SNIPPET: Snippet = {
+  documentId: 'id',
   text: 'lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec accumsan tellus eget nisl feugiat, Overall priority a luctus arcu viverra. Nunc blandit mollis libero, ac dictum diam cursus',
   documentTitle: 'Document title',
   documentAuthor: 'Document author',
@@ -68,12 +71,43 @@ const props = defineProps<{
   // componentNames: string[];
 }>();
 
-// TODO: use real document count
-const documentCount = 811;
+let documentCount = 0;
+const NO_TITLE = 'Title not available';
+const NO_AUTHOR = 'Author not available';
 
-// TODO: use real snippets
 // TODO: bold the name of the selected node and its components when they're found in the snippets
-const snippetsForSelectedNode: Snippet[] = [MOCK_SNIPPET, MOCK_SNIPPET];
+const snippetsForSelectedNode: Snippet[] = [];
+const queryResults = await searchParagraphs(props.selectedNodeName);
+const docIdsToFind: string[] = [];
+if (queryResults) {
+  const qrJSON = JSON.parse(queryResults); // todo: this shouldn't have to be done...(should return JSON)
+  // const qrJSON = queryResults;
+  documentCount = qrJSON.hits;
+  qrJSON.results?.forEach(async (result: any) => {
+    docIdsToFind.push(result.document_id);
+    const aSnippet: Snippet = {
+      documentId: result.document_id,
+      text: result.text,
+      documentTitle: NO_TITLE,
+      documentAuthor: NO_AUTHOR,
+      documentSource: result.Source,
+    };
+    snippetsForSelectedNode.push(aSnippet);
+  });
+
+  const docRequests: Promise<any>[] = []; // blast these requests in parallel (to slow if one-by-one)
+  docIdsToFind.forEach((anId) => docRequests.push(getDocument(anId)));
+  const docMetaData = await Promise.all(docRequests);
+
+  snippetsForSelectedNode.forEach((aSnippet) => {
+    const meta = docMetaData.find((m) => aSnippet.documentId === m.id);
+    if (meta) {
+      aSnippet.documentTitle = meta.doc_title ? meta.doc_title : NO_TITLE;
+      aSnippet.documentAuthor = meta.author ? meta.author : NO_AUTHOR;
+    }
+  });
+}
+
 const snippetsForComponents: Snippet[] = [MOCK_SNIPPET, MOCK_SNIPPET];
 </script>
 

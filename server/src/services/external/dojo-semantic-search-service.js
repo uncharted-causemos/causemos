@@ -3,10 +3,29 @@ const authUtil = rootRequire('/util/auth-util');
 
 const DOJO_PARAGRAPHS_URL = process.env.JATAWARE_DOJO_URL + '/paragraphs';
 const DOJO_PARAGRAPHS_SEARCH_URL = process.env.JATAWARE_DOJO_URL + '/paragraphs/search';
+const DOJO_DOCUMENT_URL = process.env.JATAWARE_DOJO_URL + '/documents';
 const DOJO_AUTH = authUtil.getBasicAuthToken(
   process.env.JATAWARE_DOJO_UID,
   process.env.JATAWARE_DOJO_PWD
 );
+
+const getDocument = async (docId) => {
+  const requestOptions = {
+    method: 'GET',
+    url: `${DOJO_DOCUMENT_URL}/${docId}`,
+    headers: {
+      'Content-type': 'application/json',
+      Accept: 'application/json',
+      Authorization: DOJO_AUTH,
+    },
+  };
+  const response = await requestAsPromise(requestOptions);
+  if (response) {
+    return response;
+  } else {
+    throw new Error('DOJO enp-point request failed.');
+  }
+};
 
 const getParagraphs = async () => {
   const requestOptions = {
@@ -51,6 +70,7 @@ const searchParagraphs = async (searchString, scrollId = '', size = 10) => {
 };
 
 module.exports = {
+  getDocument,
   getParagraphs,
   searchParagraphs,
 };
