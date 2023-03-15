@@ -212,7 +212,7 @@ app.use('/api/domain-projects', DomainProjectsRouter);
 
 app.use('/api/bibliography', bibliographyRouter);
 
-app.use('/api/paragraphs', paragraphsRouter);
+app.use('/api/paragraphs', [paragraphsRouter]);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -221,7 +221,6 @@ app.use(function (req, res, next) {
 
 // error handler
 app.use(function (err, req, res, next) {
-  console.log('ERROR', JSON.stringify(err));
   Logger.error(err);
 
   // set locals, only providing error in development

@@ -26,7 +26,7 @@ const getParagraphs = async () => {
   }
 };
 
-const searchParagraphs = async (searchString, scrollId = null, size = 10) => {
+const searchParagraphs = async (searchString, scrollId = '', size = 10) => {
   const requestOptions = {
     method: 'GET',
     url: DOJO_PARAGRAPHS_SEARCH_URL,
@@ -35,7 +35,7 @@ const searchParagraphs = async (searchString, scrollId = null, size = 10) => {
       Accept: 'application/json',
       Authorization: DOJO_AUTH,
     },
-    json: {
+    qs: {
       query: searchString,
       // scroll_id: scrollId,
       size: size,
