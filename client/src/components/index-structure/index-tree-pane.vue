@@ -219,8 +219,12 @@ const selectEdge = (evt: MouseEvent) => {
       selectedOutEdgeId = interactedId;
 
       edgeSelection = interactedNodes;
-      emit('select-element', inEdgeId);
-      emit('select-upstream-element', selectedOutEdgeId);
+      if (inEdgeId) {
+        emit('select-element', inEdgeId);
+      }
+      if (selectedOutEdgeId) {
+        emit('select-upstream-element', selectedOutEdgeId);
+      }
     }
   }
 };
