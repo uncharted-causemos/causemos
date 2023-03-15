@@ -13,18 +13,21 @@ export default function useModelMetadataCoverage(metadata: Ref<Model | Indicator
   watch([metadata], async () => {
     if (!metadata?.value) return;
     const defaultOutput = getOutput(metadata.value, metadata.value.default_feature);
-    sparkline.value = await getSparkline({
-      modelId: metadata.value.data_id,
-      runId: 'indicator',
-      outputVariable: metadata.value.default_feature,
-      spatialAggregation: metadata.value.default_view?.spatialAggregation || AggregationOption.Mean,
-      temporalAggregation:
-        metadata.value.default_view?.temporalAggregation || AggregationOption.Mean,
-      temporalResolution:
-        metadata.value.default_view?.temporalResolution || TemporalResolutionOption.Month,
-      rawRes: defaultOutput?.data_resolution?.temporal_resolution,
-      rawLastTimestamp: metadata.value?.period?.lte ?? 0,
-    });
+    sparkline.value = await getSparkline(
+      {
+        modelId: metadata.value.data_id,
+        runId: 'indicator',
+        outputVariable: metadata.value.default_feature,
+        spatialAggregation:
+          metadata.value.default_view?.spatialAggregation || AggregationOption.Mean,
+        temporalAggregation:
+          metadata.value.default_view?.temporalAggregation || AggregationOption.Mean,
+        temporalResolution:
+          metadata.value.default_view?.temporalResolution || TemporalResolutionOption.Month,
+      },
+      defaultOutput?.data_resolution?.temporal_resolution,
+      metadata.value?.period?.lte ?? 0
+    );
   });
 
   const sparklineData = computed<SparklineData | null>(() => {
