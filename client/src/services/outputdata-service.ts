@@ -206,8 +206,8 @@ export const getBulkTimeseries = async (spec: OutputSpec, regionIds: string[]): 
 };
 
 /**
- * Get the sparkline data for provided output data spec. If rawRes and rawLastTimestamp are provided,
- * the last point value of the spark line data maybe extrapolated or omitted accordingly based on the temporal coverage of the last aggregated point value.
+ * Get the sparkline data for the given output data spec. If rawRes and rawLastTimestamp are provided,
+ * the last point value of the sparkline data maybe extrapolated or omitted accordingly based on the temporal coverage of the last aggregated point value.
  */
 export const getSparkline = async (
   spec: { rawRes?: TemporalResolution; rawLastTimestamp?: number } & OutputSpec
