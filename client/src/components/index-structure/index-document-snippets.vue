@@ -95,8 +95,8 @@ if (queryResults) {
     snippetsForSelectedNode.push(aSnippet);
   });
 
-  const docRequests: Promise<any>[] = []; // blast these requests in parallel (to slow if one-by-one)
-  docIdsToFind.forEach((anId) => docRequests.push(getDocument(anId)));
+  const docRequests: Promise<any>[] = docIdsToFind.map((anId) => getDocument(anId)); // blast these requests in parallel (to slow if one-by-one)
+  // docIdsToFind.forEach((anId) => docRequests.push(getDocument(anId)));
 
   if (docRequests.length > 0) {
     const docMetadata = await Promise.all(docRequests);
