@@ -1,7 +1,7 @@
 import API from '@/api/api';
 
-const SEARCH_PATH = 'paragraphs/search';
-const GET_DOC_PATH = 'documents';
+const SEARCH_PATH = 'dojo/paragraphs/search';
+const GET_DOC_PATH = 'dojo/documents';
 
 export const searchParagraphs = async (searchString) => {
   const result = await API.get(SEARCH_PATH, { params: { searchString } });

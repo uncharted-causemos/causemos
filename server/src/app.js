@@ -213,8 +213,8 @@ app.use('/api/domain-projects', DomainProjectsRouter);
 
 app.use('/api/bibliography', bibliographyRouter);
 
-app.use('/api/paragraphs', [jatawareParagraphsRouter]);
-app.use('/api/documents', [jatawareDocumentsRouter]);
+app.use('/api/dojo/paragraphs', [jatawareParagraphsRouter]);
+app.use('/api/dojo/documents', [jatawareDocumentsRouter]);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
