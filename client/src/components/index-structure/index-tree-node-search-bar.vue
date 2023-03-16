@@ -80,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import _ from 'lodash';
 import { ref, computed, watch, onMounted } from 'vue';
 import newDatacubeService from '@/services/new-datacube-service';
 import { DatasetSearchResult } from '@/types/Index';
@@ -87,9 +88,11 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
 
+const toDisplayName = (v: string) => _.words(v).map(_.capitalize).join(' ');
+
 const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult => {
   return {
-    displayName: doc.display_name,
+    displayName: doc.display_name || toDisplayName(doc.feature),
     datasetMetadataDocId: doc.id,
     dataId: doc.data_id,
     description: doc.description,
