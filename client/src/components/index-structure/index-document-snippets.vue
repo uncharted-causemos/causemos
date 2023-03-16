@@ -80,12 +80,11 @@ const NO_TEXT = 'Text not available';
 // TODO: bold the name of the selected node and its components when they're found in the snippets
 const snippetsForSelectedNode: Snippet[] = [];
 const queryResults = await searchParagraphs(props.selectedNodeName);
+
 const docIdsToFind: string[] = [];
 if (queryResults) {
-  const qrJSON = JSON.parse(queryResults); // todo: this shouldn't have to be done...(should return JSON)
-  // const qrJSON = queryResults;
-  documentCount = qrJSON.hits;
-  qrJSON.results?.forEach(async (result: any) => {
+  documentCount = queryResults.hits;
+  queryResults.results?.forEach(async (result: any) => {
     docIdsToFind.push(result.document_id);
     const aSnippet: Snippet = {
       documentId: result.document_id,
@@ -105,7 +104,7 @@ if (queryResults) {
     snippetsForSelectedNode.forEach((aSnippet) => {
       const meta = docMetadata.find((m) => aSnippet.documentId === m?.id);
       if (meta) {
-        aSnippet.documentTitle = meta.doc_title ? meta.doc_title : NO_TITLE;
+        aSnippet.documentTitle = meta.title ? meta.title : NO_TITLE; // note: may be some inconsistencies from the server (doc_title v.s. title)
         aSnippet.documentAuthor = meta.author ? meta.author : NO_AUTHOR;
       }
     });

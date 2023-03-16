@@ -10,6 +10,7 @@ const getDocument = async (docId) => {
   const requestOptions = {
     method: 'GET',
     url: `${DOJO_DOCUMENT_URL}/${docId}`,
+    json: {},
     headers: {
       'Content-type': 'application/json',
       Accept: 'application/json',
@@ -24,6 +25,7 @@ const getParagraphs = async () => {
   const requestOptions = {
     method: 'GET',
     url: DOJO_PARAGRAPHS_URL,
+    json: {},
     headers: {
       'Content-type': 'application/json',
       Accept: 'application/json',
@@ -38,6 +40,7 @@ const searchParagraphs = async (searchString, scrollId = '', size = 10) => {
   const requestOptions = {
     method: 'GET',
     url: DOJO_PARAGRAPHS_SEARCH_URL,
+    json: {},
     headers: {
       'Content-type': 'application/json',
       Accept: 'application/json',
