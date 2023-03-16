@@ -690,7 +690,7 @@ const indicatorSearchConceptAlignerBulk = async (projectId, nodes, k, geography)
           if (match.datamart.datamartId === 'DOJO_Indicator') {
             const dataId = match.datamart.datasetId;
             const name = match.datamart.variableId;
-            const candidates = await indicatorSeachByDatasetId(dataId, name);
+            const candidates = await indicatorSearchByDatasetIdAndOutputName(dataId, name);
             if (candidates.length > 0) {
               indicatorsForMatches.push({ score: match.score, candidate: candidates[0] });
             } else {
@@ -774,7 +774,7 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
           if (result.datamart.datamartId === 'DOJO_Indicator') {
             const dataId = result.datamart.datasetId;
             const name = result.datamart.variableId;
-            const candidates = await indicatorSeachByDatasetId(dataId, name);
+            const candidates = await indicatorSearchByDatasetIdAndOutputName(dataId, name);
             if (candidates.length > 0) {
               indicators.push({ score: result.score, candidate: candidates[0] });
             }
@@ -798,7 +798,7 @@ const indicatorSearchConceptAligner = async (projectId, node, k) => {
     .map((x) => x.candidate);
 };
 
-const indicatorSeachByDatasetId = async (dataId, name) => {
+const indicatorSearchByDatasetIdAndOutputName = async (dataId, name) => {
   const searchPayload = {
     index: RESOURCE.DATA_DATACUBE,
     size: 1,
@@ -811,6 +811,29 @@ const indicatorSeachByDatasetId = async (dataId, name) => {
             },
             {
               term: { 'outputs.name': name },
+            },
+            {
+              term: { status: 'READY' },
+            },
+          ],
+        },
+      },
+    },
+  };
+
+  const results = await client.search(searchPayload);
+  return results.body.hits.hits.map((d) => d._source);
+};
+const indicatorSearchByDataId = async (dataId) => {
+  const searchPayload = {
+    index: RESOURCE.DATA_DATACUBE,
+    size: 1,
+    body: {
+      query: {
+        bool: {
+          must: [
+            {
+              term: { data_id: dataId },
             },
             {
               term: { status: 'READY' },
@@ -862,4 +885,5 @@ module.exports = {
   indicatorSearchByConcepts,
   indicatorSearchConceptAligner,
   indicatorSearchConceptAlignerBulk,
+  indicatorSearchByDataId,
 };

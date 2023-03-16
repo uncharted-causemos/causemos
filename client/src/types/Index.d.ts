@@ -25,10 +25,9 @@ export interface Dataset extends BaseNode, WeightedNode, DataConfig {
 
 export interface DatasetSearchResult {
   displayName: string;
-  datasetMetadataDocId: string;
   dataId: string;
+  outputName: string;
   description: string;
-  period: { gte: number; lte: number };
   familyName: string;
 }
 

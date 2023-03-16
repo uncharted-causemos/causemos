@@ -120,7 +120,6 @@ export const convertPlaceholderToDataset = (
 ) => {
   const node = createNewDatasetNode({
     name: placeholder.name === '' ? dataset.displayName : placeholder.name,
-    datasetMetadataDocId: dataset.datasetMetadataDocId,
     datasetName: dataset.displayName,
     source: dataset.familyName,
     weight: initialWeight,
@@ -372,7 +371,7 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
       return;
     }
     const { found: placeholderNode, parent } = foundResult;
-    const dataConfig = await getDefaultDataConfig(dataset.datasetMetadataDocId);
+    const dataConfig = await getDefaultDataConfig(dataset.dataId, dataset.outputName);
     const datasetNode = convertPlaceholderToDataset(placeholderNode, dataset, 0, dataConfig);
     Object.assign(placeholderNode, datasetNode);
     // Parent should never be null unless we found a disconnected placeholder node.

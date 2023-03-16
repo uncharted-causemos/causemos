@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { DataConfig, Datacube, Model } from '@/types/Datacube';
+import { DataConfig, Datacube, Indicator, Model } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import { getTimeseries } from '@/services/outputdata-service';
@@ -37,6 +37,20 @@ export const getDatacubes = async (filters: Filters, options = {}) => {
     },
   });
   return data;
+};
+
+/**
+ * Get indicator by `dataId`, as opposed to `id`.
+ * `dataId` is an identifier provided at registration time by Jataware.
+ * `id` is an ElasticSearch document ID generated during registration.
+ */
+export const getIndicatorMetadata = async (dataId: string): Promise<Indicator | null> => {
+  const { data } = await API.get('maas/indicators/metadata', {
+    params: {
+      data_id: dataId,
+    },
+  });
+  return data[0] ?? null;
 };
 
 /**
@@ -305,17 +319,19 @@ export const getDatacubeMetadataToCache = (datacube: Datacube): CachedDatacubeMe
   };
 };
 
-export const getDefaultDataConfig = async (datacubeId: string) => {
-  const metadata: Datacube = await getDatacubeById(datacubeId);
+export const getDefaultDataConfig = async (dataId: string, outputVariable: string) => {
+  const metadata = await getIndicatorMetadata(dataId);
   const config: DataConfig = {
-    datasetId: metadata.data_id,
+    datasetId: dataId,
     runId: 'indicator',
-    outputVariable: metadata.default_feature,
+    outputVariable,
     selectedTimestamp: 0,
-    spatialAggregation: metadata.default_view?.spatialAggregation || AggregationOption.Mean,
-    temporalAggregation: metadata.default_view?.temporalAggregation || AggregationOption.Mean,
-    temporalResolution: metadata.default_view?.temporalResolution || TemporalResolutionOption.Month,
+    spatialAggregation: metadata?.default_view?.spatialAggregation || AggregationOption.Mean,
+    temporalAggregation: metadata?.default_view?.temporalAggregation || AggregationOption.Mean,
+    temporalResolution:
+      metadata?.default_view?.temporalResolution || TemporalResolutionOption.Month,
   };
+  // Fetch timeseries to find the true last point we have data for. `period.lte` is unreliable.
   const { data } = await getTimeseries({
     modelId: config.datasetId,
     outputVariable: config.outputVariable,
@@ -331,6 +347,7 @@ export const getDefaultDataConfig = async (datacubeId: string) => {
 export default {
   updateDatacube,
   getDatacubes,
+  getIndicatorMetadata,
   getDatacubeById,
   getDatacubesCount,
   getDatacubeFacets,
