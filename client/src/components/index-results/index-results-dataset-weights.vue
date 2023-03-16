@@ -2,7 +2,7 @@
   <div class="index-results-dataset-weights-container">
     <header>
       <h4>Datasets weights</h4>
-      <p class="de-emphasized">with respect to {{ 'Overall Priority' }}</p>
+      <p class="de-emphasized">with respect to {{ props.selectedNodeName }}</p>
     </header>
     <div class="list-items">
       <div v-for="item of listItems" :key="item.dataset.id" class="list-item">
@@ -32,6 +32,8 @@ import { computed } from 'vue';
 import { IndexNodeType } from '@/types/Enums';
 import IndexResultsDatasetWeight from './index-results-dataset-weight.vue';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
+
+const props = defineProps<{ selectedNodeName: string }>();
 
 const { tree } = useIndexTree();
 

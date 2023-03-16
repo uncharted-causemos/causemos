@@ -80,12 +80,15 @@
 </template>
 
 <script setup lang="ts">
+import _ from 'lodash';
 import { ref, computed, watch, onMounted } from 'vue';
 import newDatacubeService from '@/services/new-datacube-service';
 import { DatasetSearchResult } from '@/types/Index';
 import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import { Indicator } from '@/types/Datacube';
+
+const toDisplayName = (v: string) => _.words(v).map(_.capitalize).join(' ');
 
 interface DojoFeatureSearchResult {
   display_name: string;
@@ -108,7 +111,7 @@ const convertFeatureSearchResultToDatasetSearchResult = (
   feature: DojoFeatureSearchResult
 ): DatasetSearchResult => {
   return {
-    displayName: feature.display_name && feature.name,
+    displayName: feature.display_name && toDisplayName(feature.name),
     dataId: feature.owner_dataset.id,
     description: feature.description,
     familyName: feature.owner_dataset.name,
