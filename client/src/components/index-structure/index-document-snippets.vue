@@ -96,7 +96,6 @@ if (queryResults) {
   });
 
   const docRequests: Promise<any>[] = docIdsToFind.map((anId) => getDocument(anId)); // blast these requests in parallel (to slow if one-by-one)
-  // docIdsToFind.forEach((anId) => docRequests.push(getDocument(anId)));
 
   if (docRequests.length > 0) {
     const docMetadata = await Promise.all(docRequests);
