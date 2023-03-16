@@ -6,19 +6,18 @@
     <div class="flex-col structure-column">
       <header>
         <h3>Index results</h3>
-        <p class="subtitle">{{ 'Overall Priority' }}</p>
+        <p class="subtitle">{{ selectedNodeName }}</p>
       </header>
       <section>
         <header class="flex index-structure-header">
           <h4>Index structure</h4>
-          <!-- TODO: hook up modify button -->
-          <button disabled class="btn btn-sm">Modify</button>
+          <button class="btn btn-sm" @click="modifyStructure">Modify</button>
         </header>
         <IndexResultsStructurePreview class="index-structure-preview" />
         <IndexResultsComponentList />
       </section>
       <section>
-        <IndexResultsDatasetWeights />
+        <IndexResultsDatasetWeights :selected-node-name="selectedNodeName" />
       </section>
     </div>
     <div class="map">
@@ -30,6 +29,7 @@
       :is-showing-key-datasets="isShowingKeyDatasets"
       :index-results-data="indexResultsData"
       :index-results-settings="indexResultsSettings"
+      :selected-node-name="selectedNodeName"
       @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
     />
   </div>
@@ -37,6 +37,7 @@
 
 <script setup lang="ts">
 import _ from 'lodash';
+import router from '@/router';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -49,7 +50,7 @@ import { IndexResultsData } from '@/types/Index';
 import { getRegionAggregation } from '@/services/outputdata-service';
 import { OutputSpec, RegionalAggregation } from '@/types/Outputdata';
 import { normalize } from '@/utils/value-util';
-import { DataTransform } from '@/types/Enums';
+import { DataTransform, ProjectType } from '@/types/Enums';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import IndexResultsMap from '@/components/index-results/index-results-map.vue';
@@ -89,6 +90,18 @@ const route = useRoute();
 const analysisId = computed(() => route.params.analysisId as string);
 const { analysisName, indexResultsSettings, refresh } = useIndexAnalysis(analysisId);
 
+const project = computed(() => store.getters['app/project']);
+const modifyStructure = () => {
+  router.push({
+    name: 'indexStructure',
+    params: {
+      project: project.value,
+      analysisId: analysisId.value,
+      projectType: ProjectType.Analysis,
+    },
+  });
+};
+
 // Set analysis name on the navbar
 onMounted(async () => {
   store.dispatch('app/setAnalysisName', '');
@@ -97,6 +110,8 @@ onMounted(async () => {
 });
 
 const { tree } = useIndexTree();
+
+const selectedNodeName = computed(() => tree.value.name);
 
 /**
  * Sort high values to the front of the list, then low values, then null values.

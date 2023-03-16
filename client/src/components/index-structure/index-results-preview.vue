@@ -1,7 +1,9 @@
 <template>
   <div class="index-results-preview-container">
     <h4>Index results</h4>
-    <button :disabled="!canViewResults" class="btn" @click="seeResults">See results</button>
+    <button :disabled="!canViewResults" class="btn btn-call-to-action" @click="seeResults">
+      See results
+    </button>
     <p v-if="!canViewResults" class="de-emphasized">
       There are no datasets with a path to this index.
     </p>
