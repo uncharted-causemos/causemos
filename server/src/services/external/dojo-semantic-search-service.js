@@ -20,7 +20,7 @@ const getDocument = async (docId) => {
   if (response) {
     return response;
   } else {
-    throw new Error('DOJO enp-point request failed.');
+    throw new Error('DOJO end-point request failed.');
   }
 };
 
@@ -38,7 +38,7 @@ const getParagraphs = async () => {
   if (response) {
     return response;
   } else {
-    throw new Error('DOJO enp-point request failed.');
+    throw new Error('DOJO end-point request failed.');
   }
 };
 
@@ -62,7 +62,7 @@ const searchParagraphs = async (searchString, scrollId = '', size = 10) => {
   if (response) {
     return response;
   } else {
-    throw new Error('DOJO enp-point request failed.');
+    throw new Error('DOJO end-point request failed.');
   }
 };
 
