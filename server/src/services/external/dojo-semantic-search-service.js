@@ -1,13 +1,10 @@
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const authUtil = rootRequire('/util/auth-util');
 
-const DOJO_PARAGRAPHS_URL = process.env.JATAWARE_DOJO_URL + '/paragraphs';
-const DOJO_PARAGRAPHS_SEARCH_URL = process.env.JATAWARE_DOJO_URL + '/paragraphs/search';
-const DOJO_DOCUMENT_URL = process.env.JATAWARE_DOJO_URL + '/documents';
-const DOJO_AUTH = authUtil.getBasicAuthToken(
-  process.env.JATAWARE_DOJO_UID,
-  process.env.JATAWARE_DOJO_PWD
-);
+const DOJO_PARAGRAPHS_URL = process.env.DOJO_URL + '/paragraphs';
+const DOJO_PARAGRAPHS_SEARCH_URL = process.env.DOJO_URL + '/paragraphs/search';
+const DOJO_DOCUMENT_URL = process.env.DOJO_URL + '/documents';
+const DOJO_AUTH = authUtil.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
 const getDocument = async (docId) => {
   const requestOptions = {
