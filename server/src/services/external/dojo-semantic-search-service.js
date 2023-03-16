@@ -17,11 +17,7 @@ const getDocument = async (docId) => {
     },
   };
   const response = await requestAsPromise(requestOptions);
-  if (response) {
-    return response;
-  } else {
-    throw new Error('DOJO end-point request failed.');
-  }
+  return response;
 };
 
 const getParagraphs = async () => {
@@ -35,11 +31,7 @@ const getParagraphs = async () => {
     },
   };
   const response = await requestAsPromise(requestOptions);
-  if (response) {
-    return response;
-  } else {
-    throw new Error('DOJO end-point request failed.');
-  }
+  return response;
 };
 
 const searchParagraphs = async (searchString, scrollId = '', size = 10) => {
@@ -59,11 +51,7 @@ const searchParagraphs = async (searchString, scrollId = '', size = 10) => {
   };
 
   const response = await requestAsPromise(requestOptions);
-  if (response) {
-    return response;
-  } else {
-    throw new Error('DOJO end-point request failed.');
-  }
+  return response;
 };
 
 module.exports = {
