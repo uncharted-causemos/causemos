@@ -9,9 +9,6 @@ router.get(
     const docId = req.params.docId;
     if (docId) {
       const result = await paragraphSearchService.getDocument(docId);
-      if (result === null) {
-        throw new Error('Failed to query DOJO paragraphs');
-      }
       res.status(200);
       res.json(result);
     } else {
