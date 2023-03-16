@@ -12,10 +12,6 @@ router.get(
     const { searchString } = req.query;
     if (searchString) {
       const result = await paragraphSearchService.searchParagraphs(searchString, '', 10);
-      if (result === null) {
-        res.status(500);
-        throw new Error('Failed to query DOJO paragraphs');
-      }
       res.status(200);
       res.json(result);
     } else {
@@ -28,9 +24,6 @@ router.get(
   '/',
   asyncHandler(async (req, res) => {
     const result = await paragraphSearchService.getParagraphs();
-    if (result === null) {
-      throw new Error('Failed to query DOJO paragraphs');
-    }
     res.status(200);
     res.json(result);
   })
