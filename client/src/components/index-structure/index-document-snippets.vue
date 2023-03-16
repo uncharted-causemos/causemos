@@ -99,10 +99,10 @@ if (queryResults) {
   docIdsToFind.forEach((anId) => docRequests.push(getDocument(anId)));
 
   if (docRequests.length > 0) {
-    const docMetaData = await Promise.all(docRequests);
+    const docMetadata = await Promise.all(docRequests);
 
     snippetsForSelectedNode.forEach((aSnippet) => {
-      const meta = docMetaData.find((m) => aSnippet.documentId === m.id);
+      const meta = docMetadata.find((m) => aSnippet.documentId === m.id);
       if (meta) {
         aSnippet.documentTitle = meta.doc_title ? meta.doc_title : NO_TITLE;
         aSnippet.documentAuthor = meta.author ? meta.author : NO_AUTHOR;
