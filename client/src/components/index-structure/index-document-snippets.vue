@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { searchParagraphs, getDocument } from '@/services/paragraphs-service';
 interface Snippet {
-  documentId: string;
+  documentId: string | null;
   text: string;
   documentTitle: string;
   documentAuthor: string;
@@ -74,6 +74,8 @@ const props = defineProps<{
 let documentCount = 0;
 const NO_TITLE = 'Title not available';
 const NO_AUTHOR = 'Author not available';
+const NO_SOURCE = 'Source not available';
+const NO_TEXT = 'Text not available';
 
 // TODO: bold the name of the selected node and its components when they're found in the snippets
 const snippetsForSelectedNode: Snippet[] = [];
@@ -87,10 +89,10 @@ if (queryResults) {
     docIdsToFind.push(result.document_id);
     const aSnippet: Snippet = {
       documentId: result.document_id,
-      text: result.text,
+      text: result.text ? result.text : NO_TEXT,
       documentTitle: NO_TITLE,
       documentAuthor: NO_AUTHOR,
-      documentSource: result.Source,
+      documentSource: result.Source ? result.Source : NO_SOURCE,
     };
     snippetsForSelectedNode.push(aSnippet);
   });
