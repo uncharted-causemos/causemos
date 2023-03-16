@@ -31,7 +31,7 @@ router.get(
     if (result === null) {
       throw new Error('Failed to query DOJO paragraphs');
     }
-    res.status = 200;
+    res.status(200);
     res.json(result);
   })
 );
