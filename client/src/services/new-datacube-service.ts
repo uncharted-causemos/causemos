@@ -5,7 +5,7 @@ import { ModelRun } from '@/types/ModelRun';
 import { getTimeseries } from '@/services/outputdata-service';
 import fu from '@/utils/filters-util';
 import { getImageMime } from '@/utils/datacube-util';
-import { FlowLogs } from '@/types/Common';
+import { FlowLogs, Facets } from '@/types/Common';
 import { CachedDatacubeMetadata } from '@/types/Analysis';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 
@@ -29,7 +29,7 @@ export interface SparklineParams {
  * @param {Filters} filters
  * @param {object} options - ES options
  */
-export const getDatacubes = async (filters: Filters, options = {}) => {
+export const getDatacubes = async (filters: Filters, options = {}): Promise<Datacube[]> => {
   const { data } = await API.get('maas/datacubes', {
     params: {
       filters: filters,
@@ -44,10 +44,13 @@ export const getDatacubes = async (filters: Filters, options = {}) => {
  * @param {string[]} facets
  * @param {Filters} filters
  */
-export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
-  const { data } = await API.get(
-    `maas/datacubes/facets?facets=${JSON.stringify(facets)}&filters=${JSON.stringify(filters)}`
-  );
+export const getDatacubeFacets = async (facets: string[], filters: Filters): Promise<Facets> => {
+  const { data } = await API.get('maas/datacubes/facets', {
+    params: {
+      facets: JSON.stringify(facets),
+      filters: filters,
+    },
+  });
   return data;
 };
 

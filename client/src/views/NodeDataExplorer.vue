@@ -148,8 +148,8 @@ export default defineComponent({
       this.enableOverlay();
       const searchFilters = this.getSearchFilters();
       const defaultFilters = { clauses: [] };
-      this.facets = await getDatacubeFacets(FACET_FIELDS, defaultFilters as any);
-      this.filteredFacets = await getDatacubeFacets(FACET_FIELDS, searchFilters);
+      this.facets = (await getDatacubeFacets(FACET_FIELDS, defaultFilters as any)) as any;
+      this.filteredFacets = (await getDatacubeFacets(FACET_FIELDS, searchFilters)) as any;
 
       this.disableOverlay();
     },

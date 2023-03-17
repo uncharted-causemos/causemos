@@ -74,7 +74,9 @@
           </div>
         </div>
       </ul>
-      <button class="btn btn-sm advanced-search" disabled>Use advanced search</button>
+      <button class="btn btn-sm advanced-search" @click="openDataExplorer">
+        Use advanced search
+      </button>
     </div>
   </div>
 </template>
@@ -86,6 +88,11 @@ import { DatasetSearchResult } from '@/types/Index';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
+
+import { useRoute } from 'vue-router';
+import router from '@/router';
+import filtersUtil from '@/utils/filters-util';
+import { STATUS } from '@/utils/datacube-util';
 
 const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult => {
   return {
@@ -214,6 +221,23 @@ const shiftIndex = (direction: -1 | 1) => {
   } else if (direction === 1) {
     activeResultIndex.value = Math.min(results.value.length - 1, activeResultIndex.value + 1);
   }
+};
+
+// Advanced Search Button
+const route = useRoute();
+const openDataExplorer = () => {
+  const filters = filtersUtil.newFilters();
+  filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
+  router.push({
+    name: 'indexNodeDataExplorer',
+    params: {
+      projectType: route.params.projectType,
+      project: route.params.project,
+      analysisId: route.params.analysisId,
+      nodeId: 'tsetNode',
+    },
+    // query: { analysisId: route.params.analysisId },
+  });
 };
 </script>
 

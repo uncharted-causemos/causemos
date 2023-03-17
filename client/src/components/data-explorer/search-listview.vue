@@ -85,7 +85,6 @@ import MultilineDescription from '@/components/widgets/multiline-description.vue
 import { DatacubeStatus, TemporalResolution } from '@/types/Enums';
 import { isIndicator, isModel } from '../../utils/datacube-util';
 import { Datacube, ModelParameter } from '@/types/Datacube';
-import { AnalysisItem } from '@/types/Analysis';
 
 export default defineComponent({
   name: 'SearchListview',
@@ -99,7 +98,7 @@ export default defineComponent({
       default: () => [],
     },
     selectedSearchItems: {
-      type: Array as PropType<AnalysisItem[]>,
+      type: Array as PropType<{ id: string }[]>,
       required: true,
     },
     enableMultipleSelection: {
@@ -157,7 +156,7 @@ export default defineComponent({
     updateSelection(datacube: Datacube) {
       if (!this.isDisabled(datacube)) {
         const item = {
-          // Partial analysisItem
+          // TODO: datacubeId is misleading it should be renamed to data_id
           datacubeId: datacube.data_id,
           id: datacube.id,
         };
