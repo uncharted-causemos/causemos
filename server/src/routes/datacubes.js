@@ -164,7 +164,6 @@ router.get(
 
 /**
  * GET Search for data cubes based on query string
- * As of Mar 2023, Dojo's semantic feature search only returns indicator features, not model runs.
  */
 router.get(
   '/datacube-suggestions',
