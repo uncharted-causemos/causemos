@@ -48,15 +48,17 @@
 </template>
 
 <script setup lang="ts">
-interface Snippet {
-  text: string;
-  documentTitle: string;
-  documentAuthor: string;
-  documentSource: string;
-}
+import { searchParagraphs, getDocument } from '@/services/paragraphs-service';
+import {
+  Snippet,
+  ParagraphSearchResponse,
+  FoundParagraphs,
+  Document,
+} from '@/types/IndexDocuments';
 
 // TODO: remove when we have real data
 const MOCK_SNIPPET: Snippet = {
+  documentId: 'id',
   text: 'lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec accumsan tellus eget nisl feugiat, Overall priority a luctus arcu viverra. Nunc blandit mollis libero, ac dictum diam cursus',
   documentTitle: 'Document title',
   documentAuthor: 'Document author',
@@ -68,12 +70,47 @@ const props = defineProps<{
   // componentNames: string[];
 }>();
 
-// TODO: use real document count
-const documentCount = 811;
+let documentCount = 0;
+const NO_TITLE = 'Title not available';
+const NO_AUTHOR = 'Author not available';
+const NO_SOURCE = 'Source not available';
+const NO_TEXT = 'Text not available';
 
-// TODO: use real snippets
 // TODO: bold the name of the selected node and its components when they're found in the snippets
-const snippetsForSelectedNode: Snippet[] = [MOCK_SNIPPET, MOCK_SNIPPET];
+const snippetsForSelectedNode: Snippet[] = [];
+const queryResults: ParagraphSearchResponse = await searchParagraphs(props.selectedNodeName);
+
+const docIdsToFind: string[] = [];
+if (queryResults) {
+  documentCount = queryResults.hits;
+  queryResults.results?.forEach(async (result: FoundParagraphs) => {
+    docIdsToFind.push(result.document_id);
+    const aSnippet: Snippet = {
+      documentId: result.document_id,
+      text: result.text ? result.text : NO_TEXT,
+      documentTitle: NO_TITLE,
+      documentAuthor: NO_AUTHOR,
+      documentSource: NO_SOURCE,
+    };
+    snippetsForSelectedNode.push(aSnippet);
+  });
+
+  const docRequests: Promise<Document>[] = docIdsToFind.map((anId) => getDocument(anId)); // blast these requests in parallel (to slow if one-by-one)
+
+  if (docRequests.length > 0) {
+    const docMetadata = await Promise.all(docRequests);
+
+    snippetsForSelectedNode.forEach((aSnippet) => {
+      const meta = docMetadata.find((m) => aSnippet.documentId === m?.id);
+      if (meta) {
+        aSnippet.documentTitle = meta.title ? meta.title : NO_TITLE; // note: may be some inconsistencies from the server (doc_title v.s. title)
+        aSnippet.documentAuthor = meta.author ? meta.author : NO_AUTHOR;
+        aSnippet.documentSource = meta.creator ? meta.creator : NO_SOURCE;
+      }
+    });
+  }
+}
+
 const snippetsForComponents: Snippet[] = [MOCK_SNIPPET, MOCK_SNIPPET];
 </script>
 
