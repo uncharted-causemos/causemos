@@ -49,13 +49,12 @@
 
 <script setup lang="ts">
 import { searchParagraphs, getDocument } from '@/services/paragraphs-service';
-interface Snippet {
-  documentId: string | null;
-  text: string;
-  documentTitle: string;
-  documentAuthor: string;
-  documentSource: string;
-}
+import {
+  Snippet,
+  ParagraphSearchResponse,
+  FoundParagraphs,
+  Document,
+} from '@/types/IndexDocuments';
 
 // TODO: remove when we have real data
 const MOCK_SNIPPET: Snippet = {
@@ -79,24 +78,24 @@ const NO_TEXT = 'Text not available';
 
 // TODO: bold the name of the selected node and its components when they're found in the snippets
 const snippetsForSelectedNode: Snippet[] = [];
-const queryResults = await searchParagraphs(props.selectedNodeName);
+const queryResults: ParagraphSearchResponse = await searchParagraphs(props.selectedNodeName);
 
 const docIdsToFind: string[] = [];
 if (queryResults) {
   documentCount = queryResults.hits;
-  queryResults.results?.forEach(async (result: any) => {
+  queryResults.results?.forEach(async (result: FoundParagraphs) => {
     docIdsToFind.push(result.document_id);
     const aSnippet: Snippet = {
       documentId: result.document_id,
       text: result.text ? result.text : NO_TEXT,
       documentTitle: NO_TITLE,
       documentAuthor: NO_AUTHOR,
-      documentSource: result.creator ? result.creator : NO_SOURCE,
+      documentSource: NO_SOURCE,
     };
     snippetsForSelectedNode.push(aSnippet);
   });
 
-  const docRequests: Promise<any>[] = docIdsToFind.map((anId) => getDocument(anId)); // blast these requests in parallel (to slow if one-by-one)
+  const docRequests: Promise<Document>[] = docIdsToFind.map((anId) => getDocument(anId)); // blast these requests in parallel (to slow if one-by-one)
 
   if (docRequests.length > 0) {
     const docMetadata = await Promise.all(docRequests);
@@ -106,6 +105,7 @@ if (queryResults) {
       if (meta) {
         aSnippet.documentTitle = meta.title ? meta.title : NO_TITLE; // note: may be some inconsistencies from the server (doc_title v.s. title)
         aSnippet.documentAuthor = meta.author ? meta.author : NO_AUTHOR;
+        aSnippet.documentSource = meta.creator ? meta.creator : NO_SOURCE;
       }
     });
   }
