@@ -91,7 +91,7 @@ if (queryResults) {
       text: result.text ? result.text : NO_TEXT,
       documentTitle: NO_TITLE,
       documentAuthor: NO_AUTHOR,
-      documentSource: result.Source ? result.Source : NO_SOURCE,
+      documentSource: result.creator ? result.creator : NO_SOURCE,
     };
     snippetsForSelectedNode.push(aSnippet);
   });
