@@ -2,6 +2,7 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const datacubeService = rootRequire('/services/datacube-service');
+const searchService = rootRequire('/services/search-service');
 const filtersUtil = rootRequire('/util/filters-util');
 const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
 
@@ -168,9 +169,9 @@ router.get(
 router.get(
   '/datacube-suggestions',
   asyncHandler(async (req, res) => {
-    const queryString = req.query.q;
-    const result = await datacubeService.semanticFeatureSearch(queryString);
-    res.json(result.results);
+    const q = req.query.q;
+    const result = await searchService.rawDatacubeSearch(q);
+    res.json(result);
   })
 );
 

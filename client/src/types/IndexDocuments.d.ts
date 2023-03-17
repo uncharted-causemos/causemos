@@ -1,5 +1,5 @@
 /**
- * Interfaces for Jataware symantec search endpoint (dojo)
+ * Interfaces for Jataware's Dojo semantic document search endpoint
  */
 export interface Snippet {
   documentId: string | null;

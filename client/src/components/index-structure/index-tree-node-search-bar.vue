@@ -87,25 +87,12 @@ import { DatasetSearchResult } from '@/types/Index';
 import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import { Indicator } from '@/types/Datacube';
+import {
+  searchFeatures,
+  DojoFeatureSearchResult,
+} from '@/services/semantic-feature-search-service';
 
 const toDisplayName = (v: string) => _.words(v).map(_.capitalize).join(' ');
-
-interface DojoFeatureSearchResult {
-  display_name: string;
-  description: string;
-  name: string;
-  type: string;
-  unit: string;
-  unit_description: string;
-  ontologies: string;
-  is_primary: string;
-  data_resolution: string;
-  alias: {};
-  owner_dataset: {
-    id: string;
-    name: string;
-  };
-}
 
 const convertFeatureSearchResultToDatasetSearchResult = (
   feature: DojoFeatureSearchResult
@@ -150,17 +137,16 @@ const isFetchingResults = ref(false);
 
 watch([searchText], async () => {
   // Save a copy of the current search text value in case it changes before results are fetched
-  const queryString = searchText.value;
-  if (queryString === '') {
+  const query = searchText.value;
+  if (query === '') {
     results.value = [];
     isFetchingResults.value = false;
     return;
   }
   isFetchingResults.value = true;
   try {
-    const dojoFeatureSearchResults: DojoFeatureSearchResult[] =
-      await newDatacubeService.getDatacubeSuggestions(queryString);
-    if (queryString !== searchText.value) {
+    const dojoFeatureSearchResults = await searchFeatures(query);
+    if (query !== searchText.value) {
       // Search text has changed since we started fetching results, so let the more recent call
       //  modify state.
       return;
@@ -168,7 +154,7 @@ watch([searchText], async () => {
     results.value = dojoFeatureSearchResults.map(convertFeatureSearchResultToDatasetSearchResult);
     isFetchingResults.value = false;
   } catch (e) {
-    console.error('Unable to fetch search results for query', searchText);
+    console.error('Unable to fetch search results for query', searchText.value);
     console.error(e);
   }
 });

@@ -510,19 +510,6 @@ const _getFlowIdForIndicator = async (indicatorId) => {
   return _.get(indicators[0], 'flow_id');
 };
 
-const semanticFeatureSearch = async (queryString) => {
-  const result = await requestAsPromise({
-    method: 'GET',
-    url: process.env.DOJO_URL + '/features/search?query=' + queryString,
-    headers: {
-      Authorization: basicAuthToken,
-      'Content-type': 'application/json',
-      Accept: 'application/json',
-    },
-  });
-  return JSON.parse(result);
-};
-
 module.exports = {
   getDatacubes,
   getDatasets,
@@ -541,6 +528,4 @@ module.exports = {
   getJobStatus,
 
   getTimeseries,
-
-  semanticFeatureSearch,
 };
