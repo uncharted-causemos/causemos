@@ -21,7 +21,7 @@
     "types": ["vite/client", "mocha", "chai"]
   },
   "vueCompilerOptions": {
-    // "skipTemplateCodegen": true
+    "skipTemplateCodegen": true
   },
   "include": [
     "src/**/*.ts",
