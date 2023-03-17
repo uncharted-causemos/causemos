@@ -97,8 +97,10 @@ const toDisplayName = (v: string) => _.words(v).map(_.capitalize).join(' ');
 const convertFeatureSearchResultToDatasetSearchResult = (
   feature: DojoFeatureSearchResult
 ): DatasetSearchResult => {
+  const displayName =
+    feature.display_name === '' ? toDisplayName(feature.name) : feature.display_name;
   return {
-    displayName: feature.display_name && toDisplayName(feature.name),
+    displayName,
     dataId: feature.owner_dataset.id,
     description: feature.description,
     familyName: feature.owner_dataset.name,
