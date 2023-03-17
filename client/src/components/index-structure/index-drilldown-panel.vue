@@ -339,7 +339,7 @@ const selectedNode = computed<IndexNode | null>(() => {
   const foundInTree = findNode(props.selectedElementId);
   // If not found in main tree, check in the list of disconnected nodes and trees
   const found = foundInTree ?? workbench.findNode(props.selectedElementId);
-  // TODO: we'll want to keep the parent around when searching for edges
+
   return found?.found ?? null;
 });
 
