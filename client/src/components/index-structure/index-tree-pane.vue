@@ -12,8 +12,8 @@
       <div
         class="edge incoming"
         :class="{ visible: hasChildren(cell.node) }"
-        @mouseenter="highLight"
-        @mouseleave="highLightClear"
+        @mouseenter="highlight"
+        @mouseleave="highlightClear"
         @click="selectEdge"
       ></div>
       <IndexTreeNode
@@ -29,7 +29,7 @@
         @select="(id) => emit('select-element', id)"
         @create-child="createChild"
         @attach-dataset="attachDatasetToPlaceholder"
-        @mouseenter="highLightClear"
+        @mouseenter="highlightClear"
         @click="edgeSelectionClear"
       />
       <div
@@ -39,8 +39,8 @@
           dashed: cell.node.type === IndexNodeType.Placeholder,
           'last-child': cell.isLastChild,
         }"
-        @mouseenter="highLight"
-        @mouseleave="highLightClear"
+        @mouseenter="highlight"
+        @mouseleave="highlightClear"
         @click="selectEdge"
       />
     </div>
@@ -146,7 +146,7 @@ const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult
  * Clear all selected/highlighted edges and clear selected node
  */
 const clearAll = () => {
-  highLightClear();
+  highlightClear();
   edgeSelectionClear();
   emit('deselect-all');
 };
@@ -159,8 +159,8 @@ let hoverElements: HTMLElement[] = [];
  *
  * @param evt
  */
-const highLight = (evt: MouseEvent) => {
-  highLightClear();
+const highlight = (evt: MouseEvent) => {
+  highlightClear();
   const current = evt.target;
   if (current) {
     const targetEl = current as HTMLElement;
@@ -174,7 +174,7 @@ const highLight = (evt: MouseEvent) => {
   }
 };
 
-const highLightClear = () => {
+const highlightClear = () => {
   edgeInteractionClear(hoverElements, true);
   hoverElements = [];
 };
@@ -187,7 +187,7 @@ const edgeSelectionClear = () => {
 
 let edgeSelection: HTMLElement[] = [];
 const selectEdge = (evt: MouseEvent) => {
-  highLightClear();
+  highlightClear();
   const targetEl = evt.target as HTMLElement;
 
   if (targetEl) {
