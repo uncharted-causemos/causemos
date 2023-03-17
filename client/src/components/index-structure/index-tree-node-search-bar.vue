@@ -91,14 +91,13 @@ import {
   searchFeatures,
   DojoFeatureSearchResult,
 } from '@/services/semantic-feature-search-service';
-
-const toDisplayName = (v: string) => _.words(v).map(_.capitalize).join(' ');
+import { capitalizeEachWord } from '@/utils/string-util';
 
 const convertFeatureSearchResultToDatasetSearchResult = (
   feature: DojoFeatureSearchResult
 ): DatasetSearchResult => {
   const displayName =
-    feature.display_name === '' ? toDisplayName(feature.name) : feature.display_name;
+    feature.display_name === '' ? capitalizeEachWord(feature.name) : feature.display_name;
   return {
     displayName,
     dataId: feature.owner_dataset.id,
