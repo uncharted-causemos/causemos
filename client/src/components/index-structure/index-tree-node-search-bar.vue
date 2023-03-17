@@ -102,7 +102,7 @@ const convertFeatureSearchResultToDatasetSearchResult = (
     dataId: feature.owner_dataset.id,
     description: feature.description,
     familyName: feature.owner_dataset.name,
-    // We need this to distinguish between results with the same dataId and to fetch the actual data for calculating sparklines and index results.
+    // We need this to distinguish between results with the same dataId and to fetch the actual data for calculating index results.
     outputName: feature.name,
   };
 };
@@ -137,16 +137,16 @@ const isFetchingResults = ref(false);
 
 watch([searchText], async () => {
   // Save a copy of the current search text value in case it changes before results are fetched
-  const query = searchText.value;
-  if (query === '') {
+  const queryString = searchText.value;
+  if (queryString === '') {
     results.value = [];
     isFetchingResults.value = false;
     return;
   }
   isFetchingResults.value = true;
   try {
-    const dojoFeatureSearchResults = await searchFeatures(query);
-    if (query !== searchText.value) {
+    const dojoFeatureSearchResults = await searchFeatures(queryString);
+    if (queryString !== searchText.value) {
       // Search text has changed since we started fetching results, so let the more recent call
       //  modify state.
       return;
