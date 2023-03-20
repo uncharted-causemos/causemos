@@ -28,6 +28,7 @@
     <IndexTreeNodeSearchBar
       v-if="showDatasetSearch"
       :initial-search-text="props.nodeData.name"
+      :node-id="props.nodeData.id"
       @select-dataset="attachDataset"
       @keep-as-placeholder="keepAsPlaceholder"
       @cancel="cancelDatasetSearch"

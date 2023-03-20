@@ -119,6 +119,7 @@ export const convertPlaceholderToDataset = (
   config: DataConfig
 ) => {
   const node = createNewDatasetNode({
+    id: placeholder.id,
     name: placeholder.name === '' ? dataset.displayName : placeholder.name,
     datasetName: dataset.displayName,
     source: dataset.familyName,

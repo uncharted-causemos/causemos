@@ -117,6 +117,7 @@ const convertFeatureSearchResultToDatasetSearchResult = (
 
 interface Props {
   initialSearchText: string;
+  nodeId: string;
 }
 const props = defineProps<Props>();
 
@@ -253,9 +254,9 @@ const openDataExplorer = () => {
       projectType: route.params.projectType,
       project: route.params.project,
       analysisId: route.params.analysisId,
-      nodeId: 'tsetNode',
+      nodeId: props.nodeId,
     },
-    // query: { analysisId: route.params.analysisId },
+    query: { filters: filters } as any,
   });
 };
 </script>

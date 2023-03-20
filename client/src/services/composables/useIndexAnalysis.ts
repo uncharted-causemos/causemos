@@ -54,6 +54,26 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     }
   });
 
+  // Check current analysis state loaded in the memory is synced with the one from the server.
+  // Since _saveState is fired asynchronously and we don't wait for the response, and also the Elastic Search index takes some time to get refreshed and be available for search with newly inserted or updated document
+  // there might be a chance that the analysis state result from the server is not yet updated and the changes in _analysisState is not fully reflected yet.
+  // This issue might cause race condition in some cases and to avoid, we need a method to check whether the data in the server is synced with the current _analysisState.
+  // isStateInSync if the analysis state from the server is in sync with _analysisState
+  const isStateInSync = async () => {
+    const analysis = await getAnalysis(analysisId.value);
+    return _.isEqual(analysis.state, _analysisState.value);
+  };
+
+  const waitForStateInSync = async (retry = 10, waitTimeout = 500) => {
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    for (let index = 0; index < retry; index++) {
+      await sleep(waitTimeout);
+      const isSync = await isStateInSync();
+      if (isSync) return true;
+    }
+    return false;
+  };
+
   // Index results settings
 
   const indexResultsSettings = computed(() => _analysisState.value.resultsSettings);
@@ -71,5 +91,6 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     indexResultsSettings,
     saveIndexResultsSettings,
     refresh: fetchAnalysis,
+    waitForStateInSync,
   };
 }
