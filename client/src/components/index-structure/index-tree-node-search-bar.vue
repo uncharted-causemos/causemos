@@ -40,7 +40,7 @@
             <h5 class="results-header">Choose a dataset</h5>
             <li
               v-for="(result, index) of results"
-              :key="result.id"
+              :key="result.dataId + result.outputName"
               :class="{
                 active: activeResultIndex === index,
                 'de-emphasized': result.displayName === '',
@@ -84,20 +84,27 @@ import _ from 'lodash';
 import { ref, computed, watch, onMounted } from 'vue';
 import newDatacubeService from '@/services/new-datacube-service';
 import { DatasetSearchResult } from '@/types/Index';
-import useModelMetadata from '@/services/composables/useModelMetadata';
 import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
+import { Indicator } from '@/types/Datacube';
+import {
+  searchFeatures,
+  DojoFeatureSearchResult,
+} from '@/services/semantic-feature-search-service';
+import { capitalizeEachWord } from '@/utils/string-util';
 
-const toDisplayName = (v: string) => _.words(v).map(_.capitalize).join(' ');
-
-const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult => {
+const convertFeatureSearchResultToDatasetSearchResult = (
+  feature: DojoFeatureSearchResult
+): DatasetSearchResult => {
+  const displayName =
+    feature.display_name === '' ? capitalizeEachWord(feature.name) : feature.display_name;
   return {
-    displayName: doc.display_name || toDisplayName(doc.feature),
-    datasetMetadataDocId: doc.id,
-    dataId: doc.data_id,
-    description: doc.description,
-    familyName: doc.family_name,
-    period: doc.period,
+    displayName,
+    dataId: feature.owner_dataset.id,
+    description: feature.description,
+    familyName: feature.owner_dataset.name,
+    // We need this to distinguish between results with the same dataId and to fetch the actual data for calculating index results.
+    outputName: feature.name,
   };
 };
 
@@ -139,16 +146,16 @@ watch([searchText], async () => {
   }
   isFetchingResults.value = true;
   try {
-    const esDocResults = await newDatacubeService.getDatacubeSuggestions(queryString);
+    const dojoFeatureSearchResults = await searchFeatures(queryString);
     if (queryString !== searchText.value) {
       // Search text has changed since we started fetching results, so let the more recent call
       //  modify state.
       return;
     }
-    results.value = esDocResults.map(convertESDocToDatasetSearchResult);
+    results.value = dojoFeatureSearchResults.map(convertFeatureSearchResultToDatasetSearchResult);
     isFetchingResults.value = false;
   } catch (e) {
-    console.error('Unable to fetch search results for query', searchText);
+    console.error('Unable to fetch search results for query', searchText.value);
     console.error(e);
   }
 });
@@ -171,8 +178,17 @@ const activeResult = computed(() => {
   return results.value[activeResultIndex.value];
 });
 
-const activeResultMetadataId = computed(() => activeResult.value?.datasetMetadataDocId ?? null);
-const activeResultMetadata = useModelMetadata(activeResultMetadataId);
+const activeResultMetadata = ref<Indicator | null>(null);
+watch([activeResult], async () => {
+  if (activeResult.value === null) {
+    activeResultMetadata.value = null;
+    return;
+  }
+  activeResultMetadata.value = (await newDatacubeService.getDatacubeByDataId(
+    activeResult.value.dataId
+  )) as Indicator | null;
+});
+
 const { sparklineData, temporalCoverage } = useModelMetadataCoverage(activeResultMetadata);
 
 const spatialCoverageDisplayString = computed(() => {
