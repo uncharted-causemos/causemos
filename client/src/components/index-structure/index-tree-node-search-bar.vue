@@ -184,9 +184,9 @@ watch([activeResult], async () => {
     activeResultMetadata.value = null;
     return;
   }
-  activeResultMetadata.value = await newDatacubeService.getIndicatorMetadata(
+  activeResultMetadata.value = (await newDatacubeService.getDatacubeByDataId(
     activeResult.value.dataId
-  );
+  )) as Indicator | null;
 });
 
 const { sparklineData, temporalCoverage } = useModelMetadataCoverage(activeResultMetadata);

@@ -824,29 +824,6 @@ const indicatorSearchByDatasetIdAndOutputName = async (dataId, name) => {
   const results = await client.search(searchPayload);
   return results.body.hits.hits.map((d) => d._source);
 };
-const indicatorSearchByDataId = async (dataId) => {
-  const searchPayload = {
-    index: RESOURCE.DATA_DATACUBE,
-    size: 1,
-    body: {
-      query: {
-        bool: {
-          must: [
-            {
-              term: { data_id: dataId },
-            },
-            {
-              term: { status: 'READY' },
-            },
-          ],
-        },
-      },
-    },
-  };
-
-  const results = await client.search(searchPayload);
-  return results.body.hits.hits.map((d) => d._source);
-};
 
 const modelSearchWithName = async (id, name) => {
   // id and dataId are interchangeable for models
@@ -885,5 +862,4 @@ module.exports = {
   indicatorSearchByConcepts,
   indicatorSearchConceptAligner,
   indicatorSearchConceptAlignerBulk,
-  indicatorSearchByDataId,
 };

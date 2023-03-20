@@ -40,17 +40,16 @@ export const getDatacubes = async (filters: Filters, options = {}) => {
 };
 
 /**
- * Get indicator by `dataId`, as opposed to `id`.
+ * Get indicator or model by `dataId`, as opposed to `id`.
  * `dataId` is an identifier provided at registration time by Jataware.
  * `id` is an ElasticSearch document ID generated during registration.
  */
-export const getIndicatorMetadata = async (dataId: string): Promise<Indicator | null> => {
-  const { data } = await API.get('maas/indicators/metadata', {
-    params: {
-      data_id: dataId,
-    },
-  });
-  return data[0] ?? null;
+export const getDatacubeByDataId = async (dataId: string): Promise<Model | Indicator | null> => {
+  const result = await getDatacubes(
+    { clauses: [{ field: 'dataId', operand: 'or', isNot: false, values: [dataId] }] },
+    { from: 0, size: 1 }
+  );
+  return result[0] ?? null;
 };
 
 /**
@@ -320,7 +319,7 @@ export const getDatacubeMetadataToCache = (datacube: Datacube): CachedDatacubeMe
 };
 
 export const getDefaultDataConfig = async (dataId: string, outputVariable: string) => {
-  const metadata = await getIndicatorMetadata(dataId);
+  const metadata = await getDatacubeByDataId(dataId);
   const config: DataConfig = {
     datasetId: dataId,
     runId: 'indicator',
@@ -347,7 +346,7 @@ export const getDefaultDataConfig = async (dataId: string, outputVariable: strin
 export default {
   updateDatacube,
   getDatacubes,
-  getIndicatorMetadata,
+  getDatacubeByDataId,
   getDatacubeById,
   getDatacubesCount,
   getDatacubeFacets,
