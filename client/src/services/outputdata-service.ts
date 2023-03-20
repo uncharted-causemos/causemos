@@ -7,6 +7,7 @@ import {
   AggregationOption,
   ReferenceSeriesOption,
   TemporalAggregationLevel,
+  TemporalResolution,
 } from '@/types/Enums';
 import {
   OutputSpec,
@@ -199,6 +200,39 @@ export const getBulkTimeseries = async (spec: OutputSpec, regionIds: string[]): 
       }
     );
     return result;
+  } catch (e) {
+    return [];
+  }
+};
+
+/**
+ * Get the sparkline data for the given output data spec. If rawRes and rawLatestTimestamp are provided,
+ * the last point value of the sparkline data maybe extrapolated or omitted accordingly based on the temporal coverage of the last aggregated point value.
+ *
+ * @param spec Output data spec
+ * @param rawRes Temporal resolution of the corresponding raw data
+ * @param rawLatestTimestamp Timestamp of the most recent record from the raw data
+ */
+export const getSparkline = async (
+  spec: OutputSpec,
+  rawRes?: TemporalResolution,
+  rawLatestTimestamp?: number
+): Promise<number[]> => {
+  const params: any = {
+    data_id: spec.modelId,
+    run_id: spec.runId,
+    feature: spec.outputVariable,
+    resolution: spec.temporalResolution,
+    temporal_agg: spec.temporalAggregation,
+    spatial_agg: spec.spatialAggregation,
+  };
+  if (rawRes && rawLatestTimestamp) {
+    params.raw_res = rawRes;
+    params.raw_latest_ts = rawLatestTimestamp;
+  }
+  try {
+    const { data } = await API.get('maas/output/sparkline', { params });
+    return data || [];
   } catch (e) {
     return [];
   }
