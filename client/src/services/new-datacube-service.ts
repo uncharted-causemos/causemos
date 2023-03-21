@@ -1,5 +1,6 @@
+import _ from 'lodash';
 import API from '@/api/api';
-import { DataConfig, Datacube, Indicator, Model } from '@/types/Datacube';
+import { DataConfig, Datacube, Model } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import { getTimeseries } from '@/services/outputdata-service';
@@ -24,19 +25,35 @@ export interface SparklineParams {
   finalRawTimestamp: number;
 }
 
+// TEMPORARY FIX MARCH 2023: some metadata coming from Jataware has flipped time period values.
+//  This code can be removed once the metadata is corrected on their side.
+const fixIncorrectData = (datacube: Datacube) => {
+  // fix period
+  if (
+    !_.isNil(datacube.period?.gte) &&
+    !_.isNil(datacube.period?.lte) &&
+    datacube.period.gte > datacube.period.lte
+  ) {
+    datacube.period = {
+      lte: datacube.period.gte,
+      gte: datacube.period.lte,
+    };
+  }
+  return datacube;
+};
 /**
  * Get datacubes
  * @param {Filters} filters
  * @param {object} options - ES options
  */
-export const getDatacubes = async (filters: Filters, options = {}) => {
+export const getDatacubes = async (filters: Filters, options = {}): Promise<Datacube[]> => {
   const { data } = await API.get('maas/datacubes', {
     params: {
       filters: filters,
       options: options,
     },
   });
-  return data;
+  return data.map(fixIncorrectData);
 };
 
 /**
@@ -44,7 +61,7 @@ export const getDatacubes = async (filters: Filters, options = {}) => {
  * `dataId` is an identifier provided at registration time by Jataware.
  * `id` is an ElasticSearch document ID generated during registration.
  */
-export const getDatacubeByDataId = async (dataId: string): Promise<Model | Indicator | null> => {
+export const getDatacubeByDataId = async (dataId: string): Promise<Datacube | null> => {
   const result = await getDatacubes(
     { clauses: [{ field: 'dataId', operand: 'or', isNot: false, values: [dataId] }] },
     { from: 0, size: 1 }
