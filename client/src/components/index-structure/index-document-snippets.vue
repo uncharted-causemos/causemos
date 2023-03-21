@@ -46,37 +46,41 @@ const NO_TEXT = 'Text not available';
 
 // `null` means snippets are loading
 const snippetsForSelectedNode = ref<Snippet[] | null>(null);
-watch([selectedNodeName], async () => {
-  // Clear any previously-fetched snippets
-  snippetsForSelectedNode.value = null;
-  // Save a copy of the node name to watch for race conditions later
-  const fetchingSnippetsFor = selectedNodeName.value;
-  const queryResults: ParagraphSearchResponse = await searchParagraphs(props.selectedNodeName);
-  if (fetchingSnippetsFor !== selectedNodeName.value) {
-    // SelectedNodeName has changed since the results returned, so throw away the results to avoid
-    //  a race condition.
-    return;
-  }
-  // Fetch metadata for each document in parallel (too slow if performed one-by-one).
-  const metadataRequests: Promise<Document>[] = queryResults.results.map((result) =>
-    getDocument(result.document_id)
-  );
-  const metadataResults = await Promise.all(metadataRequests);
-  // Form list of snippets by pulling out relevant fields from query results and document data.
-  const snippets: Snippet[] = queryResults.results.map((result, i) => {
-    const metadata = metadataResults[i];
-    return {
-      documentId: result.document_id,
-      text: result.text ? result.text : NO_TEXT,
-      // There may be some inconsistencies from the server about how this metadata field is named
-      //  (doc_title v.s. title)
-      documentTitle: metadata.title ?? NO_TITLE,
-      documentAuthor: metadata.author ?? NO_AUTHOR,
-      documentSource: metadata.producer ?? NO_SOURCE,
-    };
-  });
-  snippetsForSelectedNode.value = snippets;
-});
+watch(
+  [selectedNodeName],
+  async () => {
+    // Clear any previously-fetched snippets
+    snippetsForSelectedNode.value = null;
+    // Save a copy of the node name to watch for race conditions later
+    const fetchingSnippetsFor = selectedNodeName.value;
+    const queryResults: ParagraphSearchResponse = await searchParagraphs(props.selectedNodeName);
+    if (fetchingSnippetsFor !== selectedNodeName.value) {
+      // SelectedNodeName has changed since the results returned, so throw away the results to avoid
+      //  a race condition.
+      return;
+    }
+    // Fetch metadata for each document in parallel (too slow if performed one-by-one).
+    const metadataRequests: Promise<Document>[] = queryResults.results.map((result) =>
+      getDocument(result.document_id)
+    );
+    const metadataResults = await Promise.all(metadataRequests);
+    // Form list of snippets by pulling out relevant fields from query results and document data.
+    const snippets: Snippet[] = queryResults.results.map((result, i) => {
+      const metadata = metadataResults[i];
+      return {
+        documentId: result.document_id,
+        text: result.text ? result.text : NO_TEXT,
+        // There may be some inconsistencies from the server about how this metadata field is named
+        //  (doc_title v.s. title)
+        documentTitle: metadata.title ?? NO_TITLE,
+        documentAuthor: metadata.author ?? NO_AUTHOR,
+        documentSource: metadata.producer ?? NO_SOURCE,
+      };
+    });
+    snippetsForSelectedNode.value = snippets;
+  },
+  { immediate: true }
+);
 </script>
 
 <style lang="scss" scoped>
