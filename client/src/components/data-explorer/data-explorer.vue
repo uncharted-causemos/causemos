@@ -37,16 +37,20 @@ import _ from 'lodash';
 import { useStore } from 'vuex';
 import { ref, computed, onMounted, watch, defineEmits } from 'vue';
 
+import { Datacube } from '@/types/Datacube';
+import { Filters } from '@/types/Filters';
+import { Facets } from '@/types/common';
+
+import useOverlay from '@/services/composables/useOverlay';
+
 import FacetsPanel from './facets-panel.vue';
 import ModalHeader from './modal-header.vue';
 import Search from './search.vue';
 import SimplePagination from './simple-pagination.vue';
 
-import { FACET_FIELDS } from '@/utils/datacube-util';
 import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
-import { Datacube } from '@/types/Datacube';
-import { Filters } from '@/types/Filters';
-import { Facets } from '@/types/common';
+
+import { FACET_FIELDS } from '@/utils/datacube-util';
 
 interface Props {
   navBackLabel: string;
@@ -62,6 +66,7 @@ const emit = defineEmits<{
 }>();
 
 const store = useStore();
+const overlay = useOverlay();
 
 const pageSize = 100;
 const pageCount = ref(0);
@@ -72,9 +77,6 @@ const facets = ref<Facets | null>(null);
 const filteredFacets = ref<Facets | null>(null);
 
 const filters = computed<Filters>(() => store.getters['app/filters']);
-
-const enableOverlay = () => store.dispatch('app/enableOverlay');
-const disableOverlay = () => store.dispatch('app/disableOverlay');
 
 const fetchDatacubeList = async () => {
   const options = {
@@ -95,9 +97,9 @@ const fetchDatacubeFacets = async () => {
 
 const refresh = async () => {
   pageCount.value = 0;
-  enableOverlay();
+  overlay.enable();
   await Promise.all([fetchDatacubeList(), fetchDatacubeFacets()]);
-  disableOverlay();
+  overlay.disable();
 };
 
 const setSelectedDatacube = (item: { id: string }) => {
@@ -107,17 +109,17 @@ const setSelectedDatacube = (item: { id: string }) => {
 };
 
 const nextPage = async () => {
-  enableOverlay();
+  overlay.enable();
   pageCount.value += 1;
   await fetchDatacubeList();
-  disableOverlay();
+  overlay.disable();
 };
 
 const prevPage = async () => {
-  enableOverlay();
+  overlay.enable();
   pageCount.value -= 1;
   await fetchDatacubeList();
-  disableOverlay();
+  overlay.disable();
 };
 
 const onClose = () => emit('close');

@@ -10,8 +10,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
+import { TYPE } from 'vue-toastification';
 
 import { Datacube } from '@/types/Datacube';
 import { DatasetSearchResult } from '@/types/Index';
@@ -22,16 +22,19 @@ import DataExplorer from '../components/data-explorer/data-explorer.vue';
 
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
+import useToaster from '@/services/composables/useToaster';
+import useOverlay from '@/services/composables/useOverlay';
 
 import { getOutput } from '@/utils/datacube-util';
 import { capitalizeEachWord } from '@/utils/string-util';
-import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 
 const navBackLabel = 'Back';
 const selectButtonLabel = 'Add Dataset';
 
 const route = useRoute();
-const store = useStore();
+const toaster = useToaster();
+const overlay = useOverlay();
 
 // Load and initialize the index analysis state for given analysis id
 const { waitForStateInSync, refresh } = useIndexAnalysis(
@@ -42,14 +45,9 @@ onMounted(async () => await refresh());
 const workBench = useIndexWorkBench();
 const indexTree = useIndexTree();
 
-const enableOverlay = () => store.dispatch('app/enableOverlay');
-const disableOverlay = () => store.dispatch('app/disableOverlay');
-
-const convertDatacubeToDatasetSearchResult = (
-  datacube: Datacube
-): DatasetSearchResult | undefined => {
+const convertDatacubeToDatasetSearchResult = (datacube: Datacube): DatasetSearchResult | null => {
   const defaultOutput = getOutput(datacube, datacube.default_feature);
-  if (!defaultOutput || !defaultOutput.name) return;
+  if (!defaultOutput || !defaultOutput.name) return null;
   const displayName = defaultOutput.display_name || capitalizeEachWord(defaultOutput.name);
   return {
     displayName,
@@ -74,19 +72,20 @@ const navigateBackToIndexStructure = () => {
 const handleSelection = async (selectedDatacubes: Datacube[]) => {
   if (!selectedDatacubes.length) return;
   const dataset = convertDatacubeToDatasetSearchResult(selectedDatacubes[0]);
-  if (!dataset) return; // TODO: show error message;
-  enableOverlay();
-  await Promise.all([
-    workBench.attachDatasetToPlaceholder(route.params.nodeId as string, dataset),
-    indexTree.attachDatasetToPlaceholder(route.params.nodeId as string, dataset),
-  ]);
-  const isInSync = await waitForStateInSync();
-  disableOverlay();
-  if (isInSync) {
-    navigateBackToIndexStructure();
-  } else {
-    // TODO: handle error toaster to display the failure message "Failed to add a dataset to index node"
+  if (!dataset)
+    return toaster('Selected dataset is invalid or is missing metadata', TYPE.ERROR, false);
+  overlay.enable();
+  try {
+    await Promise.all([
+      workBench.attachDatasetToPlaceholder(route.params.nodeId as string, dataset),
+      indexTree.attachDatasetToPlaceholder(route.params.nodeId as string, dataset),
+    ]);
+    await waitForStateInSync();
+  } catch (e) {
+    toaster('Failed to add the selected dataset to index node', TYPE.ERROR, false);
   }
+  overlay.disable();
+  navigateBackToIndexStructure();
 };
 </script>
 
