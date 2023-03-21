@@ -11,15 +11,9 @@
         class="flex-grow w-0"
         @deselect-all="deselectAllElements"
         @select-element="selectElement"
-        @select-upstream-element="selectUpstreamElement"
         :selected-element-id="selectedElementId"
-        :selected-upstream-element-id="selectedUpstreamElementId"
       />
-      <IndexDrilldownPanel
-        class="index-drilldown-panel"
-        :selected-element-id="selectedElementId"
-        :selected-upstream-element-id="selectedUpstreamElementId"
-      />
+      <IndexDrilldownPanel class="index-drilldown-panel" :selected-element-id="selectedElementId" />
     </div>
   </div>
 </template>
@@ -48,17 +42,13 @@ const indexWorkBench = useIndexWorkBench();
 const isStateLoaded = ref(false);
 
 const selectedElementId = ref<SelectableIndexElementId | null>(null);
-const selectedUpstreamElementId = ref<SelectableIndexElementId | null>(null);
 const selectElement = (id: SelectableIndexElementId) => {
+  console.log(`SETTING ELEMENT: ${JSON.stringify(id)}`);
   deselectAllElements();
   selectedElementId.value = id;
 };
-const selectUpstreamElement = (id: SelectableIndexElementId) => {
-  selectedUpstreamElementId.value = id;
-};
 const deselectAllElements = () => {
   selectedElementId.value = null;
-  selectedUpstreamElementId.value = null;
 };
 
 // Set analysis name on the navbar
