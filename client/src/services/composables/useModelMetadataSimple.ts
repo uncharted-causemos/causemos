@@ -27,7 +27,9 @@ export default function useModelMetadataSimple(
         // Data ID changed during the request, so throw out results to avoid race conditions.
         return;
       }
-      metadata.value = result;
+      // FIXME: verify whether we should be using `Model | Indicator` or `Datacube` and be
+      //  consistent throughout
+      metadata.value = result as Model | Indicator | null;
     },
     { immediate: true }
   );
