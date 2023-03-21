@@ -25,7 +25,8 @@ export interface SparklineParams {
   finalRawTimestamp: number;
 }
 
-// Attempt to correct wrong datacube metadata
+// TEMPORARY FIX MARCH 2023: some metadata coming from Jataware has flipped time period values.
+//  This code can be removed once the metadata is corrected on their side.
 const fixIncorrectData = (datacube: Datacube) => {
   // fix period
   if (
