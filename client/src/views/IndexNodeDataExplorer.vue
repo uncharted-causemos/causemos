@@ -82,7 +82,11 @@ const handleSelection = async (selectedDatacubes: Datacube[]) => {
     ]);
     await waitForStateInSync();
   } catch (e) {
-    toaster('Failed to add the selected dataset to index node', TYPE.ERROR, false);
+    toaster(
+      'Unexpected error happened while adding the selected dataset to index node',
+      TYPE.ERROR,
+      false
+    );
   }
   overlay.disable();
   navigateBackToIndexStructure();
