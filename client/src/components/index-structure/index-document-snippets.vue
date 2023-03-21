@@ -2,33 +2,15 @@
   <div class="index-document-snippets-container">
     <header>
       <h4>Document snippets</h4>
-      <p class="subtitle">Extracted from {{ documentCount }} documents.</p>
     </header>
     <section>
       <h5>
         Snippets related to <strong>{{ props.selectedNodeName }}</strong>
       </h5>
-      <div class="snippets">
+      <div v-if="snippetsForSelectedNode === null" class="loading-indicator" />
+      <p v-else-if="snippetsForSelectedNode.length === 0" class="subdued">No results</p>
+      <div v-else class="snippets">
         <div class="snippet" v-for="(snippet, i) in snippetsForSelectedNode" :key="i">
-          <span class="open-quote">"</span>
-          <div class="snippet-body">
-            <p>{{ snippet.text }}</p>
-            <div class="bottom-row">
-              <div class="metadata">
-                <p>{{ snippet.documentTitle }}</p>
-                <p>{{ snippet.documentAuthor }}, {{ snippet.documentSource }}</p>
-              </div>
-              <!-- TODO: open document -->
-              <button class="btn btn-sm" disabled>View in context</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    <section>
-      <h5>Snippets related to components</h5>
-      <div class="snippets">
-        <div class="snippet" v-for="(snippet, i) in snippetsForComponents" :key="i">
           <span class="open-quote">"</span>
           <div class="snippet-body">
             <p>{{ snippet.text }}</p>
@@ -49,69 +31,52 @@
 
 <script setup lang="ts">
 import { searchParagraphs, getDocument } from '@/services/paragraphs-service';
-import {
-  Snippet,
-  ParagraphSearchResponse,
-  FoundParagraphs,
-  Document,
-} from '@/types/IndexDocuments';
-
-// TODO: remove when we have real data
-const MOCK_SNIPPET: Snippet = {
-  documentId: 'id',
-  text: 'lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec accumsan tellus eget nisl feugiat, Overall priority a luctus arcu viverra. Nunc blandit mollis libero, ac dictum diam cursus',
-  documentTitle: 'Document title',
-  documentAuthor: 'Document author',
-  documentSource: 'Document source',
-};
+import { Snippet, ParagraphSearchResponse, Document } from '@/types/IndexDocuments';
+import { toRefs, watch, ref } from 'vue';
 
 const props = defineProps<{
   selectedNodeName: string;
-  // componentNames: string[];
 }>();
+const { selectedNodeName } = toRefs(props);
 
-let documentCount = 0;
 const NO_TITLE = 'Title not available';
 const NO_AUTHOR = 'Author not available';
 const NO_SOURCE = 'Source not available';
 const NO_TEXT = 'Text not available';
 
-// TODO: bold the name of the selected node and its components when they're found in the snippets
-const snippetsForSelectedNode: Snippet[] = [];
-const queryResults: ParagraphSearchResponse = await searchParagraphs(props.selectedNodeName);
-
-const docIdsToFind: string[] = [];
-if (queryResults) {
-  documentCount = queryResults.hits;
-  queryResults.results?.forEach(async (result: FoundParagraphs) => {
-    docIdsToFind.push(result.document_id);
-    const aSnippet: Snippet = {
+// `null` means snippets are loading
+const snippetsForSelectedNode = ref<Snippet[] | null>(null);
+watch([selectedNodeName], async () => {
+  // Clear any previously-fetched snippets
+  snippetsForSelectedNode.value = null;
+  // Save a copy of the node name to watch for race conditions later
+  const fetchingSnippetsFor = selectedNodeName.value;
+  const queryResults: ParagraphSearchResponse = await searchParagraphs(props.selectedNodeName);
+  if (fetchingSnippetsFor !== selectedNodeName.value) {
+    // SelectedNodeName has changed since the results returned, so throw away the results to avoid
+    //  a race condition.
+    return;
+  }
+  // Fetch metadata for each document in parallel (too slow if performed one-by-one).
+  const metadataRequests: Promise<Document>[] = queryResults.results.map((result) =>
+    getDocument(result.document_id)
+  );
+  const metadataResults = await Promise.all(metadataRequests);
+  // Form list of snippets by pulling out relevant fields from query results and document data.
+  const snippets: Snippet[] = queryResults.results.map((result, i) => {
+    const metadata = metadataResults[i];
+    return {
       documentId: result.document_id,
       text: result.text ? result.text : NO_TEXT,
-      documentTitle: NO_TITLE,
-      documentAuthor: NO_AUTHOR,
-      documentSource: NO_SOURCE,
+      // There may be some inconsistencies from the server about how this metadata field is named
+      //  (doc_title v.s. title)
+      documentTitle: metadata.title ?? NO_TITLE,
+      documentAuthor: metadata.author ?? NO_AUTHOR,
+      documentSource: metadata.producer ?? NO_SOURCE,
     };
-    snippetsForSelectedNode.push(aSnippet);
   });
-
-  const docRequests: Promise<Document>[] = docIdsToFind.map((anId) => getDocument(anId)); // blast these requests in parallel (to slow if one-by-one)
-
-  if (docRequests.length > 0) {
-    const docMetadata = await Promise.all(docRequests);
-
-    snippetsForSelectedNode.forEach((aSnippet) => {
-      const meta = docMetadata.find((m) => aSnippet.documentId === m?.id);
-      if (meta) {
-        aSnippet.documentTitle = meta.title ? meta.title : NO_TITLE; // note: may be some inconsistencies from the server (doc_title v.s. title)
-        aSnippet.documentAuthor = meta.author ? meta.author : NO_AUTHOR;
-        aSnippet.documentSource = meta.creator ? meta.creator : NO_SOURCE;
-      }
-    });
-  }
-}
-
-const snippetsForComponents: Snippet[] = [MOCK_SNIPPET, MOCK_SNIPPET];
+  snippetsForSelectedNode.value = snippets;
+});
 </script>
 
 <style lang="scss" scoped>
@@ -127,7 +92,7 @@ header {
   flex-direction: column;
 }
 
-.subtitle {
+.subdued {
   color: $un-color-black-40;
 }
 
@@ -141,6 +106,21 @@ section {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.loading-indicator {
+  height: 100px;
+  background: $un-color-black-5;
+  animation: fading 1s ease infinite alternate;
+}
+
+@keyframes fading {
+  0% {
+    opacity: 25%;
+  }
+  100% {
+    opacity: 75%;
+  }
 }
 
 .snippet {
