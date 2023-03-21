@@ -82,11 +82,10 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import { ref, computed, watch, onMounted } from 'vue';
-import newDatacubeService from '@/services/new-datacube-service';
 import { DatasetSearchResult } from '@/types/Index';
+import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
-import { Indicator } from '@/types/Datacube';
 import {
   searchFeatures,
   DojoFeatureSearchResult,
@@ -178,16 +177,8 @@ const activeResult = computed(() => {
   return results.value[activeResultIndex.value];
 });
 
-const activeResultMetadata = ref<Indicator | null>(null);
-watch([activeResult], async () => {
-  if (activeResult.value === null) {
-    activeResultMetadata.value = null;
-    return;
-  }
-  activeResultMetadata.value = (await newDatacubeService.getDatacubeByDataId(
-    activeResult.value.dataId
-  )) as Indicator | null;
-});
+const activeResultDataId = computed(() => activeResult.value?.dataId ?? null);
+const activeResultMetadata = useModelMetadataSimple(activeResultDataId);
 
 const { sparklineData, temporalCoverage } = useModelMetadataCoverage(activeResultMetadata);
 
