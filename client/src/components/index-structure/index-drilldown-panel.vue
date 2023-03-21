@@ -222,7 +222,6 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
-  selectedUpstreamElementId: SelectableIndexElementId | null;
 }>();
 
 const indexTree = useIndexTree();
@@ -312,8 +311,15 @@ const indexUpstreamType = computed<IndexNodeType | null>(() => {
 });
 
 const nodeName = computed<String | null>(() => {
-  if (props.selectedElementId) {
-    const node = findNode(props.selectedElementId.toString());
+  let idToSearch = null;
+  if (props.selectedElementId && typeof props.selectedElementId === 'string') {
+    idToSearch = props.selectedElementId;
+  } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    idToSearch = props.selectedElementId.targetId;
+  }
+
+  if (idToSearch) {
+    const node = findNode(idToSearch);
     if (node) {
       return node.found.name;
     }
@@ -322,8 +328,8 @@ const nodeName = computed<String | null>(() => {
 });
 
 const nodeUpstreamName = computed<String | null>(() => {
-  if (props.selectedUpstreamElementId) {
-    const node = findNode(props.selectedUpstreamElementId.toString());
+  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    const node = findNode(props.selectedElementId.sourceId);
     if (node) {
       return node.found.name;
     }
@@ -332,27 +338,31 @@ const nodeUpstreamName = computed<String | null>(() => {
 });
 
 const selectedNode = computed<IndexNode | null>(() => {
-  if (!(typeof props.selectedElementId === 'string')) {
+  let idToSearch = null;
+  if (props.selectedElementId && typeof props.selectedElementId === 'string') {
+    idToSearch = props.selectedElementId;
+  } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    idToSearch = props.selectedElementId.targetId;
+  } else {
     return null;
   }
+
   // Check for node in main tree
-  const foundInTree = findNode(props.selectedElementId);
+  const foundInTree = findNode(idToSearch);
   // If not found in main tree, check in the list of disconnected nodes and trees
-  const found = foundInTree ?? workbench.findNode(props.selectedElementId);
+  const found = foundInTree ?? workbench.findNode(idToSearch);
 
   return found?.found ?? null;
 });
 
 const selectedUpstreamNode = computed<IndexNode | null>(() => {
-  if (!(typeof props.selectedUpstreamElementId === 'string')) {
-    return null;
+  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    const foundInTree = findNode(props.selectedElementId.sourceId);
+    // If not found in main tree, check in the list of disconnected nodes and trees
+    const found = foundInTree ?? workbench.findNode(props.selectedElementId.sourceId);
+    return found?.found ?? null;
   }
-  // Check for node in main tree
-  const foundInTree = findNode(props.selectedUpstreamElementId);
-  // If not found in main tree, check in the list of disconnected nodes and trees
-  const found = foundInTree ?? workbench.findNode(props.selectedUpstreamElementId);
-  // TODO: we'll want to keep the parent around when searching for edges
-  return found?.found ?? null;
+  return null;
 });
 
 const selectedDatasetMetadataId = computed(() => {
@@ -367,7 +377,12 @@ const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode }
 });
 
 const edgeSelected = computed(() => {
-  return props.selectedUpstreamElementId !== null;
+  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    if (props.selectedElementId.sourceId) {
+      return true;
+    }
+  }
+  return false;
 });
 
 const type = computed<IndexElementType | null>(() => {
