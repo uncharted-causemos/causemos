@@ -47,7 +47,6 @@
           [EDGE_CLASS.HIGHLIGHTED_Y]:
             isOutgoingYHighlighted(cell.node.id) && !isOutgoingYSelected(cell.node.id),
         }"
-        :ref="`${EDGE_CLASS.OUTGOING}-${cell.node.id}`"
         @mouseenter="(evt) => highlight(evt, cell.node.id)"
         @mouseleave="highlightClear"
         @click="(evt) => selectEdge(evt, cell.node.id)"
