@@ -29,9 +29,7 @@
       </header>
       <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
       <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
-      <Suspense>
-        <IndexDocumentSnippets :selected-node-name="panelTitle" />
-      </Suspense>
+      <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
     <template v-if="type === IndexNodeType.Index">
@@ -77,9 +75,7 @@
         </div>
       </header>
       <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
-      <Suspense>
-        <IndexDocumentSnippets :selected-node-name="panelTitle" />
-      </Suspense>
+      <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
     <template v-if="type === IndexNodeType.Dataset">
@@ -138,9 +134,7 @@
           @toggle-inverted="() => toggleDatasetIsInverted(selectedNode.id)"
         />
       </section>
-      <Suspense>
-        <IndexDocumentSnippets :selected-node-name="panelTitle" />
-      </Suspense>
+      <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
     <template v-if="type === IndexEdgeType.Edge">
@@ -156,9 +150,7 @@
         </div>
       </header>
       <IndexComponentWeights />
-      <Suspense>
-        <IndexDocumentSnippets :selected-node-name="panelTitle" />
-      </Suspense>
+      <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
   </div>
 </template>
@@ -185,7 +177,7 @@ import {
   isOutputIndexNode,
 } from '@/utils/index-tree-util';
 import { OptionButtonMenu } from './index-tree-node.vue';
-import useModelMetadata from '@/services/composables/useModelMetadata';
+import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -250,11 +242,11 @@ const selectedNode = computed<IndexNode | null>(() => {
   // TODO: we'll want to keep the parent around when searching for edges
   return found?.found ?? null;
 });
-const selectedDatasetMetadataId = computed(() => {
+const selectedDatasetDataId = computed(() => {
   if (selectedNode.value === null || !isDatasetNode(selectedNode.value)) {
     return null;
   }
-  return selectedNode.value.datasetMetadataDocId;
+  return selectedNode.value.datasetId;
 });
 
 const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode } | null>(() => {
@@ -275,7 +267,7 @@ const panelTitle = computed(() => {
   return selectedNode?.value?.name ?? '';
 });
 
-const datasetMetadata = useModelMetadata(selectedDatasetMetadataId);
+const datasetMetadata = useModelMetadataSimple(selectedDatasetDataId);
 
 const isRenaming = ref(false);
 // Exit rename flow if another node is selected before it completes

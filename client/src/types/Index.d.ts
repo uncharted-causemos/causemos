@@ -16,8 +16,6 @@ export interface Placeholder extends BaseNode {
 
 export interface Dataset extends BaseNode, WeightedNode, DataConfig {
   type: IndexNodeType.Dataset;
-  /* equivalent to `id` of Datacube (see `Datacube.d.ts`) **/
-  datasetMetadataDocId: string;
   datasetName: string;
   isInverted: boolean;
   source: string;

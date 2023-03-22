@@ -344,7 +344,7 @@ export const isCategoricalAxis = (name: string, dimensions: DimensionInfo[]) => 
 export const unpublishDatacube = async (datacubeId: string) => {
   const rawMetadata = await getDatacubeById(datacubeId);
   if (rawMetadata) {
-    await unpublishDatacubeInstance(rawMetadata);
+    await unpublishDatacubeInstance(rawMetadata as Model);
   }
 };
 

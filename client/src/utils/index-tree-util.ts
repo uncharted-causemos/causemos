@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
+import { IndexNodeType } from '@/types/Enums';
 import {
   IndexNode,
   Dataset,
@@ -89,25 +89,27 @@ export const createNewPlaceholderDataset = () => {
   return node;
 };
 
-export const createNewDatasetNode = (spec?: Partial<Dataset>) => {
+export const createNewDatasetNode = (
+  name: string,
+  datasetName: string,
+  source: string,
+  weight: number,
+  config: DataConfig,
+  id?: string
+) => {
   const node: Dataset = {
-    id: uuidv4(),
+    // Set starting values for new dataset node
+    id: id || uuidv4(),
     type: IndexNodeType.Dataset,
-    name: '',
-    datasetId: '',
-    datasetMetadataDocId: '',
-    datasetName: '',
     isInverted: false,
     isWeightUserSpecified: false,
-    outputVariable: '',
-    runId: 'indicators',
-    selectedTimestamp: 0,
-    source: '',
-    weight: 0,
-    temporalResolution: TemporalResolutionOption.Month,
-    temporalAggregation: AggregationOption.Mean,
-    spatialAggregation: AggregationOption.Mean,
-    ...spec,
+    // Store values from the search result and pre-calculated starting weight
+    name,
+    datasetName,
+    source,
+    weight,
+    // Store default data config
+    ...config,
   };
   return node;
 };
@@ -118,14 +120,14 @@ export const convertPlaceholderToDataset = (
   initialWeight: number,
   config: DataConfig
 ) => {
-  const node = createNewDatasetNode({
-    id: placeholder.id,
-    name: placeholder.name === '' ? dataset.displayName : placeholder.name,
-    datasetName: dataset.displayName,
-    source: dataset.familyName,
-    weight: initialWeight,
-    ...config,
-  });
+  const node = createNewDatasetNode(
+    placeholder.name === '' ? dataset.displayName : placeholder.name,
+    dataset.displayName,
+    dataset.familyName,
+    initialWeight,
+    config,
+    placeholder.id
+  );
   return node;
 };
 

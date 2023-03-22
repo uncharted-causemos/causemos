@@ -70,6 +70,7 @@ const searchFeatures = async (searchString) => {
     },
     qs: {
       query: searchString,
+      size: 50,
     },
   };
 
