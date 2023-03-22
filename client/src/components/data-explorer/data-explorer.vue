@@ -51,6 +51,7 @@ import SimplePagination from './simple-pagination.vue';
 import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
 
 import { FACET_FIELDS } from '@/utils/datacube-util';
+import filtersUtil from '@/utils/filters-util';
 
 interface Props {
   navBackLabel: string;
@@ -76,7 +77,7 @@ const selectedDatacubes = ref<Datacube[]>([]);
 const facets = ref<Facets | null>(null);
 const filteredFacets = ref<Facets | null>(null);
 
-const filters = computed<Filters>(() => store.getters['app/filters']);
+const filters = computed<Filters>(() => store.getters['dataSearch/filters']);
 
 const fetchDatacubeList = async () => {
   const options = {
@@ -129,7 +130,8 @@ onMounted(() => {
   refresh();
 });
 
-watch([filters], () => {
+watch(filters, (newVal, oldVal) => {
+  if (filtersUtil.isEqual(newVal, oldVal)) return;
   refresh();
 });
 </script>
