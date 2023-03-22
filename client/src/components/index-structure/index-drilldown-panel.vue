@@ -319,7 +319,7 @@ const nodeName = computed<String | null>(() => {
   }
 
   if (idToSearch) {
-    const node = findNode(idToSearch);
+    const node = searchForNode(idToSearch);
     if (node) {
       return node.found.name;
     }
@@ -329,7 +329,7 @@ const nodeName = computed<String | null>(() => {
 
 const nodeUpstreamName = computed<String | null>(() => {
   if (props.selectedElementId && typeof props.selectedElementId === 'object') {
-    const node = findNode(props.selectedElementId.sourceId);
+    const node = searchForNode(props.selectedElementId.sourceId);
     if (node) {
       return node.found.name;
     }
@@ -346,20 +346,13 @@ const selectedNode = computed<IndexNode | null>(() => {
   } else {
     return null;
   }
-
-  // Check for node in main tree
-  const foundInTree = findNode(idToSearch);
-  // If not found in main tree, check in the list of disconnected nodes and trees
-  const found = foundInTree ?? workbench.findNode(idToSearch);
-
+  const found = searchForNode(idToSearch);
   return found?.found ?? null;
 });
 
 const selectedUpstreamNode = computed<IndexNode | null>(() => {
   if (props.selectedElementId && typeof props.selectedElementId === 'object') {
-    const foundInTree = findNode(props.selectedElementId.sourceId);
-    // If not found in main tree, check in the list of disconnected nodes and trees
-    const found = foundInTree ?? workbench.findNode(props.selectedElementId.sourceId);
+    const found = searchForNode(props.selectedElementId.sourceId);
     return found?.found ?? null;
   }
   return null;
@@ -437,6 +430,11 @@ const handleRenameDone = () => {
   renameNode(newNodeName);
   isRenaming.value = false;
   renameInputText.value = '';
+};
+
+const searchForNode = (id: string) => {
+  const foundInTree = findNode(id);
+  return foundInTree ?? workbench.findNode(id);
 };
 </script>
 
