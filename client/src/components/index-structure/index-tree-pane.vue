@@ -88,6 +88,7 @@ const emit = defineEmits<{
 const workBench = useIndexWorkBench();
 const indexTree = useIndexTree();
 const { findNode } = indexTree;
+const workbench = useIndexWorkBench();
 
 const isOutgoingHighlighted = (id: string) => {
   if (props.highlightEdgeId && typeof props.highlightEdgeId === 'object') {
@@ -109,7 +110,8 @@ const isYRequired = (id: string, isHighlight: boolean) => {
     if (sourceId === id) {
       return false;
     }
-    const targetNode = findNode(edgeId.sourceId);
+    const targetNode = searchForNode(edgeId.sourceId);
+
     if (
       targetNode &&
       targetNode.parent &&
@@ -233,11 +235,16 @@ const edgeSelectionClear = () => {
   clearAll();
 };
 
+const searchForNode = (id: string) => {
+  const foundInTree = findNode(id);
+  return foundInTree ?? workbench.findNode(id);
+};
+
 const interactEdge = (evt: MouseEvent, nodeId: string, isHighlight = false) => {
   highlightClear();
   const targetElement = evt.target as HTMLElement;
   if (targetElement) {
-    const foundNode = findNode(nodeId);
+    const foundNode = searchForNode(nodeId);
     if (foundNode) {
       const isIncoming = targetElement.classList.contains(EDGE_CLASS.INCOMING);
       const isOutgoing = targetElement.classList.contains(EDGE_CLASS.OUTGOING);
