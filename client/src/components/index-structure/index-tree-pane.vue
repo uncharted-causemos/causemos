@@ -11,17 +11,19 @@
     >
       <div
         class="edge incoming"
-        :class="{ visible: hasChildren(cell.node) }"
-        @mouseenter="highlight"
+        :class="{
+          visible: hasChildren(cell.node),
+          [EDGE_CLASS.SELECTED]: isIncomingSelected(cell.node.id),
+          [EDGE_CLASS.HIGHLIGHTED]:
+            isIncomingHighlighted(cell.node.id) && !isIncomingSelected(cell.node.id),
+        }"
+        @mouseenter="(evt) => highlight(evt, cell.node.id)"
         @mouseleave="highlightClear"
-        @click="selectEdge"
+        @click="(evt) => selectEdge(evt, cell.node.id)"
       ></div>
       <IndexTreeNode
         :node-data="cell.node"
-        :is-selected="
-          cell.node.id === props.selectedElementId ||
-          cell.node.id === props.selectedUpstreamElementId
-        "
+        :is-selected="isSelected(cell.node.id)"
         class="index-tree-node"
         @rename="renameNode"
         @delete="deleteNode"
@@ -38,10 +40,17 @@
           visible: cell.hasOutputLine,
           dashed: cell.node.type === IndexNodeType.Placeholder,
           'last-child': cell.isLastChild,
+          [EDGE_CLASS.SELECTED]: isOutgoingSelected(cell.node.id),
+          [EDGE_CLASS.SELECTED_Y]: isOutgoingYSelected(cell.node.id),
+          [EDGE_CLASS.HIGHLIGHTED]:
+            isOutgoingHighlighted(cell.node.id) && !isOutgoingSelected(cell.node.id),
+          [EDGE_CLASS.HIGHLIGHTED_Y]:
+            isOutgoingYHighlighted(cell.node.id) && !isOutgoingYSelected(cell.node.id),
         }"
-        @mouseenter="highlight"
+        :ref="`${EDGE_CLASS.OUTGOING}-${cell.node.id}`"
+        @mouseenter="(evt) => highlight(evt, cell.node.id)"
         @mouseleave="highlightClear"
-        @click="selectEdge"
+        @click="(evt) => selectEdge(evt, cell.node.id)"
       />
     </div>
   </div>
@@ -61,29 +70,95 @@ import {
   getGridRowCount,
   getGridColumnCount,
   convertTreeToGridCells,
-  edgeInteractionClear,
   EDGE_CLASS,
-  edgeInteractionInput,
-  edgeInteractionOutput,
 } from '@/utils/grid-cell-util';
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-let selectedOutEdgeId = null; // to be used when the edge needs to be deleted (muted error for now)
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
-  selectedUpstreamElementId: SelectableIndexElementId | null;
+  highlightEdgeId: SelectableIndexElementId | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
-  (e: 'select-upstream-element', selectedUpstreamElement: SelectableIndexElementId): void;
+  (e: 'highlight-edge', selectedElement: SelectableIndexElementId): void;
   (e: 'deselect-all'): void;
+  (e: 'clear-highlight'): void;
 }>();
 
 const workBench = useIndexWorkBench();
 const indexTree = useIndexTree();
+const { findNode } = indexTree;
 
+const isOutgoingHighlighted = (id: string) => {
+  if (props.highlightEdgeId && typeof props.highlightEdgeId === 'object') {
+    return props.highlightEdgeId.sourceId === id;
+  }
+  return false;
+};
+
+const isYRequired = (id: string, isHighlight: boolean) => {
+  let edgeId = null;
+  if (isHighlight) {
+    edgeId = props.highlightEdgeId;
+  } else {
+    edgeId = props.selectedElementId;
+  }
+
+  if (edgeId && typeof edgeId === 'object') {
+    const sourceId = edgeId.sourceId;
+    if (sourceId === id) {
+      return false;
+    }
+    const targetNode = findNode(edgeId.sourceId);
+    if (
+      targetNode &&
+      targetNode.parent &&
+      (targetNode.parent.type === 'Index' || targetNode.parent.type === 'OutputIndex')
+    ) {
+      const allInputs = targetNode.parent.inputs;
+      const idIndex = allInputs.findIndex((item) => item.id === sourceId);
+      const selection = allInputs.slice(0, idIndex).map((item) => item.id);
+
+      const returnValue = selection.includes(id);
+      return returnValue;
+    }
+  }
+  return false;
+};
+const isOutgoingYHighlighted = (id: string) => {
+  return isYRequired(id, true);
+};
+const isOutgoingSelected = (id: string) => {
+  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    return props.selectedElementId.sourceId === id;
+  }
+  return false;
+};
+const isOutgoingYSelected = (id: string) => {
+  return isYRequired(id, false);
+};
+const isIncomingHighlighted = (id: string) => {
+  if (props.highlightEdgeId && typeof props.highlightEdgeId === 'object') {
+    return props.highlightEdgeId.targetId === id;
+  }
+  return false;
+};
+const isIncomingSelected = (id: string) => {
+  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    return props.selectedElementId.targetId === id;
+  }
+  return false;
+};
+const isSelected = (id: string) => {
+  if (typeof id === 'string' && props.selectedElementId === id) {
+    return true;
+  } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    if (props.selectedElementId.sourceId === id || props.selectedElementId.targetId === id) {
+      return true;
+    }
+  }
+  return false;
+};
 // A list of grid cells with enough information to render with CSS-grid.
 //  Represents a combination of all workbench trees and the main index tree.
 const gridCells = computed<GridCell[]>(() => {
@@ -142,91 +217,72 @@ const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult
   indexTree.attachDatasetToPlaceholder(nodeId, dataset);
 };
 
-/**
- * Clear all selected/highlighted edges and clear selected node
- */
 const clearAll = () => {
-  highlightClear();
-  edgeSelectionClear();
   emit('deselect-all');
 };
 
-// edge highlight
-let hoverElements: HTMLElement[] = [];
-
-/**
- * Handle highlight requests from user interaction with incoming or outgoing edges.
- *
- * @param evt
- */
-const highlight = (evt: MouseEvent) => {
-  highlightClear();
-  const current = evt.target;
-  if (current) {
-    const targetEl = current as HTMLElement;
-    if (targetEl.classList.contains(EDGE_CLASS.INCOMING)) {
-      const { interactedNodes } = edgeInteractionInput(targetEl, gridCells.value, true);
-      hoverElements = interactedNodes;
-    } else {
-      const { interactedNodes } = edgeInteractionOutput(targetEl, gridCells.value, true);
-      hoverElements = interactedNodes;
-    }
-  }
+const highlight = (evt: MouseEvent, nodeId: string) => {
+  interactEdge(evt, nodeId, true);
 };
 
 const highlightClear = () => {
-  edgeInteractionClear(hoverElements, true);
-  hoverElements = [];
+  emit('clear-highlight');
 };
 
 const edgeSelectionClear = () => {
-  selectedOutEdgeId = null;
-  edgeInteractionClear(edgeSelection, false);
-  edgeSelection = [];
+  clearAll();
 };
 
-let edgeSelection: HTMLElement[] = [];
-const selectEdge = (evt: MouseEvent) => {
+const interactEdge = (evt: MouseEvent, nodeId: string, isHighlight = false) => {
   highlightClear();
-  const targetEl = evt.target as HTMLElement;
+  const targetElement = evt.target as HTMLElement;
+  if (targetElement) {
+    const foundNode = findNode(nodeId);
+    if (foundNode) {
+      const isIncoming = targetElement.classList.contains(EDGE_CLASS.INCOMING);
+      const isOutgoing = targetElement.classList.contains(EDGE_CLASS.OUTGOING);
 
-  if (targetEl) {
-    const classList = targetEl.classList;
-
-    edgeSelectionClear();
-    if (classList.contains(EDGE_CLASS.INCOMING)) {
-      const { interactedId, firstOutEdgeId, interactedNodes } = edgeInteractionInput(
-        targetEl,
-        gridCells.value,
-        false
-      );
-      edgeSelection = interactedNodes;
-      if (interactedId) {
-        emit('select-element', interactedId);
-      }
-      if (firstOutEdgeId) {
-        emit('select-upstream-element', firstOutEdgeId);
-      }
-    } else if (classList.contains(EDGE_CLASS.OUTGOING)) {
-      const { interactedId, inEdgeId, interactedNodes } = edgeInteractionOutput(
-        // NOTE: inEdgeId and
-        targetEl,
-        gridCells.value,
-        false
-      );
-
-      // only interactions on out edges give a distinct path.  Use this pair for deleting edges with escape key (future).
-      selectedOutEdgeId = interactedId;
-
-      edgeSelection = interactedNodes;
-      if (inEdgeId) {
-        emit('select-element', inEdgeId);
-      }
-      if (selectedOutEdgeId) {
-        emit('select-upstream-element', selectedOutEdgeId);
+      if (
+        isIncoming &&
+        (foundNode.found.type === 'Index' || foundNode.found.type === 'OutputIndex')
+      ) {
+        if (foundNode.found.inputs.length > 0) {
+          if (isHighlight) {
+            emit('highlight-edge', {
+              sourceId: foundNode.found.inputs[0].id,
+              targetId: foundNode.found.id,
+            });
+          } else {
+            emit('select-element', {
+              sourceId: foundNode.found.inputs[0].id,
+              targetId: foundNode.found.id,
+            });
+          }
+        } else {
+          if (!isHighlight) {
+            emit('select-element', foundNode.found.id);
+          }
+        }
+      } else if (isIncoming && !isHighlight) {
+        emit('select-element', foundNode.found.id);
+      } else if (isOutgoing) {
+        if (foundNode.parent) {
+          if (isHighlight) {
+            emit('highlight-edge', { sourceId: foundNode.found.id, targetId: foundNode.parent.id });
+          } else {
+            emit('select-element', { sourceId: foundNode.found.id, targetId: foundNode.parent.id });
+          }
+        } else {
+          if (!isHighlight) {
+            emit('select-element', foundNode.found.id);
+          }
+        }
       }
     }
   }
+};
+const selectEdge = (evt: MouseEvent, nodeId: string) => {
+  interactEdge(evt, nodeId, false);
 };
 </script>
 
@@ -293,55 +349,31 @@ $edge-selected: $accent-main;
         height: calc(100% + #{$space-between-rows});
         border-right: $edge-styles;
         &.highlighted {
-          border-color: $accent-light;
-          &.highlighted-x {
-            border-right-color: $un-color-black-20;
-          }
-          &.highlighted-y {
-            border-top-color: $un-color-black-20;
-          }
+          border-top-color: $accent-light;
+        }
+        &.highlighted-y {
+          border-right-color: $accent-light;
         }
         &.selected-edge {
-          border-color: $edge-selected;
-          &.selected-x {
-            border-right-color: $un-color-black-20;
-            &.highlighted-y {
-              border-right-color: $accent-light;
-            }
-          }
-          &.selected-y {
-            border-top-color: $un-color-black-20;
-            &.highlighted-x {
-              border-top-color: $accent-light;
-            }
-          }
+          border-top-color: $edge-selected;
+        }
+        &.selected-y {
+          border-right-color: $edge-selected;
         }
       }
       &.dashed {
         border-top-style: dashed;
         &.highlighted {
-          border-color: $accent-light;
-          &.highlighted-x {
-            border-right-color: $un-color-black-20;
-          }
-          &.highlighted-y {
-            border-top-color: $un-color-black-20;
-          }
+          border-top-color: $accent-light;
+        }
+        &.highlighted-y {
+          border-right-color: $accent-light;
         }
         &.selected-edge {
-          border-color: $edge-selected;
-          &.selected-x {
-            border-right-color: $un-color-black-20;
-            &.highlighted-y {
-              border-right-color: $accent-light;
-            }
-          }
-          &.selected-y {
-            border-top-color: $un-color-black-20;
-            &.highlight-x {
-              border-top-color: $accent-light;
-            }
-          }
+          border-top-color: $edge-selected;
+        }
+        &.selected-y {
+          border-right-color: $edge-selected;
         }
       }
       &.last-child {
