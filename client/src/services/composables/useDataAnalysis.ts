@@ -1,7 +1,7 @@
 import { AnalysisItem, CachedDatacubeMetadata, DataAnalysisState } from '@/types/Analysis';
 import _ from 'lodash';
 import { computed, Ref, ref, watch } from 'vue';
-import { getAnalysisState, saveAnalysisState } from '../analysis-service';
+import { getAnalysis, saveAnalysisState } from '../analysis-service';
 import { v4 as uuidv4 } from 'uuid';
 import { DataSpaceDataState } from '@/types/Insight';
 import {
@@ -21,14 +21,16 @@ const saveState = _.debounce((analysisId, state: DataAnalysisState) => {
 }, SYNC_DELAY_MS);
 
 export function useDataAnalysis(analysisId: Ref<string>) {
+  const analysisName = ref('');
   const analysisState = ref<DataAnalysisState>(createDataAnalysisObject());
   // Whenever analysisId changes, fetch the state for that analysis
   watch(
     [analysisId],
     async () => {
       if (!analysisId.value) return;
-      const result = await getAnalysisState(analysisId.value);
-      analysisState.value = result;
+      const analysis = await getAnalysis(analysisId.value);
+      analysisName.value = analysis?.title || '';
+      analysisState.value = { ...createDataAnalysisObject(), ...analysis?.state };
     },
     { immediate: true }
   );
@@ -181,6 +183,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
   };
 
   return {
+    analysisName,
     analysisState,
     analysisItems,
     selectedAnalysisItems,

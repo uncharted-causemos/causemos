@@ -96,6 +96,17 @@ export const getDatacubeById = async (datacubeId: string) => {
 };
 
 /**
+ * Get  datacubes by ids
+ * @param {string} datacubeId
+ */
+export const getDatacubesByIds = async (datacubeIds: string[]) => {
+  const filters = fu.newFilters();
+  fu.setClause(filters, 'id', datacubeIds, 'or', false);
+  const cubes = await getDatacubes(filters);
+  return cubes;
+};
+
+/**
  * Get the count of the datacubes that meets the filter criteria. By default filters is empty.
  * @param {Filters} filters Optional filters object
  * @returns {Promise<number>}

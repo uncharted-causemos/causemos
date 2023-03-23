@@ -19,6 +19,7 @@
           :enableMultipleSelection="enableMultipleSelection"
           :selected-search-items="selectedDatacubes"
           @set-datacube-selected="setSelectedDatacube"
+          @toggle-datacube-selected="toggleDatacubeSelected"
         />
         <SimplePagination
           :current-page-length="datacubes.length"
@@ -57,9 +58,9 @@ interface Props {
   navBackLabel: string;
   selectButtonLabel: string;
   enableMultipleSelection: boolean;
-  onClose: () => void;
+  initialSelection: Datacube[];
 }
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'selection', selection: Datacube[]): void;
@@ -73,6 +74,16 @@ const pageSize = 100;
 const pageCount = ref(0);
 const datacubes = ref<Datacube[]>([]);
 const selectedDatacubes = ref<Datacube[]>([]);
+
+watch(
+  () => props.initialSelection,
+  () => {
+    if (props.initialSelection) {
+      selectedDatacubes.value = [...props.initialSelection];
+    }
+  },
+  { immediate: true }
+);
 
 const facets = ref<Facets | null>(null);
 const filteredFacets = ref<Facets | null>(null);
@@ -109,6 +120,20 @@ const setSelectedDatacube = (item: { id: string }) => {
   selectedDatacubes.value = [datacube];
 };
 
+const isDatacubeSelected = (id: string) => {
+  return selectedDatacubes.value.find((i) => i.id === id) !== undefined;
+};
+
+const toggleDatacubeSelected = (item: { datacubeId: string; id: string }) => {
+  if (isDatacubeSelected(item.id)) {
+    selectedDatacubes.value = selectedDatacubes.value.filter((sd) => sd.id !== item.id);
+    return;
+  }
+  const datacube = datacubes.value.find((d) => d.id === item.id);
+  if (!datacube) return;
+  selectedDatacubes.value.push(datacube);
+};
+
 const nextPage = async () => {
   overlay.enable();
   pageCount.value += 1;
@@ -126,9 +151,7 @@ const prevPage = async () => {
 const onClose = () => emit('close');
 const onSelection = () => emit('selection', selectedDatacubes.value);
 
-onMounted(() => {
-  refresh();
-});
+onMounted(() => refresh());
 
 watch(filters, (newVal, oldVal) => {
   if (filtersUtil.isEqual(newVal, oldVal)) return;
