@@ -97,7 +97,7 @@ export const getDatacubeById = async (datacubeId: string) => {
 
 /**
  * Get  datacubes by ids
- * @param {string} datacubeId
+ * @param {string[]} datacubeIds
  */
 export const getDatacubesByIds = async (datacubeIds: string[]) => {
   const filters = fu.newFilters();
