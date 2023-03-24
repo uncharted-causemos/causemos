@@ -40,7 +40,7 @@ export default defineComponent({
       default: false,
     },
     selectedSearchItems: {
-      type: Array as PropType<{ id: string }[]>,
+      type: Array as PropType<{ id: string /** datacube id */ }[]>,
       required: true,
     },
   },

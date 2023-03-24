@@ -98,7 +98,7 @@ export default defineComponent({
       default: () => [],
     },
     selectedSearchItems: {
-      type: Array as PropType<{ id: string }[]>,
+      type: Array as PropType<{ id: string /** datacube id */ }[]>,
       required: true,
     },
     enableMultipleSelection: {
