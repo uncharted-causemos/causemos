@@ -58,7 +58,7 @@ interface Props {
   navBackLabel: string;
   selectButtonLabel: string;
   enableMultipleSelection: boolean;
-  initialSelection: Datacube[];
+  initialSelection?: Datacube[];
 }
 const props = defineProps<Props>();
 

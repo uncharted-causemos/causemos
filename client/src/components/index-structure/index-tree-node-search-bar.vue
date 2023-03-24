@@ -12,7 +12,7 @@
       <button class="btn btn-default" @click="emit('cancel')">Cancel</button>
     </div>
     <div class="search-results-container">
-      <ul v-if="searchText !== ''">
+      <ul class="results-list" v-if="searchText !== ''">
         <li
           :class="{ active: activeResultIndex === -1 }"
           @mousemove="setActiveResultIndexOnHover(-1)"
@@ -74,9 +74,6 @@
           </div>
         </div>
       </ul>
-      <button class="btn btn-sm advanced-search" @click="openDataExplorer">
-        Use advanced search
-      </button>
     </div>
   </div>
 </template>
@@ -94,11 +91,6 @@ import Sparkline from '@/components/widgets/charts/sparkline.vue';
 // } from '@/services/semantic-feature-search-service';
 import { capitalizeEachWord } from '@/utils/string-util';
 import newDatacubeService from '@/services/new-datacube-service';
-
-import { useRoute } from 'vue-router';
-import router from '@/router';
-import filtersUtil from '@/utils/filters-util';
-import { STATUS } from '@/utils/datacube-util';
 
 // const convertFeatureSearchResultToDatasetSearchResult = (
 //   feature: DojoFeatureSearchResult
@@ -128,7 +120,6 @@ const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult =>
 
 interface Props {
   initialSearchText: string;
-  nodeId: string;
 }
 const props = defineProps<Props>();
 
@@ -247,23 +238,6 @@ const shiftIndex = (direction: -1 | 1) => {
     activeResultIndex.value = Math.min(results.value.length - 1, activeResultIndex.value + 1);
   }
 };
-
-// Advanced Search Button
-const route = useRoute();
-const openDataExplorer = () => {
-  const filters = filtersUtil.newFilters();
-  filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
-  router.push({
-    name: 'indexNodeDataExplorer',
-    params: {
-      projectType: route.params.projectType,
-      project: route.params.project,
-      analysisId: route.params.analysisId,
-      nodeId: props.nodeId,
-    },
-    query: { filters: filters } as any,
-  });
-};
 </script>
 
 <style lang="scss" scoped>
@@ -284,7 +258,6 @@ const openDataExplorer = () => {
 
 .search-results-container {
   width: 600px;
-  margin: 5px 0 10px 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -294,6 +267,9 @@ ul {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+ul.results-list {
+  margin: 5px 0;
 }
 li {
   margin: 0;
@@ -379,11 +355,6 @@ li {
 
 .timeseries-loading {
   background: $un-color-black-5;
-}
-
-.advanced-search {
-  margin-left: 10px;
-  align-self: flex-start;
 }
 
 i.fa-spinner {
