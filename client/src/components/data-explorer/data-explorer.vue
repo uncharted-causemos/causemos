@@ -2,7 +2,7 @@
   <div class="data-explorer-container">
     <ModalHeader
       :nav-back-label="navBackLabel"
-      :select-label="selectButtonLabel"
+      :select-label="completeButtonLabel"
       :selected-search-items="selectedDatacubes"
       @close="onClose"
       @selection="onSelection"
@@ -56,14 +56,14 @@ import filtersUtil from '@/utils/filters-util';
 
 interface Props {
   navBackLabel: string;
-  selectButtonLabel: string;
+  completeButtonLabel: string;
   enableMultipleSelection: boolean;
   initialSelection?: Datacube[];
 }
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'selection', selection: Datacube[]): void;
+  (e: 'complete', selection: Datacube[]): void;
   (e: 'close'): void;
 }>();
 
@@ -149,7 +149,7 @@ const prevPage = async () => {
 };
 
 const onClose = () => emit('close');
-const onSelection = () => emit('selection', selectedDatacubes.value);
+const onSelection = () => emit('complete', selectedDatacubes.value);
 
 onMounted(() => refresh());
 

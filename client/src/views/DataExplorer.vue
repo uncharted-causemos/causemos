@@ -1,11 +1,11 @@
 <template>
   <DataExplorer
     :nav-back-label="navBackLabel"
-    :select-button-label="SELECT_LABEL"
+    :complete-button-label="SELECT_LABEL"
     :enable-multiple-selection="true"
     :initial-selection="selectedDatacubes"
     @close="onClose"
-    @selection="addToAnalysis"
+    @complete="addToAnalysis"
   />
 </template>
 

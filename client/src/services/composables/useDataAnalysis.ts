@@ -23,7 +23,7 @@ const saveState = _.debounce((analysisId, state: DataAnalysisState) => {
 export function useDataAnalysis(analysisId: Ref<string>) {
   const analysisName = ref('');
   const analysisState = ref<DataAnalysisState>(createDataAnalysisObject());
-  // Whenever analysisId changes, fetch the state for that analysis
+  // Whenever analysisId changes, fetch the name and state for that analysis
   watch(
     [analysisId],
     async () => {

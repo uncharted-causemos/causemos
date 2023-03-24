@@ -1,10 +1,10 @@
 <template>
   <DataExplorer
     :nav-back-label="navBackLabel"
-    :select-button-label="selectButtonLabel"
+    :complete-button-label="selectButtonLabel"
     :enable-multiple-selection="false"
     @close="navigateBackToIndexStructure"
-    @selection="handleSelection"
+    @complete="handleSelection"
   />
 </template>
 
@@ -29,7 +29,6 @@ import useOverlay from '@/services/composables/useOverlay';
 import { getOutput } from '@/utils/datacube-util';
 import { capitalizeEachWord } from '@/utils/string-util';
 
-const navBackLabel = 'Back';
 const selectButtonLabel = 'Add Dataset';
 
 const route = useRoute();
@@ -37,13 +36,15 @@ const toaster = useToaster();
 const overlay = useOverlay();
 
 // Load and initialize the index analysis state for given analysis id
-const { waitForStateInSync, refresh } = useIndexAnalysis(
+const { waitForStateInSync, refresh, analysisName } = useIndexAnalysis(
   computed(() => route.params.analysisId as string)
 );
-onMounted(async () => await refresh());
-
 const workBench = useIndexWorkBench();
 const indexTree = useIndexTree();
+
+const navBackLabel = computed(() => `Back to ${analysisName.value}`);
+
+onMounted(async () => await refresh());
 
 const convertDatacubeToDatasetSearchResult = (datacube: Datacube): DatasetSearchResult | null => {
   const defaultOutput = getOutput(datacube, datacube.default_feature);

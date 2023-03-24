@@ -34,10 +34,4 @@ const openDataExplorer = () => {
 };
 </script>
 
-<style lang="scss" scoped>
-.index-tree-node-advanced-search-button-container {
-  .advanced-search {
-    align-self: flex-start;
-  }
-}
-</style>
+<style lang="scss" scoped></style>

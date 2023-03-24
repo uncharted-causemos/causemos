@@ -1,10 +1,10 @@
 <template>
   <DataExplorer
     :nav-back-label="navBackLabel"
-    :select-button-label="selectLabel"
+    :complete-button-label="selectLabel"
     :enable-multiple-selection="false"
     @close="onClose"
-    @selection="selectData"
+    @complete="selectData"
   />
 </template>
 <script lang="ts">
@@ -86,6 +86,4 @@ export default defineComponent({
 });
 </script>
 
-<style lang="scss" scoped>
-@import '~styles/variables';
-</style>
+<style lang="scss" scoped></style>
