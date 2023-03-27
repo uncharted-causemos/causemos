@@ -103,7 +103,7 @@ const isOutgoingHighlighted = (id: string) => {
   return false;
 };
 
-const isYRequired = (id: string, isHighlight: boolean) => {
+const isHigherThanSibling = (id: string, isHighlight: boolean) => {
   let edgeId;
   if (isHighlight) {
     edgeId = props.highlightEdgeId;
@@ -133,7 +133,7 @@ const isYRequired = (id: string, isHighlight: boolean) => {
   return false;
 };
 const isOutgoingYHighlighted = (id: string) => {
-  return isYRequired(id, true);
+  return isHigherThanSibling(id, true);
 };
 const isOutgoingSelected = (id: string) => {
   if (props.selectedElementId && typeof props.selectedElementId === 'object') {
@@ -142,7 +142,7 @@ const isOutgoingSelected = (id: string) => {
   return false;
 };
 const isOutgoingYSelected = (id: string) => {
-  return isYRequired(id, false);
+  return isHigherThanSibling(id, false);
 };
 const isIncomingHighlighted = (id: string) => {
   if (props.highlightEdgeId && typeof props.highlightEdgeId === 'object') {
