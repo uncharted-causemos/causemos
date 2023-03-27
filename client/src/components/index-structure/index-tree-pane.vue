@@ -103,15 +103,8 @@ const isOutgoingHighlighted = (id: string) => {
   return false;
 };
 
-const isHigherThanSibling = (id: string, isHighlight: boolean) => {
-  let edgeId;
-  if (isHighlight) {
-    edgeId = props.highlightEdgeId;
-  } else {
-    edgeId = props.selectedElementId;
-  }
-
-  if (edgeId && typeof edgeId === 'object') {
+const isHigherThanSibling = (id: string, edgeId: SelectableIndexElementId) => {
+  if (typeof edgeId === 'object') {
     const sourceId = edgeId.sourceId;
     if (sourceId === id) {
       return false;
@@ -133,7 +126,10 @@ const isHigherThanSibling = (id: string, isHighlight: boolean) => {
   return false;
 };
 const isOutgoingYHighlighted = (id: string) => {
-  return isHigherThanSibling(id, true);
+  if (props.highlightEdgeId) {
+    return isHigherThanSibling(id, props.highlightEdgeId);
+  }
+  return false;
 };
 const isOutgoingSelected = (id: string) => {
   if (props.selectedElementId && typeof props.selectedElementId === 'object') {
@@ -142,7 +138,10 @@ const isOutgoingSelected = (id: string) => {
   return false;
 };
 const isOutgoingYSelected = (id: string) => {
-  return isHigherThanSibling(id, false);
+  if (props.selectedElementId) {
+    return isHigherThanSibling(id, props.selectedElementId);
+  }
+  return false;
 };
 const isIncomingHighlighted = (id: string) => {
   if (props.highlightEdgeId && typeof props.highlightEdgeId === 'object') {
