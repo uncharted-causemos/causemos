@@ -3,6 +3,8 @@
     :nav-back-label="navBackLabel"
     :complete-button-label="selectButtonLabel"
     :enable-multiple-selection="false"
+    :facet-fields="facetFields"
+    :omit-model-datacubes="true"
     @close="navigateBackToIndexStructure"
     @complete="handleSelection"
   />
@@ -26,8 +28,12 @@ import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useToaster from '@/services/composables/useToaster';
 import useOverlay from '@/services/composables/useOverlay';
 
-import { getOutput } from '@/utils/datacube-util';
+import { getOutput, FACET_FIELDS, TYPE as FACET_FIELD_TYPE } from '@/utils/datacube-util';
 import { capitalizeEachWord } from '@/utils/string-util';
+
+// Omit datacube type facet field since we are restricting the datacube explorer to only show indicator datacube
+const OMITTED_FACET_FIELDS = [FACET_FIELD_TYPE];
+const facetFields = FACET_FIELDS.filter((field) => !OMITTED_FACET_FIELDS.includes(field));
 
 const selectButtonLabel = 'Add Dataset';
 

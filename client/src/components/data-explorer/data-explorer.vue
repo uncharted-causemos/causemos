@@ -51,7 +51,7 @@ import SimplePagination from './simple-pagination.vue';
 
 import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
 
-import { FACET_FIELDS } from '@/utils/datacube-util';
+import { FACET_FIELDS, TYPE as TYPE_FIELD } from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
 interface Props {
@@ -59,6 +59,8 @@ interface Props {
   completeButtonLabel: string;
   enableMultipleSelection: boolean;
   initialSelection?: Datacube[];
+  facetFields?: string[];
+  omitModelDatacubes?: boolean;
 }
 const props = defineProps<Props>();
 
@@ -88,7 +90,20 @@ watch(
 const facets = ref<Facets | null>(null);
 const filteredFacets = ref<Facets | null>(null);
 
-const filters = computed<Filters>(() => store.getters['dataSearch/filters']);
+// Add a filter to exiting filters to omit model type datacubes if omitModelDatacubes flag is true
+const omitModelType = (baseFilters: Filters) => {
+  const filters = _.cloneDeep(baseFilters);
+  if (props.omitModelDatacubes) {
+    filtersUtil.addSearchTerm(filters, TYPE_FIELD, 'model', 'and', true);
+  }
+  return filters;
+};
+
+const filters = computed<Filters>(() => {
+  // filters set by lex search bar, url or facets ui
+  const baseFilter = store.getters['dataSearch/filters'];
+  return omitModelType(baseFilter);
+});
 
 const fetchDatacubeList = async () => {
   const options = {
@@ -99,9 +114,10 @@ const fetchDatacubeList = async () => {
 };
 
 const fetchDatacubeFacets = async () => {
-  const defaultFilters: Filters = { clauses: [] };
+  const facetFileds = props.facetFields || FACET_FIELDS;
+  const defaultFilters: Filters = omitModelType({ clauses: [] });
   const [facetsResult, filteredFacetsResult] = await Promise.all(
-    [defaultFilters, filters.value].map((filter) => getDatacubeFacets(FACET_FIELDS, filter))
+    [defaultFilters, filters.value].map((filter) => getDatacubeFacets(facetFileds, filter))
   );
   facets.value = facetsResult;
   filteredFacets.value = filteredFacetsResult;
