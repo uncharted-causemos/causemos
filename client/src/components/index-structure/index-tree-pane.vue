@@ -32,7 +32,7 @@
         @create-child="createChild"
         @attach-dataset="attachDatasetToPlaceholder"
         @mouseenter="highlightClear"
-        @click="edgeSelectionClear"
+        @click="clearAll"
       />
       <div
         class="edge outgoing"
@@ -227,10 +227,6 @@ const highlight = (evt: MouseEvent, nodeId: string) => {
 
 const highlightClear = () => {
   emit('clear-highlight');
-};
-
-const edgeSelectionClear = () => {
-  clearAll();
 };
 
 const searchForNode = (id: string) => {
