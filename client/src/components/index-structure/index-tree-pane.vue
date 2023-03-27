@@ -84,7 +84,6 @@ const emit = defineEmits<{
   (e: 'clear-highlight'): void;
 }>();
 
-const workBench = useIndexWorkBench();
 const indexTree = useIndexTree();
 const { findNode } = indexTree;
 const workbench = useIndexWorkBench();
@@ -164,7 +163,7 @@ const isSelected = (id: string) => {
 //  Represents a combination of all workbench trees and the main index tree.
 const gridCells = computed<GridCell[]>(() => {
   // Convert each workbench tree to grid cells.
-  const overlappingWorkbenchTreeCellLists = workBench.items.value.map(convertTreeToGridCells);
+  const overlappingWorkbenchTreeCellLists = workbench.items.value.map(convertTreeToGridCells);
   // Move each grid down so that they're not overlapping
   let currentRow = 0;
   const workbenchTreeCellLists: GridCell[][] = [];
@@ -190,31 +189,31 @@ const gridCells = computed<GridCell[]>(() => {
 });
 
 const renameNode = (nodeId: string, newName: string) => {
-  workBench.findAndRenameNode(nodeId, newName);
+  workbench.findAndRenameNode(nodeId, newName);
   indexTree.findAndRenameNode(nodeId, newName);
 };
 
 const deleteNode = (deleteNode: IndexNode) => {
   // Find from both places and delete the node.
-  workBench.findAndDeleteItem(deleteNode.id);
+  workbench.findAndDeleteItem(deleteNode.id);
   indexTree.findAndDelete(deleteNode.id);
 };
 
 const duplicateNode = (duplicated: IndexNode) => {
   if (duplicated.type === IndexNodeType.OutputIndex) return;
-  workBench.addItem(duplicated);
+  workbench.addItem(duplicated);
 };
 
 const createChild = (
   parentNodeId: string,
   childType: IndexNodeType.Index | IndexNodeType.Dataset
 ) => {
-  workBench.findAndAddChild(parentNodeId, childType);
+  workbench.findAndAddChild(parentNodeId, childType);
   indexTree.findAndAddChild(parentNodeId, childType);
 };
 
 const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult) => {
-  workBench.attachDatasetToPlaceholder(nodeId, dataset);
+  workbench.attachDatasetToPlaceholder(nodeId, dataset);
   indexTree.attachDatasetToPlaceholder(nodeId, dataset);
 };
 
