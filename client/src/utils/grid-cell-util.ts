@@ -103,15 +103,3 @@ export const offsetGridCells = (
     startColumn: cell.startColumn + horizontalOffset,
   }));
 };
-
-/**
- * Edge selection class information
- */
-export const EDGE_CLASS = {
-  SELECTED: 'selected-edge',
-  SELECTED_Y: 'selected-y',
-  HIGHLIGHTED: 'highlighted',
-  HIGHLIGHTED_Y: 'highlighted-y',
-  OUTGOING: 'outgoing',
-  INCOMING: 'incoming',
-};

@@ -69,8 +69,16 @@ import {
   getGridRowCount,
   getGridColumnCount,
   convertTreeToGridCells,
-  EDGE_CLASS,
 } from '@/utils/grid-cell-util';
+
+const EDGE_CLASS = {
+  SELECTED: 'selected-edge',
+  SELECTED_Y: 'selected-y',
+  HIGHLIGHTED: 'highlighted',
+  HIGHLIGHTED_Y: 'highlighted-y',
+  OUTGOING: 'outgoing',
+  INCOMING: 'incoming',
+};
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -96,7 +104,7 @@ const isOutgoingHighlighted = (id: string) => {
 };
 
 const isYRequired = (id: string, isHighlight: boolean) => {
-  let edgeId = null;
+  let edgeId;
   if (isHighlight) {
     edgeId = props.highlightEdgeId;
   } else {
@@ -119,8 +127,7 @@ const isYRequired = (id: string, isHighlight: boolean) => {
       const idIndex = allInputs.findIndex((item) => item.id === sourceId);
       const selection = allInputs.slice(0, idIndex).map((item) => item.id);
 
-      const returnValue = selection.includes(id);
-      return returnValue;
+      return selection.includes(id);
     }
   }
   return false;
@@ -150,7 +157,7 @@ const isIncomingSelected = (id: string) => {
   return false;
 };
 const isSelected = (id: string) => {
-  if (typeof id === 'string' && props.selectedElementId === id) {
+  if (props.selectedElementId === id) {
     return true;
   } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
     if (props.selectedElementId.sourceId === id || props.selectedElementId.targetId === id) {
