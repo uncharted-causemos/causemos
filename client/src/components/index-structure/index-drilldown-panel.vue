@@ -45,10 +45,6 @@
         </div>
       </div>
       <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
-      <IndexResultsPreview
-        v-if="type === IndexNodeType.OutputIndex"
-        :analysis-id="indexTree.getAnalysisId()"
-      />
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
