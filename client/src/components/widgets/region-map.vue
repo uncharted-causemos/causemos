@@ -30,7 +30,12 @@
         :layer="borderLayer"
         :before-id="firstSymbolLayerId"
       />
-      <wm-map-popup :layer-id="colorLayerId" :formatter-fn="popupFormatter" :cursor="'default'" />
+      <wm-map-popup
+        v-if="!disablePopup"
+        :layer-id="colorLayerId"
+        :formatter-fn="popupFormatter"
+        :cursor="'default'"
+      />
     </wm-map>
     <div v-if="data.length === 0" class="no-data">No data</div>
   </div>
@@ -145,6 +150,10 @@ export default defineComponent({
       },
     },
     disablePanZoom: {
+      type: Boolean,
+      default: false,
+    },
+    disablePopup: {
       type: Boolean,
       default: false,
     },
