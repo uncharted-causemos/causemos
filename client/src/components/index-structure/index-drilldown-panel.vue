@@ -50,7 +50,10 @@
 
     <template v-if="!edgeSelected && type === IndexNodeType.OutputIndex">
       <header>
-        <span class="type-label"> Output Index </span>
+        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
+          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
+          Output Index
+        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -79,6 +82,10 @@
 
     <template v-if="!edgeSelected && type === IndexNodeType.Index">
       <header>
+        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
+          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
+          Index
+        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -121,6 +128,10 @@
 
     <template v-if="!edgeSelected && type === IndexNodeType.Dataset">
       <header>
+        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
+          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
+          Dataset
+        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -214,7 +225,7 @@ import {
   getIndexNodeTypeIcon,
 } from '@/utils/index-tree-util';
 import { OptionButtonMenu } from './index-tree-node.vue';
-import useModelMetadata from '@/services/composables/useModelMetadata';
+import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -353,12 +364,11 @@ const selectedUpstreamNode = computed<IndexNode | null>(() => {
   }
   return null;
 });
-
-const selectedDatasetMetadataId = computed(() => {
+const selectedDatasetDataId = computed(() => {
   if (selectedNode.value === null || !isDatasetNode(selectedNode.value)) {
     return null;
   }
-  return selectedNode.value.datasetMetadataDocId;
+  return selectedNode.value.datasetId;
 });
 
 const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode } | null>(() => {
@@ -398,7 +408,7 @@ const panelTitle = computed(() => {
   return selectedNode?.value?.name ?? '';
 });
 
-const datasetMetadata = useModelMetadata(selectedDatasetMetadataId);
+const datasetMetadata = useModelMetadataSimple(selectedDatasetDataId);
 
 const isRenaming = ref(false);
 // Exit rename flow if another node is selected before it completes

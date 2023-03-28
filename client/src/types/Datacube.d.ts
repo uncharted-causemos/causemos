@@ -155,7 +155,7 @@ export interface QualifierThresholds {
 /**
  * DataConfig represent a data configuration state of a datacube
  * This information is used to fetch correct output data with given configuration state for the corresponding datacube.
- * Currently (Since Feb 22), This interface is also extended by Dataset in (Index.d.ts) to represent the state of a dataset node in the index tree.
+ * Currently (Since Feb 22, 2023), This interface is also extended by Dataset in (Index.d.ts) to represent the state of a dataset node in the index tree.
  */
 export interface DataConfig {
   /** equivalent to `data_id` (see `Datacube.d.ts`) */

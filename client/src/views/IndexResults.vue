@@ -4,38 +4,40 @@
   </teleport>
   <div class="index-results-container flex">
     <div class="flex-col structure-column">
+      <header>
+        <h3>Index results</h3>
+        <p class="subtitle">{{ selectedNodeName }}</p>
+      </header>
       <section>
-        <header class="flex horizontal-padding">
-          <h5>Index structure</h5>
-          <!-- TODO: hook up modify button -->
-          <button disabled class="btn btn-sm">Modify</button>
+        <header class="flex index-structure-header">
+          <h4>Index structure</h4>
+          <button class="btn btn-sm" @click="modifyStructure">Modify</button>
         </header>
         <IndexResultsStructurePreview class="index-structure-preview" />
+        <IndexResultsComponentList />
       </section>
       <section>
-        <header class="horizontal-padding">
-          <h5>
-            Datasets and their percentage of <strong>{{ 'Overall Priority' }}</strong>
-          </h5>
-        </header>
-        <!-- TODO: list view of structure -->
+        <IndexResultsDatasetWeights :selected-node-name="selectedNodeName" />
       </section>
+    </div>
+    <div class="map">
+      <IndexResultsMap :index-results-data="indexResultsData" :settings="indexResultsSettings" />
     </div>
     <IndexResultsBarChartColumn
       class="bars-column"
       :class="{ expanded: isShowingKeyDatasets }"
       :is-showing-key-datasets="isShowingKeyDatasets"
       :index-results-data="indexResultsData"
+      :index-results-settings="indexResultsSettings"
+      :selected-node-name="selectedNodeName"
       @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
     />
-    <div class="map">
-      <IndexResultsMap :index-results-data="indexResultsData" :settings="indexResultsSettings" />
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import _ from 'lodash';
+import router from '@/router';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -48,17 +50,19 @@ import { IndexResultsData } from '@/types/Index';
 import { getRegionAggregation } from '@/services/outputdata-service';
 import { OutputSpec, RegionalAggregation } from '@/types/Outputdata';
 import { normalize } from '@/utils/value-util';
-import { DataTransform } from '@/types/Enums';
+import { DataTransform, ProjectType } from '@/types/Enums';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import IndexResultsMap from '@/components/index-results/index-results-map.vue';
+import IndexResultsComponentList from '@/components/index-results/index-results-component-list.vue';
+import IndexResultsDatasetWeights from '@/components/index-results/index-results-dataset-weights.vue';
 
 // TODO: temporary!
 // We probably want to
 //  - pre-normalize the data on the backend.
 //  - normalize it with respect to the min and max of the dataset across timestamps
 //  - Keep original value as well, instead of overriding it with the normalized version
-const normalizeCountryData = (regionData: RegionalAggregation) => {
+const normalizeCountryData = (regionData: RegionalAggregation, isInverted: boolean) => {
   const clonedRegionData = _.cloneDeep(regionData);
   if (clonedRegionData.country === undefined || clonedRegionData.country.length === 0) {
     return clonedRegionData;
@@ -68,9 +72,13 @@ const normalizeCountryData = (regionData: RegionalAggregation) => {
   const min = _.min(values) ?? 0;
   const max = _.max(values) ?? 0;
   clonedRegionData.country = countries.map((country) => {
+    const normalizedValue = normalize(country.value, min, max);
+    // If this dataset is inverted, higher original values should map closer to 0 and lower
+    //  original values should map closer to 1.
+    const countryValue = isInverted ? 1 - normalizedValue : normalizedValue;
     return {
       ...country,
-      value: normalize(country.value, min, max),
+      value: countryValue,
     };
   });
   return clonedRegionData;
@@ -82,6 +90,18 @@ const route = useRoute();
 const analysisId = computed(() => route.params.analysisId as string);
 const { analysisName, indexResultsSettings, refresh } = useIndexAnalysis(analysisId);
 
+const project = computed(() => store.getters['app/project']);
+const modifyStructure = () => {
+  router.push({
+    name: 'indexStructure',
+    params: {
+      project: project.value,
+      analysisId: analysisId.value,
+      projectType: ProjectType.Analysis,
+    },
+  });
+};
+
 // Set analysis name on the navbar
 onMounted(async () => {
   store.dispatch('app/setAnalysisName', '');
@@ -90,6 +110,8 @@ onMounted(async () => {
 });
 
 const { tree } = useIndexTree();
+
+const selectedNodeName = computed(() => tree.value.name);
 
 /**
  * Sort high values to the front of the list, then low values, then null values.
@@ -167,7 +189,12 @@ watch([tree], async () => {
     return;
   }
   // Normalize data
-  const regionDataForEachDataset = unnormalizedRegionDataForEachDataset.map(normalizeCountryData);
+  const regionDataForEachDataset = unnormalizedRegionDataForEachDataset.map(
+    (unnormalizedRegionData, i) => {
+      const isInverted = datasets[i].isInverted;
+      return normalizeCountryData(unnormalizedRegionData, isInverted);
+    }
+  );
   // Calculate each dataset's overall weight
   const overallWeightForEachDataset = datasets.map((dataset) =>
     calculateOverallWeight(frozenTreeState, dataset)
@@ -195,25 +222,19 @@ const isShowingKeyDatasets = ref(false);
 
 $column-padding: 20px;
 
-.structure-column,
-.bars-column {
-  width: 400px;
-}
-
 .structure-column {
-  padding: $column-padding 0;
+  width: 400px;
+  padding: $column-padding;
   overflow-y: auto;
   border-right: 1px solid $un-color-black-10;
   gap: 20px;
 }
 
-.horizontal-padding {
-  padding: 0 $column-padding;
-}
-
 .bars-column {
+  width: 300px;
+  border-left: 1px solid $un-color-black-10;
   &.expanded {
-    width: 700px;
+    width: 600px;
   }
 }
 
@@ -229,6 +250,14 @@ header {
     flex: 1;
     min-width: 0;
   }
+}
+
+.subtitle {
+  color: $un-color-black-40;
+}
+
+.index-structure-header {
+  justify-content: space-between;
 }
 .map {
   flex: 1;

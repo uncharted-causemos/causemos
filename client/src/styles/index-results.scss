@@ -5,8 +5,13 @@
 $index-result-table-column-gap: 20px;
 $index-result-table-key-datasets-column-gap: 10px;
 
+.index-result-table-dataset-country-column {
+  flex: 1;
+  min-width: 0;
+}
+
 .index-result-table-output-value-column {
-  flex: 2;
+  flex: 1;
   min-width: 0;
 }
 
