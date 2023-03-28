@@ -133,6 +133,10 @@ export default defineComponent({
       type: Number,
       default: 0,
     },
+    minZoom: {
+      type: Number,
+      default: 1,
+    },
     mapBounds: {
       // initial map bounds; default bounds to the bbox of the model country/countries
       type: [Array, Object],
@@ -185,7 +189,7 @@ export default defineComponent({
   computed: {
     mapFixedOptions() {
       const options = {
-        minZoom: 1,
+        minZoom: this.minZoom,
         ...BASE_MAP_OPTIONS,
       };
       options.style = this.selectedBaseLayerEndpoint;

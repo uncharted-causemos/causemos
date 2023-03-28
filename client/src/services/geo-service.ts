@@ -1,17 +1,16 @@
 import API from '@/api/api';
+import { BoundingBox } from '@/types/Common';
 
-const geoBBoxCache = new Map<string, [[number, number], [number, number]]>();
+const geoBBoxCache = new Map<string, BoundingBox>();
 
 /**
  * Fetch bounding box of the regions of provided region ids
  * @param regionIds region ids
  */
-export const getBboxFromRegionIds = async (
-  regionIds: string[]
-): Promise<[[number, number], [number, number]] | null> => {
+export const getBboxFromRegionIds = async (regionIds: string[]): Promise<BoundingBox | null> => {
   const key = regionIds.join('-');
   if (geoBBoxCache.has(key)) {
-    return geoBBoxCache.get(key) as [[number, number], [number, number]];
+    return geoBBoxCache.get(key) || null;
   }
 
   const { data } = await API.post('gadm/spanning-bbox', { region_ids: regionIds });

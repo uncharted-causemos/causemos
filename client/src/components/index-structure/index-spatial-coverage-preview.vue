@@ -3,6 +3,7 @@
     <RegionMap
       :data="regionMapData"
       :map-bounds="mapBounds"
+      :min-zoom="MAP_MIN_ZOOM"
       :selected-admin-level="0"
       :disable-pan-zoom="true"
       :disable-popup="true"
@@ -19,11 +20,13 @@ import RegionMap from '@/components/widgets/region-map.vue';
 import { BOUNDS_GLOBAL, computeMapBoundsForCountries } from '@/utils/map-util-new';
 import { getColors, COLOR } from '@/utils/colors-util';
 
-import { RegionMapData } from '@/types/Common';
+import { MapBounds, RegionMapData } from '@/types/Common';
 import { IndexNode } from '@/types/Index';
 import { isDatasetNode, toOutputSpec } from '@/utils/index-tree-util';
 import { getRegionAggregationNormalized } from '@/services/outputdata-service';
 
+const MAP_MIN_ZOOM = -0.5;
+const MAP_BOUNDS_ANIMATION_DURATION = 1000;
 const MAP_COLOR = COLOR.DEFAULT;
 const NUM_COLORS = 5;
 const DOMAIN = [0, 1];
@@ -36,13 +39,17 @@ const props = defineProps<{
 const colors = getColors(MAP_COLOR, NUM_COLORS);
 const scaleFn = d3.scaleQuantize(DOMAIN, colors);
 
-const mapBounds = ref<[[number, number], [number, number]]>(BOUNDS_GLOBAL);
+const mapBounds = ref<MapBounds>({ value: BOUNDS_GLOBAL });
 watch(
   () => props.countries,
   async () => {
-    if (!props.countries) return;
-    mapBounds.value =
-      (await computeMapBoundsForCountries(props.countries.map((name) => name))) || BOUNDS_GLOBAL;
+    const bounds = props.countries
+      ? (await computeMapBoundsForCountries(props.countries)) || BOUNDS_GLOBAL
+      : BOUNDS_GLOBAL;
+    mapBounds.value = {
+      value: bounds,
+      options: { duration: MAP_BOUNDS_ANIMATION_DURATION },
+    };
   },
   { immediate: true }
 );
