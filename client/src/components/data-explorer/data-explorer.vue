@@ -40,7 +40,7 @@ import { ref, computed, onMounted, watch, defineEmits } from 'vue';
 
 import { Datacube } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
-import { Facets } from '@/types/common';
+import { Facets } from '@/types/Common';
 
 import useOverlay from '@/services/composables/useOverlay';
 
