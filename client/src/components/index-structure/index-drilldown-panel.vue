@@ -3,10 +3,16 @@
     <template v-if="edgeSelected">
       <div>
         <div>
-          <div class="header content" :style="{ color: getIndexNodeTypeColor(indexUpstreamType) }">
-            <i class="fa fa-fw un-font-small" :class="[getIndexNodeTypeIcon(indexUpstreamType)]" />
+          <div
+            class="header content"
+            :style="{ color: getIndexNodeTypeColor(selectedEdgeComponents?.source.type) }"
+          >
+            <i
+              class="fa fa-fw un-font-small"
+              :class="[getIndexNodeTypeIcon(selectedEdgeComponents?.source.type)]"
+            />
             <span class="un-font-small">
-              {{ typeUpstream }}
+              {{ selectedEdgeComponents?.source.type }}
             </span>
           </div>
           <div>
@@ -33,10 +39,16 @@
         </div>
 
         <div>
-          <div class="header content" :style="{ color: getIndexNodeTypeColor(indexType) }">
-            <i class="fa fa-fw un-font-small" :class="[getIndexNodeTypeIcon(indexType)]" />
+          <div
+            class="header content"
+            :style="{ color: getIndexNodeTypeColor(selectedEdgeComponents?.target.type) }"
+          >
+            <i
+              class="fa fa-fw un-font-small"
+              :class="[getIndexNodeTypeIcon(selectedEdgeComponents?.target.type)]"
+            />
             <span class="un-font-small">
-              {{ type }}
+              {{ selectedEdgeComponents?.target.type }}
             </span>
           </div>
           <div>
@@ -291,32 +303,6 @@ const handleEdgeOptionsButtonClick = (option: OptionButtonMenu) => {
   console.log(`WIP: do the edge delete here. ${JSON.stringify(option)}`);
 };
 
-const indexType = computed<IndexNodeType | null>(() => {
-  if (type.value === IndexNodeType.OutputIndex) {
-    return IndexNodeType.OutputIndex;
-  } else if (type.value === IndexNodeType.Index) {
-    return IndexNodeType.Index;
-  } else if (type.value === IndexNodeType.Dataset) {
-    return IndexNodeType.Dataset;
-  } else if (type.value === IndexNodeType.Placeholder) {
-    return IndexNodeType.Placeholder;
-  }
-  return null;
-});
-
-const indexUpstreamType = computed<IndexNodeType | null>(() => {
-  if (typeUpstream.value === IndexNodeType.OutputIndex) {
-    return IndexNodeType.OutputIndex;
-  } else if (typeUpstream.value === IndexNodeType.Index) {
-    return IndexNodeType.Index;
-  } else if (typeUpstream.value === IndexNodeType.Dataset) {
-    return IndexNodeType.Dataset;
-  } else if (typeUpstream.value === IndexNodeType.Placeholder) {
-    return IndexNodeType.Placeholder;
-  }
-  return null;
-});
-
 const nodeName = computed<String | null>(() => {
   let idToSearch = null;
   if (props.selectedElementId && typeof props.selectedElementId === 'string') {
@@ -357,13 +343,6 @@ const selectedNode = computed<IndexNode | null>(() => {
   return found?.found ?? null;
 });
 
-const selectedUpstreamNode = computed<IndexNode | null>(() => {
-  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
-    const found = searchForNode(props.selectedElementId.sourceId);
-    return found?.found ?? null;
-  }
-  return null;
-});
 const selectedDatasetDataId = computed(() => {
   if (selectedNode.value === null || !isDatasetNode(selectedNode.value)) {
     return null;
@@ -372,6 +351,12 @@ const selectedDatasetDataId = computed(() => {
 });
 
 const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode } | null>(() => {
+  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    const sourceNode = searchForNode(props.selectedElementId.sourceId);
+    if (sourceNode?.found && sourceNode?.parent) {
+      return { source: sourceNode.found, target: sourceNode.parent };
+    }
+  }
   return null;
 });
 
@@ -385,21 +370,10 @@ const edgeSelected = computed(() => {
 });
 
 const type = computed<IndexElementType | null>(() => {
-  if (selectedNode.value !== null) {
+  if (selectedEdgeComponents.value !== null) {
+    return IndexEdgeType.Edge;
+  } else if (selectedNode.value !== null) {
     return selectedNode.value.type;
-  }
-  if (selectedEdgeComponents.value !== null) {
-    return IndexEdgeType.Edge;
-  }
-  return null;
-});
-
-const typeUpstream = computed<IndexElementType | null>(() => {
-  if (selectedUpstreamNode.value !== null) {
-    return selectedUpstreamNode.value.type;
-  }
-  if (selectedEdgeComponents.value !== null) {
-    return IndexEdgeType.Edge;
   }
   return null;
 });
@@ -445,8 +419,8 @@ const searchForNode = (id: string) => {
 </script>
 
 <style scoped lang="scss">
-@import '~styles/variables';
-@import '~styles/uncharted-design-tokens';
+@import '@/styles/variables.scss';
+@import '@/styles/uncharted-design-tokens.scss';
 
 .fa-long-arrow-right {
   color: $un-color-black-20;
