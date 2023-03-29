@@ -12,7 +12,7 @@
       <button class="btn btn-default" @click="emit('cancel')">Cancel</button>
     </div>
     <div class="search-results-container">
-      <ul v-if="searchText !== ''">
+      <ul class="results-list" v-if="searchText !== ''">
         <li
           :class="{ active: activeResultIndex === -1 }"
           @mousemove="setActiveResultIndexOnHover(-1)"
@@ -74,7 +74,6 @@
           </div>
         </div>
       </ul>
-      <button class="btn btn-sm advanced-search" disabled>Use advanced search</button>
     </div>
   </div>
 </template>
@@ -259,7 +258,6 @@ const shiftIndex = (direction: -1 | 1) => {
 
 .search-results-container {
   width: 600px;
-  margin: 5px 0 10px 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -269,6 +267,9 @@ ul {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+ul.results-list {
+  margin: 5px 0;
 }
 li {
   margin: 0;
@@ -354,11 +355,6 @@ li {
 
 .timeseries-loading {
   background: $un-color-black-5;
-}
-
-.advanced-search {
-  margin-left: 10px;
-  align-self: flex-start;
 }
 
 i.fa-spinner {

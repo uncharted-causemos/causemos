@@ -25,13 +25,18 @@
         </template>
       </OptionsButton>
     </div>
-    <IndexTreeNodeSearchBar
-      v-if="showDatasetSearch"
-      :initial-search-text="props.nodeData.name"
-      @select-dataset="attachDataset"
-      @keep-as-placeholder="keepAsPlaceholder"
-      @cancel="cancelDatasetSearch"
-    />
+    <template v-if="showDatasetSearch">
+      <IndexTreeNodeSearchBar
+        :initial-search-text="props.nodeData.name"
+        @select-dataset="attachDataset"
+        @keep-as-placeholder="keepAsPlaceholder"
+        @cancel="cancelDatasetSearch"
+      />
+      <IndexTreeNodeAdvancedSearchButton
+        class="advanced-search-button"
+        :node-id="props.nodeData.id"
+      />
+    </template>
     <div v-else-if="showEditName" class="rename content flex">
       <input
         v-focus
@@ -93,6 +98,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
+import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
 
 const addInputDropdownOptions = [IndexNodeType.Index, IndexNodeType.Dataset];
 
@@ -447,6 +453,9 @@ $option-button-width: 16px;
   }
   &.placeholder {
     border-style: dashed;
+  }
+  .advanced-search-button {
+    margin: 5px 0 10px 10px;
   }
 }
 </style>

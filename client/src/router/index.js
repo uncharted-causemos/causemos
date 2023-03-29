@@ -21,6 +21,7 @@ import IndicatorPublisher from '@/views/IndicatorPublisher.vue';
 import NodeDataDrilldown from '@/views/NodeDataDrilldown.vue';
 import NodeDrilldown from '@/views/NodeDrilldown.vue';
 import NodeDataExplorer from '@/views/NodeDataExplorer.vue';
+import IndexNodeDataExplorer from '@/views/IndexNodeDataExplorer.vue';
 import PrefectFlowLogs from '@/views/PrefectFlowLogs.vue';
 import qs from 'qs';
 import _ from 'lodash';
@@ -91,6 +92,11 @@ const routes = [
     path: '/:projectType/:project/index-structure/:analysisId',
     name: 'indexStructure',
     component: IndexStructure,
+  },
+  {
+    path: '/:projectType/:project/index-structure/:analysisId/node/:nodeId/explorer',
+    name: 'indexNodeDataExplorer',
+    component: IndexNodeDataExplorer,
   },
   {
     path: '/:projectType/:project/index-results/:analysisId',
