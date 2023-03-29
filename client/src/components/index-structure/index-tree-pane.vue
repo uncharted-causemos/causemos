@@ -13,13 +13,18 @@
         class="edge incoming"
         :class="{
           visible: hasChildren(cell.node),
+          inactive: !hasChildren(cell.node),
           [EDGE_CLASS.SELECTED]: isIncomingSelected(cell.node.id),
           [EDGE_CLASS.HIGHLIGHTED]:
             isIncomingHighlighted(cell.node.id) && !isIncomingSelected(cell.node.id),
         }"
-        @mouseenter="(evt) => highlight(evt, cell.node.id)"
+        @mouseenter="
+          emit('highlight-edge', { sourceId: cell.node.inputs[0].id, targetId: cell.node.id })
+        "
         @mouseleave="highlightClear"
-        @click="(evt) => selectEdge(evt, cell.node.id)"
+        @click="
+          () => emit('select-element', { sourceId: cell.node.inputs[0].id, targetId: cell.node.id })
+        "
       ></div>
       <IndexTreeNode
         :node-data="cell.node"
@@ -32,12 +37,12 @@
         @create-child="createChild"
         @attach-dataset="attachDatasetToPlaceholder"
         @mouseenter="highlightClear"
-        @click="clearAll"
       />
       <div
         class="edge outgoing"
         :class="{
           visible: cell.hasOutputLine,
+          inactive: !cell.hasOutputLine,
           dashed: cell.node.type === IndexNodeType.Placeholder,
           'last-child': cell.isLastChild,
           [EDGE_CLASS.SELECTED]: isOutgoingSelected(cell.node.id),
@@ -47,9 +52,13 @@
           [EDGE_CLASS.HIGHLIGHTED_Y]:
             isOutgoingYHighlighted(cell.node.id) && !isOutgoingYSelected(cell.node.id),
         }"
-        @mouseenter="(evt) => highlight(evt, cell.node.id)"
+        @mouseenter="
+          () => emit('highlight-edge', { sourceId: cell.node.id, targetId: parentId(cell.node.id) })
+        "
         @mouseleave="highlightClear"
-        @click="(evt) => selectEdge(evt, cell.node.id)"
+        @click="
+          () => emit('select-element', { sourceId: cell.node.id, targetId: parentId(cell.node.id) })
+        "
       />
     </div>
   </div>
@@ -227,69 +236,21 @@ const clearAll = () => {
   emit('deselect-all');
 };
 
-const highlight = (evt: MouseEvent, nodeId: string) => {
-  interactEdge(evt, nodeId, true);
-};
-
 const highlightClear = () => {
   emit('clear-highlight');
+};
+
+const parentId = (id: string): string | null => {
+  const found = searchForNode(id);
+  if (found && found.parent) {
+    return found.parent.id;
+  }
+  return null;
 };
 
 const searchForNode = (id: string) => {
   const foundInTree = findNode(id);
   return foundInTree ?? workbench.findNode(id);
-};
-
-const interactEdge = (evt: MouseEvent, nodeId: string, isHighlight = false) => {
-  highlightClear();
-  const targetElement = evt.target as HTMLElement;
-  if (targetElement) {
-    const foundNode = searchForNode(nodeId);
-    if (foundNode) {
-      const isIncoming = targetElement.classList.contains(EDGE_CLASS.INCOMING);
-      const isOutgoing = targetElement.classList.contains(EDGE_CLASS.OUTGOING);
-
-      if (
-        isIncoming &&
-        (foundNode.found.type === 'Index' || foundNode.found.type === 'OutputIndex')
-      ) {
-        if (foundNode.found.inputs.length > 0) {
-          if (isHighlight) {
-            emit('highlight-edge', {
-              sourceId: foundNode.found.inputs[0].id,
-              targetId: foundNode.found.id,
-            });
-          } else {
-            emit('select-element', {
-              sourceId: foundNode.found.inputs[0].id,
-              targetId: foundNode.found.id,
-            });
-          }
-        } else {
-          if (!isHighlight) {
-            emit('select-element', foundNode.found.id);
-          }
-        }
-      } else if (isIncoming && !isHighlight) {
-        emit('select-element', foundNode.found.id);
-      } else if (isOutgoing) {
-        if (foundNode.parent) {
-          if (isHighlight) {
-            emit('highlight-edge', { sourceId: foundNode.found.id, targetId: foundNode.parent.id });
-          } else {
-            emit('select-element', { sourceId: foundNode.found.id, targetId: foundNode.parent.id });
-          }
-        } else {
-          if (!isHighlight) {
-            emit('select-element', foundNode.found.id);
-          }
-        }
-      }
-    }
-  }
-};
-const selectEdge = (evt: MouseEvent, nodeId: string) => {
-  interactEdge(evt, nodeId, false);
 };
 </script>
 
@@ -346,6 +307,9 @@ $edge-selected: $accent-main;
           border-color: $edge-selected;
         }
       }
+      &.inactive {
+        pointer-events: none;
+      }
     }
 
     &.outgoing {
@@ -367,6 +331,9 @@ $edge-selected: $accent-main;
         &.selected-y {
           border-right-color: $edge-selected;
         }
+      }
+      &.inactive {
+        pointer-events: none;
       }
       &.dashed {
         border-top-style: dashed;
