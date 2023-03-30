@@ -90,43 +90,26 @@ export const createNewPlaceholderDataset = () => {
   return node;
 };
 
-export const createNewDatasetNode = (
-  name: string,
-  datasetName: string,
-  source: string,
-  weight: number,
-  config: DataConfig
-) => {
-  const node: Dataset = {
-    // Set starting values for new dataset node
-    id: uuidv4(),
-    type: IndexNodeType.Dataset,
-    isInverted: false,
-    isWeightUserSpecified: false,
-    // Store values from the search result and pre-calculated starting weight
-    name,
-    datasetName,
-    source,
-    weight,
-    // Store default data config
-    ...config,
-  };
-  return node;
-};
-
 export const convertPlaceholderToDataset = (
   placeholder: Placeholder,
   dataset: DatasetSearchResult,
   initialWeight: number,
   config: DataConfig
 ) => {
-  const node = createNewDatasetNode(
-    placeholder.name === '' ? dataset.displayName : placeholder.name,
-    dataset.displayName,
-    dataset.familyName,
-    initialWeight,
-    config
-  );
+  const node: Dataset = {
+    // Set starting values for new dataset node
+    id: placeholder.id,
+    type: IndexNodeType.Dataset,
+    isInverted: false,
+    isWeightUserSpecified: false,
+    // Store values from the search result and pre-calculated starting weight
+    name: placeholder.name === '' ? dataset.displayName : placeholder.name,
+    datasetName: dataset.displayName,
+    source: dataset.familyName,
+    weight: initialWeight,
+    // Store default data config
+    ...config,
+  };
   return node;
 };
 

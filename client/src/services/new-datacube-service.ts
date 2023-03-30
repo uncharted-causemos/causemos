@@ -6,7 +6,7 @@ import { ModelRun } from '@/types/ModelRun';
 import { getTimeseries } from '@/services/outputdata-service';
 import fu from '@/utils/filters-util';
 import { getImageMime } from '@/utils/datacube-util';
-import { FlowLogs } from '@/types/Common';
+import { FlowLogs, Facets } from '@/types/Common';
 import { CachedDatacubeMetadata } from '@/types/Analysis';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 
@@ -74,10 +74,13 @@ export const getDatacubeByDataId = async (dataId: string): Promise<Datacube | nu
  * @param {string[]} facets
  * @param {Filters} filters
  */
-export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
-  const { data } = await API.get(
-    `maas/datacubes/facets?facets=${JSON.stringify(facets)}&filters=${JSON.stringify(filters)}`
-  );
+export const getDatacubeFacets = async (facets: string[], filters: Filters): Promise<Facets> => {
+  const { data } = await API.get('maas/datacubes/facets', {
+    params: {
+      facets: JSON.stringify(facets),
+      filters: filters,
+    },
+  });
   return data;
 };
 
@@ -90,6 +93,17 @@ export const getDatacubeById = async (datacubeId: string) => {
   fu.setClause(filters, 'id', [datacubeId], 'or', false);
   const cubes = await getDatacubes(filters);
   return cubes && cubes.length > 0 && cubes[0];
+};
+
+/**
+ * Get  datacubes by ids
+ * @param {string[]} datacubeIds
+ */
+export const getDatacubesByIds = async (datacubeIds: string[]) => {
+  const filters = fu.newFilters();
+  fu.setClause(filters, 'id', datacubeIds, 'or', false);
+  const cubes = await getDatacubes(filters);
+  return cubes;
 };
 
 /**

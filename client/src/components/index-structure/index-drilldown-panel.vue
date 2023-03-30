@@ -1,6 +1,66 @@
 <template>
   <div class="index-drilldown-panel-container" :class="{ hidden: type === null }">
-    <template v-if="type === IndexNodeType.OutputIndex">
+    <template v-if="edgeSelected">
+      <div>
+        <div>
+          <div
+            class="header content"
+            :style="{ color: getIndexNodeTypeColor(selectedEdgeComponents?.source.type) }"
+          >
+            <i
+              class="fa fa-fw un-font-small"
+              :class="[getIndexNodeTypeIcon(selectedEdgeComponents?.source.type)]"
+            />
+            <span class="un-font-small">
+              {{ selectedEdgeComponents?.source.type }}
+            </span>
+          </div>
+          <div>
+            <h4>{{ nodeUpstreamName }}</h4>
+          </div>
+        </div>
+        <div class="title-row space-between centered">
+          <i class="fa fa-long-arrow-right" />
+          <div class="button-group">
+            <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
+              <template #content>
+                <div
+                  v-for="item in edgeOptionsButtonMenu"
+                  :key="item.type"
+                  class="dropdown-option"
+                  @click="handleEdgeOptionsButtonClick(item.type)"
+                >
+                  <i class="fa fa-fw" :class="item.icon" />
+                  {{ item.text }}
+                </div>
+              </template>
+            </OptionsButton>
+          </div>
+        </div>
+
+        <div>
+          <div
+            class="header content"
+            :style="{ color: getIndexNodeTypeColor(selectedEdgeComponents?.target.type) }"
+          >
+            <i
+              class="fa fa-fw un-font-small"
+              :class="[getIndexNodeTypeIcon(selectedEdgeComponents?.target.type)]"
+            />
+            <span class="un-font-small">
+              {{ selectedEdgeComponents?.target.type }}
+            </span>
+          </div>
+          <div>
+            <h4>{{ nodeName }}</h4>
+          </div>
+        </div>
+      </div>
+      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+    </template>
+
+    <template v-if="!edgeSelected && type === IndexNodeType.OutputIndex">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -32,7 +92,7 @@
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
-    <template v-if="type === IndexNodeType.Index">
+    <template v-if="!edgeSelected && type === IndexNodeType.Index">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -78,7 +138,7 @@
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
-    <template v-if="type === IndexNodeType.Dataset">
+    <template v-if="!edgeSelected && type === IndexNodeType.Dataset">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -140,7 +200,7 @@
       <IndexDocumentSnippets :selected-node-name="panelTitle" />
     </template>
 
-    <template v-if="type === IndexEdgeType.Edge">
+    <template v-if="!edgeSelected && type === IndexEdgeType.Edge">
       <header>
         <div class="title-row space-between">
           <div class="edge-source-and-target">
@@ -174,10 +234,10 @@ import useIndexTree from '@/services/composables/useIndexTree';
 import { IndexNode, IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
 import {
   duplicateNode,
-  getIndexNodeTypeColor,
-  getIndexNodeTypeIcon,
   isDatasetNode,
   isOutputIndexNode,
+  getIndexNodeTypeColor,
+  getIndexNodeTypeIcon,
 } from '@/utils/index-tree-util';
 import { OptionButtonMenu } from './index-tree-node.vue';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
@@ -218,6 +278,14 @@ const optionsButtonMenu = [
   },
 ];
 
+const edgeOptionsButtonMenu = [
+  {
+    type: OptionButtonMenu.DeleteEdge,
+    text: 'Delete Edge',
+    icon: 'fa-trash',
+  },
+];
+
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   const node = selectedNode.value;
   if (node === null || isOutputIndexNode(node)) {
@@ -234,17 +302,50 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   }
 };
 
+const handleEdgeOptionsButtonClick = (option: OptionButtonMenu) => {
+  console.log(`WIP: do the edge delete here. ${JSON.stringify(option)}`);
+};
+
+const nodeName = computed<String | null>(() => {
+  let idToSearch = null;
+  if (props.selectedElementId && typeof props.selectedElementId === 'string') {
+    idToSearch = props.selectedElementId;
+  } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    idToSearch = props.selectedElementId.targetId;
+  }
+
+  if (idToSearch) {
+    const node = searchForNode(idToSearch);
+    if (node) {
+      return node.found.name;
+    }
+  }
+  return null;
+});
+
+const nodeUpstreamName = computed<String | null>(() => {
+  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    const node = searchForNode(props.selectedElementId.sourceId);
+    if (node) {
+      return node.found.name;
+    }
+  }
+  return null;
+});
+
 const selectedNode = computed<IndexNode | null>(() => {
-  if (!(typeof props.selectedElementId === 'string')) {
+  let idToSearch = null;
+  if (props.selectedElementId && typeof props.selectedElementId === 'string') {
+    idToSearch = props.selectedElementId;
+  } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    idToSearch = props.selectedElementId.targetId;
+  } else {
     return null;
   }
-  // Check for node in main tree
-  const foundInTree = findNode(props.selectedElementId);
-  // If not found in main tree, check in the list of disconnected nodes and trees
-  const found = foundInTree ?? workbench.findNode(props.selectedElementId);
-  // TODO: we'll want to keep the parent around when searching for edges
+  const found = searchForNode(idToSearch);
   return found?.found ?? null;
 });
+
 const selectedDatasetDataId = computed(() => {
   if (selectedNode.value === null || !isDatasetNode(selectedNode.value)) {
     return null;
@@ -253,15 +354,29 @@ const selectedDatasetDataId = computed(() => {
 });
 
 const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode } | null>(() => {
+  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    const sourceNode = searchForNode(props.selectedElementId.sourceId);
+    if (sourceNode?.found && sourceNode?.parent) {
+      return { source: sourceNode.found, target: sourceNode.parent };
+    }
+  }
   return null;
 });
 
-const type = computed<IndexElementType | null>(() => {
-  if (selectedNode.value !== null) {
-    return selectedNode.value.type;
+const edgeSelected = computed(() => {
+  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    if (props.selectedElementId.sourceId) {
+      return true;
+    }
   }
+  return false;
+});
+
+const type = computed<IndexElementType | null>(() => {
   if (selectedEdgeComponents.value !== null) {
     return IndexEdgeType.Edge;
+  } else if (selectedNode.value !== null) {
+    return selectedNode.value.type;
   }
   return null;
 });
@@ -299,11 +414,20 @@ const handleRenameDone = () => {
   isRenaming.value = false;
   renameInputText.value = '';
 };
+
+const searchForNode = (id: string) => {
+  const foundInTree = findNode(id);
+  return foundInTree ?? workbench.findNode(id);
+};
 </script>
 
 <style scoped lang="scss">
-@import '~styles/variables';
-@import '~styles/uncharted-design-tokens';
+@import '@/styles/variables.scss';
+@import '@/styles/uncharted-design-tokens.scss';
+
+.fa-long-arrow-right {
+  color: $un-color-black-20;
+}
 
 .index-drilldown-panel-container {
   padding: 20px;
@@ -336,6 +460,9 @@ header {
 
   &.space-between {
     justify-content: space-between;
+    &.centered {
+      align-items: center;
+    }
   }
 }
 
