@@ -22,7 +22,7 @@ import { getColors, COLOR } from '@/utils/colors-util';
 
 import { MapBounds, RegionMapData } from '@/types/Common';
 import { IndexNode } from '@/types/Index';
-import { isDatasetNode, toOutputSpec } from '@/utils/index-tree-util';
+import { isDatasetNode, convertDatasetToOutputSpec } from '@/utils/index-tree-util';
 import { getRegionAggregationNormalized } from '@/services/outputdata-service';
 
 const MAP_MIN_ZOOM = -0.5;
@@ -61,7 +61,7 @@ const loadMapData = async () => {
     return;
   }
   const result = await getRegionAggregationNormalized(
-    toOutputSpec(props.node),
+    convertDatasetToOutputSpec(props.node),
     props.node.isInverted
   );
   const mapData: RegionMapData[] = (result.country || []).map((country) => ({

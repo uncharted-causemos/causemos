@@ -44,7 +44,11 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { calculateOverallWeight, findAllDatasets, toOutputSpec } from '@/utils/index-tree-util';
+import {
+  calculateOverallWeight,
+  findAllDatasets,
+  convertDatasetToOutputSpec,
+} from '@/utils/index-tree-util';
 import { calculateIndexResults } from '@/utils/index-results-util';
 import { IndexResultsData } from '@/types/Index';
 import { getRegionAggregationNormalized } from '@/services/outputdata-service';
@@ -141,7 +145,7 @@ watch([tree], async () => {
   const datasets = findAllDatasets(tree.value);
   // Prepare an "output spec" for each dataset to fetch its regional data
   const promises = datasets.map((dataset) =>
-    getRegionAggregationNormalized(toOutputSpec(dataset), dataset.isInverted)
+    getRegionAggregationNormalized(convertDatasetToOutputSpec(dataset), dataset.isInverted)
   );
   // Wait for all fetches to complete.
   const regionDataForEachDataset = await Promise.all(promises);
