@@ -176,7 +176,10 @@
         </div>
       </header>
       <section>
-        <IndexSpatialCoveragePreview :countries="datasetMetadata?.geography.country ?? null" />
+        <IndexSpatialCoveragePreview
+          :node="selectedNode"
+          :countries="datasetMetadata?.geography.country ?? null"
+        />
       </section>
       <IndexDatasetMetadata :node="selectedNode" :dataset-metadata="datasetMetadata" />
       <section>

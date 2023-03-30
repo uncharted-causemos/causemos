@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { IndexNodeType } from '@/types/Enums';
+import { DataTransform, IndexNodeType } from '@/types/Enums';
 import {
   IndexNode,
   Dataset,
@@ -12,6 +12,7 @@ import {
 import _ from 'lodash';
 import { DataConfig } from '@/types/Datacube';
 import { getDefaultDataConfig } from '@/services/new-datacube-service';
+import { OutputSpec } from '@/types/Outputdata';
 
 export type FindNodeResult = { parent: ParentNode | null; found: IndexNode } | undefined;
 
@@ -110,6 +111,20 @@ export const convertPlaceholderToDataset = (
     ...config,
   };
   return node;
+};
+
+export const convertDatasetToOutputSpec = (node: Dataset) => {
+  const outputSpec: OutputSpec = {
+    modelId: node.datasetId,
+    runId: node.runId,
+    outputVariable: node.outputVariable,
+    timestamp: node.selectedTimestamp,
+    transform: DataTransform.None,
+    temporalResolution: node.temporalResolution,
+    temporalAggregation: node.temporalAggregation,
+    spatialAggregation: node.spatialAggregation,
+  };
+  return outputSpec;
 };
 
 // Traverse the provided index node tree, find the parent node with the given parentId and add new node as a first child of the parent

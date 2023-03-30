@@ -191,3 +191,14 @@ export interface BoxPlotStats {
   q50: number;
   q75: number;
 }
+
+export type BoundingBox = [[number, number], [number, number]]; // [[minLng, minLat], [maxLng, maxLat]]
+export interface MapBoundsWithOptions {
+  value: BoundingBox;
+  options?: {
+    /** camera move animation duration */
+    duration: number;
+  };
+}
+
+export type MapBounds = BoundingBox | MapBoundsWithOptions;

@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
-import { AnalysisMapStats, MapLayerStats, MapLegendColor } from '@/types/Common';
+import { AnalysisMapStats, BoundingBox, MapLayerStats, MapLegendColor } from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
 import {
   isSelectionEmpty,
@@ -13,7 +13,7 @@ import { getBboxFromRegionIds } from '@/services/geo-service';
 import { AdminRegionSets } from '@/types/Datacubes';
 import { DiscreteOuputScale } from '@/types/Enums';
 
-export const BOUNDS_GLOBAL: [[number, number], [number, number]] = [
+export const BOUNDS_GLOBAL: BoundingBox = [
   [-180, -90],
   [180, 90],
 ]; // [[minLng, minLat], [maxLng, maxLat]]
