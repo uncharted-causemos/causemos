@@ -113,7 +113,7 @@ export const convertPlaceholderToDataset = (
   return node;
 };
 
-export const toOutputSpec = (node: Dataset) => {
+export const convertDatasetToOutputSpec = (node: Dataset) => {
   const outputSpec: OutputSpec = {
     modelId: node.datasetId,
     runId: node.runId,
