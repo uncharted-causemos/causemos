@@ -7,7 +7,10 @@
       <h5>
         Snippets related to <strong>{{ props.selectedNodeName }}</strong>
       </h5>
-      <div v-if="snippetsForSelectedNode === null" class="loading-indicator" />
+      <div v-if="snippetsForSelectedNode === null" class="loading-indicator">
+        <i class="fa fa-spin fa-spinner pane-loading-icon" />
+        <p>{{ SNIPPETS_LOADING }}</p>
+      </div>
       <p v-else-if="snippetsForSelectedNode.length === 0" class="subdued">No results</p>
       <div v-else class="snippets">
         <div class="snippet" v-for="(snippet, i) in snippetsForSelectedNode" :key="i">
@@ -39,7 +42,7 @@ const props = defineProps<{
   selectedNodeName: string;
 }>();
 const { selectedNodeName } = toRefs(props);
-
+const SNIPPETS_LOADING = 'Loading snippets...';
 const NO_TITLE = 'Title not available';
 const NO_AUTHOR = 'Author not available';
 const NO_SOURCE = 'Source not available';
@@ -135,6 +138,11 @@ section {
   height: 100px;
   background: $un-color-black-5;
   animation: fading 1s ease infinite alternate;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
 }
 
 @keyframes fading {
