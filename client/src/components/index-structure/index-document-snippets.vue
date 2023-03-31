@@ -186,6 +186,8 @@ section {
     :deep(.dojo-mark) {
       color: $accent-medium;
       background-color: $accent-lightest;
+      border: 1px solid $accent-light;
+      padding: 0 2px;
     }
   }
 }
