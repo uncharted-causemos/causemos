@@ -13,7 +13,7 @@
         <div class="snippet" v-for="(snippet, i) in snippetsForSelectedNode" :key="i">
           <span class="open-quote">"</span>
           <div class="snippet-body">
-            <p>{{ snippet.text }}</p>
+            <p><span v-html="snippet.text" /></p>
             <div class="bottom-row">
               <div class="metadata">
                 <p>{{ snippet.documentTitle }}</p>
@@ -30,9 +30,10 @@
 </template>
 
 <script setup lang="ts">
-import { searchParagraphs, getDocument } from '@/services/paragraphs-service';
+import { searchParagraphs, getDocument, getHighlights } from '@/services/paragraphs-service';
 import { Snippet, ParagraphSearchResponse, Document } from '@/types/IndexDocuments';
 import { toRefs, watch, ref } from 'vue';
+import { DojoParagraphHighlights } from '@/types/Dojo';
 
 const props = defineProps<{
   selectedNodeName: string;
@@ -46,6 +47,7 @@ const NO_TEXT = 'Text not available';
 
 // `null` means snippets are loading
 const snippetsForSelectedNode = ref<Snippet[] | null>(null);
+
 watch(
   [selectedNodeName],
   async () => {
@@ -59,32 +61,49 @@ watch(
       //  a race condition.
       return;
     }
+
     // Fetch metadata for each document in parallel (too slow if performed one-by-one).
     const metadataRequests: Promise<Document>[] = queryResults.results.map((result) =>
       getDocument(result.document_id)
     );
     const metadataResults = await Promise.all(metadataRequests);
+
+    const paragraphHighlights: DojoParagraphHighlights | null = await getHighlights({
+      query: props.selectedNodeName,
+      matches: queryResults.results.map((item) => item.text),
+    });
+
     // Form list of snippets by pulling out relevant fields from query results and document data.
-    const snippets: Snippet[] = queryResults.results.map((result, i) => {
+    snippetsForSelectedNode.value = queryResults.results.map((result, i) => {
       const metadata = metadataResults[i];
+
       return {
         documentId: result.document_id,
-        text: result.text ? result.text : NO_TEXT,
-        // There may be some inconsistencies from the server about how this metadata field is named
-        //  (doc_title v.s. title)
+        text: paragraphHighlights
+          ? paragraphHighlights.highlights[i].reduce(
+              (paragraph, item) =>
+                item.highlight
+                  ? `${paragraph}<span class="dojo-mark">${item.text}</span>`
+                  : `${paragraph}${item.text}`,
+              ''
+            )
+          : result.text
+          ? result.text
+          : NO_TEXT,
         documentTitle: metadata.title ?? NO_TITLE,
         documentAuthor: metadata.author ?? NO_AUTHOR,
         documentSource: metadata.producer ?? NO_SOURCE,
       };
     });
-    snippetsForSelectedNode.value = snippets;
   },
   { immediate: true }
 );
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/uncharted-design-tokens';
+@import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
+
 .index-document-snippets-container {
   display: flex;
   flex-direction: column;
@@ -151,6 +170,10 @@ section {
         flex-direction: column;
         color: $un-color-black-40;
       }
+    }
+    :deep(.dojo-mark) {
+      color: $accent-medium;
+      background-color: $accent-lightest;
     }
   }
 }
