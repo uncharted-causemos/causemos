@@ -34,9 +34,13 @@
 
 <script setup lang="ts">
 import { searchParagraphs, getDocument, getHighlights } from '@/services/paragraphs-service';
-import { Snippet, ParagraphSearchResponse, Document } from '@/types/IndexDocuments';
+import {
+  Snippet,
+  ParagraphSearchResponse,
+  Document,
+  DojoParagraphHighlights,
+} from '@/types/IndexDocuments';
 import { toRefs, watch, ref } from 'vue';
-import { DojoParagraphHighlights } from '@/types/Dojo';
 
 const props = defineProps<{
   selectedNodeName: string;

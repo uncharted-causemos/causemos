@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { DojoParagraphDetails } from '@/types/Dojo';
+import { DojoParagraphDetails } from '@/types/IndexDocuments';
 
 const SEARCH_PATH = 'dojo/paragraphs/search';
 const GET_DOC_PATH = 'dojo/documents';
