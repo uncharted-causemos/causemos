@@ -83,13 +83,12 @@ const getHighlights = async (details) => {
   const requestOptions = {
     method: 'POST',
     url: DOJO_PARAGRAPHS_HIGHLIGHT_URL,
-    json: {},
+    json: details,
     headers: {
       'Content-type': 'application/json',
       Accept: 'application/json',
       Authorization: DOJO_AUTH,
     },
-    body: details,
   };
   const response = await requestAsPromise(requestOptions);
   return response;

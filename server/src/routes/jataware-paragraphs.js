@@ -3,11 +3,14 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const paragraphSearchService = rootRequire('/services/external/dojo-semantic-search-service');
 
+/**
+ * get highlights for semantic search
+ */
 router.post(
   '/highlight',
   asyncHandler(async (req, res) => {
     const details = req.body;
-    console.log(`POST: dets=${JSON.stringify(details)}`);
+
     if (details) {
       const result = await paragraphSearchService.getHighlights(details);
       res.status(200);
@@ -17,6 +20,7 @@ router.post(
     }
   })
 );
+
 /**
  * Semantic search of paragraphs.
  */
