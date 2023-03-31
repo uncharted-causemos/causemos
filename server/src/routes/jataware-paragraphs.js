@@ -4,6 +4,24 @@ const router = express.Router();
 const paragraphSearchService = rootRequire('/services/external/dojo-semantic-search-service');
 
 /**
+ * get highlights for semantic search
+ */
+router.post(
+  '/highlight',
+  asyncHandler(async (req, res) => {
+    const details = req.body;
+
+    if (details) {
+      const result = await paragraphSearchService.getHighlights(details);
+      res.status(200);
+      res.json(result);
+    } else {
+      res.status(400).send('Bad request, missing details.');
+    }
+  })
+);
+
+/**
  * Semantic search of paragraphs.
  */
 router.get(
