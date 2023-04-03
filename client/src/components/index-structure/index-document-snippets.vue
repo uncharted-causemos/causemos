@@ -7,13 +7,16 @@
       <h5>
         Snippets related to <strong>{{ props.selectedNodeName }}</strong>
       </h5>
-      <div v-if="snippetsForSelectedNode === null" class="loading-indicator" />
+      <div v-if="snippetsForSelectedNode === null" class="loading-indicator">
+        <i class="fa fa-spin fa-spinner pane-loading-icon" />
+        <p>{{ SNIPPETS_LOADING }}</p>
+      </div>
       <p v-else-if="snippetsForSelectedNode.length === 0" class="subdued">No results</p>
       <div v-else class="snippets">
         <div class="snippet" v-for="(snippet, i) in snippetsForSelectedNode" :key="i">
           <span class="open-quote">"</span>
           <div class="snippet-body">
-            <p>{{ snippet.text }}</p>
+            <p><span v-html="snippet.text" /></p>
             <div class="bottom-row">
               <div class="metadata">
                 <p>{{ snippet.documentTitle }}</p>
@@ -56,8 +59,14 @@ import {
   searchParagraphs,
   getDocument,
   getDocumentParagraphs,
+  getHighlights,
 } from '@/services/paragraphs-service';
-import { Snippet, ParagraphSearchResponse, Document } from '@/types/IndexDocuments';
+import {
+  Snippet,
+  ParagraphSearchResponse,
+  Document,
+  DojoParagraphHighlights,
+} from '@/types/IndexDocuments';
 import { toRefs, watch, ref } from 'vue';
 import ModalDocument from '@/components/modals/modal-document.vue';
 
@@ -68,6 +77,7 @@ const { selectedNodeName } = toRefs(props);
 const documentData = ref<object | null>(null);
 const textFragment = ref<string | null>(null);
 
+const SNIPPETS_LOADING = 'Loading snippets...';
 const NO_TITLE = 'Title not available';
 const NO_AUTHOR = 'Author not available';
 const NO_SOURCE = 'Source not available';
@@ -75,6 +85,7 @@ const NO_TEXT = 'Text not available';
 
 // `null` means snippets are loading
 const snippetsForSelectedNode = ref<Snippet[] | null>(null);
+
 watch(
   [selectedNodeName],
   async () => {
@@ -88,32 +99,49 @@ watch(
       //  a race condition.
       return;
     }
+
     // Fetch metadata for each document in parallel (too slow if performed one-by-one).
     const metadataRequests: Promise<Document>[] = queryResults.results.map((result) =>
       getDocument(result.document_id)
     );
     const metadataResults = await Promise.all(metadataRequests);
+
+    const paragraphHighlights: DojoParagraphHighlights | null = await getHighlights({
+      query: props.selectedNodeName,
+      matches: queryResults.results.map((item) => item.text),
+    });
+
     // Form list of snippets by pulling out relevant fields from query results and document data.
-    const snippets: Snippet[] = queryResults.results.map((result, i) => {
+    snippetsForSelectedNode.value = queryResults.results.map((result, i) => {
       const metadata = metadataResults[i];
+
       return {
         documentId: result.document_id,
-        text: result.text ? result.text : NO_TEXT,
-        // There may be some inconsistencies from the server about how this metadata field is named
-        //  (doc_title v.s. title)
+        text: paragraphHighlights
+          ? paragraphHighlights.highlights[i].reduce(
+              (paragraph, item) =>
+                item.highlight
+                  ? `${paragraph}<span class="dojo-mark">${item.text}</span>`
+                  : `${paragraph}${item.text}`,
+              ''
+            )
+          : result.text
+          ? result.text
+          : NO_TEXT,
         documentTitle: metadata.title ?? NO_TITLE,
         documentAuthor: metadata.author ?? NO_AUTHOR,
         documentSource: metadata.producer ?? NO_SOURCE,
       };
     });
-    snippetsForSelectedNode.value = snippets;
   },
   { immediate: true }
 );
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables';
 @import '@/styles/uncharted-design-tokens';
+
 .index-document-snippets-container {
   display: flex;
   flex-direction: column;
@@ -145,6 +173,11 @@ section {
   height: 100px;
   background: $un-color-black-5;
   animation: fading 1s ease infinite alternate;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
 }
 
 @keyframes fading {
@@ -180,6 +213,12 @@ section {
         flex-direction: column;
         color: $un-color-black-40;
       }
+    }
+    :deep(.dojo-mark) {
+      color: $accent-medium;
+      background-color: $accent-lightest;
+      border: 1px solid $accent-light;
+      padding: 0 2px;
     }
   }
 }

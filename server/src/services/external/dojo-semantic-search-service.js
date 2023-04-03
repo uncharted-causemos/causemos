@@ -2,6 +2,7 @@ const requestAsPromise = rootRequire('/util/request-as-promise');
 const authUtil = rootRequire('/util/auth-util');
 
 const DOJO_DOC_PARAGRAPH_LIMIT = 500;
+const DOJO_PARAGRAPHS_HIGHLIGHT_URL = process.env.DOJO_URL + '/paragraphs/highlight';
 const DOJO_PARAGRAPHS_URL = process.env.DOJO_URL + '/paragraphs';
 const DOJO_PARAGRAPHS_SEARCH_URL = process.env.DOJO_URL + '/paragraphs/search';
 const DOJO_FEATURES_SEARCH_URL = process.env.DOJO_URL + '/features/search';
@@ -89,10 +90,26 @@ const searchFeatures = async (searchString) => {
   return await requestAsPromise(requestOptions);
 };
 
+const getHighlights = async (details) => {
+  const requestOptions = {
+    method: 'POST',
+    url: DOJO_PARAGRAPHS_HIGHLIGHT_URL,
+    json: details,
+    headers: {
+      'Content-type': 'application/json',
+      Accept: 'application/json',
+      Authorization: DOJO_AUTH,
+    },
+  };
+  const response = await requestAsPromise(requestOptions);
+  return response;
+};
+
 module.exports = {
   getDocument,
   getDocumentParagraphs,
   getParagraphs,
   searchParagraphs,
   searchFeatures,
+  getHighlights,
 };
