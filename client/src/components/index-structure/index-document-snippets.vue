@@ -20,24 +20,53 @@
                 <p>{{ snippet.documentAuthor }}, {{ snippet.documentSource }}</p>
               </div>
               <!-- TODO: open document -->
-              <button class="btn btn-sm" disabled>View in context</button>
+              <button
+                class="btn btn-sm"
+                @click="
+                  () => {
+                    documentData = { doc_id: snippet.documentId };
+                    textFragment = snippet.text;
+                  }
+                "
+              >
+                View in context
+              </button>
             </div>
           </div>
         </div>
       </div>
     </section>
   </div>
+  <modal-document
+    v-if="!!documentData"
+    :disable-edit="true"
+    :document-id="documentData.doc_id"
+    :text-fragment="textFragment"
+    :retrieve-document-meta="getDocument"
+    :retrieve-document="getDocumentParagraphs"
+    :content-handler="
+      (data) => data?.paragraphs?.reduce((bodyText, p) => `${bodyText}<p>${p.text}</p>`, '')
+    "
+    @close="documentData = null"
+  />
 </template>
 
 <script setup lang="ts">
-import { searchParagraphs, getDocument } from '@/services/paragraphs-service';
+import {
+  searchParagraphs,
+  getDocument,
+  getDocumentParagraphs,
+} from '@/services/paragraphs-service';
 import { Snippet, ParagraphSearchResponse, Document } from '@/types/IndexDocuments';
 import { toRefs, watch, ref } from 'vue';
+import ModalDocument from '@/components/modals/modal-document.vue';
 
 const props = defineProps<{
   selectedNodeName: string;
 }>();
 const { selectedNodeName } = toRefs(props);
+const documentData = ref<object | null>(null);
+const textFragment = ref<string | null>(null);
 
 const NO_TITLE = 'Title not available';
 const NO_AUTHOR = 'Author not available';
@@ -84,7 +113,7 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/uncharted-design-tokens';
+@import '@/styles/uncharted-design-tokens';
 .index-document-snippets-container {
   display: flex;
   flex-direction: column;

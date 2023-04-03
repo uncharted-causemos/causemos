@@ -2,28 +2,37 @@
   <modal class="modal-document-container" @close="close()">
     <template #body>
       <div class="metadata">
-        <table style="border-bottom: 1px solid #e3e3e3" v-if="documentData">
+        <table v-if="documentData" style="border-bottom: 1px solid #e3e3e3">
           <tr>
             <td class="doc-label">Publication Date</td>
-            <td>{{ dateFormatter(documentData.publication_date.date, 'YYYY-MM-DD') }}</td>
+            <td>
+              {{
+                dateFormatter(
+                  documentMeta
+                    ? documentMeta.mod_date
+                    : documentData.publication_date.date ?? 'Date not found',
+                  'YYYY-MM-DD'
+                )
+              }}
+            </td>
           </tr>
           <tr>
             <td class="doc-label">Publisher</td>
-            <td v-if="!editable" class="doc-value">{{ publisher }}</td>
+            <td v-if="!editable" class="doc-value">{{ publisher ?? 'Publisher not found' }}</td>
             <td v-else class="doc-value">
               <input v-model="publisher" />
             </td>
           </tr>
           <tr>
             <td class="doc-label">Author</td>
-            <td v-if="!editable" class="doc-value">{{ author }}</td>
+            <td v-if="!editable" class="doc-value">{{ author ?? 'Author not found' }}</td>
             <td v-else class="doc-value">
               <input v-model="author" />
             </td>
           </tr>
           <tr>
             <td class="doc-label">Title</td>
-            <td v-if="!editable" class="doc-value">{{ title }}</td>
+            <td v-if="!editable" class="doc-value">{{ title ?? 'Title not found' }}</td>
             <td v-else class="doc-value">
               <input v-model="title" />
             </td>
@@ -35,17 +44,24 @@
         <i v-if="showTextViewer === false" class="fa fa-lg fa-fw fa-toggle-off" @click="toggle" />
         <i v-if="showTextViewer === true" class="fa fa-lg fa-fw fa-toggle-on" @click="toggle" />
       </div>
-      <div ref="content">Loading...</div>
+      <div v-if="isLoading" class="loading-indicator status">
+        <i class="fa fa-spin fa-spinner" />
+        <h2>Loading data...</h2>
+      </div>
+      <div v-if="!documentData && !isLoading" class="no-data status">Document not found.</div>
+      <div ref="content"></div>
     </template>
     <template #footer>
-      <button v-if="!editable" class="btn btn-md btn-secondary" @click="edit()">
+      <button v-if="!disableEdit && !editable" class="btn btn-md btn-secondary" @click="edit()">
         <i class="fa fa-fw fa-edit" /> Edit
       </button>
-      <button v-if="editable" class="btn btn-md btn-secondary" @click="save()">
+      <button v-if="!disableEdit && editable" class="btn btn-md btn-secondary" @click="save()">
         <i class="fa fa-fw fa-save" />Save
       </button>
       <div class="spacer"></div>
-      <button v-if="editable" class="btn btn-md btn-secondary" @click="cancel()">Cancel</button>
+      <button v-if="!disableEdit && editable" class="btn btn-md btn-secondary" @click="cancel()">
+        Cancel
+      </button>
       <button class="btn btn-md btn-primary" @click="close()">Close</button>
       <button
         v-if="$route.name === 'kbExplorer'"
@@ -171,8 +187,25 @@ export default {
       type: String,
       default: null,
     },
+    disableEdit: {
+      type: Boolean,
+      default: false,
+    },
+    retrieveDocumentMeta: {
+      type: Function,
+      default: null,
+    },
+    retrieveDocument: {
+      type: Function,
+      default: getDocument,
+    },
+    contentHandler: {
+      type: Function,
+      default: null,
+    },
   },
   data: () => ({
+    isLoading: false,
     documentData: null,
     textViewer: null,
     pdfViewer: null,
@@ -182,6 +215,7 @@ export default {
     author: '',
     publisher: '',
     title: '',
+    documentMeta: null,
   }),
   mounted() {
     this.refresh();
@@ -195,33 +229,57 @@ export default {
       this.fetchReaderContent();
     },
     async fetchReaderContent() {
-      this.documentData = (await getDocument(this.documentId)).data;
-      this.setFieldsFromDocumentData();
-      this.textViewer = createTextViewer(this.documentData.extracted_text);
+      this.isLoading = true;
 
-      const useDART = true;
-
-      if (isPdf(this.documentData) && useDART) {
-        const rawDocUrl = `/api/dart/${this.documentId}/raw`;
-        try {
-          this.pdfViewer = await createPDFViewer({ url: rawDocUrl });
-        } catch (_) {
-          this.textOnly = true;
-        }
-      } else {
-        this.textOnly = true;
+      if (this.retrieveDocumentMeta && this.documentId) {
+        this.documentMeta = await this.retrieveDocumentMeta(this.documentId);
       }
 
-      removeChildren(this.$refs.content);
-      if (this.textOnly === true) {
-        this.$refs.content.appendChild(this.textViewer.element);
-        if (this.textFragment) {
-          this.textViewer.search(this.textFragment);
-        }
+      const content = await this.retrieveDocument(this.documentId);
+      if (this.contentHandler) {
+        this.documentData = this.contentHandler(content);
       } else {
-        this.$refs.content.appendChild(this.pdfViewer.element);
-        if (this.textFragment) {
-          this.pdfViewer.search(this.textFragment);
+        this.documentData = content.data;
+      }
+      this.isLoading = false;
+
+      if (this.documentData) {
+        if (this.documentMeta) {
+          this.setFieldsFromDocumentMeta();
+        } else {
+          this.setFieldsFromDocumentData();
+        }
+
+        if (this.contentHandler) {
+          this.textViewer = createTextViewer(this.documentData); // provided contentHandler has generated a simple HTML string.
+        } else {
+          this.textViewer = createTextViewer(this.documentData.extracted_text);
+        }
+
+        const useDART = true;
+
+        if (isPdf(this.documentData) && useDART) {
+          const rawDocUrl = `/api/dart/${this.documentId}/raw`;
+          try {
+            this.pdfViewer = await createPDFViewer({ url: rawDocUrl });
+          } catch (_) {
+            this.textOnly = true;
+          }
+        } else {
+          this.textOnly = true;
+        }
+
+        removeChildren(this.$refs.content);
+        if (this.textOnly === true) {
+          this.$refs.content.appendChild(this.textViewer.element);
+          if (this.textFragment) {
+            this.textViewer.search(this.textFragment);
+          }
+        } else {
+          this.$refs.content.appendChild(this.pdfViewer.element);
+          if (this.textFragment) {
+            this.pdfViewer.search(this.textFragment);
+          }
         }
       }
     },
@@ -250,6 +308,11 @@ export default {
       this.publisher = this.documentData.publisher_name;
       this.title = this.documentData.doc_title;
     },
+    setFieldsFromDocumentMeta() {
+      this.author = this.documentMeta.author;
+      this.publisher = this.documentMeta.producer;
+      this.title = this.documentMeta.title;
+    },
     edit() {
       // scroll up to edit zone;
       const anchor = document.getElementsByClassName('modal-body')[0];
@@ -277,6 +340,20 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/uncharted-design-tokens';
+.status {
+  height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.loading-indicator {
+  height: 100px;
+  background: $un-color-black-5;
+  animation: fading 1s ease infinite alternate;
+}
+
 .modal-document-container {
   .metadata {
     margin-top: 2rem;
