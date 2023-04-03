@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import API from '@/api/api';
 import { DataConfig, Datacube, Model } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
@@ -5,7 +6,7 @@ import { ModelRun } from '@/types/ModelRun';
 import { getTimeseries } from '@/services/outputdata-service';
 import fu from '@/utils/filters-util';
 import { getImageMime } from '@/utils/datacube-util';
-import { FlowLogs } from '@/types/Common';
+import { FlowLogs, Facets } from '@/types/Common';
 import { CachedDatacubeMetadata } from '@/types/Analysis';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 
@@ -24,19 +25,48 @@ export interface SparklineParams {
   finalRawTimestamp: number;
 }
 
+// TEMPORARY FIX MARCH 2023: some metadata coming from Jataware has flipped time period values.
+//  This code can be removed once the metadata is corrected on their side.
+const fixIncorrectData = (datacube: Datacube) => {
+  // fix period
+  if (
+    !_.isNil(datacube.period?.gte) &&
+    !_.isNil(datacube.period?.lte) &&
+    datacube.period.gte > datacube.period.lte
+  ) {
+    datacube.period = {
+      lte: datacube.period.gte,
+      gte: datacube.period.lte,
+    };
+  }
+  return datacube;
+};
 /**
  * Get datacubes
  * @param {Filters} filters
  * @param {object} options - ES options
  */
-export const getDatacubes = async (filters: Filters, options = {}) => {
+export const getDatacubes = async (filters: Filters, options = {}): Promise<Datacube[]> => {
   const { data } = await API.get('maas/datacubes', {
     params: {
       filters: filters,
       options: options,
     },
   });
-  return data;
+  return data.map(fixIncorrectData);
+};
+
+/**
+ * Get indicator or model by `dataId`, as opposed to `id`.
+ * `dataId` is an identifier provided at registration time by Jataware.
+ * `id` is an ElasticSearch document ID generated during registration.
+ */
+export const getDatacubeByDataId = async (dataId: string): Promise<Datacube | null> => {
+  const result = await getDatacubes(
+    { clauses: [{ field: 'dataId', operand: 'or', isNot: false, values: [dataId] }] },
+    { from: 0, size: 1 }
+  );
+  return result[0] ?? null;
 };
 
 /**
@@ -44,10 +74,13 @@ export const getDatacubes = async (filters: Filters, options = {}) => {
  * @param {string[]} facets
  * @param {Filters} filters
  */
-export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
-  const { data } = await API.get(
-    `maas/datacubes/facets?facets=${JSON.stringify(facets)}&filters=${JSON.stringify(filters)}`
-  );
+export const getDatacubeFacets = async (facets: string[], filters: Filters): Promise<Facets> => {
+  const { data } = await API.get('maas/datacubes/facets', {
+    params: {
+      facets: JSON.stringify(facets),
+      filters: filters,
+    },
+  });
   return data;
 };
 
@@ -60,6 +93,17 @@ export const getDatacubeById = async (datacubeId: string) => {
   fu.setClause(filters, 'id', [datacubeId], 'or', false);
   const cubes = await getDatacubes(filters);
   return cubes && cubes.length > 0 && cubes[0];
+};
+
+/**
+ * Get  datacubes by ids
+ * @param {string[]} datacubeIds
+ */
+export const getDatacubesByIds = async (datacubeIds: string[]) => {
+  const filters = fu.newFilters();
+  fu.setClause(filters, 'id', datacubeIds, 'or', false);
+  const cubes = await getDatacubes(filters);
+  return cubes;
 };
 
 /**
@@ -305,17 +349,19 @@ export const getDatacubeMetadataToCache = (datacube: Datacube): CachedDatacubeMe
   };
 };
 
-export const getDefaultDataConfig = async (datacubeId: string) => {
-  const metadata: Datacube = await getDatacubeById(datacubeId);
+export const getDefaultDataConfig = async (dataId: string, outputVariable: string) => {
+  const metadata = await getDatacubeByDataId(dataId);
   const config: DataConfig = {
-    datasetId: metadata.data_id,
+    datasetId: dataId,
     runId: 'indicator',
-    outputVariable: metadata.default_feature,
+    outputVariable,
     selectedTimestamp: 0,
-    spatialAggregation: metadata.default_view?.spatialAggregation || AggregationOption.Mean,
-    temporalAggregation: metadata.default_view?.temporalAggregation || AggregationOption.Mean,
-    temporalResolution: metadata.default_view?.temporalResolution || TemporalResolutionOption.Month,
+    spatialAggregation: metadata?.default_view?.spatialAggregation || AggregationOption.Mean,
+    temporalAggregation: metadata?.default_view?.temporalAggregation || AggregationOption.Mean,
+    temporalResolution:
+      metadata?.default_view?.temporalResolution || TemporalResolutionOption.Month,
   };
+  // Fetch timeseries to find the true last point we have data for. `period.lte` is unreliable.
   const { data } = await getTimeseries({
     modelId: config.datasetId,
     outputVariable: config.outputVariable,
@@ -331,6 +377,7 @@ export const getDefaultDataConfig = async (datacubeId: string) => {
 export default {
   updateDatacube,
   getDatacubes,
+  getDatacubeByDataId,
   getDatacubeById,
   getDatacubesCount,
   getDatacubeFacets,

@@ -19,7 +19,6 @@ import SearchBar from '@/components/data-explorer/search-bar.vue';
 import SearchListview from '@/components/data-explorer/search-listview.vue';
 import { defineComponent, PropType } from 'vue';
 import { Datacube } from '@/types/Datacube';
-import { AnalysisItem } from '@/types/Analysis';
 
 export default defineComponent({
   name: 'Search',
@@ -41,7 +40,7 @@ export default defineComponent({
       default: false,
     },
     selectedSearchItems: {
-      type: Array as PropType<AnalysisItem[]>,
+      type: Array as PropType<{ id: string /** datacube id */ }[]>,
       required: true,
     },
   },

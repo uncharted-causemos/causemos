@@ -6,7 +6,7 @@ import {
   getGridRowCount,
   offsetGridCells,
 } from '@/utils/grid-cell-util';
-import { createNewOutputIndex } from '@/utils/indextree-util';
+import { createNewOutputIndex } from '@/utils/index-tree-util';
 import { expect } from 'chai';
 
 const newTestTree = (): OutputIndex => ({
@@ -42,7 +42,6 @@ const newTestTree = (): OutputIndex => ({
           weight: 80,
           isWeightUserSpecified: true,
           datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-          datasetMetadataDocId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
           datasetName: 'Poverty indicator index',
           selectedTimestamp: 0,
           isInverted: false,
@@ -67,7 +66,6 @@ const newTestTree = (): OutputIndex => ({
               weight: 80,
               isWeightUserSpecified: true,
               datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-              datasetMetadataDocId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
               datasetName: 'Malnutrition rates dataset',
               selectedTimestamp: 0,
               isInverted: false,
@@ -85,7 +83,6 @@ const newTestTree = (): OutputIndex => ({
               weight: 20,
               isWeightUserSpecified: true,
               datasetId: 'dd7f69937-060d-44e8-8a04-22070ce35b27',
-              datasetMetadataDocId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
               datasetName: 'Life expectancy by country',
               selectedTimestamp: 0,
               isInverted: false,

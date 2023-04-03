@@ -61,4 +61,6 @@ export interface IndexAnalysisState {
   index: OutputIndex;
   /** Temporary index nodes or sub trees that are being edited and detached from the main index tree */
   workBench: IndexWorkBenchItem[];
+  /** Index results page settings */
+  resultsSettings: IndexResultsSettings;
 }

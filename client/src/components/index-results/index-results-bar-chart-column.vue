@@ -2,16 +2,22 @@
   <div class="index-results-bar-chart-column-container flex-col">
     <header class="flex-col">
       <div class="flex">
-        <h5>
-          Countries ranked by <strong>{{ 'Overall Priority' }}</strong>
-        </h5>
-        <button class="btn btn-sm" @click="emit('toggle-is-showing-key-datasets')">
+        <button
+          class="btn btn-sm toggle-key-datasets-button"
+          @click="emit('toggle-is-showing-key-datasets')"
+        >
           {{ isShowingKeyDatasets ? 'Hide' : 'Show' }} key datasets for each country
         </button>
       </div>
-      <div v-if="isShowingKeyDatasets" class="table-header">
-        <p class="index-result-table-output-value-column" />
-        <div class="key-datasets-labels index-result-table-key-datasets-column">
+      <div class="table-header">
+        <div class="index-result-table-output-value-column flex">
+          <p class="index-result-table-dataset-country-column">Country</p>
+          <p v-if="!isShowingKeyDatasets">{{ props.selectedNodeName }}</p>
+        </div>
+        <div
+          v-if="isShowingKeyDatasets"
+          class="key-datasets-labels index-result-table-key-datasets-column"
+        >
           <p class="index-result-table-dataset-name-column">Key datasets</p>
           <p class="index-result-table-dataset-weight-column">Dataset weight</p>
           <p class="index-result-table-dataset-value-column">Country's value</p>
@@ -20,10 +26,11 @@
     </header>
     <div class="flex-col results-rows">
       <IndexResultsBarChartRow
-        v-for="(country, index) of indexResultsData"
+        v-for="(data, index) of indexResultsData"
         :key="index"
         :rank="index + 1"
-        :row-data="country"
+        :row-data="data"
+        :color="colorConfig.scaleFn(data.value || 0)"
         :is-expanded="isShowingKeyDatasets"
       />
     </div>
@@ -31,17 +38,25 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import IndexResultsBarChartRow from '@/components/index-results/index-results-bar-chart-row.vue';
-import { IndexResultsData } from '@/types/Index';
+import { IndexResultsData, IndexResultsSettings } from '@/types/Index';
+import { getIndexResultsColorConfig } from '@/utils/index-results-util';
 
-defineProps<{
+const props = defineProps<{
   isShowingKeyDatasets: boolean;
   indexResultsData: IndexResultsData[];
+  indexResultsSettings: IndexResultsSettings;
+  selectedNodeName: string;
 }>();
 
 const emit = defineEmits<{
   (e: 'toggle-is-showing-key-datasets'): void;
 }>();
+
+const colorConfig = computed(() =>
+  getIndexResultsColorConfig(props.indexResultsData, props.indexResultsSettings)
+);
 </script>
 
 <style lang="scss" scoped>
@@ -52,6 +67,10 @@ const emit = defineEmits<{
   border-right: 1px solid $un-color-black-10;
   gap: 20px;
   padding: 20px;
+}
+
+.toggle-key-datasets-button {
+  width: 100%;
 }
 
 header {
@@ -68,9 +87,10 @@ header {
 .table-header {
   display: flex;
   gap: $index-result-table-column-gap;
+  border-bottom: 1px solid $un-color-black-10;
+  color: $un-color-black-40;
   .key-datasets-labels {
     display: flex;
-    border-bottom: 1px solid $un-color-black-10;
     gap: $index-result-table-key-datasets-column-gap;
     align-items: flex-end;
   }

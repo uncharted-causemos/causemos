@@ -1,6 +1,7 @@
 import numberFormatter from '@/formatters/number-formatter';
 import * as d3 from 'd3';
 import { RuntimeStage } from '@/types/Common';
+import _ from 'lodash';
 
 const cleanTextFragment = (text: string) => {
   return (
@@ -138,6 +139,8 @@ export const convertStringToBoolean = (input: string) => {
   }
   throw new Error(`Unable to convert string "${input}" to boolean.`);
 };
+
+export const capitalizeEachWord = (input: string) => _.words(input).map(_.capitalize).join(' ');
 
 export default {
   cleanTextFragment,

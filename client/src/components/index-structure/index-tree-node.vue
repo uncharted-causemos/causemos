@@ -6,13 +6,12 @@
       <i class="fa fa-fw un-font-small" :class="[getIndexNodeTypeIcon(props.nodeData.type)]" />
       <span class="un-font-small">
         {{ headerText }}
+        <InvertedDatasetLabel
+          v-if="isDatasetNode(props.nodeData) && props.nodeData.isInverted"
+          class="inverted-label"
+        />
       </span>
-      <OptionsButton
-        v-if="props.nodeData.type !== IndexNodeType.OutputIndex"
-        :dropdown-below="true"
-        :wider-dropdown-options="true"
-        @click.stop=""
-      >
+      <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
         <template #content>
           <div
             v-for="item in optionsButtonMenu"
@@ -26,22 +25,18 @@
         </template>
       </OptionsButton>
     </div>
-    <div v-if="showDatasetSearch">
-      <div class="search-bar-container flex content">
-        <input
-          class="form-control"
-          type="text"
-          v-model="datasetSearchText"
-          placeholder="Search for a dataset"
-        />
-        <button class="btn btn-default" @click="cancelDatasetSearch">Cancel</button>
-      </div>
-      <IndexTreeNodeSearchResults
-        :searchText="datasetSearchText"
-        @keep-as-placeholder="keepAsPlaceholder"
+    <template v-if="showDatasetSearch">
+      <IndexTreeNodeSearchBar
+        :initial-search-text="props.nodeData.name"
         @select-dataset="attachDataset"
+        @keep-as-placeholder="keepAsPlaceholder"
+        @cancel="cancelDatasetSearch"
       />
-    </div>
+      <IndexTreeNodeAdvancedSearchButton
+        class="advanced-search-button"
+        :node-id="props.nodeData.id"
+      />
+    </template>
     <div v-else-if="showEditName" class="rename content flex">
       <input
         v-focus
@@ -49,7 +44,8 @@
         type="text"
         :placeholder="renameInputTextPlaceholder"
         v-model="renameInputText"
-        v-on:keyup.enter="handleRenameDone"
+        @keyup.escape="cancelRename"
+        @keyup.enter="handleRenameDone"
       />
       <button
         class="btn btn-default"
@@ -97,10 +93,12 @@ import {
   isDatasetNode,
   isParentNode,
   isPlaceholderNode,
-} from '@/utils/indextree-util';
+} from '@/utils/index-tree-util';
 import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
-import IndexTreeNodeSearchResults from '@/components/index-structure/index-tree-node-search-results.vue';
+import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
+import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
+import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
 
 const addInputDropdownOptions = [IndexNodeType.Index, IndexNodeType.Dataset];
 
@@ -108,6 +106,7 @@ export enum OptionButtonMenu {
   Rename = 'Rename',
   Duplicate = 'Duplicate',
   Delete = 'Delete',
+  DeleteEdge = 'DeleteEdge',
 }
 </script>
 <script setup lang="ts">
@@ -159,6 +158,14 @@ const renameInputTextPlaceholder = computed(() => {
   return isDatasetNode(props.nodeData) ? props.nodeData.datasetName : '';
 });
 
+const cancelRename = () => {
+  if (props.nodeData.name === '') {
+    // the "create index node" flow has never been completed, so delete node.
+    emit('delete', props.nodeData);
+  } else {
+    isRenaming.value = false;
+  }
+};
 const handleRenameDone = () => {
   if (
     // Can't exit the flow with an empty rename bar unless this is a dataset node
@@ -195,25 +202,32 @@ const headerText = computed(() => {
 
 // Options button
 
+const MENU_OPTION_RENAME = {
+  type: OptionButtonMenu.Rename,
+  text: 'Rename',
+  icon: 'fa-pencil',
+};
+
+const MENU_OPTION_DUPLICATE = {
+  type: OptionButtonMenu.Duplicate,
+  text: 'Duplicate',
+  icon: 'fa-copy',
+};
+
+const MENU_OPTION_DELETE = {
+  type: OptionButtonMenu.Delete,
+  text: 'Delete',
+  icon: 'fa-trash',
+};
+
 const optionsButtonMenu = computed(() => {
-  const menu = [
-    {
-      type: OptionButtonMenu.Rename,
-      text: 'Rename',
-      icon: 'fa-pencil',
-    },
-    {
-      type: OptionButtonMenu.Duplicate,
-      text: 'Duplicate',
-      icon: 'fa-copy',
-    },
-    {
-      type: OptionButtonMenu.Delete,
-      text: 'Delete',
-      icon: 'fa-trash',
-    },
-  ];
-  return showEditName.value ? [menu[2]] : menu;
+  if (props.nodeData.type === IndexNodeType.OutputIndex) {
+    return [MENU_OPTION_RENAME];
+  }
+  if (showEditName.value) {
+    return [MENU_OPTION_DELETE];
+  }
+  return [MENU_OPTION_RENAME, MENU_OPTION_DUPLICATE, MENU_OPTION_DELETE];
 });
 
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
@@ -235,26 +249,26 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
 
 // Dataset search
 
+const disableInteraction = ref(false);
+const isSearchingForDataset = ref(false);
+
 const showDatasetSearch = computed(
   () =>
     isPlaceholderNode(props.nodeData) &&
     // props.nodeData.name === '' means that the "create dataset node" flow has never been completed.
     (isSearchingForDataset.value === true || props.nodeData.name === '')
 );
-const disableInteraction = ref(false);
-const isSearchingForDataset = ref(false);
-const datasetSearchText = ref('');
+
 const cancelDatasetSearch = () => {
   if (props.nodeData.name === '') {
     // the "create dataset node" flow has never been completed, so delete node.
     emit('delete', props.nodeData);
   } else {
-    datasetSearchText.value = '';
     isSearchingForDataset.value = false;
   }
 };
-const keepAsPlaceholder = () => {
-  emit('rename', props.nodeData.id, datasetSearchText.value);
+const keepAsPlaceholder = (value: string) => {
+  emit('rename', props.nodeData.id, value);
   isSearchingForDataset.value = false;
 };
 const attachDataset = (dataset: DatasetSearchResult) => {
@@ -290,6 +304,16 @@ const getDatasetFooterText = (data: Dataset) => {
 <style scoped lang="scss">
 @import '~styles/variables';
 @import '~styles/uncharted-design-tokens';
+@import '~styles/common';
+
+// The space between the edges of the node and the content within it.
+//  This would be applied to .index-tree-node-container directly, but some elements (namely the
+//  search results) need to expand to take the full width of the node.
+$horizontal-padding: 10px;
+// Standard padding that's applied to each element within the node by default
+$vertical-padding: 5px;
+
+$option-button-width: 16px;
 
 .index-tree-node-container {
   display: flex;
@@ -343,16 +367,6 @@ const getDatasetFooterText = (data: Dataset) => {
     background: white;
   }
 
-  .btn-default {
-    background: $un-color-black-5;
-    border: 1px solid $un-color-black-20;
-    box-shadow: 0px 1px 0px rgb(54 55 56 / 10%), inset 0px -8px 10px -8px rgb(54 55 56 / 10%);
-    border-radius: 3px;
-    font-size: $font-size-small;
-    font-weight: 600;
-    padding: 3px 8px;
-  }
-
   .input-arrow {
     position: absolute;
     top: 8px;
@@ -363,16 +377,20 @@ const getDatasetFooterText = (data: Dataset) => {
     border-left: 5px solid #b3b4b5;
   }
 
+  .inverted-label {
+    margin-left: 5px;
+  }
+
   .options-button-container {
-    width: 16px;
-    height: 16px;
+    width: $option-button-width;
+    height: $option-button-width;
     :deep(i) {
       font-size: 12px;
     }
     display: none;
     :deep(.dropdown-container) {
-      top: 16px;
-      right: 16px;
+      top: $option-button-width;
+      right: $option-button-width;
     }
   }
 
@@ -391,10 +409,10 @@ const getDatasetFooterText = (data: Dataset) => {
   }
 
   .content {
-    padding: 5px 10px;
+    padding: $vertical-padding $horizontal-padding;
   }
   .replace-dataset-button {
-    margin: 5px 10px;
+    margin: $vertical-padding $horizontal-padding;
   }
 
   .header {
@@ -403,7 +421,7 @@ const getDatasetFooterText = (data: Dataset) => {
     > i {
       display: grid;
       align-items: center;
-      margin-right: 5px;
+      margin-right: $horizontal-padding;
     }
 
     > span {
@@ -412,8 +430,7 @@ const getDatasetFooterText = (data: Dataset) => {
     }
   }
 
-  .rename,
-  .search-bar-container {
+  .rename {
     .form-control {
       height: 32px;
       padding: 8px 8px;
@@ -422,11 +439,9 @@ const getDatasetFooterText = (data: Dataset) => {
       width: 100%;
       max-width: 59px;
       margin-left: 5px;
+      color: white;
+      background-color: $call-to-action-color;
     }
-  }
-  .rename button {
-    color: white;
-    background-color: $call-to-action-color;
   }
 
   .name {
@@ -439,6 +454,9 @@ const getDatasetFooterText = (data: Dataset) => {
   }
   &.placeholder {
     border-style: dashed;
+  }
+  .advanced-search-button {
+    margin: 5px 0 10px 10px;
   }
 }
 </style>

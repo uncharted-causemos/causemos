@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
+import { DataTransform, IndexNodeType } from '@/types/Enums';
 import {
   IndexNode,
   Dataset,
@@ -8,13 +8,11 @@ import {
   OutputIndex,
   Placeholder,
   DatasetSearchResult,
-  IndexResultsData,
-  IndexResultsContributingDataset,
 } from '@/types/Index';
 import _ from 'lodash';
-import { RegionalAggregation } from '@/types/Outputdata';
 import { DataConfig } from '@/types/Datacube';
 import { getDefaultDataConfig } from '@/services/new-datacube-service';
+import { OutputSpec } from '@/types/Outputdata';
 
 export type FindNodeResult = { parent: ParentNode | null; found: IndexNode } | undefined;
 
@@ -92,44 +90,41 @@ export const createNewPlaceholderDataset = () => {
   return node;
 };
 
-export const createNewDatasetNode = (spec?: Partial<Dataset>) => {
-  const node: Dataset = {
-    id: uuidv4(),
-    type: IndexNodeType.Dataset,
-    name: '',
-    datasetId: '',
-    datasetMetadataDocId: '',
-    datasetName: '',
-    isInverted: false,
-    isWeightUserSpecified: false,
-    outputVariable: '',
-    runId: 'indicators',
-    selectedTimestamp: 0,
-    source: '',
-    weight: 0,
-    temporalResolution: TemporalResolutionOption.Month,
-    temporalAggregation: AggregationOption.Mean,
-    spatialAggregation: AggregationOption.Mean,
-    ...spec,
-  };
-  return node;
-};
-
 export const convertPlaceholderToDataset = (
   placeholder: Placeholder,
   dataset: DatasetSearchResult,
   initialWeight: number,
   config: DataConfig
 ) => {
-  const node = createNewDatasetNode({
+  const node: Dataset = {
+    // Set starting values for new dataset node
+    id: placeholder.id,
+    type: IndexNodeType.Dataset,
+    isInverted: false,
+    isWeightUserSpecified: false,
+    // Store values from the search result and pre-calculated starting weight
     name: placeholder.name === '' ? dataset.displayName : placeholder.name,
-    datasetMetadataDocId: dataset.datasetMetadataDocId,
     datasetName: dataset.displayName,
     source: dataset.familyName,
     weight: initialWeight,
+    // Store default data config
     ...config,
-  });
+  };
   return node;
+};
+
+export const convertDatasetToOutputSpec = (node: Dataset) => {
+  const outputSpec: OutputSpec = {
+    modelId: node.datasetId,
+    runId: node.runId,
+    outputVariable: node.outputVariable,
+    timestamp: node.selectedTimestamp,
+    transform: DataTransform.None,
+    temporalResolution: node.temporalResolution,
+    temporalAggregation: node.temporalAggregation,
+    spatialAggregation: node.spatialAggregation,
+  };
+  return outputSpec;
 };
 
 // Traverse the provided index node tree, find the parent node with the given parentId and add new node as a first child of the parent
@@ -322,115 +317,6 @@ export const calculateOverallWeight = (tree: IndexNode, targetNode: IndexNode) =
   return _search(tree, 100);
 };
 
-/**
- * Summarizes the countries that are found across multiple datasets.
- * Returns the summary as sets to quickly determine whether a given country is in either.
- * @param regionData a list of RegionalAggregation objects, one for each dataset.
- * @returns two sets representing the country names that are found in all or just some datasets.
- */
-export const calculateCoverage = (
-  regionData: RegionalAggregation[]
-): {
-  countriesInAllDatasets: Set<string>;
-  countriesInSomeDatasets: Set<string>;
-} => {
-  if (regionData.length === 0) {
-    return {
-      countriesInAllDatasets: new Set(),
-      countriesInSomeDatasets: new Set(),
-    };
-  }
-  // Pull out a list of just country names (no values) for each dataset
-  const countryLists = regionData.map(
-    (regionDataForOneDataset) => regionDataForOneDataset.country?.map(({ id }) => id) ?? []
-  );
-  // Identify countries found in all datasets and those found in only some
-  let countriesInAllDatasets = new Set(countryLists[0]);
-  const countriesInSomeDatasets = new Set(countryLists[0]);
-  countryLists.slice(1).forEach((countryList) => {
-    countryList.forEach((country) => {
-      // Add all countries to countriesInSomeDatasets
-      countriesInSomeDatasets.add(country);
-    });
-    // Remove all countries in countriesInAllDatasets that aren't found in this one
-    //  (take the intersection)
-    countriesInAllDatasets = new Set(
-      countryList.filter((country) => countriesInAllDatasets.has(country))
-    );
-  });
-  return {
-    countriesInAllDatasets,
-    countriesInSomeDatasets,
-  };
-};
-
-/**
- * Multiplies each dataset's overall weight by the value of the country in the dataset.
- * ASSUMES that the relevant data for dataset[i] can be found at overallWeightForEachDataset[i] and
- *  regionDataForEachDataset[i].
- * NOTE: does not sort or filter the results.
- * @param country the name string of the country that indicates which values to look for.
- * @param datasets All dataset nodes in the index.
- * @param overallWeightForEachDataset The overall weight for each node.
- * @param regionDataForEachDataset The regional data for each node.
- * @returns a list of IndexResultsContributingDataset objects.
- */
-export const calculateContributingDatasets = (
-  country: string,
-  datasets: Dataset[],
-  overallWeightForEachDataset: number[],
-  regionDataForEachDataset: RegionalAggregation[]
-): IndexResultsContributingDataset[] => {
-  return datasets.map((dataset, i) => {
-    const overallWeight = overallWeightForEachDataset[i];
-    const countriesWithValues = regionDataForEachDataset[i].country;
-    const datasetValue = countriesWithValues?.find((entry) => entry.id === country)?.value ?? null;
-    const weightedDatasetValue = datasetValue !== null ? datasetValue * overallWeight : null;
-    return {
-      overallWeight,
-      dataset,
-      datasetValue,
-      weightedDatasetValue,
-    };
-  });
-};
-
-/**
- * Calculates the overall value for each country by
- *  - multiplying each dataset's overall weight by the value of the country in the dataset
- *  - adding up all the products
- * While doing so, keeps track of
- *  - how much each dataset contributes to each country's overall value
- *  - whether each country is found in all datasets
- * ASSUMES that the relevant data for dataset[i] can be found at overallWeightForEachDataset[i] and
- *  regionDataForEachDataset[i].
- * NOTE: does not sort or filter the results.
- * @param datasetsWithOverallWeight All dataset nodes in the index.
- * @param overallWeightForEachDataset The overall weight for each node.
- * @param regionDataForEachDataset The regional data for each node.
- */
-export const calculateIndexResults = (
-  datasets: Dataset[],
-  overallWeightForEachDataset: number[],
-  regionDataForEachDataset: RegionalAggregation[]
-): IndexResultsData[] => {
-  const { countriesInSomeDatasets } = calculateCoverage(regionDataForEachDataset);
-  return [...countriesInSomeDatasets].map((country) => {
-    const contributingDatasets = calculateContributingDatasets(
-      country,
-      datasets,
-      overallWeightForEachDataset,
-      regionDataForEachDataset
-    );
-    const overallValue = _.sum(contributingDatasets.map((entry) => entry.weightedDatasetValue));
-    return {
-      countryName: country,
-      value: overallValue,
-      contributingDatasets,
-    };
-  });
-};
-
 /** ====== Operations on a node ====== */
 
 export const rename = (node: IndexNode, newName: string) => {
@@ -484,7 +370,7 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
       return;
     }
     const { found: placeholderNode, parent } = foundResult;
-    const dataConfig = await getDefaultDataConfig(dataset.datasetMetadataDocId);
+    const dataConfig = await getDefaultDataConfig(dataset.dataId, dataset.outputName);
     const datasetNode = convertPlaceholderToDataset(placeholderNode, dataset, 0, dataConfig);
     Object.assign(placeholderNode, datasetNode);
     // Parent should never be null unless we found a disconnected placeholder node.

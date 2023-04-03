@@ -11,7 +11,10 @@
         class="flex-grow w-0"
         @deselect-all="deselectAllElements"
         @select-element="selectElement"
+        @highlight-edge="highlightEdge"
+        @clear-highlight="clearHighlight"
         :selected-element-id="selectedElementId"
+        :highlight-edge-id="highlightEdgeId"
       />
       <IndexDrilldownPanel class="index-drilldown-panel" :selected-element-id="selectedElementId" />
     </div>
@@ -28,7 +31,7 @@ import IndexDrilldownPanel from '@/components/index-structure/index-drilldown-pa
 import IndexTreePane from '@/components/index-structure/index-tree-pane.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import { createNewIndex, createNewPlaceholderDataset } from '@/utils/indextree-util';
+import { createNewIndex, createNewPlaceholderDataset } from '@/utils/index-tree-util';
 import { SelectableIndexElementId } from '@/types/Index';
 
 const store = useStore();
@@ -42,11 +45,23 @@ const indexWorkBench = useIndexWorkBench();
 const isStateLoaded = ref(false);
 
 const selectedElementId = ref<SelectableIndexElementId | null>(null);
+const highlightEdgeId = ref<SelectableIndexElementId | null>(null);
+
 const selectElement = (id: SelectableIndexElementId) => {
+  deselectAllElements();
   selectedElementId.value = id;
 };
 const deselectAllElements = () => {
   selectedElementId.value = null;
+  highlightEdgeId.value = null;
+};
+
+const highlightEdge = (id: SelectableIndexElementId) => {
+  highlightEdgeId.value = id;
+};
+
+const clearHighlight = () => {
+  highlightEdgeId.value = null;
 };
 
 // Set analysis name on the navbar

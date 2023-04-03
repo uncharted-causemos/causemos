@@ -9,13 +9,11 @@ import {
   rebalanceInputWeights,
   createNewIndex,
   createNewPlaceholderDataset,
-  calculateCoverage,
   findAllDatasets,
   calculateOverallWeight,
-} from '@/utils/indextree-util';
+} from '@/utils/index-tree-util';
 import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
 import { OutputIndex, Index, Dataset, ParentNode } from '@/types/Index';
-import { RegionalAggregation } from '@/types/Outputdata';
 
 const newTestTree = (): OutputIndex => ({
   id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
@@ -50,7 +48,6 @@ const newTestTree = (): OutputIndex => ({
           weight: 80,
           isWeightUserSpecified: true,
           datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-          datasetMetadataDocId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
           datasetName: 'Poverty indicator index',
           selectedTimestamp: 0,
           isInverted: false,
@@ -75,7 +72,6 @@ const newTestTree = (): OutputIndex => ({
               weight: 80,
               isWeightUserSpecified: true,
               datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-              datasetMetadataDocId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
               datasetName: 'Malnutrition rates dataset',
               selectedTimestamp: 0,
               isInverted: false,
@@ -93,7 +89,6 @@ const newTestTree = (): OutputIndex => ({
               weight: 20,
               isWeightUserSpecified: true,
               datasetId: 'dd7f69937-060d-44e8-8a04-22070ce35b27',
-              datasetMetadataDocId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
               datasetName: 'Life expectancy by country',
               selectedTimestamp: 0,
               isInverted: false,
@@ -111,7 +106,7 @@ const newTestTree = (): OutputIndex => ({
   ],
 });
 
-describe('indextree-util', () => {
+describe('index-tree-util', () => {
   describe('findNode', () => {
     it('should find a root node', () => {
       const tree = newTestTree();
@@ -297,7 +292,6 @@ describe('indextree-util', () => {
             weight: 100,
             isWeightUserSpecified: true,
             datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-            datasetMetadataDocId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
             datasetName: 'Poverty indicator index',
             selectedTimestamp: 0,
             isInverted: false,
@@ -328,7 +322,6 @@ describe('indextree-util', () => {
       weight: 0,
       isWeightUserSpecified: false,
       datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-      datasetMetadataDocId: 'd7f69937-060d-44e8-8a04-22070ce35b27',
       datasetName: 'Poverty indicator index',
       selectedTimestamp: 0,
       isInverted: false,
@@ -432,65 +425,6 @@ describe('indextree-util', () => {
       const expectedWeight = ((tree.inputs[1] as Index).weight * targetNode.weight) / 100;
       const result = calculateOverallWeight(tree, targetNode);
       expect(result).to.equal(expectedWeight);
-    });
-  });
-
-  describe('calculateCoverage', () => {
-    const mockData: RegionalAggregation = {
-      country: [
-        { id: 'Country A', value: 0 },
-        { id: 'Country B', value: 0 },
-        { id: 'Country C', value: 0 },
-      ],
-    };
-    const disjointDataset: RegionalAggregation = {
-      country: [
-        { id: 'Country D', value: 0 },
-        { id: 'Country E', value: 0 },
-        { id: 'Country F', value: 0 },
-      ],
-    };
-    it('should return empty sets when passed an empty array', () => {
-      const { countriesInAllDatasets, countriesInSomeDatasets } = calculateCoverage([]);
-      expect(countriesInAllDatasets.size).to.equal(0);
-      expect(countriesInSomeDatasets.size).to.equal(0);
-    });
-    it('should return sets with all countries when passed an array with one item', () => {
-      const { countriesInAllDatasets, countriesInSomeDatasets } = calculateCoverage([mockData]);
-      const mockCountryList = mockData.country?.map(({ id }) => id) ?? [];
-      expect(countriesInAllDatasets).to.have.all.keys(...mockCountryList);
-      expect(countriesInSomeDatasets).to.have.all.keys(...mockCountryList);
-    });
-    describe('countriesInAllDatasets', () => {
-      it('should be an empty set when two datasets have no overlap', () => {
-        const { countriesInAllDatasets } = calculateCoverage([mockData, disjointDataset]);
-        expect(countriesInAllDatasets.size).to.equal(0);
-      });
-      it('should correctly return the intersection when two datasets have some overlap', () => {
-        const overlappingDataset: RegionalAggregation = {
-          country: [
-            { id: 'Country C', value: 0 },
-            { id: 'Country D', value: 0 },
-            { id: 'Country E', value: 0 },
-          ],
-        };
-        const { countriesInAllDatasets } = calculateCoverage([mockData, overlappingDataset]);
-        expect(countriesInAllDatasets).to.have.key('Country C');
-      });
-    });
-    describe('countriesInSomeDatasets', () => {
-      const { countriesInSomeDatasets } = calculateCoverage([mockData, disjointDataset]);
-      it('should have a size equal to the size of the union when passed two datasets', () => {
-        const expectedSize =
-          (mockData.country?.length ?? 0) + (disjointDataset.country?.length ?? 0);
-        expect(countriesInSomeDatasets.size).to.equal(expectedSize);
-      });
-      it('should contain all countries found in both input datasets', () => {
-        const mockCountryList = mockData.country?.map(({ id }) => id) ?? [];
-        expect(countriesInSomeDatasets).to.include.all.keys(...mockCountryList);
-        const disjointCountryList = mockData.country?.map(({ id }) => id) ?? [];
-        expect(countriesInSomeDatasets).to.include.all.keys(...disjointCountryList);
-      });
     });
   });
 });

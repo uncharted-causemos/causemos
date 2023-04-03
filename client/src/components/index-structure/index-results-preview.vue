@@ -1,7 +1,9 @@
 <template>
   <div class="index-results-preview-container">
     <h4>Index results</h4>
-    <button :disabled="!canViewResults" class="btn" @click="seeResults">See results</button>
+    <button :disabled="!canViewResults" class="btn btn-call-to-action" @click="seeResults">
+      See results
+    </button>
     <p v-if="!canViewResults" class="de-emphasized">
       There are no datasets with a path to this index.
     </p>
@@ -13,7 +15,7 @@ import { computed } from 'vue';
 import router from '@/router';
 import { useStore } from 'vuex';
 import { ProjectType } from '@/types/Enums';
-import { indexNodeTreeContainsDataset } from '@/utils/indextree-util';
+import { indexNodeTreeContainsDataset } from '@/utils/index-tree-util';
 import useIndexTree from '@/services/composables/useIndexTree';
 
 const props = defineProps<{

@@ -1,5 +1,5 @@
 <template>
-  <div class="index-tree-pane-container" @click.self="emit('deselect-all')">
+  <div ref="tree-container" class="index-tree-pane-container" @click.self="clearAll">
     <div
       v-for="cell in gridCells"
       :key="cell.node.id"
@@ -9,10 +9,26 @@
       }"
       class="grid-cell"
     >
-      <div class="edge incoming" :class="{ visible: hasChildren(cell.node) }"></div>
+      <div
+        class="edge incoming"
+        :class="{
+          visible: hasChildren(cell.node),
+          inactive: !hasChildren(cell.node),
+          [EDGE_CLASS.SELECTED]: isIncomingSelected(cell.node.id),
+          [EDGE_CLASS.HIGHLIGHTED]:
+            isIncomingHighlighted(cell.node.id) && !isIncomingSelected(cell.node.id),
+        }"
+        @mouseenter="
+          emit('highlight-edge', { sourceId: cell.node.inputs[0].id, targetId: cell.node.id })
+        "
+        @mouseleave="highlightClear"
+        @click="
+          () => emit('select-element', { sourceId: cell.node.inputs[0].id, targetId: cell.node.id })
+        "
+      ></div>
       <IndexTreeNode
         :node-data="cell.node"
-        :is-selected="cell.node.id === props.selectedElementId"
+        :is-selected="isSelected(cell.node.id)"
         class="index-tree-node"
         @rename="renameNode"
         @delete="deleteNode"
@@ -20,14 +36,29 @@
         @select="(id) => emit('select-element', id)"
         @create-child="createChild"
         @attach-dataset="attachDatasetToPlaceholder"
+        @mouseenter="highlightClear"
       />
       <div
         class="edge outgoing"
         :class="{
           visible: cell.hasOutputLine,
+          inactive: !cell.hasOutputLine,
           dashed: cell.node.type === IndexNodeType.Placeholder,
           'last-child': cell.isLastChild,
+          [EDGE_CLASS.SELECTED]: isOutgoingSelected(cell.node.id),
+          [EDGE_CLASS.SELECTED_Y]: isOutgoingYSelected(cell.node.id),
+          [EDGE_CLASS.HIGHLIGHTED]:
+            isOutgoingHighlighted(cell.node.id) && !isOutgoingSelected(cell.node.id),
+          [EDGE_CLASS.HIGHLIGHTED_Y]:
+            isOutgoingYHighlighted(cell.node.id) && !isOutgoingYSelected(cell.node.id),
         }"
+        @mouseenter="
+          () => emit('highlight-edge', { sourceId: cell.node.id, targetId: parentId(cell.node.id) })
+        "
+        @mouseleave="highlightClear"
+        @click="
+          () => emit('select-element', { sourceId: cell.node.id, targetId: parentId(cell.node.id) })
+        "
       />
     </div>
   </div>
@@ -41,7 +72,7 @@ import { IndexNodeType } from '@/types/Enums';
 import { DatasetSearchResult, GridCell, IndexNode, SelectableIndexElementId } from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren } from '@/utils/indextree-util';
+import { hasChildren } from '@/utils/index-tree-util';
 import {
   offsetGridCells,
   getGridRowCount,
@@ -49,23 +80,105 @@ import {
   convertTreeToGridCells,
 } from '@/utils/grid-cell-util';
 
+const EDGE_CLASS = {
+  SELECTED: 'selected-edge',
+  SELECTED_Y: 'selected-y',
+  HIGHLIGHTED: 'highlighted',
+  HIGHLIGHTED_Y: 'highlighted-y',
+  OUTGOING: 'outgoing',
+  INCOMING: 'incoming',
+};
+
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
+  highlightEdgeId: SelectableIndexElementId | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
+  (e: 'highlight-edge', selectedElement: SelectableIndexElementId): void;
   (e: 'deselect-all'): void;
+  (e: 'clear-highlight'): void;
 }>();
 
-const workBench = useIndexWorkBench();
 const indexTree = useIndexTree();
+const { findNode } = indexTree;
+const workbench = useIndexWorkBench();
 
+const isOutgoingHighlighted = (id: string) => {
+  if (props.highlightEdgeId && typeof props.highlightEdgeId === 'object') {
+    return props.highlightEdgeId.sourceId === id;
+  }
+  return false;
+};
+
+const isHigherThanSibling = (id: string, edgeId: SelectableIndexElementId) => {
+  if (typeof edgeId === 'object') {
+    const sourceId = edgeId.sourceId;
+    if (sourceId === id) {
+      return false;
+    }
+    const targetNode = searchForNode(edgeId.sourceId);
+
+    if (
+      targetNode &&
+      targetNode.parent &&
+      (targetNode.parent.type === 'Index' || targetNode.parent.type === 'OutputIndex')
+    ) {
+      const allInputs = targetNode.parent.inputs;
+      const idIndex = allInputs.findIndex((item) => item.id === sourceId);
+      const selection = allInputs.slice(0, idIndex).map((item) => item.id);
+
+      return selection.includes(id);
+    }
+  }
+  return false;
+};
+const isOutgoingYHighlighted = (id: string) => {
+  if (props.highlightEdgeId) {
+    return isHigherThanSibling(id, props.highlightEdgeId);
+  }
+  return false;
+};
+const isOutgoingSelected = (id: string) => {
+  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    return props.selectedElementId.sourceId === id;
+  }
+  return false;
+};
+const isOutgoingYSelected = (id: string) => {
+  if (props.selectedElementId) {
+    return isHigherThanSibling(id, props.selectedElementId);
+  }
+  return false;
+};
+const isIncomingHighlighted = (id: string) => {
+  if (props.highlightEdgeId && typeof props.highlightEdgeId === 'object') {
+    return props.highlightEdgeId.targetId === id;
+  }
+  return false;
+};
+const isIncomingSelected = (id: string) => {
+  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    return props.selectedElementId.targetId === id;
+  }
+  return false;
+};
+const isSelected = (id: string) => {
+  if (props.selectedElementId === id) {
+    return true;
+  } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+    if (props.selectedElementId.sourceId === id || props.selectedElementId.targetId === id) {
+      return true;
+    }
+  }
+  return false;
+};
 // A list of grid cells with enough information to render with CSS-grid.
 //  Represents a combination of all workbench trees and the main index tree.
 const gridCells = computed<GridCell[]>(() => {
   // Convert each workbench tree to grid cells.
-  const overlappingWorkbenchTreeCellLists = workBench.items.value.map(convertTreeToGridCells);
+  const overlappingWorkbenchTreeCellLists = workbench.items.value.map(convertTreeToGridCells);
   // Move each grid down so that they're not overlapping
   let currentRow = 0;
   const workbenchTreeCellLists: GridCell[][] = [];
@@ -91,37 +204,59 @@ const gridCells = computed<GridCell[]>(() => {
 });
 
 const renameNode = (nodeId: string, newName: string) => {
-  workBench.findAndRenameNode(nodeId, newName);
+  workbench.findAndRenameNode(nodeId, newName);
   indexTree.findAndRenameNode(nodeId, newName);
 };
 
 const deleteNode = (deleteNode: IndexNode) => {
   // Find from both places and delete the node.
-  workBench.findAndDeleteItem(deleteNode.id);
+  workbench.findAndDeleteItem(deleteNode.id);
   indexTree.findAndDelete(deleteNode.id);
 };
 
 const duplicateNode = (duplicated: IndexNode) => {
   if (duplicated.type === IndexNodeType.OutputIndex) return;
-  workBench.addItem(duplicated);
+  workbench.addItem(duplicated);
 };
 
 const createChild = (
   parentNodeId: string,
   childType: IndexNodeType.Index | IndexNodeType.Dataset
 ) => {
-  workBench.findAndAddChild(parentNodeId, childType);
+  workbench.findAndAddChild(parentNodeId, childType);
   indexTree.findAndAddChild(parentNodeId, childType);
 };
 
 const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult) => {
-  workBench.attachDatasetToPlaceholder(nodeId, dataset);
+  workbench.attachDatasetToPlaceholder(nodeId, dataset);
   indexTree.attachDatasetToPlaceholder(nodeId, dataset);
+};
+
+const clearAll = () => {
+  emit('deselect-all');
+};
+
+const highlightClear = () => {
+  emit('clear-highlight');
+};
+
+const parentId = (id: string): string | null => {
+  const found = searchForNode(id);
+  if (found && found.parent) {
+    return found.parent.id;
+  }
+  return null;
+};
+
+const searchForNode = (id: string) => {
+  const foundInTree = findNode(id);
+  return foundInTree ?? workbench.findNode(id);
 };
 </script>
 
 <style scoped lang="scss">
 @import '~styles/uncharted-design-tokens';
+@import '~styles/variables';
 
 $space-between-columns: 40px;
 $space-between-rows: 10px;
@@ -130,6 +265,7 @@ $incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
 $outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-length);
 $edge-top-offset-from-node: 13px;
 $edge-styles: 2px solid $un-color-black-20;
+$edge-selected: $accent-main;
 
 .index-tree-pane-container {
   // The farthest left column will never have incoming edges, so it will have an empty space of
@@ -157,12 +293,22 @@ $edge-styles: 2px solid $un-color-black-20;
     pointer-events: auto;
 
     &.incoming {
+      max-height: 5px;
       min-width: $incoming-edge-minimum-length;
       // If one node in the column is wider than this one (e.g. placeholder in search mode), expand
       //  the incoming edge to stay connected to children, and push the node to stay right-aligned.
       flex: 1;
       &.visible {
         border-top: $edge-styles;
+        &.highlighted {
+          border-color: $accent-light;
+        }
+        &.selected-edge {
+          border-color: $edge-selected;
+        }
+      }
+      &.inactive {
+        pointer-events: none;
       }
     }
 
@@ -173,9 +319,36 @@ $edge-styles: 2px solid $un-color-black-20;
         // Extend edge down to the sibling below this one
         height: calc(100% + #{$space-between-rows});
         border-right: $edge-styles;
+        &.highlighted {
+          border-top-color: $accent-light;
+        }
+        &.highlighted-y {
+          border-right-color: $accent-light;
+        }
+        &.selected-edge {
+          border-top-color: $edge-selected;
+        }
+        &.selected-y {
+          border-right-color: $edge-selected;
+        }
+      }
+      &.inactive {
+        pointer-events: none;
       }
       &.dashed {
         border-top-style: dashed;
+        &.highlighted {
+          border-top-color: $accent-light;
+        }
+        &.highlighted-y {
+          border-right-color: $accent-light;
+        }
+        &.selected-edge {
+          border-top-color: $edge-selected;
+        }
+        &.selected-y {
+          border-right-color: $edge-selected;
+        }
       }
       &.last-child {
         border-right: none;
