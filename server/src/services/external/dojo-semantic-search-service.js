@@ -1,6 +1,7 @@
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const authUtil = rootRequire('/util/auth-util');
 
+const DOJO_DOC_PARAGRAPH_LIMIT = 500;
 const DOJO_PARAGRAPHS_URL = process.env.DOJO_URL + '/paragraphs';
 const DOJO_PARAGRAPHS_SEARCH_URL = process.env.DOJO_URL + '/paragraphs/search';
 const DOJO_FEATURES_SEARCH_URL = process.env.DOJO_URL + '/features/search';
@@ -11,6 +12,21 @@ const getDocument = async (docId) => {
   const requestOptions = {
     method: 'GET',
     url: `${DOJO_DOCUMENT_URL}/${docId}`,
+    json: {},
+    headers: {
+      'Content-type': 'application/json',
+      Accept: 'application/json',
+      Authorization: DOJO_AUTH,
+    },
+  };
+  const response = await requestAsPromise(requestOptions);
+  return response;
+};
+
+const getDocumentParagraphs = async (docId) => {
+  const requestOptions = {
+    method: 'GET',
+    url: `${DOJO_DOCUMENT_URL}/${docId}/paragraphs?size=${DOJO_DOC_PARAGRAPH_LIMIT}`,
     json: {},
     headers: {
       'Content-type': 'application/json',
@@ -80,6 +96,7 @@ const searchFeatures = async (searchString) => {
 
 module.exports = {
   getDocument,
+  getDocumentParagraphs,
   getParagraphs,
   searchParagraphs,
   searchFeatures,
