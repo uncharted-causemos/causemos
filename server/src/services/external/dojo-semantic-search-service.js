@@ -19,8 +19,7 @@ const getDocument = async (docId) => {
       Authorization: DOJO_AUTH,
     },
   };
-  const response = await requestAsPromise(requestOptions);
-  return response;
+  return await requestAsPromise(requestOptions);
 };
 
 const getDocumentParagraphs = async (docId) => {
@@ -34,8 +33,7 @@ const getDocumentParagraphs = async (docId) => {
       Authorization: DOJO_AUTH,
     },
   };
-  const response = await requestAsPromise(requestOptions);
-  return response;
+  return await requestAsPromise(requestOptions);
 };
 
 const getParagraphs = async () => {
@@ -49,8 +47,7 @@ const getParagraphs = async () => {
       Authorization: DOJO_AUTH,
     },
   };
-  const response = await requestAsPromise(requestOptions);
-  return response;
+  return await requestAsPromise(requestOptions);
 };
 
 const searchParagraphs = async (searchString, scrollId = '', size = 10) => {
@@ -70,8 +67,7 @@ const searchParagraphs = async (searchString, scrollId = '', size = 10) => {
     },
   };
 
-  const response = await requestAsPromise(requestOptions);
-  return response;
+  return await requestAsPromise(requestOptions);
 };
 
 const searchFeatures = async (searchString) => {
@@ -90,8 +86,7 @@ const searchFeatures = async (searchString) => {
     },
   };
 
-  const response = await requestAsPromise(requestOptions);
-  return response;
+  return await requestAsPromise(requestOptions);
 };
 
 module.exports = {
