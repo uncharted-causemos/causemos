@@ -26,7 +26,7 @@
                 class="btn btn-sm"
                 @click="
                   () => {
-                    documentData = { doc_id: snippet.documentId };
+                    expandedDocumentId = snippet.documentId;
                     textFragment = snippet.text;
                   }
                 "
@@ -40,16 +40,16 @@
     </section>
   </div>
   <modal-document
-    v-if="!!documentData"
+    v-if="!!expandedDocumentId"
     :disable-edit="true"
-    :document-id="documentData.doc_id"
+    :document-id="expandedDocumentId"
     :text-fragment="textFragment"
     :retrieve-document-meta="getDocument"
     :retrieve-document="getDocumentParagraphs"
     :content-handler="
       (data) => data?.paragraphs?.reduce((bodyText, p) => `${bodyText}<p>${p.text}</p>`, '')
     "
-    @close="documentData = null"
+    @close="expandedDocumentId = null"
   />
 </template>
 
@@ -73,7 +73,7 @@ const props = defineProps<{
   selectedNodeName: string;
 }>();
 const { selectedNodeName } = toRefs(props);
-const documentData = ref<object | null>(null);
+const expandedDocumentId = ref<string | null>(null);
 const textFragment = ref<string | null>(null);
 
 const SNIPPETS_LOADING = 'Loading snippets...';
