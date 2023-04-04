@@ -67,7 +67,14 @@ watch(
     snippetsForSelectedNode.value = null;
     // Save a copy of the node name to watch for race conditions later
     const fetchingSnippetsFor = selectedNodeName.value;
-    const queryResults: ParagraphSearchResponse = await searchParagraphs(props.selectedNodeName);
+
+    // ensure search string includes source and target name data.
+    const searchString =
+      props.selectedUpstreamNodeName != null
+        ? `${props.selectedNodeName} and ${props.selectedUpstreamNodeName}`
+        : props.selectedNodeName;
+
+    const queryResults: ParagraphSearchResponse = await searchParagraphs(searchString);
     if (fetchingSnippetsFor !== selectedNodeName.value) {
       // SelectedNodeName has changed since the results returned, so throw away the results to avoid
       //  a race condition.
@@ -81,7 +88,7 @@ watch(
     const metadataResults = await Promise.all(metadataRequests);
 
     const paragraphHighlights: DojoParagraphHighlights | null = await getHighlights({
-      query: props.selectedNodeName,
+      query: searchString,
       matches: queryResults.results.map((item) => item.text),
     });
 
