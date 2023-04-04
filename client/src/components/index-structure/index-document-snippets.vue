@@ -4,7 +4,11 @@
       <h4>Document snippets</h4>
     </header>
     <section>
-      <h5>
+      <h5 v-if="selectedUpstreamNodeName != null">
+        Snippets related to <strong>{{ props.selectedNodeName }}</strong> and
+        <strong>{{ props.selectedUpstreamNodeName }}</strong>
+      </h5>
+      <h5 v-else>
         Snippets related to <strong>{{ props.selectedNodeName }}</strong>
       </h5>
       <div v-if="snippetsForSelectedNode === null" class="loading-indicator">
@@ -44,8 +48,9 @@ import { toRefs, watch, ref } from 'vue';
 
 const props = defineProps<{
   selectedNodeName: string;
+  selectedUpstreamNodeName?: string | null;
 }>();
-const { selectedNodeName } = toRefs(props);
+const { selectedNodeName, selectedUpstreamNodeName } = toRefs(props);
 const SNIPPETS_LOADING = 'Loading snippets...';
 const NO_TITLE = 'Title not available';
 const NO_AUTHOR = 'Author not available';
