@@ -57,7 +57,10 @@
         </div>
       </div>
       <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="panelTitleChild"
+      />
     </template>
 
     <template v-if="!edgeSelected && type === IndexNodeType.OutputIndex">
@@ -89,7 +92,10 @@
       </header>
       <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
       <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="panelTitleChild"
+      />
     </template>
 
     <template v-if="!edgeSelected && type === IndexNodeType.Index">
@@ -135,7 +141,10 @@
         </div>
       </header>
       <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="panelTitleChild"
+      />
     </template>
 
     <template v-if="!edgeSelected && type === IndexNodeType.Dataset">
@@ -197,7 +206,10 @@
           @toggle-inverted="() => toggleDatasetIsInverted(selectedNode.id)"
         />
       </section>
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="panelTitleChild"
+      />
     </template>
 
     <template v-if="!edgeSelected && type === IndexEdgeType.Edge">
@@ -213,7 +225,10 @@
         </div>
       </header>
       <IndexComponentWeights />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="panelTitleChild"
+      />
     </template>
   </div>
 </template>
@@ -383,6 +398,13 @@ const type = computed<IndexElementType | null>(() => {
 
 const panelTitle = computed(() => {
   return selectedNode?.value?.name ?? '';
+});
+
+const panelTitleChild = computed(() => {
+  if (selectedEdgeComponents.value) {
+    return selectedEdgeComponents.value.source.name;
+  }
+  return null;
 });
 
 const datasetMetadata = useModelMetadataSimple(selectedDatasetDataId);
