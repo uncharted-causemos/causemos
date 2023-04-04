@@ -22,7 +22,6 @@
                 <p>{{ snippet.documentTitle }}</p>
                 <p>{{ snippet.documentAuthor }}, {{ snippet.documentSource }}</p>
               </div>
-              <!-- TODO: open document -->
               <button
                 class="btn btn-sm"
                 @click="
