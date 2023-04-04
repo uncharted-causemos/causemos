@@ -188,18 +188,22 @@ export default {
       default: null,
     },
     disableEdit: {
+      // if custom document then we may not provide editing capability
       type: Boolean,
       default: false,
     },
     retrieveDocumentMeta: {
+      // if custom handler, document metadata must be collected separately.  Function is provided.
       type: Function,
       default: null,
     },
     retrieveDocument: {
+      // original function (getDocument) is retained as default.  User may provide custom function if required.
       type: Function,
       default: getDocument,
     },
     contentHandler: {
+      // custom document retrieval will have a different data structure, provide the handler to create body text
       type: Function,
       default: null,
     },
