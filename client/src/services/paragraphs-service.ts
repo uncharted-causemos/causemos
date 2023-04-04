@@ -28,7 +28,15 @@ export const getHighlights = async (details: DojoParagraphDetails) => {
   return result.data;
 };
 
+export const getDocumentParagraphs = async (docId: string) => {
+  if (docId) {
+    const result = await API.get(`${GET_DOC_PATH}/${docId}/paragraphs`);
+    return result.data;
+  }
+};
+
 export default {
   searchParagraphs,
   getDocument,
+  getDocumentParagraphs,
 };

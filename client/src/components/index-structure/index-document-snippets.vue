@@ -26,18 +26,44 @@
                 <p>{{ snippet.documentTitle }}</p>
                 <p>{{ snippet.documentAuthor }}, {{ snippet.documentSource }}</p>
               </div>
-              <!-- TODO: open document -->
-              <button class="btn btn-sm" disabled>View in context</button>
+              <button
+                class="btn btn-sm"
+                @click="
+                  () => {
+                    expandedDocumentId = snippet.documentId;
+                    textFragment = snippet.text;
+                  }
+                "
+              >
+                View in context
+              </button>
             </div>
           </div>
         </div>
       </div>
     </section>
   </div>
+  <modal-document
+    v-if="!!expandedDocumentId"
+    :disable-edit="true"
+    :document-id="expandedDocumentId"
+    :text-fragment="textFragment"
+    :retrieve-document-meta="getDocument"
+    :retrieve-document="getDocumentParagraphs"
+    :content-handler="
+      (data) => data?.paragraphs?.reduce((bodyText, p) => `${bodyText}<p>${p.text}</p>`, '')
+    "
+    @close="expandedDocumentId = null"
+  />
 </template>
 
 <script setup lang="ts">
-import { searchParagraphs, getDocument, getHighlights } from '@/services/paragraphs-service';
+import {
+  searchParagraphs,
+  getDocument,
+  getDocumentParagraphs,
+  getHighlights,
+} from '@/services/paragraphs-service';
 import {
   Snippet,
   ParagraphSearchResponse,
@@ -45,12 +71,16 @@ import {
   DojoParagraphHighlights,
 } from '@/types/IndexDocuments';
 import { toRefs, watch, ref } from 'vue';
+import ModalDocument from '@/components/modals/modal-document.vue';
 
 const props = defineProps<{
   selectedNodeName: string;
   selectedUpstreamNodeName?: string | null;
 }>();
 const { selectedNodeName, selectedUpstreamNodeName } = toRefs(props);
+const expandedDocumentId = ref<string | null>(null);
+const textFragment = ref<string | null>(null);
+
 const SNIPPETS_LOADING = 'Loading snippets...';
 const NO_TITLE = 'Title not available';
 const NO_AUTHOR = 'Author not available';

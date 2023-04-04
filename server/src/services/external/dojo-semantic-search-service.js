@@ -1,6 +1,7 @@
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const authUtil = rootRequire('/util/auth-util');
 
+const DOJO_DOC_PARAGRAPH_LIMIT = 5000;
 const DOJO_PARAGRAPHS_HIGHLIGHT_URL = process.env.DOJO_URL + '/paragraphs/highlight';
 const DOJO_PARAGRAPHS_URL = process.env.DOJO_URL + '/paragraphs';
 const DOJO_PARAGRAPHS_SEARCH_URL = process.env.DOJO_URL + '/paragraphs/search';
@@ -19,8 +20,21 @@ const getDocument = async (docId) => {
       Authorization: DOJO_AUTH,
     },
   };
-  const response = await requestAsPromise(requestOptions);
-  return response;
+  return await requestAsPromise(requestOptions);
+};
+
+const getDocumentParagraphs = async (docId) => {
+  const requestOptions = {
+    method: 'GET',
+    url: `${DOJO_DOCUMENT_URL}/${docId}/paragraphs?size=${DOJO_DOC_PARAGRAPH_LIMIT}`,
+    json: {},
+    headers: {
+      'Content-type': 'application/json',
+      Accept: 'application/json',
+      Authorization: DOJO_AUTH,
+    },
+  };
+  return await requestAsPromise(requestOptions);
 };
 
 const getParagraphs = async () => {
@@ -34,8 +48,7 @@ const getParagraphs = async () => {
       Authorization: DOJO_AUTH,
     },
   };
-  const response = await requestAsPromise(requestOptions);
-  return response;
+  return await requestAsPromise(requestOptions);
 };
 
 const searchParagraphs = async (searchString, scrollId = '', size = 10) => {
@@ -55,8 +68,7 @@ const searchParagraphs = async (searchString, scrollId = '', size = 10) => {
     },
   };
 
-  const response = await requestAsPromise(requestOptions);
-  return response;
+  return await requestAsPromise(requestOptions);
 };
 
 const searchFeatures = async (searchString) => {
@@ -75,8 +87,7 @@ const searchFeatures = async (searchString) => {
     },
   };
 
-  const response = await requestAsPromise(requestOptions);
-  return response;
+  return await requestAsPromise(requestOptions);
 };
 
 const getHighlights = async (details) => {
@@ -96,6 +107,7 @@ const getHighlights = async (details) => {
 
 module.exports = {
   getDocument,
+  getDocumentParagraphs,
   getParagraphs,
   searchParagraphs,
   searchFeatures,
