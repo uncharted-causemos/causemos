@@ -3,11 +3,16 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const paragraphSearchService = rootRequire('/services/external/dojo-semantic-search-service');
 
+/* Keycloak Authentication */
+const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
+const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+
 /**
  * get highlights for semantic search
  */
 router.post(
   '/highlight',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const details = req.body;
 
@@ -26,6 +31,7 @@ router.post(
  */
 router.get(
   '/search',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const { searchString } = req.query;
     if (searchString) {
@@ -40,6 +46,7 @@ router.get(
 
 router.get(
   '/',
+  keycloak.enforcer([PERMISSIONS.USER]),
   asyncHandler(async (req, res) => {
     const result = await paragraphSearchService.getParagraphs();
     res.status(200);
