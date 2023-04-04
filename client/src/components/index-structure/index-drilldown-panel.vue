@@ -56,7 +56,7 @@
           </div>
         </div>
       </div>
-      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="panelTitleChild"
@@ -90,7 +90,7 @@
           <button class="btn btn-sm" @click="startRenaming">Rename</button>
         </div>
       </header>
-      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
       <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
@@ -140,7 +140,7 @@
           </div>
         </div>
       </header>
-      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="panelTitleChild"
@@ -224,7 +224,7 @@
           </button>
         </div>
       </header>
-      <IndexComponentWeights />
+      <IndexComponentWeights :target-name="nodeName" />
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="panelTitleChild"

@@ -255,8 +255,8 @@ const searchForNode = (id: string) => {
 </script>
 
 <style scoped lang="scss">
-@import '~styles/uncharted-design-tokens';
-@import '~styles/variables';
+@import '@/styles/uncharted-design-tokens';
+@import '@/styles/variables';
 
 $space-between-columns: 40px;
 $space-between-rows: 10px;
