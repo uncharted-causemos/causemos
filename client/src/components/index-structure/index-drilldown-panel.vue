@@ -1,6 +1,6 @@
 <template>
   <div class="index-drilldown-panel-container" :class="{ hidden: type === null }">
-    <template v-if="edgeSelected">
+    <template v-if="type === IndexEdgeType.Edge">
       <div>
         <div>
           <div
@@ -62,7 +62,7 @@
         :selected-upstream-node-name="selectedUpstreamNodeName"
       />
     </template>
-    <template v-if="!edgeSelected && type === IndexNodeType.OutputIndex">
+    <template v-if="type === IndexNodeType.OutputIndex">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -97,7 +97,7 @@
       />
     </template>
 
-    <template v-if="!edgeSelected && type === IndexNodeType.Index">
+    <template v-if="type === IndexNodeType.Index">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -146,7 +146,7 @@
       />
     </template>
 
-    <template v-if="!edgeSelected && type === IndexNodeType.Dataset">
+    <template v-if="type === IndexNodeType.Dataset">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -356,15 +356,6 @@ const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode }
     }
   }
   return null;
-});
-
-const edgeSelected = computed(() => {
-  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
-    if (props.selectedElementId.sourceId) {
-      return true;
-    }
-  }
-  return false;
 });
 
 const type = computed<IndexElementType | null>(() => {
