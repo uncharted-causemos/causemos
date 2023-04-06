@@ -91,10 +91,7 @@
       </header>
       <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
       <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
-      <IndexDocumentSnippets
-        :selected-node-name="panelTitle"
-        :selected-upstream-node-name="selectedUpstreamNodeName"
-      />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
 
     <template v-if="type === IndexNodeType.Index">
@@ -140,10 +137,7 @@
         </div>
       </header>
       <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
-      <IndexDocumentSnippets
-        :selected-node-name="panelTitle"
-        :selected-upstream-node-name="selectedUpstreamNodeName"
-      />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
 
     <template v-if="type === IndexNodeType.Dataset">
@@ -205,10 +199,7 @@
           @toggle-inverted="() => toggleDatasetIsInverted(selectedNode.id)"
         />
       </section>
-      <IndexDocumentSnippets
-        :selected-node-name="panelTitle"
-        :selected-upstream-node-name="selectedUpstreamNodeName"
-      />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
   </div>
 </template>
