@@ -62,7 +62,6 @@
         :selected-upstream-node-name="selectedUpstreamNodeName"
       />
     </template>
-
     <template v-if="!edgeSelected && type === IndexNodeType.OutputIndex">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
@@ -206,25 +205,6 @@
           @toggle-inverted="() => toggleDatasetIsInverted(selectedNode.id)"
         />
       </section>
-      <IndexDocumentSnippets
-        :selected-node-name="panelTitle"
-        :selected-upstream-node-name="selectedUpstreamNodeName"
-      />
-    </template>
-
-    <template v-if="!edgeSelected && type === IndexEdgeType.Edge">
-      <header>
-        <div class="title-row space-between">
-          <div class="edge-source-and-target">
-            <h3>{{ 'Highest risk of drought' }}</h3>
-            <h3 class="edge-target">{{ panelTitle }}</h3>
-          </div>
-          <button class="btn btn-sm" disabled>
-            <i class="fa fa-ellipsis-v" />
-          </button>
-        </div>
-      </header>
-      <IndexComponentWeights :target-name="nodeName" />
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="selectedUpstreamNodeName"
