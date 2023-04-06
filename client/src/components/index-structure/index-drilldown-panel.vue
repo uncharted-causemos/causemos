@@ -59,7 +59,7 @@
       <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
-        :selected-upstream-node-name="panelTitleChild"
+        :selected-upstream-node-name="selectedUpstreamNodeName"
       />
     </template>
 
@@ -94,7 +94,7 @@
       <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
-        :selected-upstream-node-name="panelTitleChild"
+        :selected-upstream-node-name="selectedUpstreamNodeName"
       />
     </template>
 
@@ -143,7 +143,7 @@
       <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
-        :selected-upstream-node-name="panelTitleChild"
+        :selected-upstream-node-name="selectedUpstreamNodeName"
       />
     </template>
 
@@ -208,7 +208,7 @@
       </section>
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
-        :selected-upstream-node-name="panelTitleChild"
+        :selected-upstream-node-name="selectedUpstreamNodeName"
       />
     </template>
 
@@ -227,7 +227,7 @@
       <IndexComponentWeights :target-name="nodeName" />
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
-        :selected-upstream-node-name="panelTitleChild"
+        :selected-upstream-node-name="selectedUpstreamNodeName"
       />
     </template>
   </div>
@@ -400,7 +400,7 @@ const panelTitle = computed(() => {
   return selectedNode?.value?.name ?? '';
 });
 
-const panelTitleChild = computed(() => {
+const selectedUpstreamNodeName = computed(() => {
   if (selectedEdgeComponents.value) {
     return selectedEdgeComponents.value.source.name;
   }
