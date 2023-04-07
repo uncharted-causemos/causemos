@@ -22,6 +22,7 @@ import NodeDataDrilldown from '@/views/NodeDataDrilldown.vue';
 import NodeDrilldown from '@/views/NodeDrilldown.vue';
 import NodeDataExplorer from '@/views/NodeDataExplorer.vue';
 import IndexNodeDataExplorer from '@/views/IndexNodeDataExplorer.vue';
+import ProjectionExp from '@/views/ProjectionExp.vue';
 import PrefectFlowLogs from '@/views/PrefectFlowLogs.vue';
 import qs from 'qs';
 import _ from 'lodash';
@@ -157,6 +158,11 @@ const routes = [
     path: '/:projectType/:project/audit-trail',
     name: 'auditTrail',
     component: AuditTrail,
+  },
+  {
+    path: '/projection-experiment',
+    name: 'projection-experiment',
+    component: ProjectionExp,
   },
   /* 404, this has to go last */
   {
