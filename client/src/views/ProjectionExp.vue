@@ -246,11 +246,7 @@ type ChartData<T> = {
   className?: string;
 };
 
-const renderChart = <T>(
-  chartData: ChartData<T>[],
-  xAccessor: (d: T) => number,
-  yAccessor: (d: T) => number
-) => {
+const renderChart = <T>(chartData: ChartData<T>[], xAccessor: any, yAccessor: any) => {
   const allDataPoints = chartData.reduce((prev, cur) => prev.concat(cur.data), [] as T[]);
   function xScale<T>(data: T[], accessor: (d: T) => number) {
     const extent = d3.extent(data, accessor) as [number, number];
@@ -324,36 +320,36 @@ const optimizeParameters = <T>(hw: hwObject<T>, iterations: number, maxPeriod = 
 
   let bestPeriod = 3;
   let bestAlpha = 0.0;
+  let bestBeta = 0.0;
   let bestGamma = 0.0;
-  let bestDelta = 0.0;
   let bestError = -1;
 
   let curPeriod = 3;
   let curAlpha = 0.0;
+  let curBeta = 0.0;
   let curGamma = 0.0;
-  let curDelta = 0.0;
   let curError = -1;
 
   while (curPeriod < Math.min(maxPeriod, 13)) {
     while (curAlpha < 1) {
-      while (curGamma < 1) {
-        while (curDelta < 1) {
-          hw.level(curAlpha).trend(curGamma).season(curDelta).period(curPeriod);
+      while (curBeta < 1) {
+        while (curGamma < 1) {
+          hw.level(curAlpha).trend(curBeta).season(curGamma).period(curPeriod);
           hw();
           curError = hw.sumSquares();
           if (curError < bestError || bestError === -1) {
             bestPeriod = curPeriod;
             bestAlpha = curAlpha;
+            bestBeta = curBeta;
             bestGamma = curGamma;
-            bestDelta = curDelta;
             bestError = curError;
           }
-          curDelta += increment;
+          curGamma += increment;
         }
-        curDelta = 0;
-        curGamma += increment;
+        curGamma = 0;
+        curBeta += increment;
       }
-      curGamma = 0;
+      curBeta = 0;
       curAlpha += increment;
     }
     curAlpha = 0;
@@ -362,43 +358,43 @@ const optimizeParameters = <T>(hw: hwObject<T>, iterations: number, maxPeriod = 
 
   curPeriod = bestPeriod;
   curAlpha = bestAlpha;
+  curBeta = bestBeta;
   curGamma = bestGamma;
-  curDelta = bestDelta;
-  hw.level(curAlpha).trend(curGamma).season(curDelta).period(curPeriod);
-  return { alpha: curAlpha, gamma: curGamma, delta: curDelta, period: curPeriod };
+  hw.level(curAlpha).trend(curBeta).season(curGamma).period(curPeriod);
+  return { alpha: curAlpha, beta: curBeta, gamma: curGamma, period: curPeriod };
 };
 
 const optimizeParametersH = (hw: any, iterations: number) => {
   const increment = 1 / iterations;
 
   let bestAlpha = 0.0;
-  let bestGamma = 0.0;
+  let bestBeta = 0.0;
   let bestError = -1;
 
   let curAlpha = 0.0;
-  let curGamma = 0.0;
+  let curBeta = 0.0;
   let curError = -1;
 
   while (curAlpha < 1) {
-    while (curGamma < 1) {
-      hw.factor(curAlpha).trend(curGamma);
+    while (curBeta < 1) {
+      hw.factor(curAlpha).trend(curBeta);
       hw();
       curError = hw.sumSquares();
       if (curError < bestError || bestError === -1) {
         bestAlpha = curAlpha;
-        bestGamma = curGamma;
+        bestBeta = curBeta;
         bestError = curError;
       }
-      curGamma += increment;
+      curBeta += increment;
     }
-    curGamma = 0;
+    curBeta = 0;
     curAlpha += increment;
   }
 
   curAlpha = bestAlpha;
-  curGamma = bestGamma;
-  hw.factor(curAlpha).trend(curGamma);
-  return { alpha: curAlpha, gamma: curGamma };
+  curBeta = bestBeta;
+  hw.factor(curAlpha).trend(curBeta);
+  return { alpha: curAlpha, beta: curBeta };
 };
 
 const runHoltWinters = (data: [number, number][], backcastSteps: number, forecastSteps: number) => {
@@ -582,11 +578,11 @@ const runProjectionAndRender = (
 const toStringParams = (params: any) => {
   if (params.period !== undefined) {
     // params for holt winters
-    const { alpha, gamma, delta, period } = params;
-    return `period: ${period}, alpha(level): ${alpha}, gamma(trend): ${gamma}, delta(season): ${delta}`;
+    const { alpha, beta, gamma, period } = params;
+    return `period: ${period}, alpha(level): ${alpha}, beta(trend): ${beta}, gamma(season): ${gamma}`;
   }
-  const { alpha, gamma } = params;
-  return `alpha(level): ${alpha}, gamma(trend): ${gamma}}`;
+  const { alpha, beta } = params;
+  return `alpha(level): ${alpha}, beta(trend): ${beta}}`;
 };
 
 // const interpolate = (data: [number, number][]) => {
