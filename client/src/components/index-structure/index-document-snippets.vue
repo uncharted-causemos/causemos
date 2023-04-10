@@ -4,7 +4,11 @@
       <h4>Document snippets</h4>
     </header>
     <section>
-      <h5>
+      <h5 v-if="selectedUpstreamNodeName != null">
+        Snippets related to <strong>{{ props.selectedNodeName }}</strong> and
+        <strong>{{ props.selectedUpstreamNodeName }}</strong>
+      </h5>
+      <h5 v-else>
         Snippets related to <strong>{{ props.selectedNodeName }}</strong>
       </h5>
       <div v-if="snippetsForSelectedNode === null" class="loading-indicator">
@@ -71,8 +75,9 @@ import ModalDocument from '@/components/modals/modal-document.vue';
 
 const props = defineProps<{
   selectedNodeName: string;
+  selectedUpstreamNodeName?: string | null;
 }>();
-const { selectedNodeName } = toRefs(props);
+const { selectedNodeName, selectedUpstreamNodeName } = toRefs(props);
 const expandedDocumentId = ref<string | null>(null);
 const textFragment = ref<string | null>(null);
 
@@ -86,13 +91,20 @@ const NO_TEXT = 'Text not available';
 const snippetsForSelectedNode = ref<Snippet[] | null>(null);
 
 watch(
-  [selectedNodeName],
+  [selectedNodeName, selectedUpstreamNodeName],
   async () => {
     // Clear any previously-fetched snippets
     snippetsForSelectedNode.value = null;
     // Save a copy of the node name to watch for race conditions later
     const fetchingSnippetsFor = selectedNodeName.value;
-    const queryResults: ParagraphSearchResponse = await searchParagraphs(props.selectedNodeName);
+
+    // ensure search string includes source and target name data.
+    const searchString =
+      props.selectedUpstreamNodeName != null
+        ? `${props.selectedNodeName} and ${props.selectedUpstreamNodeName}`
+        : props.selectedNodeName;
+
+    const queryResults: ParagraphSearchResponse = await searchParagraphs(searchString);
     if (fetchingSnippetsFor !== selectedNodeName.value) {
       // SelectedNodeName has changed since the results returned, so throw away the results to avoid
       //  a race condition.
@@ -106,7 +118,7 @@ watch(
     const metadataResults = await Promise.all(metadataRequests);
 
     const paragraphHighlights: DojoParagraphHighlights | null = await getHighlights({
-      query: props.selectedNodeName,
+      query: searchString,
       matches: queryResults.results.map((item) => item.text),
     });
 
