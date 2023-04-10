@@ -247,7 +247,10 @@ export default {
           this.textOnly = true;
         }
 
-        removeChildren(this.$refs.content);
+        if (this.$refs.content.hasChildNodes()) {
+          removeChildren(this.$refs.content);
+        }
+
         if (this.textOnly === true) {
           this.$refs.content.appendChild(this.textViewer.element);
           if (this.textFragment) {
