@@ -671,7 +671,7 @@ const toStringParams = (params: any) => {
 //   return result as [number, number][];
 // };
 
-const run = async (dataId: string, feature = '') => {
+const run = async (dataId: string, feature = '', namePrifix: any) => {
   const datacube = await getDatacubeByDataId(dataId);
   const config: DataConfig = {
     datasetId: dataId,
@@ -699,7 +699,12 @@ const run = async (dataId: string, feature = '') => {
     ]
   );
   const name = datacube?.name + ': ' + config.outputVariable;
-  await runProjectionAndRender(seriesData.slice(-MAX_DATA_LENGTH), 12, 12, name);
+  await runProjectionAndRender(
+    seriesData.slice(-MAX_DATA_LENGTH),
+    12,
+    12,
+    namePrifix + '. ' + name
+  );
 };
 
 const runExperiments = async (option: ForecastMethodOption = 'auto') => {
@@ -708,29 +713,34 @@ const runExperiments = async (option: ForecastMethodOption = 'auto') => {
   const start = Date.now();
   status.value = 'Running...';
 
-  await runProjectionAndRender(data as [number, number][], 12, 12, 'Test Data: Monthly Seasonal');
-  await run('a318111e-587d-4c89-8993-431d5fb0c973');
-  await run('62fcdd55-1459-41c8-b815-e5fd90e06587');
-  await run('53004696-8ca3-41a7-957d-d9f73cc10ef4');
-  await run('371ca304-a94c-4c67-ae28-6933c7493e9a');
-  await run('82e418bd-35e1-46df-86ba-75e33cb423ca');
-  await run('828750df-5c0f-4d19-b34b-334ad8b2d0c9');
-  await run('15a79a65-9e4d-42b0-a4b6-e2fb0e7ddcf5');
+  await runProjectionAndRender(
+    data as [number, number][],
+    12,
+    12,
+    '1. Test Data: Monthly Seasonal'
+  );
+  await run('a318111e-587d-4c89-8993-431d5fb0c973', '', 2);
+  await run('62fcdd55-1459-41c8-b815-e5fd90e06587', '', 3);
+  await run('53004696-8ca3-41a7-957d-d9f73cc10ef4', '', 4);
+  await run('371ca304-a94c-4c67-ae28-6933c7493e9a', '', 5);
+  await run('82e418bd-35e1-46df-86ba-75e33cb423ca', '', 6);
+  await run('828750df-5c0f-4d19-b34b-334ad8b2d0c9', '', 7);
+  await run('15a79a65-9e4d-42b0-a4b6-e2fb0e7ddcf5', '', 8);
 
-  await run('c9e1e0fe-6a97-4a96-8868-ab074f5bee3a');
-  await run('0b1f665b-973e-4be2-a9a0-4abcaa44a1bc');
-  await run('0f77f201-5ae2-48b6-9394-53aa103f4794');
-  await run('d5571341-30e5-47ef-a07a-3ba902305529');
+  await run('c9e1e0fe-6a97-4a96-8868-ab074f5bee3a', '', 9);
+  await run('0b1f665b-973e-4be2-a9a0-4abcaa44a1bc', '', 10);
+  await run('0f77f201-5ae2-48b6-9394-53aa103f4794', '', 11);
+  await run('d5571341-30e5-47ef-a07a-3ba902305529', '', 12);
 
-  await run('ccab44a5-220e-4757-8a0d-0a2362a59e53');
-  await run('c0801062-410f-48f0-9f8a-80ca4b2e6ccc');
-  await run('cb9a342c-92ad-4d6b-b537-ffb31456b8be');
+  await run('ccab44a5-220e-4757-8a0d-0a2362a59e53', '', 13);
+  await run('c0801062-410f-48f0-9f8a-80ca4b2e6ccc', '', 14);
+  await run('cb9a342c-92ad-4d6b-b537-ffb31456b8be', '', 15);
 
-  await run('a247b4ae-fc5a-46b5-be6e-c7a778ce7c18', 'Duration (minutes)');
-  await run('85f744c4-c2a7-4b4a-adad-42b40a378d0b');
-  await run('85f744c4-c2a7-4b4a-adad-42b40a378d0b', 'Data_long_term_Average');
-  await run('a5126145-51f7-4626-a19a-e9738838a97f', 'fatalities');
-  await run('6ce7ff40-9dd2-4b25-9d27-92c2327343d3', 'fatalities');
+  await run('a247b4ae-fc5a-46b5-be6e-c7a778ce7c18', 'Duration (minutes)', 16);
+  await run('85f744c4-c2a7-4b4a-adad-42b40a378d0b', '', 17);
+  await run('85f744c4-c2a7-4b4a-adad-42b40a378d0b', 'Data_long_term_Average', 18);
+  await run('a5126145-51f7-4626-a19a-e9738838a97f', 'fatalities', 19);
+  await run('6ce7ff40-9dd2-4b25-9d27-92c2327343d3', 'fatalities', 20);
 
   const end = Date.now() - start;
   status.value = 'Done in ' + end / 1000 + 's';
