@@ -91,7 +91,7 @@ const NO_TEXT = 'Text not available';
 const snippetsForSelectedNode = ref<Snippet[] | null>(null);
 
 watch(
-  [selectedNodeName],
+  [selectedNodeName, selectedUpstreamNodeName],
   async () => {
     // Clear any previously-fetched snippets
     snippetsForSelectedNode.value = null;
