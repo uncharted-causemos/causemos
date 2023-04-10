@@ -319,7 +319,7 @@ interface hwObject<T> {
 // Residual Sum of Squares (RSS). This method calculates the difference between observed data (actual value) and its vertical distance from the proposed best-fitting line (predicted value). It squares each difference and adds all of them.
 // Minimize RSS (residual sum of squares). MSE (Mean squared error) = RSS / # of data points. RMSE (Root mean squared error) = square root of MSE
 // Run brute force grid search to find out optimized parameter combination that minimizes the residual sum of squares error.
-const optimizeParameters = <T>(hw: hwObject<T>, iterations: number, maxPeriod = 13) => {
+const optimizeParameters = (hw: any, iterations: number, maxPeriod = 13) => {
   const increment = 1 / iterations;
 
   let bestPeriod = 3;
@@ -400,38 +400,6 @@ const optimizeParametersH = (hw: any, iterations: number) => {
   hw.factor(curAlpha).trend(curBeta);
   return { alpha: curAlpha, beta: curBeta };
 };
-
-// const runAr = async (data: [number, number][], backcastSteps: number, forecastSteps: number) => {
-//   const ARIMA = await ARIMAPromise;
-//   const ts = data.map(d => d[1]);
-//   const arima = new ARIMA({ p: 2, d: 1, q: 2, P: 0, D: 0, Q: 0, S: 0, verbose: false }).train(ts)
-//   const arimaBack = new ARIMA({ p: 2, d: 1, q: 2, P: 0, D: 0, Q: 0, S: 0, verbose: false }).train([...ts].reverse())
-//   const [pred] = arima.predict(forecastSteps)
-//   const [predBack] = arimaBack.predict(backcastSteps)
-
-//   const distance = data[1][0] - data[0][0];
-//   const lastTimeValue = data[data.length - 1][0];
-//   const firstTimeValue = data[0][0];
-
-//   const forecast = pred.map((v: number, i: number)=> ([ lastTimeValue + ((i + 1) * distance), v]))
-//   const backcast = predBack.map((v: number, i: number)=> ([ firstTimeValue - ((i + 1) * distance), v]))
-
-//   const prediction: [number, number][] = []
-//   const predictionBack: [number, number][] = []
-//   const rmse = NaN;
-
-//   return {
-//     name: 'Arima',
-//     observed: data,
-//     prediction,
-//     predictionBack,
-//     forecast,
-//     backcast,
-//     error: rmse,
-//     forecastParams: {},
-//     backcastParams: {},
-//   };
-// }
 
 const runAr = async (data: [number, number][], backcastSteps: number, forecastSteps: number) => {
   // https://github.com/zemlyansky/arima#readme
@@ -658,14 +626,17 @@ const runProjectionAndRender = async (
   const loserError = loser
     ? `vs <span style="color: pink">${loser.error}</span> (${loser.name})`
     : '';
-  title.innerHTML = `<span>${name}</span></br>
-    <span>Winner: <span style="color: ${methodNameColor}"> ${method.name} -</span></span>
-    <span style="color: grey"> Error: <span style="color: red">${method.error.toFixed(
+  let htmlString = `<span>${name}</span></br>
+    <span>Winner: <span style="color: ${methodNameColor}"> ${method.name} -</span></span>`;
+  if (method.name !== 'Arima') {
+    htmlString += `<span style="color: grey"> Error: <span style="color: red">${method.error.toFixed(
       2
     )}</span> ${loserError}</span></br>
-    <span style=>forecast parameters: ${toStringParams(method.forecastParams)}</span></br>
-    <span>backcast parameters: ${toStringParams(method.backcastParams)}</span>
-    `;
+      <span style=>forecast parameters: ${toStringParams(method.forecastParams)}</span></br>
+      <span>backcast parameters: ${toStringParams(method.backcastParams)}</span>
+      `;
+  }
+  title.innerHTML = htmlString;
   el.append(title);
   el.append(chart);
   chartContainer.value.append(el);
