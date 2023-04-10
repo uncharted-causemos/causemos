@@ -46,9 +46,8 @@
     :text-fragment="textFragment"
     :retrieve-document-meta="getDocument"
     :retrieve-document="getDocumentParagraphs"
-    :content-handler="
-      (data) => data?.paragraphs?.reduce((bodyText, p) => `${bodyText}<p>${p.text}</p>`, '')
-    "
+    :content-handler="handleReturnedData"
+    :use-scrolling="true"
     @close="expandedDocumentId = null"
   />
 </template>
@@ -75,7 +74,6 @@ const props = defineProps<{
 const { selectedNodeName } = toRefs(props);
 const expandedDocumentId = ref<string | null>(null);
 const textFragment = ref<string | null>(null);
-
 const SNIPPETS_LOADING = 'Loading snippets...';
 const NO_TITLE = 'Title not available';
 const NO_AUTHOR = 'Author not available';
@@ -84,6 +82,13 @@ const NO_TEXT = 'Text not available';
 
 // `null` means snippets are loading
 const snippetsForSelectedNode = ref<Snippet[] | null>(null);
+
+const handleReturnedData = (data: any, previousContent: string | null) => {
+  const content = previousContent || '';
+  return content.concat(
+    data?.paragraphs?.reduce((bodyText: string, p: any) => `${bodyText}<p>${p.text}</p>`, '')
+  );
+};
 
 watch(
   [selectedNodeName],

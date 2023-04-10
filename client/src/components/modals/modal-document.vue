@@ -50,6 +50,10 @@
       </div>
       <div v-if="!documentData && !isLoading" class="no-data status">Document not found.</div>
       <div ref="content"></div>
+      <div ref="loadMoreText" class="load-more-text">
+        <h5 v-if="useScrolling && hasScrollId">Loading body text ...</h5>
+        <h5 v-if="useScrolling && !hasScrollId">---- End of document ----</h5>
+      </div>
     </template>
     <template #footer>
       <button v-if="!disableEdit && !editable" class="btn btn-md btn-secondary" @click="edit()">
@@ -81,96 +85,11 @@ import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';
 import dateFormatter from '@/formatters/date-formatter';
 import { getDocument, updateDocument } from '@/services/document-service';
-import { SELECTED_COLOR } from '@/utils/colors-util';
+import { createTextViewer } from '@/utils/text-viewer-util';
 
 const isPdf = (data) => {
   const fileType = data && data.file_type;
   return fileType === 'pdf' || fileType === 'application/pdf';
-};
-
-const reformat = (v) => {
-  return `<span class='extract-text-anchor' style='border-bottom: 2px solid${SELECTED_COLOR}'>${v}</span>`;
-};
-
-// Run through a list of inexpensive, sucessive transforms to try to find the correct match
-const lossySearch = (text, textFragment) => {
-  let fragment = textFragment;
-
-  const replacementElements = [
-    [' .', '.'],
-    [' ;', ';'],
-    [' ,', ','],
-    [' )', ')'],
-    ['( ', '('],
-  ];
-
-  for (let i = 0; i < replacementElements.length; i++) {
-    fragment = fragment.replaceAll(...replacementElements[i]);
-    if (text.indexOf(fragment) >= 0) return text.replace(fragment, reformat(fragment));
-  }
-
-  return text;
-};
-
-// gradually loosen search requirements of a "regex and select punctuation"-sanitized
-// search string by progressively adding regex wildcards to account for skipped
-// characters, words and phrases in the text fragment being searched for.
-const iterativeRegexSearch = (text, fragment) => {
-  let sanitizedSearch = fragment
-    // remove some special characters, may need adjustment for edge cases but some are regex reserved
-    .replace(/[/\\[\].+*?^$(){}|,]/g, '')
-    .split(/\s+/)
-    .join(' ')
-    .trim();
-  const spaceTotal = sanitizedSearch.split(' ').length;
-  let count = 0;
-  while (count <= spaceTotal) {
-    const searchRegEx = new RegExp(sanitizedSearch);
-    const searchIndex = text.search(searchRegEx);
-    if (searchIndex > -1) {
-      return text.replace(searchRegEx, reformat(fragment));
-    }
-    sanitizedSearch = sanitizedSearch.replace(' ', '\\b.*?\\b');
-    count++;
-  }
-  return text;
-};
-
-const createTextViewer = (text) => {
-  const el = document.createElement('div');
-  const originalText = text;
-
-  function search(textFragment) {
-    let t = originalText;
-    if (textFragment) {
-      if (text.indexOf(textFragment) >= 0) {
-        t = t.replace(textFragment, reformat(textFragment));
-      } else {
-        t = lossySearch(t, textFragment);
-      }
-      // if all else fails, do this expensive regex search
-      if (t === text) {
-        t = iterativeRegexSearch(t, textFragment);
-      }
-      el.innerHTML = t;
-      const anchor = document.getElementsByClassName('extract-text-anchor')[0];
-      if (anchor) {
-        const scroller = document.getElementsByClassName('modal-body')[0];
-        scroller.scrollTop = anchor.offsetTop - 100;
-      }
-    }
-  }
-
-  el.innerHTML = originalText;
-  el.style.paddingTop = '30px';
-  el.style.paddingLeft = '15px';
-  el.style.paddingRight = '15px';
-  el.style.paddingBottom = '15px';
-
-  return {
-    search,
-    element: el,
-  };
 };
 
 export default {
@@ -207,6 +126,10 @@ export default {
       type: Function,
       default: null,
     },
+    useScrolling: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     isLoading: false,
@@ -220,15 +143,64 @@ export default {
     publisher: '',
     title: '',
     documentMeta: null,
+    scrollId: null,
+    scrollPlaceholder: null,
+    scrollObserver: null,
   }),
   mounted() {
     this.refresh();
+
+    if (this.useScrolling) {
+      // grab a reference to the element for scrolling (if it exists, then must scroll)
+      const placeHolder = document.getElementsByClassName('load-more-text');
+      if (this.useScrolling && placeHolder && placeHolder.length > 0) {
+        this.scrollPlaceholder = placeHolder[0];
+
+        this.scrollObserver = new IntersectionObserver(this.getScrollData, {
+          root: document.getElementsByClassName('modal-body')[0], // div div
+          rootMargin: '0px',
+          threshold: 0.25,
+        });
+        this.scrollObserver.observe(this.scrollPlaceholder);
+      }
+    }
+  },
+  computed: {
+    hasScrollId() {
+      return this.scrollId !== null;
+    },
   },
   methods: {
     ...mapActions({
       addSearchTerm: 'query/addSearchTerm',
     }),
     dateFormatter,
+    async getScrollData() {
+      if (this.scrollId != null) {
+        if (this.contentHandler) {
+          const content = await this.retrieveDocument(this.documentId, this.scrollId);
+          this.documentData = this.contentHandler(content, this.documentData);
+          this.textViewer = createTextViewer(this.documentData);
+
+          // brute force the entire view
+          if (this.$refs.content.hasChildNodes()) {
+            removeChildren(this.$refs.content);
+          }
+
+          if (this.textOnly === true) {
+            this.$refs.content.appendChild(this.textViewer.element);
+            if (this.textFragment) {
+              this.textViewer.search(this.textFragment);
+            }
+          }
+
+          if (content.scroll_id === null) {
+            this.scrollId = null;
+            this.scrollObserver = null; // end of scroll loading.
+          }
+        }
+      }
+    },
     refresh() {
       this.fetchReaderContent();
     },
@@ -240,8 +212,10 @@ export default {
       }
 
       const content = await this.retrieveDocument(this.documentId);
+
       if (this.contentHandler) {
-        this.documentData = this.contentHandler(content);
+        this.scrollId = content.scroll_id ?? null;
+        this.documentData = this.contentHandler(content, this.documentData, this.useScrolling);
       } else {
         this.documentData = content.data;
       }
@@ -408,6 +382,9 @@ export default {
   }
   .toolbar {
     padding: 5px;
+  }
+  .load-more-text {
+    text-align: center;
   }
 
   /* Bootstrap sets all box-sizing to border-box, which messes up the pdf-js library */
