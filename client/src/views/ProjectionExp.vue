@@ -4,9 +4,10 @@
     <label>Holt Winters Iterations </label><input type="number" v-model="iterationHW" />
     <label>Show fit lines</label><input type="checkbox" v-model="showFitting" />
     <br />
-    <button @click="runExperiments('auto')">Run Auto</button>
+    <button @click="runExperiments('auto')">Run Auto (Holt or HW)</button>
     <button @click="runExperiments('holt')">Run Holt</button>
     <button @click="runExperiments('hw')">Run Holt Winters</button>
+    <button @click="runExperiments('arima')">Run AutoARIMA</button>
     <span v-if="status">{{ status }}</span>
     <div ref="chartContainer" class="charts-container hide-prediction-lines"></div>
   </div>
@@ -22,10 +23,13 @@ import {
   getNumberOfMonthsPassedFromTimestamp,
 } from '@/utils/date-util';
 import { holt } from '@/utils/forecasting/holt';
+import ARIMAPromise from 'arima/async';
 import { getDatacubeByDataId } from '@/services/new-datacube-service';
 import { DataConfig } from '@/types/Datacube';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { getTimeseries } from '@/services/outputdata-service';
+
+type ForecastMethodOption = 'auto' | 'holt' | 'hw' | 'arima';
 
 const MAX_DATA_LENGTH = 120; // 10 years with monthly data
 
@@ -229,7 +233,7 @@ const width = 800 - margin.left - margin.right;
 const height = 300 - margin.top - margin.bottom;
 
 const chartContainer = ref();
-const forecastOption = ref<'auto' | 'holt' | 'hw'>('auto');
+const forecastOption = ref<ForecastMethodOption>('auto');
 const status = ref('');
 const iterationHolt = ref(10);
 const iterationHW = ref(10);
@@ -397,6 +401,96 @@ const optimizeParametersH = (hw: any, iterations: number) => {
   return { alpha: curAlpha, beta: curBeta };
 };
 
+// const runAr = async (data: [number, number][], backcastSteps: number, forecastSteps: number) => {
+//   const ARIMA = await ARIMAPromise;
+//   const ts = data.map(d => d[1]);
+//   const arima = new ARIMA({ p: 2, d: 1, q: 2, P: 0, D: 0, Q: 0, S: 0, verbose: false }).train(ts)
+//   const arimaBack = new ARIMA({ p: 2, d: 1, q: 2, P: 0, D: 0, Q: 0, S: 0, verbose: false }).train([...ts].reverse())
+//   const [pred] = arima.predict(forecastSteps)
+//   const [predBack] = arimaBack.predict(backcastSteps)
+
+//   const distance = data[1][0] - data[0][0];
+//   const lastTimeValue = data[data.length - 1][0];
+//   const firstTimeValue = data[0][0];
+
+//   const forecast = pred.map((v: number, i: number)=> ([ lastTimeValue + ((i + 1) * distance), v]))
+//   const backcast = predBack.map((v: number, i: number)=> ([ firstTimeValue - ((i + 1) * distance), v]))
+
+//   const prediction: [number, number][] = []
+//   const predictionBack: [number, number][] = []
+//   const rmse = NaN;
+
+//   return {
+//     name: 'Arima',
+//     observed: data,
+//     prediction,
+//     predictionBack,
+//     forecast,
+//     backcast,
+//     error: rmse,
+//     forecastParams: {},
+//     backcastParams: {},
+//   };
+// }
+
+const runAr = async (data: [number, number][], backcastSteps: number, forecastSteps: number) => {
+  // https://github.com/zemlyansky/arima#readme
+
+  const ARIMA = await ARIMAPromise;
+  const ts = data.map((d) => d[1]);
+
+  // 0 - Exact Maximum Likelihood Method (Default)
+  // 1 - Conditional Method - Sum Of Squares
+  // 2 - Box-Jenkins Method
+  const ARIMA_METHOD = 0;
+
+  // Optimization Method (optimizer)
+  // Method 0 - Nelder-Mead
+  // Method 1 - Newton Line Search
+  // Method 2 - Newton Trust Region - Hook Step
+  // Method 3 - Newton Trust Region - Double Dog-Leg
+  // Method 4 - Conjugate Gradient
+  // Method 5 - BFGS
+  // Method 6 - Limited Memory BFGS (Default)
+  // Method 7 - BFGS Using More Thuente Method
+  const ARIMA_OPTIMIZER = 2;
+
+  // AutoARIMA
+  const arima = new ARIMA({ auto: true, method: ARIMA_METHOD, optimizer: ARIMA_OPTIMIZER }).train(
+    ts
+  );
+  const arimaBack = new ARIMA({
+    auto: true,
+    method: ARIMA_METHOD,
+    optimizer: ARIMA_OPTIMIZER,
+  }).train([...ts].reverse());
+  const [pred] = arima.predict(forecastSteps);
+  const [predBack] = arimaBack.predict(backcastSteps);
+
+  const distance = data[1][0] - data[0][0];
+  const lastTimeValue = data[data.length - 1][0];
+  const firstTimeValue = data[0][0];
+
+  const forecast = pred.map((v: number, i: number) => [lastTimeValue + (i + 1) * distance, v]);
+  const backcast = predBack.map((v: number, i: number) => [firstTimeValue - (i + 1) * distance, v]);
+
+  const prediction: [number, number][] = [];
+  const predictionBack: [number, number][] = [];
+  const rmse = NaN;
+
+  return {
+    name: 'Arima',
+    observed: data,
+    prediction,
+    predictionBack,
+    forecast,
+    backcast,
+    error: rmse,
+    forecastParams: {},
+    backcastParams: {},
+  };
+};
+
 const runHoltWinters = (data: [number, number][], backcastSteps: number, forecastSteps: number) => {
   /**
    * number of season in a year. e.g for monthly data PERIOD = 12, and for quarterly data PERIOD = 4
@@ -492,7 +586,7 @@ const runHolt = (data: [number, number][], backcastSteps: number, forecastSteps:
   };
 };
 
-const runProjectionAndRender = (
+const runProjectionAndRender = async (
   data: [number, number][],
   backcastSteps = 24,
   forecastSteps = 24,
@@ -504,6 +598,8 @@ const runProjectionAndRender = (
     method = runHolt(data, backcastSteps, forecastSteps);
   } else if (forecastOption.value === 'hw') {
     method = runHoltWinters(data, backcastSteps, forecastSteps);
+  } else if (forecastOption.value === 'arima') {
+    method = await runAr(data, backcastSteps, forecastSteps);
   } else {
     const holt = runHolt(data, backcastSteps, forecastSteps);
     const holtWinters = runHoltWinters(data, backcastSteps, forecastSteps);
@@ -632,16 +728,16 @@ const run = async (dataId: string, feature = '') => {
     ]
   );
   const name = datacube?.name + ': ' + config.outputVariable;
-  runProjectionAndRender(seriesData.slice(-MAX_DATA_LENGTH), 12, 12, name);
+  await runProjectionAndRender(seriesData.slice(-MAX_DATA_LENGTH), 12, 12, name);
 };
 
-const runExperiments = async (option: 'auto' | 'holt' | 'hw' = 'auto') => {
+const runExperiments = async (option: ForecastMethodOption = 'auto') => {
   forecastOption.value = option;
   chartContainer.value.innerHTML = '';
   const start = Date.now();
   status.value = 'Running...';
 
-  runProjectionAndRender(data as [number, number][], 12, 12, 'Test Data: Monthly Seasonal');
+  await runProjectionAndRender(data as [number, number][], 12, 12, 'Test Data: Monthly Seasonal');
   await run('a318111e-587d-4c89-8993-431d5fb0c973');
   await run('62fcdd55-1459-41c8-b815-e5fd90e06587');
   await run('53004696-8ca3-41a7-957d-d9f73cc10ef4');

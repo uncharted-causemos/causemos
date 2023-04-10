@@ -24,6 +24,7 @@
     "@uncharted.software/facets-core": "^3.1.0",
     "@uncharted.software/facets-plugins": "^3.1.0",
     "@uncharted.software/lex": "^1.0.0",
+    "arima": "^0.2.5",
     "axios": "^0.21.4",
     "bubblesets-js": "^2.2.0",
     "check-node-version": "^4.0.1",
