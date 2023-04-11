@@ -1,6 +1,6 @@
 <template>
   <div class="index-drilldown-panel-container" :class="{ hidden: type === null }">
-    <template v-if="edgeSelected">
+    <template v-if="type === IndexEdgeType.Edge">
       <div>
         <div>
           <div
@@ -56,11 +56,13 @@
           </div>
         </div>
       </div>
-      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="selectedUpstreamNodeName"
+      />
     </template>
-
-    <template v-if="!edgeSelected && type === IndexNodeType.OutputIndex">
+    <template v-if="type === IndexNodeType.OutputIndex">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -87,12 +89,12 @@
           <button class="btn btn-sm" @click="startRenaming">Rename</button>
         </div>
       </header>
-      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
       <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
 
-    <template v-if="!edgeSelected && type === IndexNodeType.Index">
+    <template v-if="type === IndexNodeType.Index">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -134,11 +136,11 @@
           </div>
         </div>
       </header>
-      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
 
-    <template v-if="!edgeSelected && type === IndexNodeType.Dataset">
+    <template v-if="type === IndexNodeType.Dataset">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -197,23 +199,7 @@
           @toggle-inverted="() => toggleDatasetIsInverted(selectedNode.id)"
         />
       </section>
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
-    </template>
-
-    <template v-if="!edgeSelected && type === IndexEdgeType.Edge">
-      <header>
-        <div class="title-row space-between">
-          <div class="edge-source-and-target">
-            <h3>{{ 'Highest risk of drought' }}</h3>
-            <h3 class="edge-target">{{ panelTitle }}</h3>
-          </div>
-          <button class="btn btn-sm" disabled>
-            <i class="fa fa-ellipsis-v" />
-          </button>
-        </div>
-      </header>
-      <IndexComponentWeights />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
   </div>
 </template>
@@ -363,15 +349,6 @@ const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode }
   return null;
 });
 
-const edgeSelected = computed(() => {
-  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
-    if (props.selectedElementId.sourceId) {
-      return true;
-    }
-  }
-  return false;
-});
-
 const type = computed<IndexElementType | null>(() => {
   if (selectedEdgeComponents.value !== null) {
     return IndexEdgeType.Edge;
@@ -383,6 +360,13 @@ const type = computed<IndexElementType | null>(() => {
 
 const panelTitle = computed(() => {
   return selectedNode?.value?.name ?? '';
+});
+
+const selectedUpstreamNodeName = computed(() => {
+  if (selectedEdgeComponents.value) {
+    return selectedEdgeComponents.value.source.name;
+  }
+  return null;
 });
 
 const datasetMetadata = useModelMetadataSimple(selectedDatasetDataId);

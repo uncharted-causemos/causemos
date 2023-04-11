@@ -9,7 +9,9 @@
     </p>
 
     <header v-if="props.inputs.length !== 0">
-      <h4>Component weights</h4>
+      <h4>
+        Component weights for <b>{{ targetName }}</b>
+      </h4>
       <!-- TODO: modify weights -->
       <button class="btn btn-sm" disabled>Modify</button>
     </header>
@@ -31,6 +33,7 @@
 </template>
 
 <script setup lang="ts">
+import { toRefs } from 'vue';
 import precisionFormatter from '@/formatters/precision-formatter';
 import { IndexWorkBenchItem } from '@/types/Index';
 import {
@@ -40,12 +43,15 @@ import {
 } from '@/utils/index-tree-util';
 
 const props = defineProps<{
+  targetName?: string | null;
   inputs: IndexWorkBenchItem[];
 }>();
+
+const { targetName } = toRefs(props);
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/uncharted-design-tokens';
+@import '@/styles/uncharted-design-tokens';
 .index-component-weights-container {
   display: flex;
   flex-direction: column;
