@@ -56,7 +56,7 @@ const reformat = (v: string) => {
   return `<span class='extract-text-anchor' style='border-bottom: 2px solid${SELECTED_COLOR}'>${v}</span>`;
 };
 
-const createTextViewer = (text: string) => {
+const createTextViewer = (text: string, isHTML = false) => {
   const el = document.createElement('div');
   const originalText = text;
 
@@ -83,7 +83,12 @@ const createTextViewer = (text: string) => {
     }
   }
 
-  el.innerHTML = originalText;
+  if (isHTML) {
+    const parsedText = new DOMParser().parseFromString(originalText, 'text/html');
+    el.appendChild(parsedText.body);
+  } else {
+    el.innerHTML = originalText;
+  }
   el.style.paddingTop = '30px';
   el.style.paddingLeft = '15px';
   el.style.paddingRight = '15px';

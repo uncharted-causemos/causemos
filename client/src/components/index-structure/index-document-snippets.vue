@@ -26,6 +26,7 @@
                 class="btn btn-sm"
                 @click="
                   () => {
+                    selectHighlight(i);
                     expandedDocumentId = snippet.documentId;
                     textFragment = snippet.text;
                   }
@@ -48,6 +49,7 @@
     :retrieve-document="getDocumentParagraphs"
     :content-handler="handleReturnedData"
     :use-scrolling="true"
+    :highlights-for-selected="highlightsForSelected"
     @close="expandedDocumentId = null"
   />
 </template>
@@ -64,6 +66,7 @@ import {
   ParagraphSearchResponse,
   Document,
   DojoParagraphHighlights,
+  DojoParagraphHighlight,
 } from '@/types/IndexDocuments';
 import { toRefs, watch, ref } from 'vue';
 import ModalDocument from '@/components/modals/modal-document.vue';
@@ -82,7 +85,8 @@ const NO_TEXT = 'Text not available';
 
 // `null` means snippets are loading
 const snippetsForSelectedNode = ref<Snippet[] | null>(null);
-
+const highlightsForSelected = ref<DojoParagraphHighlight[]>([]);
+const allHighlights = ref<DojoParagraphHighlights | null>(null);
 const handleReturnedData = (data: any, previousContent: string | null) => {
   const content = previousContent || '';
   return content.concat(
@@ -90,11 +94,50 @@ const handleReturnedData = (data: any, previousContent: string | null) => {
   );
 };
 
+/**
+ * Grab set of highlights and verify the highlights are unique and sorted by length
+ * to ensure highlights are applied correctly.
+ *
+ * @param index
+ */
+const selectHighlight = (index: number) => {
+  if (allHighlights.value !== null) {
+    const workingValue: any[] = allHighlights.value.highlights[index];
+
+    highlightsForSelected.value = workingValue
+      .filter((item) => item.highlight === true)
+      .reduce((accumulator, item) => {
+        const index = accumulator.findIndex((e: any) => {
+          if (e.text === item.text) return true;
+          return false;
+        });
+        if (index < 0) {
+          return [...accumulator, item];
+        }
+        return accumulator;
+      }, [])
+      .sort((a: any, b: any) => {
+        if (a.text.length > b.text.length) {
+          return 1;
+        } else if (a.text.length < b.text.length) {
+          return -1;
+        } else {
+          return 0;
+        }
+      });
+  } else {
+    highlightsForSelected.value = [];
+  }
+};
+
 watch(
   [selectedNodeName],
   async () => {
     // Clear any previously-fetched snippets
     snippetsForSelectedNode.value = null;
+    highlightsForSelected.value = [];
+    allHighlights.value = null;
+
     // Save a copy of the node name to watch for race conditions later
     const fetchingSnippetsFor = selectedNodeName.value;
     const queryResults: ParagraphSearchResponse = await searchParagraphs(props.selectedNodeName);
@@ -110,7 +153,7 @@ watch(
     );
     const metadataResults = await Promise.all(metadataRequests);
 
-    const paragraphHighlights: DojoParagraphHighlights | null = await getHighlights({
+    allHighlights.value = await getHighlights({
       query: props.selectedNodeName,
       matches: queryResults.results.map((item) => item.text),
     });
@@ -121,8 +164,8 @@ watch(
 
       return {
         documentId: result.document_id,
-        text: paragraphHighlights
-          ? paragraphHighlights.highlights[i].reduce(
+        text: allHighlights.value
+          ? allHighlights.value.highlights[i].reduce(
               (paragraph, item) =>
                 item.highlight
                   ? `${paragraph}<span class="dojo-mark">${item.text}</span>`

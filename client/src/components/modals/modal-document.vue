@@ -49,7 +49,7 @@
         <h2>Loading data...</h2>
       </div>
       <div v-if="!documentData && !isLoading" class="no-data status">Document not found.</div>
-      <div ref="content"></div>
+      <div ref="content" v-html="formattedText"></div>
       <div ref="loadMoreText" class="load-more-text">
         <h5 v-if="useScrolling && hasScrollId">Loading body text ...</h5>
         <h5 v-if="useScrolling && !hasScrollId">---- End of document ----</h5>
@@ -130,6 +130,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    highlightsForSelected: {
+      type: Array,
+      default: null,
+    },
   },
   data: () => ({
     isLoading: false,
@@ -146,6 +150,7 @@ export default {
     scrollId: null,
     scrollPlaceholder: null,
     scrollObserver: null,
+    formattedText: null,
   }),
   mounted() {
     this.refresh();
@@ -174,13 +179,26 @@ export default {
     ...mapActions({
       addSearchTerm: 'query/addSearchTerm',
     }),
+    applyHighlights(content) {
+      if (this.highlightsForSelected !== null) {
+        let highlightContent = content;
+        this.highlightsForSelected.forEach((highlight) => {
+          highlightContent = highlightContent.replaceAll(
+            highlight.text,
+            `<span class="dojo-mark">${highlight.text}</span>`
+          );
+        });
+        return highlightContent;
+      }
+      return content;
+    },
     dateFormatter,
     async getScrollData() {
       if (this.scrollId != null) {
         if (this.contentHandler) {
           const content = await this.retrieveDocument(this.documentId, this.scrollId);
           this.documentData = this.contentHandler(content, this.documentData);
-          this.textViewer = createTextViewer(this.documentData);
+          this.textViewer = createTextViewer(this.applyHighlights(this.documentData), true);
 
           // brute force the entire view
           if (this.$refs.content.hasChildNodes()) {
@@ -229,7 +247,7 @@ export default {
         }
 
         if (this.contentHandler) {
-          this.textViewer = createTextViewer(this.documentData); // provided contentHandler has generated a simple HTML string.
+          this.textViewer = createTextViewer(this.applyHighlights(this.documentData), true); // provided contentHandler has generated a simple HTML string.
         } else {
           this.textViewer = createTextViewer(this.documentData.extracted_text);
         }
@@ -321,7 +339,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables';
 @import '@/styles/uncharted-design-tokens';
+
 .status {
   height: 70vh;
   display: flex;
@@ -381,6 +401,13 @@ export default {
       height: 80vh;
       overflow-y: auto;
       overflow-x: hidden;
+
+      div div p span.dojo-mark {
+        color: $accent-medium;
+        background-color: $accent-lightest;
+        border: 1px solid $accent-light;
+        padding: 0 2px;
+      }
     }
   }
   .toolbar {
