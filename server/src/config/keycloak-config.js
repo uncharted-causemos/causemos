@@ -3,31 +3,31 @@ const Keycloak = require('keycloak-connect');
 let keycloak;
 
 const keycloakConfig = {
-  authServerUrl: process.env.KC_URL,
-  sslRequired: 'external',
+  'auth-server-url': `${process.env.KC_SERVICE_PROTOCOL}://${process.env.KC_SERVICE_FQDN}${process.env.KC_SERVICE_PORT}`,
+  'ssl-required': 'external',
   resource: process.env.KC_CLIENT_ID,
-  confidentialPort: 0,
-  bearerOnly: true,
+  'confidential-port': 0,
+  'bearer-only': false,
   realm: process.env.KC_REALM,
-  verifyTokenAudience: true,
+  'verify-token-audience': true,
   credentials: {
     secret: process.env.KC_SECRET,
   },
-  policyEnforcer: {},
+  'policy-enforcer': {},
 };
 
-function initKeycloak() {
+function initKeycloak(options) {
   if (keycloak) {
     return keycloak;
   } else {
-    keycloak = new Keycloak({}, keycloakConfig);
+    keycloak = new Keycloak(options || {}, keycloakConfig);
     return keycloak;
   }
 }
 
-function getKeycloak() {
+function getKeycloak(options) {
   if (!keycloak) {
-    return initKeycloak();
+    return initKeycloak(options);
   }
   return keycloak;
 }

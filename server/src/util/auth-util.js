@@ -12,8 +12,8 @@ const ROLES = Object.freeze({
 });
 
 const PERMISSIONS = Object.freeze({
-  USER: 'api:user',
-  ADMIN: 'api:admin',
+  USER: 'realm:user',
+  ADMIN: 'realm:admin',
 });
 
 module.exports = {

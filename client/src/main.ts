@@ -42,4 +42,5 @@ app.directive('focus', {
   },
 });
 
+await store.dispatch('auth/fetchSSO');
 app.mount('#app');

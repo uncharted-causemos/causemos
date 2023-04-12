@@ -4,7 +4,6 @@ const ROLES = Object.freeze({
 });
 
 const PERMISSIONS = Object.freeze({
-  API: 'api:user',
   USER: 'realm:user',
   ADMIN: 'realm:admin',
 });

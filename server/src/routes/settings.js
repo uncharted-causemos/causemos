@@ -36,7 +36,7 @@ router.get('/settings', keycloak.enforcer([PERMISSIONS.USER]), function (req, re
 });
 
 /* GET client settings */
-router.get('/client-settings', keycloak.enforcer([PERMISSIONS.USER]), function (req, res, next) {
+router.get('/client-settings', keycloak.protect(), function (req, res, next) {
   const env = process.env;
   const clientSettings = {};
   Object.entries(env).filter(([key, value]) => {

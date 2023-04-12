@@ -57,8 +57,6 @@ const jatawareFeaturesRouter = rootRequire('/routes/jataware-features');
 const compression = require('compression');
 const requestAsPromise = require('./util/request-as-promise');
 
-const keycloak = require('./config/keycloak-config.js').getKeycloak();
-
 const app = express();
 
 // This code block is for handling issues with setting up the .env file for environment variables.
@@ -66,10 +64,22 @@ if (dotenvConfigResult.error) {
   Logger.warn('No .env file found or has initialization errors - will use default environment');
 }
 
+const memoryStore = new session.MemoryStore();
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    store: memoryStore,
+  })
+);
+const keycloak = require('./config/keycloak-config.js').getKeycloak({ store: memoryStore });
+keycloak.checkSso();
+app.use(keycloak.middleware());
+
 // TODO: selectively add cache busting header for performance
 app.use(nocache());
 app.use(compression());
-app.use(keycloak.middleware());
 
 const prodFormat = ':method :url :status :response-time ms - :res[content-length]';
 const morganFormat = argv.morganFormat || prodFormat;

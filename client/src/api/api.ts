@@ -3,6 +3,7 @@ import store from '@/store/index';
 
 const API = axios.create({
   baseURL: '/api',
+  withCredentials: true,
 });
 
 // Hook in bearer tokens
@@ -17,6 +18,7 @@ API.interceptors.request.use(
     } else {
       config.headers = { Authorization: `Bearer ${token}` };
     }
+    config.headers.access_token = config.headers.Authorization;
     return config;
   },
   (error) => {
