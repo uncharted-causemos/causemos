@@ -225,11 +225,15 @@ import {
   getIndexNodeTypeColor,
   getIndexNodeTypeIcon,
 } from '@/utils/index-tree-util';
-import { OptionButtonMenu } from './index-tree-node.vue';
+import { OptionButtonMenu } from '@/utils/index-common-util';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
+}>();
+
+const emit = defineEmits<{
+  (e: 'deleteEdge', value: SelectableIndexElementId): void;
 }>();
 
 const indexTree = useIndexTree();
@@ -289,7 +293,9 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
 };
 
 const handleEdgeOptionsButtonClick = (option: OptionButtonMenu) => {
-  console.log(`WIP: do the edge delete here. ${JSON.stringify(option)}`);
+  if (option === OptionButtonMenu.DeleteEdge && props.selectedElementId) {
+    emit('deleteEdge', props.selectedElementId);
+  }
 };
 
 const nodeName = computed<String | null>(() => {

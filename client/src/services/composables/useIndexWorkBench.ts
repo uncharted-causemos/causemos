@@ -1,11 +1,12 @@
-import _ from 'lodash';
-import { ref, computed } from 'vue';
-import { IndexWorkBenchItem } from '@/types/Index';
+import { computed, ref } from 'vue';
+import { IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
 import {
+  createIndexTreeActions,
+  deleteEdgeFromIndexTree,
   findAndRemoveChild,
   findNode as indexTreeUtilFindNode,
-  createIndexTreeActions,
 } from '@/utils/index-tree-util';
+import { IndexNodeType } from '@/types/Enums';
 
 // States
 
@@ -62,6 +63,18 @@ export default function useIndexWorkBench() {
     }
   };
 
+  const deleteEdge = (nodeIds: SelectableIndexElementId) => {
+    if (typeof nodeIds === 'object') {
+      const node = findNode(nodeIds.targetId);
+      if (node && node?.found !== null) {
+        const child = deleteEdgeFromIndexTree(node.found, nodeIds.sourceId);
+        if (child !== null && child.type !== IndexNodeType.OutputIndex) {
+          addItem(child);
+        }
+      }
+    }
+  };
+
   const {
     findAndRenameNode,
     findAndAddChild,
@@ -80,5 +93,6 @@ export default function useIndexWorkBench() {
     toggleDatasetIsInverted,
     attachDatasetToPlaceholder,
     getAnalysisId,
+    deleteEdge,
   };
 }

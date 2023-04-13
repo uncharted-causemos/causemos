@@ -16,7 +16,11 @@
         :selected-element-id="selectedElementId"
         :highlight-edge-id="highlightEdgeId"
       />
-      <IndexDrilldownPanel class="index-drilldown-panel" :selected-element-id="selectedElementId" />
+      <IndexDrilldownPanel
+        class="index-drilldown-panel"
+        :selected-element-id="selectedElementId"
+        @delete-edge="deleteEdge"
+      />
     </div>
   </div>
 </template>
@@ -26,13 +30,15 @@ import { computed, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
-import IndexActionBar, { DropdownOptions } from '@/components/index-structure/index-action-bar.vue';
+import IndexActionBar from '@/components/index-structure/index-action-bar.vue';
+import { DropdownOptions } from '@/utils/index-common-util';
 import IndexDrilldownPanel from '@/components/index-structure/index-drilldown-panel.vue';
 import IndexTreePane from '@/components/index-structure/index-tree-pane.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { createNewIndex, createNewPlaceholderDataset } from '@/utils/index-tree-util';
 import { SelectableIndexElementId } from '@/types/Index';
+import useIndexTree from '@/services/composables/useIndexTree';
 
 const store = useStore();
 const route = useRoute();
@@ -41,6 +47,7 @@ const analysisId = computed(() => route.params.analysisId as string);
 const { analysisName, refresh } = useIndexAnalysis(analysisId);
 
 const indexWorkBench = useIndexWorkBench();
+const indexTree = useIndexTree();
 
 const isStateLoaded = ref(false);
 
@@ -84,10 +91,18 @@ const handleAddDropdownChange = (option: DropdownOptions) => {
       break;
   }
 };
+
+const deleteEdge = (selectedElementIdToDelete: SelectableIndexElementId) => {
+  if (typeof selectedElementIdToDelete === 'object') {
+    indexTree.deleteEdge(selectedElementIdToDelete.sourceId) ||
+      indexWorkBench.deleteEdge(selectedElementIdToDelete);
+    deselectAllElements();
+  }
+};
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/variables';
+@import '@/styles/variables';
 
 .index-structure-view-container {
   .index-drilldown-panel {
