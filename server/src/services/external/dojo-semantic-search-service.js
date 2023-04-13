@@ -1,7 +1,7 @@
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const authUtil = rootRequire('/util/auth-util');
 
-const DOJO_DOC_PARAGRAPH_LIMIT = 20;
+const DOJO_DOC_PARAGRAPH_LIMIT = 50;
 const DOJO_PARAGRAPHS_HIGHLIGHT_URL = process.env.DOJO_URL + '/paragraphs/highlight';
 const DOJO_PARAGRAPHS_URL = process.env.DOJO_URL + '/paragraphs';
 const DOJO_PARAGRAPHS_SEARCH_URL = process.env.DOJO_URL + '/paragraphs/search';
