@@ -156,14 +156,12 @@ export default {
     this.refresh();
 
     if (this.useScrolling) {
-      if (this.useScrolling) {
-        this.scrollObserver = new IntersectionObserver(this.getScrollData, {
-          root: this.$refs.modalBody,
-          rootMargin: '0px',
-          threshold: 0.25,
-        });
-        this.scrollObserver.observe(this.$refs.loadMoreText);
-      }
+      this.scrollObserver = new IntersectionObserver(this.getScrollData, {
+        root: this.$refs.modalBody,
+        rootMargin: '0px',
+        threshold: 0.25,
+      });
+      this.scrollObserver.observe(this.$refs.loadMoreText);
     }
   },
   computed: {
