@@ -43,3 +43,16 @@ export interface Document {
   creator: string | null;
   id: string;
 }
+
+export interface DojoParagraphDetails {
+  query: string;
+  matches: string[];
+}
+
+export interface DojoParagraphHighlight {
+  text: string;
+  highlight: boolean;
+}
+export interface DojoParagraphHighlights {
+  highlights: [DojoParagraphHighlight[]];
+}
