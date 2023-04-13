@@ -193,28 +193,26 @@ export default {
     },
     dateFormatter,
     async getScrollData() {
-      if (this.scrollId != null) {
-        if (this.contentHandler) {
-          const content = await this.retrieveDocument(this.documentId, this.scrollId);
-          this.documentData = this.contentHandler(content, this.documentData);
-          this.textViewer = createTextViewer(this.applyHighlights(this.documentData), true);
+      if (this.scrollId !== null && this.contentHandler !== null) {
+        const content = await this.retrieveDocument(this.documentId, this.scrollId);
+        this.documentData = this.contentHandler(content, this.documentData);
+        this.textViewer = createTextViewer(this.applyHighlights(this.documentData), true);
 
-          // brute force the entire view
-          if (this.$refs.content.hasChildNodes()) {
-            removeChildren(this.$refs.content);
-          }
+        // brute force the entire view
+        if (this.$refs.content.hasChildNodes()) {
+          removeChildren(this.$refs.content);
+        }
 
-          if (this.textOnly === true) {
-            this.$refs.content.appendChild(this.textViewer.element);
-            if (this.textFragment) {
-              this.textViewer.search(this.textFragment);
-            }
+        if (this.textOnly === true) {
+          this.$refs.content.appendChild(this.textViewer.element);
+          if (this.textFragment) {
+            this.textViewer.search(this.textFragment);
           }
+        }
 
-          if (content.scroll_id === null) {
-            this.scrollId = null;
-            this.scrollObserver = null; // end of scroll loading.
-          }
+        if (content.scroll_id === null) {
+          this.scrollId = null;
+          this.scrollObserver = null; // end of scroll loading.
         }
       }
     },
