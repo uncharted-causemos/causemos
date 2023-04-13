@@ -156,10 +156,9 @@ export default {
     this.refresh();
 
     if (this.useScrolling) {
-      // grab a reference to the element for scrolling (if it exists, then must scroll)
-      const placeHolder = document.getElementsByClassName('load-more-text');
-      if (this.useScrolling && placeHolder && placeHolder.length > 0) {
-        this.scrollPlaceholder = placeHolder[0];
+      const loadMoreTextElement = document.getElementsByClassName('load-more-text');
+      if (this.useScrolling && loadMoreTextElement && loadMoreTextElement.length > 0) {
+        this.scrollPlaceholder = loadMoreTextElement[0];
 
         this.scrollObserver = new IntersectionObserver(this.getScrollData, {
           root: document.getElementsByClassName('modal-body')[0], // div div
