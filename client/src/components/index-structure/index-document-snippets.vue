@@ -30,7 +30,7 @@
                 class="btn btn-sm"
                 @click="
                   () => {
-                    selectHighlight(i);
+                    prepareHighlightsForDocumentViewer(i);
                     expandedDocumentId = snippet.documentId;
                     textFragment = snippet.text;
                   }
@@ -105,7 +105,7 @@ const handleReturnedData = (data: any, previousContent: string | null) => {
  *
  * @param index
  */
-const selectHighlight = (index: number) => {
+const prepareHighlightsForDocumentViewer = (index: number) => {
   if (allHighlights.value !== null) {
     const workingValue: any[] = allHighlights.value.highlights[index];
 
