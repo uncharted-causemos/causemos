@@ -71,6 +71,7 @@ import {
   Document,
   DojoParagraphHighlights,
   DojoParagraphHighlight,
+  ScrollData,
 } from '@/types/IndexDocuments';
 import { toRefs, watch, ref } from 'vue';
 import ModalDocument from '@/components/modals/modal-document.vue';
@@ -92,7 +93,7 @@ const NO_TEXT = 'Text not available';
 const snippetsForSelectedNode = ref<Snippet[] | null>(null);
 const highlightsForSelected = ref<DojoParagraphHighlight[]>([]);
 const allHighlights = ref<DojoParagraphHighlights | null>(null);
-const handleReturnedData = (data: any, previousContent: string | null) => {
+const handleReturnedData = (data: ScrollData, previousContent: string | null) => {
   const content = previousContent || '';
   return content.concat(
     data?.paragraphs?.reduce((bodyText: string, p: any) => `${bodyText}<p>${p.text}</p>`, '')

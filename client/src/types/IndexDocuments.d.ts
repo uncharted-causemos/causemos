@@ -56,3 +56,17 @@ export interface DojoParagraphHighlight {
 export interface DojoParagraphHighlights {
   highlights: [DojoParagraphHighlight[]];
 }
+
+export interface ScrollDataParagraph {
+  id: string;
+  document_id: string;
+  text: string;
+  page_no: number;
+  length: number;
+}
+export interface ScrollData {
+  hits: number;
+  items_in_page: number;
+  scroll_id: string;
+  paragraphs: ScrollDataParagraph[];
+}
