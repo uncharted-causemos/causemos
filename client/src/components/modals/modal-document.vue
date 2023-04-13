@@ -50,7 +50,7 @@
       </div>
       <div v-if="!documentData && !isLoading" class="no-data status">Document not found.</div>
       <div ref="content" v-html="formattedText"></div>
-      <div ref="loadMoreText" class="load-more-text">
+      <div class="load-more-text">
         <h5 v-if="useScrolling && hasScrollId">Loading body text ...</h5>
         <h5 v-if="useScrolling && !hasScrollId">---- End of document ----</h5>
       </div>
