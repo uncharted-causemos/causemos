@@ -50,7 +50,7 @@
       </div>
       <div v-if="!documentData && !isLoading" class="no-data status">Document not found.</div>
       <div ref="content" v-html="formattedText"></div>
-      <div class="load-more-text">
+      <div ref="loadMoreText" class="load-more-text">
         <h5 v-if="useScrolling && hasScrollId">Loading body text ...</h5>
         <h5 v-if="useScrolling && !hasScrollId">---- End of document ----</h5>
       </div>
@@ -156,16 +156,13 @@ export default {
     this.refresh();
 
     if (this.useScrolling) {
-      const loadMoreTextElement = document.getElementsByClassName('load-more-text');
-      if (this.useScrolling && loadMoreTextElement && loadMoreTextElement.length > 0) {
-        this.scrollPlaceholder = loadMoreTextElement[0];
-
+      if (this.useScrolling) {
         this.scrollObserver = new IntersectionObserver(this.getScrollData, {
-          root: document.getElementsByClassName('modal-body')[0], // div div
+          root: this.$refs.modalBody,
           rootMargin: '0px',
           threshold: 0.25,
         });
-        this.scrollObserver.observe(this.scrollPlaceholder);
+        this.scrollObserver.observe(this.$refs.loadMoreText);
       }
     }
   },
@@ -226,7 +223,9 @@ export default {
         this.documentMeta = await this.retrieveDocumentMeta(this.documentId);
       }
 
-      const content = await this.retrieveDocument(this.documentId);
+      const content = this.useScrolling
+        ? await this.retrieveDocument(this.documentId, this.scrollId)
+        : await this.retrieveDocument(this.documentId);
 
       if (this.contentHandler) {
         this.scrollId = content.scroll_id ?? null;
@@ -311,7 +310,7 @@ export default {
     },
     edit() {
       // scroll up to edit zone;
-      const anchor = document.getElementsByClassName('modal-body')[0];
+      const anchor = this.$refs.modalBody;
       anchor.scrollTop = 0;
       this.setFieldsFromDocumentData();
       this.editable = true;
