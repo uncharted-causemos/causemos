@@ -30,6 +30,7 @@
                 class="btn btn-sm"
                 @click="
                   () => {
+                    prepareHighlightsForDocumentViewer(i);
                     expandedDocumentId = snippet.documentId;
                     textFragment = snippet.text;
                   }
@@ -50,9 +51,9 @@
     :text-fragment="textFragment"
     :retrieve-document-meta="getDocument"
     :retrieve-document="getDocumentParagraphs"
-    :content-handler="
-      (data) => data?.paragraphs?.reduce((bodyText, p) => `${bodyText}<p>${p.text}</p>`, '')
-    "
+    :content-handler="handleReturnedData"
+    :use-scrolling="true"
+    :highlights-for-selected="highlightsForSelected"
     @close="expandedDocumentId = null"
   />
 </template>
@@ -69,6 +70,8 @@ import {
   ParagraphSearchResponse,
   Document,
   DojoParagraphHighlights,
+  DojoParagraphHighlight,
+  ScrollData,
 } from '@/types/IndexDocuments';
 import { toRefs, watch, ref } from 'vue';
 import ModalDocument from '@/components/modals/modal-document.vue';
@@ -80,7 +83,6 @@ const props = defineProps<{
 const { selectedNodeName, selectedUpstreamNodeName } = toRefs(props);
 const expandedDocumentId = ref<string | null>(null);
 const textFragment = ref<string | null>(null);
-
 const SNIPPETS_LOADING = 'Loading snippets...';
 const NO_TITLE = 'Title not available';
 const NO_AUTHOR = 'Author not available';
@@ -89,12 +91,59 @@ const NO_TEXT = 'Text not available';
 
 // `null` means snippets are loading
 const snippetsForSelectedNode = ref<Snippet[] | null>(null);
+const highlightsForSelected = ref<DojoParagraphHighlight[]>([]);
+const allHighlights = ref<DojoParagraphHighlights | null>(null);
+const handleReturnedData = (data: ScrollData, previousContent: string | null) => {
+  const content = previousContent || '';
+  return content.concat(
+    data?.paragraphs?.reduce((bodyText: string, p: any) => `${bodyText}<p>${p.text}</p>`, '')
+  );
+};
+
+/**
+ * Grab set of highlights and verify the highlights are unique and sorted by length
+ * to ensure highlights are applied correctly.
+ *
+ * @param index
+ */
+const prepareHighlightsForDocumentViewer = (index: number) => {
+  if (allHighlights.value !== null) {
+    const workingValue: any[] = allHighlights.value.highlights[index];
+
+    highlightsForSelected.value = workingValue
+      .filter((item) => item.highlight === true)
+      .reduce((accumulator, item) => {
+        const index = accumulator.findIndex((e: any) => {
+          if (e.text === item.text) return true;
+          return false;
+        });
+        if (index < 0) {
+          return [...accumulator, item];
+        }
+        return accumulator;
+      }, [])
+      .sort((a: any, b: any) => {
+        if (a.text.length > b.text.length) {
+          return 1;
+        } else if (a.text.length < b.text.length) {
+          return -1;
+        } else {
+          return 0;
+        }
+      });
+  } else {
+    highlightsForSelected.value = [];
+  }
+};
 
 watch(
   [selectedNodeName, selectedUpstreamNodeName],
   async () => {
     // Clear any previously-fetched snippets
     snippetsForSelectedNode.value = null;
+    highlightsForSelected.value = [];
+    allHighlights.value = null;
+
     // Save a copy of the node name to watch for race conditions later
     const fetchingSnippetsFor = selectedNodeName.value;
 
@@ -117,7 +166,7 @@ watch(
     );
     const metadataResults = await Promise.all(metadataRequests);
 
-    const paragraphHighlights: DojoParagraphHighlights | null = await getHighlights({
+    allHighlights.value = await getHighlights({
       query: searchString,
       matches: queryResults.results.map((item) => item.text),
     });
@@ -128,8 +177,8 @@ watch(
 
       return {
         documentId: result.document_id,
-        text: paragraphHighlights
-          ? paragraphHighlights.highlights[i].reduce(
+        text: allHighlights.value
+          ? allHighlights.value.highlights[i].reduce(
               (paragraph, item) =>
                 item.highlight
                   ? `${paragraph}<span class="dojo-mark">${item.text}</span>`
