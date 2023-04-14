@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeMount, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
@@ -54,6 +54,13 @@ const isStateLoaded = ref(false);
 const selectedElementId = ref<SelectableIndexElementId | null>(null);
 const highlightEdgeId = ref<SelectableIndexElementId | null>(null);
 
+const handleKey = (evt: KeyboardEvent) => {
+  if (evt.key === 'Delete') {
+    if (selectedElementId.value !== null && typeof selectedElementId.value === 'object') {
+      deleteEdge(selectedElementId.value);
+    }
+  }
+};
 const selectElement = (id: SelectableIndexElementId) => {
   deselectAllElements();
   selectedElementId.value = id;
@@ -71,12 +78,19 @@ const clearHighlight = () => {
   highlightEdgeId.value = null;
 };
 
+onBeforeMount(() => {
+  window.addEventListener('keyup', handleKey);
+});
 // Set analysis name on the navbar
 onMounted(async () => {
   store.dispatch('app/setAnalysisName', '');
   await refresh();
   store.dispatch('app/setAnalysisName', analysisName.value);
   isStateLoaded.value = true;
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keyup', handleKey);
 });
 
 const handleAddDropdownChange = (option: DropdownOptions) => {
