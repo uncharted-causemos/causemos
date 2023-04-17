@@ -233,7 +233,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'deleteEdge', value: SelectableIndexElementId): void;
+  (e: 'delete-edge', value: SelectableIndexElementId): void;
 }>();
 
 const indexTree = useIndexTree();
@@ -294,7 +294,7 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
 
 const handleEdgeOptionsButtonClick = (option: OptionButtonMenu) => {
   if (option === OptionButtonMenu.DeleteEdge && props.selectedElementId) {
-    emit('deleteEdge', props.selectedElementId);
+    emit('delete-edge', props.selectedElementId);
   }
 };
 
