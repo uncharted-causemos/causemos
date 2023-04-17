@@ -30,7 +30,12 @@
         :layer="borderLayer"
         :before-id="firstSymbolLayerId"
       />
-      <wm-map-popup :layer-id="colorLayerId" :formatter-fn="popupFormatter" :cursor="'default'" />
+      <wm-map-popup
+        v-if="!disablePopup"
+        :layer-id="colorLayerId"
+        :formatter-fn="popupFormatter"
+        :cursor="'default'"
+      />
     </wm-map>
     <div v-if="data.length === 0" class="no-data">No data</div>
   </div>
@@ -128,6 +133,10 @@ export default defineComponent({
       type: Number,
       default: 0,
     },
+    minZoom: {
+      type: Number,
+      default: 1,
+    },
     mapBounds: {
       // initial map bounds; default bounds to the bbox of the model country/countries
       type: [Array, Object],
@@ -145,6 +154,10 @@ export default defineComponent({
       },
     },
     disablePanZoom: {
+      type: Boolean,
+      default: false,
+    },
+    disablePopup: {
       type: Boolean,
       default: false,
     },
@@ -176,7 +189,7 @@ export default defineComponent({
   computed: {
     mapFixedOptions() {
       const options = {
-        minZoom: 1,
+        minZoom: this.minZoom,
         ...BASE_MAP_OPTIONS,
       };
       options.style = this.selectedBaseLayerEndpoint;

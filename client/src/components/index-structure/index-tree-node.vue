@@ -106,6 +106,7 @@ export enum OptionButtonMenu {
   Rename = 'Rename',
   Duplicate = 'Duplicate',
   Delete = 'Delete',
+  DeleteEdge = 'DeleteEdge',
 }
 </script>
 <script setup lang="ts">

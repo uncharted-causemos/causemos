@@ -29,6 +29,7 @@ import { isSplitByQualifierActive } from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
 import { filterRawDataByRegionIds, computeTimeseriesFromRawData } from '@/utils/outputdata-util';
 import { getLevelFromRegionId, adminLevelToString } from '@/utils/admin-level-util';
+import { normalize } from '@/utils/value-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
 
 const RAW_DATA_REQUEST_CACHE_SIZE = 20;
@@ -514,6 +515,36 @@ export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAg
   } catch (e) {
     return { country: [], admin1: [], admin2: [], admin3: [] };
   }
+};
+
+// TODO: temporary!
+// We probably want to
+//  - pre-normalize the data on the backend.
+//  - normalize it with respect to the min and max of the dataset across timestamps
+//  - Keep original value as well, instead of overriding it with the normalized version
+export const getRegionAggregationNormalized = async (
+  spec: OutputSpec,
+  isInverted: boolean
+): Promise<RegionalAggregation> => {
+  const result = await getRegionAggregation(spec);
+  if (result.country === undefined || result.country.length === 0) {
+    return result;
+  }
+  const countries = result.country;
+  const values = countries.map(({ value }) => value);
+  const min = _.min(values) ?? 0;
+  const max = _.max(values) ?? 0;
+  result.country = countries.map((country) => {
+    const normalizedValue = normalize(country.value, min, max);
+    // If this dataset is inverted, higher original values should map closer to 0 and lower
+    //  original values should map closer to 1.
+    const countryValue = isInverted ? 1 - normalizedValue : normalizedValue;
+    return {
+      ...country,
+      value: countryValue,
+    };
+  });
+  return result;
 };
 
 export const getRegionAggregationWithQualifiers = async (
