@@ -8,6 +8,8 @@ import {
   OutputIndex,
   Placeholder,
   DatasetSearchResult,
+  SelectableIndexElementId,
+  IndexEdgeId,
 } from '@/types/Index';
 import _ from 'lodash';
 import { DataConfig } from '@/types/Datacube';
@@ -342,6 +344,10 @@ export const toggleIsInverted = (datasetNode: Dataset) => {
 export const addChild = (parentNode: ParentNode, child: Index | Dataset | Placeholder) => {
   parentNode.inputs.unshift(child);
   parentNode.inputs = rebalanceInputWeights(parentNode.inputs);
+};
+
+export const isEdge = (indexElementId: SelectableIndexElementId): indexElementId is IndexEdgeId => {
+  return typeof indexElementId === 'object';
 };
 
 export interface IndexTreeActionsBase {

@@ -224,6 +224,7 @@ import {
   isOutputIndexNode,
   getIndexNodeTypeColor,
   getIndexNodeTypeIcon,
+  isEdge,
 } from '@/utils/index-tree-util';
 import { OptionButtonMenu } from '@/utils/index-common-util';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
@@ -302,7 +303,7 @@ const nodeName = computed<String | null>(() => {
   let idToSearch = null;
   if (props.selectedElementId && typeof props.selectedElementId === 'string') {
     idToSearch = props.selectedElementId;
-  } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+  } else if (props.selectedElementId && isEdge(props.selectedElementId)) {
     idToSearch = props.selectedElementId.targetId;
   }
 
@@ -316,7 +317,7 @@ const nodeName = computed<String | null>(() => {
 });
 
 const nodeUpstreamName = computed<String | null>(() => {
-  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+  if (props.selectedElementId && isEdge(props.selectedElementId)) {
     const node = searchForNode(props.selectedElementId.sourceId);
     if (node) {
       return node.found.name;
@@ -327,9 +328,9 @@ const nodeUpstreamName = computed<String | null>(() => {
 
 const selectedNode = computed<IndexNode | null>(() => {
   let idToSearch = null;
-  if (props.selectedElementId && typeof props.selectedElementId === 'string') {
+  if (props.selectedElementId && !isEdge(props.selectedElementId)) {
     idToSearch = props.selectedElementId;
-  } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+  } else if (props.selectedElementId && isEdge(props.selectedElementId)) {
     idToSearch = props.selectedElementId.targetId;
   } else {
     return null;
@@ -346,7 +347,7 @@ const selectedDatasetDataId = computed(() => {
 });
 
 const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode } | null>(() => {
-  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+  if (props.selectedElementId && isEdge(props.selectedElementId)) {
     const sourceNode = searchForNode(props.selectedElementId.sourceId);
     if (sourceNode?.found && sourceNode?.parent) {
       return { source: sourceNode.found, target: sourceNode.parent };

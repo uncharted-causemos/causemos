@@ -5,6 +5,7 @@ import {
   deleteEdgeFromIndexTree,
   findAndRemoveChild,
   findNode as indexTreeUtilFindNode,
+  isEdge,
 } from '@/utils/index-tree-util';
 import { IndexNodeType } from '@/types/Enums';
 
@@ -64,7 +65,7 @@ export default function useIndexWorkBench() {
   };
 
   const deleteEdge = (nodeIds: SelectableIndexElementId) => {
-    if (typeof nodeIds === 'object') {
+    if (isEdge(nodeIds)) {
       const node = findNode(nodeIds.targetId);
       if (node && node?.found !== null) {
         const child = deleteEdgeFromIndexTree(node.found, nodeIds.sourceId);

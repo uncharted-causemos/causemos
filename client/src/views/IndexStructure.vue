@@ -36,7 +36,7 @@ import IndexDrilldownPanel from '@/components/index-structure/index-drilldown-pa
 import IndexTreePane from '@/components/index-structure/index-tree-pane.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import { createNewIndex, createNewPlaceholderDataset } from '@/utils/index-tree-util';
+import { createNewIndex, createNewPlaceholderDataset, isEdge } from '@/utils/index-tree-util';
 import { SelectableIndexElementId } from '@/types/Index';
 import useIndexTree from '@/services/composables/useIndexTree';
 
@@ -56,7 +56,7 @@ const highlightEdgeId = ref<SelectableIndexElementId | null>(null);
 
 const handleKey = (evt: KeyboardEvent) => {
   if (evt.key === 'Delete') {
-    if (selectedElementId.value !== null && typeof selectedElementId.value === 'object') {
+    if (selectedElementId.value !== null && isEdge(selectedElementId.value)) {
       deleteEdge(selectedElementId.value);
     }
   }
@@ -107,7 +107,7 @@ const handleAddDropdownChange = (option: DropdownOptions) => {
 };
 
 const deleteEdge = (selectedElementIdToDelete: SelectableIndexElementId) => {
-  if (typeof selectedElementIdToDelete === 'object') {
+  if (isEdge(selectedElementIdToDelete)) {
     indexTree.deleteEdge(selectedElementIdToDelete.sourceId) ||
       indexWorkBench.deleteEdge(selectedElementIdToDelete);
     deselectAllElements();
