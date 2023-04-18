@@ -2,21 +2,6 @@
   <div class="index-tree-node-container" :class="classObject" @click="selectNode">
     <div class="disable-overlay" />
     <div v-if="isConceptNodeWithoutDataset(props.nodeData)" class="input-arrow" />
-    <div class="header content">
-      <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
-        <template #content>
-          <div
-            v-for="item in optionsButtonMenu"
-            class="dropdown-option"
-            :key="item.type"
-            @click="handleOptionsButtonClick(item.type)"
-          >
-            <i class="fa fa-fw" :class="item.icon" />
-            {{ item.text }}
-          </div>
-        </template>
-      </OptionsButton>
-    </div>
     <template v-if="showDatasetSearch">
       <IndexTreeNodeSearchBar
         :initial-search-text="props.nodeData.name"
@@ -47,28 +32,49 @@
         Done
       </button>
     </div>
-    <div v-else class="name content">
-      {{ props.nodeData.name }}
+    <div v-else class="header content">
+      <div class="name">
+        {{ props.nodeData.name }}
+      </div>
+      <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
+        <template #content>
+          <div
+            v-for="item in optionsButtonMenu"
+            class="dropdown-option"
+            :key="item.type"
+            @click="handleOptionsButtonClick(item.type)"
+          >
+            <i class="fa fa-fw" :class="item.icon" />
+            {{ item.text }}
+          </div>
+        </template>
+      </OptionsButton>
     </div>
-    <div v-if="footerText" class="footer content un-font-small">
-      {{ footerText }}
+    <p class="un-font-small content" :class="{ warning: isEmptyNode(props.nodeData) }">
+      {{ dataSourceText }}
+    </p>
+    <button
+      v-if="isConceptNodeWithoutDataset(props.nodeData) && !showEditName"
+      class="btn btn-default full-width-button"
+      @click="emit('create-child', props.nodeData.id)"
+    >
+      Add input concept
+    </button>
+
+    <div
+      v-if="isConceptNodeWithDatasetAttached(props.nodeData)"
+      class="footer content un-font-small"
+    >
+      {{ dataSourceText }}
     </div>
-    <!-- footer buttons -->
     <button
       v-if="classObject['is-empty'] && !showDatasetSearch && !showEditName"
-      class="btn btn-default content replace-dataset-button"
+      class="btn btn-default full-width-button"
       @click="isSearchingForDataset = true"
     >
+      <i class="fa fa-fw" :class="DATASET_ICON" />
       Attach dataset
     </button>
-    <div
-      v-if="isConceptNodeWithoutDataset(props.nodeData) && !showEditName"
-      class="add-component-btn-container footer content"
-    >
-      <button class="btn btn-default" @click="emit('create-child', props.nodeData.id)">
-        Add input concept
-      </button>
-    </div>
   </div>
 </template>
 <script lang="ts">
@@ -79,6 +85,7 @@ import {
   isEmptyNode,
   isConceptNodeWithoutDataset,
   isConceptNodeWithDatasetAttached,
+  DATASET_ICON,
 } from '@/utils/index-tree-util';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
@@ -238,23 +245,18 @@ const attachDataset = (dataset: DatasetSearchResult) => {
   disableInteraction.value = true;
 };
 
-// Footer
-
-const childNodes = computed(() =>
-  isConceptNodeWithoutDataset(props.nodeData) ? props.nodeData.components : []
-);
-const footerText = computed(() => {
-  const dataNodes = childNodes.value.filter((node) => isEmptyNode(node.componentNode));
-  const numInputs = dataNodes.length;
-  switch (numInputs) {
+const dataSourceText = computed(() => {
+  if (!isConceptNodeWithoutDataset(props.nodeData)) {
+    return getDatasetFooterText(props.nodeData);
+  }
+  const componentCount = props.nodeData.components.length;
+  switch (componentCount) {
     case 0:
-      if (isConceptNodeWithDatasetAttached(props.nodeData))
-        return getDatasetFooterText(props.nodeData);
-      return props.nodeData.name ? 'No inputs.' : '';
+      return props.nodeData.name ? 'No dataset or inputs.' : '';
     case 1:
       return '1 input.';
     default:
-      return `Combination of ${numInputs} inputs.`;
+      return `Combination of ${componentCount} inputs.`;
   }
 });
 
@@ -356,16 +358,7 @@ $option-button-width: 16px;
     }
   }
 
-  .add-component-btn-container :deep(button) {
-    @extend .btn-default;
-    strong {
-      padding-right: 5px;
-      font-weight: 600;
-      font-size: $font-size-small;
-    }
-  }
-
-  &:hover .options-button-container,
+  .warning &:hover .options-button-container,
   .options-button-container.active {
     display: block;
   }
@@ -373,12 +366,13 @@ $option-button-width: 16px;
   .content {
     padding: $vertical-padding $horizontal-padding;
   }
-  .replace-dataset-button {
+  .full-width-button {
     margin: $vertical-padding $horizontal-padding;
   }
 
   .header {
     display: flex;
+    align-items: center;
 
     > i {
       display: grid;
@@ -407,7 +401,7 @@ $option-button-width: 16px;
   }
 
   .name {
-    padding-top: 0px;
+    flex: 1;
   }
 
   .footer {

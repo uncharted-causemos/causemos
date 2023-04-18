@@ -20,7 +20,7 @@
         }"
         @mouseenter="
           emit('highlight-edge', {
-            sourceId: cell.node.components[0].componentNode.id,
+            sourceId: (cell.node as ConceptNodeWithoutDataset).components[0].componentNode.id,
             targetId: cell.node.id,
           })
         "
@@ -28,7 +28,7 @@
         @click="
           () =>
             emit('select-element', {
-              sourceId: cell.node.components[0].componentNode.id,
+              sourceId: (cell.node as ConceptNodeWithoutDataset).components[0].componentNode.id,
               targetId: cell.node.id,
             })
         "
@@ -50,7 +50,6 @@
         :class="{
           visible: cell.hasOutputLine,
           inactive: !cell.hasOutputLine,
-          dashed: isEmptyNode(cell.node),
           'last-child': cell.isLastChild,
           [EDGE_CLASS.SELECTED]: isOutgoingSelected(cell.node.id),
           [EDGE_CLASS.SELECTED_Y]: isOutgoingYSelected(cell.node.id),
@@ -77,13 +76,14 @@ import { computed } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import {
   ConceptNode,
+  ConceptNodeWithoutDataset,
   DatasetSearchResult,
   GridCell,
   SelectableIndexElementId,
 } from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren, isEmptyNode, isOutputIndexNode, isEdge } from '@/utils/index-tree-util';
+import { hasChildren, isOutputIndexNode, isEdge } from '@/utils/index-tree-util';
 import {
   offsetGridCells,
   getGridRowCount,
@@ -339,21 +339,7 @@ $edge-selected: $accent-main;
       &.inactive {
         pointer-events: none;
       }
-      &.dashed {
-        border-top-style: dashed;
-        &.highlighted {
-          border-top-color: $accent-light;
-        }
-        &.highlighted-y {
-          border-right-color: $accent-light;
-        }
-        &.selected-edge {
-          border-top-color: $edge-selected;
-        }
-        &.selected-y {
-          border-right-color: $edge-selected;
-        }
-      }
+
       &.last-child {
         border-right: none;
       }
