@@ -18,7 +18,7 @@
       <template #content>
         <div
           v-for="item in dropdownItems"
-          :key="item.value"
+          :key="item"
           class="dropdown-option"
           :class="{
             'dropdown-option-selected': isSelectedItem(item.value),
