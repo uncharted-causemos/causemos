@@ -1,18 +1,18 @@
 import { v4 as uuidv4 } from 'uuid';
-import { DataTransform } from '@/types/Enums';
+import { DataTransform, ProjectionAlgorithm } from '@/types/Enums';
 import {
   DatasetSearchResult,
   ConceptNode,
   ConceptNodeWithDatasetAttached,
   ConceptNodeWithoutDataset,
-  ProjectionAlgorithm,
+  IndexEdgeId,
+  SelectableIndexElementId,
 } from '@/types/Index';
 import _ from 'lodash';
 import { DataConfig } from '@/types/Datacube';
 import { getDefaultDataConfig } from '@/services/new-datacube-service';
 import { OutputSpec } from '@/types/Outputdata';
 import { WeightedComponent } from '@/types/WeightedComponent';
-import { IndexEdgeId, SelectableIndexElementId } from '../types/Index';
 
 export type FindNodeResult =
   | { parent: ConceptNodeWithoutDataset | null; found: ConceptNode }

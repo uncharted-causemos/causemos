@@ -1,7 +1,7 @@
 import { COLOR } from '@/utils/colors-util';
-import { DataConfig } from './Datacube';
-import { DiscreteOuputScale } from './Enums';
-import { WeightedComponent } from './WeightedComponent';
+import { DataConfig } from '@/types/Datacube';
+import { DiscreteOuputScale } from '@/types/Enums';
+import type { WeightedComponent } from '@/types/WeightedComponent';
 
 export interface DatasetSearchResult {
   displayName: string;
@@ -9,13 +9,6 @@ export interface DatasetSearchResult {
   outputName: string;
   description: string;
   familyName: string;
-}
-
-// Each dataset should have projectionAlgorithm: Auto by default, but this can be overridden
-enum ProjectionAlgorithm {
-  Auto,
-  Holt,
-  HoltWinters,
 }
 
 interface AttachedDataset {

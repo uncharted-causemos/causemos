@@ -196,3 +196,10 @@ export enum DiscreteOuputScale {
   Quantize = 'Quantize',
   Quantile = 'Quantile',
 }
+
+// Each dataset should have projectionAlgorithm: Auto by default, but this can be overridden
+export enum ProjectionAlgorithm {
+  Auto,
+  Holt,
+  HoltWinters,
+}
