@@ -53,7 +53,7 @@ export default function useIndexTree() {
   const deleteEdge = (nodeId: string) => {
     const childNode = deleteEdgeFromIndexTree(outputIndexTree.value, nodeId);
     if (childNode !== null && childNode.type !== IndexNodeType.OutputIndex) {
-      workbench.addItem(childNode);
+      workbench.appendItem(childNode);
       triggerUpdate();
       return true;
     }

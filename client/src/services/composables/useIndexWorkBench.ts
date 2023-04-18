@@ -39,6 +39,10 @@ export default function useIndexWorkBench() {
     workBenchItems.value = [item, ...workBenchItems.value];
   };
 
+  const appendItem = (item: IndexWorkBenchItem) => {
+    workBenchItems.value = [...workBenchItems.value, item];
+  };
+
   const findNode = (nodeId: string) => {
     for (const tree of workBenchItems.value) {
       const found = indexTreeUtilFindNode(tree, nodeId);
@@ -87,6 +91,7 @@ export default function useIndexWorkBench() {
     items,
     initialize,
     addItem,
+    appendItem,
     findNode,
     findAndRenameNode,
     findAndDeleteItem,
