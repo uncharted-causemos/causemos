@@ -82,7 +82,7 @@
   </div>
 </template>
 <script lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { ConceptNode, ConceptNodeWithDatasetAttached, DatasetSearchResult } from '@/types/Index';
 import {
   duplicateNode,
@@ -220,6 +220,8 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
 // Dataset search
 
 const disableInteraction = ref(false);
+// Whenever the data for this node changes (e.g. when attaching a dataset), re-enable interactions.
+watch([props.nodeData], () => (disableInteraction.value = false));
 const isSearchingForDataset = ref(false);
 
 const showDatasetSearch = computed(
@@ -244,8 +246,9 @@ const setNodeName = (value: string) => {
 const attachDataset = (dataset: DatasetSearchResult) => {
   emit('attach-dataset', props.nodeData.id, dataset);
   isSearchingForDataset.value = false;
-  // Once attach-dataset event is fired, we are finished with interacting with the placeholder node and expecting the node to be converted to a dataset node.
-  // Further interaction with data search or selection should not be done until the node is changed and re-rendered as a dataset node.
+  // Once attach-dataset event is fired, further interaction with data search or selection should
+  //  not be done until the node data is changed and the watcher above has fired to re-enable
+  //  interactions.
   disableInteraction.value = true;
 };
 
@@ -297,7 +300,7 @@ $option-button-width: 16px;
   border: 1px solid $un-color-black-30;
   border-radius: 3px;
 
-  &:not(.placeholder):hover {
+  &:hover {
     border-color: $accent-main;
   }
 
@@ -362,7 +365,7 @@ $option-button-width: 16px;
     }
   }
 
-  .warning &:hover .options-button-container,
+  &:hover .options-button-container,
   .options-button-container.active {
     display: block;
   }
