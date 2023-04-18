@@ -54,13 +54,6 @@ const isStateLoaded = ref(false);
 const selectedElementId = ref<SelectableIndexElementId | null>(null);
 const highlightEdgeId = ref<SelectableIndexElementId | null>(null);
 
-const handleKey = (evt: KeyboardEvent) => {
-  if (evt.key === 'Delete') {
-    if (selectedElementId.value !== null && isEdge(selectedElementId.value)) {
-      deleteEdge(selectedElementId.value);
-    }
-  }
-};
 const selectElement = (id: SelectableIndexElementId) => {
   deselectAllElements();
   selectedElementId.value = id;
@@ -76,6 +69,14 @@ const highlightEdge = (id: SelectableIndexElementId) => {
 
 const clearHighlight = () => {
   highlightEdgeId.value = null;
+};
+
+const handleKey = (evt: KeyboardEvent) => {
+  if (evt.key === 'Delete') {
+    if (selectedElementId.value !== null && isEdge(selectedElementId.value)) {
+      deleteEdge(selectedElementId.value);
+    }
+  }
 };
 
 onBeforeMount(() => {
