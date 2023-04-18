@@ -16,16 +16,9 @@
       <button class="btn btn-sm" disabled>Modify</button>
     </header>
     <div class="table-rows" v-if="props.inputs.length !== 0">
-      <div class="table-row" v-for="component in props.inputs" :key="component.id">
-        <p>
-          <i
-            class="fa fa-fw"
-            :style="{ color: getIndexNodeTypeColor(component.type) }"
-            :class="[getIndexNodeTypeIcon(component.type)]"
-          />
-          {{ component.name }}
-        </p>
-        <p v-if="isPlaceholderNode(component)" class="de-emphasized">Placeholder</p>
+      <div class="table-row" v-for="component in props.inputs" :key="component.componentNode.id">
+        <p>{{ component.componentNode.name }}</p>
+        <p v-if="isEmptyNode(component.componentNode)" class="de-emphasized">No data</p>
         <p v-else>{{ precisionFormatter(component.weight) }}%</p>
       </div>
     </div>
@@ -35,16 +28,12 @@
 <script setup lang="ts">
 import { toRefs } from 'vue';
 import precisionFormatter from '@/formatters/precision-formatter';
-import { IndexWorkBenchItem } from '@/types/Index';
-import {
-  getIndexNodeTypeColor,
-  getIndexNodeTypeIcon,
-  isPlaceholderNode,
-} from '@/utils/index-tree-util';
+import { isEmptyNode } from '@/utils/index-tree-util';
+import { WeightedComponent } from '@/types/WeightedComponent';
 
 const props = defineProps<{
   targetName?: string | null;
-  inputs: IndexWorkBenchItem[];
+  inputs: WeightedComponent[];
 }>();
 
 const { targetName } = toRefs(props);

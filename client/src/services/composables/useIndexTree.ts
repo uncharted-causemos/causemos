@@ -1,5 +1,4 @@
 import { ref, computed } from 'vue';
-import { OutputIndex } from '@/types/Index';
 import {
   findAndRemoveChild,
   createNewOutputIndex,
@@ -9,12 +8,15 @@ import {
 } from '@/utils/index-tree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { IndexNodeType } from '@/types/Enums';
+import { ConceptNode } from '@/types/Index';
 
 // States
 
 const targetAnalysisId = ref('');
-const outputIndexTree = ref<OutputIndex>(createNewOutputIndex());
+
+const outputIndexTree = ref<ConceptNode>(createNewOutputIndex());
 const workbench = useIndexWorkBench();
+
 const triggerUpdate = () => {
   outputIndexTree.value = { ...outputIndexTree.value };
 };
@@ -27,7 +29,7 @@ export default function useIndexTree() {
 
   // Actions
 
-  const initialize = (analysisId: string, indexTree: OutputIndex) => {
+  const initialize = (analysisId: string, indexTree: ConceptNode) => {
     targetAnalysisId.value = analysisId;
     outputIndexTree.value = indexTree;
   };
@@ -60,12 +62,8 @@ export default function useIndexTree() {
     return false;
   };
 
-  const {
-    findAndRenameNode,
-    findAndAddChild,
-    attachDatasetToPlaceholder,
-    toggleDatasetIsInverted,
-  } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
+  const { findAndRenameNode, findAndAddChild, attachDatasetToNode, toggleDatasetIsInverted } =
+    createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
 
   return {
     tree,
@@ -75,7 +73,7 @@ export default function useIndexTree() {
     findAndDelete,
     deleteEdge,
     findAndAddChild,
-    attachDatasetToPlaceholder,
+    attachDatasetToNode,
     getAnalysisId,
     toggleDatasetIsInverted,
   };

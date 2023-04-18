@@ -19,11 +19,18 @@
             isIncomingHighlighted(cell.node.id) && !isIncomingSelected(cell.node.id),
         }"
         @mouseenter="
-          emit('highlight-edge', { sourceId: cell.node.inputs[0].id, targetId: cell.node.id })
+          emit('highlight-edge', {
+            sourceId: cell.node.components[0].componentNode.id,
+            targetId: cell.node.id,
+          })
         "
         @mouseleave="highlightClear"
         @click="
-          () => emit('select-element', { sourceId: cell.node.inputs[0].id, targetId: cell.node.id })
+          () =>
+            emit('select-element', {
+              sourceId: cell.node.components[0].componentNode.id,
+              targetId: cell.node.id,
+            })
         "
       ></div>
       <IndexTreeNode
@@ -35,7 +42,7 @@
         @duplicate="duplicateNode"
         @select="(id) => emit('select-element', id)"
         @create-child="createChild"
-        @attach-dataset="attachDatasetToPlaceholder"
+        @attach-dataset="attachDatasetToNode"
         @mouseenter="highlightClear"
       />
       <div
@@ -43,7 +50,7 @@
         :class="{
           visible: cell.hasOutputLine,
           inactive: !cell.hasOutputLine,
-          dashed: cell.node.type === IndexNodeType.Placeholder,
+          dashed: isEmptyNode(cell.node),
           'last-child': cell.isLastChild,
           [EDGE_CLASS.SELECTED]: isOutgoingSelected(cell.node.id),
           [EDGE_CLASS.SELECTED_Y]: isOutgoingYSelected(cell.node.id),
@@ -68,11 +75,15 @@
 import _ from 'lodash';
 import { computed } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
-import { IndexNodeType } from '@/types/Enums';
-import { DatasetSearchResult, GridCell, IndexNode, SelectableIndexElementId } from '@/types/Index';
+import {
+  ConceptNode,
+  DatasetSearchResult,
+  GridCell,
+  SelectableIndexElementId,
+} from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren, isEdge } from '@/utils/index-tree-util';
+import { hasChildren, isEmptyNode, isOutputIndexNode, isEdge } from '@/utils/index-tree-util';
 import {
   offsetGridCells,
   getGridRowCount,
@@ -120,14 +131,10 @@ const isHigherThanSibling = (id: string, edgeId: SelectableIndexElementId) => {
     }
     const targetNode = searchForNode(edgeId.sourceId);
 
-    if (
-      targetNode &&
-      targetNode.parent &&
-      (targetNode.parent.type === 'Index' || targetNode.parent.type === 'OutputIndex')
-    ) {
-      const allInputs = targetNode.parent.inputs;
-      const idIndex = allInputs.findIndex((item) => item.id === sourceId);
-      const selection = allInputs.slice(0, idIndex).map((item) => item.id);
+    if (targetNode && targetNode.parent) {
+      const allInputs = targetNode.parent.components;
+      const idIndex = allInputs.findIndex((item) => item.componentNode.id === sourceId);
+      const selection = allInputs.slice(0, idIndex).map((item) => item.componentNode.id);
 
       return selection.includes(id);
     }
@@ -208,28 +215,25 @@ const renameNode = (nodeId: string, newName: string) => {
   indexTree.findAndRenameNode(nodeId, newName);
 };
 
-const deleteNode = (deleteNode: IndexNode) => {
+const deleteNode = (deleteNode: ConceptNode) => {
   // Find from both places and delete the node.
   workbench.findAndDeleteItem(deleteNode.id);
   indexTree.findAndDelete(deleteNode.id);
 };
 
-const duplicateNode = (duplicated: IndexNode) => {
-  if (duplicated.type === IndexNodeType.OutputIndex) return;
+const duplicateNode = (duplicated: ConceptNode) => {
+  if (isOutputIndexNode(duplicated)) return;
   workbench.addItem(duplicated);
 };
 
-const createChild = (
-  parentNodeId: string,
-  childType: IndexNodeType.Index | IndexNodeType.Dataset
-) => {
-  workbench.findAndAddChild(parentNodeId, childType);
-  indexTree.findAndAddChild(parentNodeId, childType);
+const createChild = (parentNodeId: string) => {
+  workbench.findAndAddChild(parentNodeId);
+  indexTree.findAndAddChild(parentNodeId);
 };
 
-const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult) => {
-  workbench.attachDatasetToPlaceholder(nodeId, dataset);
-  indexTree.attachDatasetToPlaceholder(nodeId, dataset);
+const attachDatasetToNode = (nodeId: string, dataset: DatasetSearchResult) => {
+  workbench.attachDatasetToNode(nodeId, dataset);
+  indexTree.attachDatasetToNode(nodeId, dataset);
 };
 
 const clearAll = () => {

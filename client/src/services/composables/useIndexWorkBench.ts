@@ -1,5 +1,6 @@
-import { computed, ref } from 'vue';
-import { IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
+import _ from 'lodash';
+import { ref, computed } from 'vue';
+import { ConceptNode, SelectableIndexElementId } from '@/types/Index';
 import {
   createIndexTreeActions,
   deleteEdgeFromIndexTree,
@@ -12,7 +13,7 @@ import { IndexNodeType } from '@/types/Enums';
 // States
 
 // Temporary index nodes that are being created and not yet attached to the main index tree yet
-const workBenchItems = ref<IndexWorkBenchItem[]>([]);
+const workBenchItems = ref<ConceptNode[]>([]);
 const targetAnalysisId = ref('');
 
 const triggerUpdate = () => {
@@ -22,11 +23,11 @@ const triggerUpdate = () => {
 export default function useIndexWorkBench() {
   // Getters
 
-  const items = computed<IndexWorkBenchItem[]>(() => workBenchItems.value);
+  const items = computed<ConceptNode[]>(() => workBenchItems.value);
 
   // Actions
 
-  const initialize = (analysisId: string, initialItems: IndexWorkBenchItem[]) => {
+  const initialize = (analysisId: string, initialItems: ConceptNode[]) => {
     targetAnalysisId.value = analysisId;
     workBenchItems.value = [...initialItems];
   };
@@ -35,11 +36,11 @@ export default function useIndexWorkBench() {
     return targetAnalysisId.value;
   };
 
-  const addItem = (item: IndexWorkBenchItem) => {
+  const addItem = (item: ConceptNode) => {
     workBenchItems.value = [item, ...workBenchItems.value];
   };
 
-  const appendItem = (item: IndexWorkBenchItem) => {
+  const appendItem = (item: ConceptNode) => {
     workBenchItems.value = [...workBenchItems.value, item];
   };
 
@@ -80,12 +81,8 @@ export default function useIndexWorkBench() {
     }
   };
 
-  const {
-    findAndRenameNode,
-    findAndAddChild,
-    attachDatasetToPlaceholder,
-    toggleDatasetIsInverted,
-  } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
+  const { findAndRenameNode, findAndAddChild, attachDatasetToNode, toggleDatasetIsInverted } =
+    createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
 
   return {
     items,
@@ -97,7 +94,7 @@ export default function useIndexWorkBench() {
     findAndDeleteItem,
     findAndAddChild,
     toggleDatasetIsInverted,
-    attachDatasetToPlaceholder,
+    attachDatasetToNode,
     getAnalysisId,
     deleteEdge,
   };

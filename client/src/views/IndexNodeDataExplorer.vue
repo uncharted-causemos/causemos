@@ -84,8 +84,8 @@ const handleSelection = async (selectedDatacubes: Datacube[]) => {
   overlay.enable();
   try {
     await Promise.all([
-      workBench.attachDatasetToPlaceholder(route.params.nodeId as string, dataset),
-      indexTree.attachDatasetToPlaceholder(route.params.nodeId as string, dataset),
+      workBench.attachDatasetToNode(route.params.nodeId as string, dataset),
+      indexTree.attachDatasetToNode(route.params.nodeId as string, dataset),
     ]);
     await waitForStateInSync();
   } catch (e) {

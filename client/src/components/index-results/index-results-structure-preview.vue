@@ -10,18 +10,13 @@
       class="grid-cell"
     >
       <div class="edge incoming" :class="{ visible: hasChildren(cell.node) }" />
-      <div
-        class="node"
-        :class="{ selected: cell.node.type === IndexNodeType.OutputIndex }"
-        :style="{ color: getIndexNodeTypeColor(cell.node.type) }"
-      >
-        <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(cell.node.type)]" />
+      <div class="node" :class="{ selected: cell.node.isOutputNode }">
+        <i class="fa fa-fw fa-th" />
       </div>
       <div
         v-if="cell.hasOutputLine"
         class="edge outgoing"
         :class="{
-          dashed: cell.node.type === IndexNodeType.Placeholder,
           'last-child': cell.isLastChild,
         }"
       ></div>
@@ -32,9 +27,8 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren, getIndexNodeTypeColor, getIndexNodeTypeIcon } from '@/utils/index-tree-util';
+import { hasChildren } from '@/utils/index-tree-util';
 import { computed } from 'vue';
-import { IndexNodeType } from '@/types/Enums';
 import { convertTreeToGridCells } from '@/utils/grid-cell-util';
 
 const { tree } = useIndexTree();
@@ -109,9 +103,6 @@ $edge-styles: 2px solid $un-color-black-20;
     height: calc(100% + #{$space-between-rows});
     border-right: $edge-styles;
 
-    &.dashed {
-      border-top-style: dashed;
-    }
     &.last-child {
       border-right: none;
       // No need to extend below this cell since we're not drawing a right border.

@@ -1,25 +1,7 @@
 import { COLOR } from '@/utils/colors-util';
 import { DataConfig } from './Datacube';
-import { DiscreteOuputScale, IndexNodeType } from './Enums';
-
-export interface BaseNode {
-  id: string;
-  name: string;
-}
-export interface WeightedNode {
-  weight: number;
-  isWeightUserSpecified: boolean;
-}
-export interface Placeholder extends BaseNode {
-  type: IndexNodeType.Placeholder;
-}
-
-export interface Dataset extends BaseNode, WeightedNode, DataConfig {
-  type: IndexNodeType.Dataset;
-  datasetName: string;
-  isInverted: boolean;
-  source: string;
-}
+import { DiscreteOuputScale } from './Enums';
+import { WeightedComponent } from './WeightedComponent';
 
 export interface DatasetSearchResult {
   displayName: string;
@@ -29,19 +11,36 @@ export interface DatasetSearchResult {
   familyName: string;
 }
 
-export interface Index extends BaseNode, WeightedNode {
-  type: IndexNodeType.Index;
-  inputs: (Dataset | Index | Placeholder)[];
+// Each dataset should have projectionAlgorithm: Auto by default, but this can be overridden
+enum ProjectionAlgorithm {
+  Auto,
+  Holt,
+  HoltWinters,
 }
 
-export interface OutputIndex extends BaseNode {
-  type: IndexNodeType.OutputIndex;
-  inputs: (Dataset | Index | Placeholder)[];
+interface AttachedDataset {
+  datasetName: string;
+  isInverted: boolean;
+  source: string;
+  config: DataConfig;
+  projectionAlgorithm: ProjectionAlgorithm;
 }
 
-export type IndexNode = OutputIndex | Index | Dataset | Placeholder;
-export type IndexWorkBenchItem = Index | Dataset | Placeholder;
-export type ParentNode = OutputIndex | Index;
+interface BaseConceptNode {
+  id: string;
+  name: string;
+  isOutputNode: boolean;
+}
+
+interface ConceptNodeWithoutDataset extends BaseConceptNode {
+  components: WeightedComponent[];
+}
+
+interface ConceptNodeWithDatasetAttached extends BaseConceptNode {
+  dataset: AttachedDataset;
+}
+
+type ConceptNode = ConceptNodeWithDatasetAttached | ConceptNodeWithoutDataset;
 
 export type IndexEdgeId = { sourceId: string; targetId: string };
 // If a node is selected, this is the node's ID
@@ -91,7 +90,7 @@ export interface IndexResultsSettings {
  * Contains enough information to render index nodes in a CSS grid
  */
 export interface GridCell {
-  node: IndexNode;
+  node: ConceptNode;
   /** 1-indexed integer, since the first row of CSS-grid can be accessed with `grid-row-start: 1` */
   startRow: number;
   /** An integer, greater than 0, that indicates how many rows this cell spans vertically. */

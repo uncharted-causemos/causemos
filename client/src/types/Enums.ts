@@ -191,19 +191,6 @@ export enum EdgeSuggestionType {
 export const SPLIT_BY_VARIABLE = 'variable';
 export const TIMESERIES_HEADER_SEPARATOR = ' | ';
 
-export enum IndexNodeType {
-  Index = 'Index',
-  OutputIndex = 'OutputIndex',
-  Dataset = 'Dataset',
-  Placeholder = 'Placeholder',
-}
-
-export enum IndexEdgeType {
-  Edge = 'Edge',
-}
-
-export type IndexElementType = IndexNodeType | IndexEdgeType;
-
 /** Scales with continuous input and discrete output */
 export enum DiscreteOuputScale {
   Quantize = 'Quantize',

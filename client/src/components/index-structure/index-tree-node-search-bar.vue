@@ -16,7 +16,7 @@
         <li
           :class="{ active: activeResultIndex === -1 }"
           @mousemove="setActiveResultIndexOnHover(-1)"
-          @click="emit('keep-as-placeholder', searchText)"
+          @click="emit('set-node-name', searchText)"
         >
           <span v-if="initialSearchText === ''">
             Add "<strong>{{ searchText }}</strong
@@ -125,7 +125,7 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'select-dataset', dataset: DatasetSearchResult): void;
-  (e: 'keep-as-placeholder', value: string): void;
+  (e: 'set-node-name', value: string): void;
   (e: 'cancel'): void;
 }>();
 
@@ -218,8 +218,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
       return emit('cancel');
     case 'Enter':
       e.preventDefault();
-      if (activeResultIndex.value === -1)
-        return emit('keep-as-placeholder', searchText.value.trim());
+      if (activeResultIndex.value === -1) return emit('set-node-name', searchText.value.trim());
       if (activeResult.value !== null) return emit('select-dataset', activeResult.value);
       return;
     case 'ArrowUp':
