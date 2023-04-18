@@ -4,12 +4,11 @@ const router = express.Router();
 const paragraphSearchService = rootRequire('/services/external/dojo-semantic-search-service');
 
 /* Keycloak Authentication */
-const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
-const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 router.get(
   '/:docId',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const docId = req.params.docId;
     if (docId) {

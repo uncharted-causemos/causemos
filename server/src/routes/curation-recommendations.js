@@ -7,8 +7,7 @@ const curationRecommendationsService = rootRequire(
 );
 
 /* Keycloak Authentication */
-const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
-const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 // Helpers
 const getCAGStatements = async (cagId, sourceNode, targetNode) => {
@@ -61,7 +60,7 @@ const getKBStatements = async (projectId, sourceNode, targetNode) => {
 
 router.get(
   '/regrounding',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const q = req.query;
     const projectId = q.project_id;
@@ -89,7 +88,7 @@ router.get(
 
 router.get(
   '/polarity',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const q = req.query;
     const projectId = q.project_id;
@@ -122,7 +121,7 @@ router.get(
 
 router.get(
   '/edge-regrounding',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const q = req.query;
     const projectId = q.project_id;
@@ -142,7 +141,7 @@ router.get(
 
 router.get(
   '/similar-concepts',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const q = req.query;
     const projectId = q.project_id;
@@ -160,7 +159,7 @@ router.get(
 
 router.put(
   '/tracking/:trackingId',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const payload = req.body.payload;
     const trackingId = req.params.trackingId;

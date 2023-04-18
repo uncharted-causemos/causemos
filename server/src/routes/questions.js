@@ -5,15 +5,14 @@ const router = express.Router();
 const questionService = rootRequire('/services/question-service');
 
 /* Keycloak Authentication */
-const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
-const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 /**
  * POST commit for an question
  */
 router.post(
   '/',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const {
       question,
@@ -53,7 +52,7 @@ router.post(
  */
 router.put(
   '/:id',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const questionId = req.params.id;
     const question = req.body;
@@ -68,7 +67,7 @@ router.put(
  */
 router.post(
   '/search',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { project_id, context_id, target_view, visibility } = req.body;
     const result = await questionService.getAllQuestions(
@@ -86,7 +85,7 @@ router.post(
  **/
 router.get(
   '/counts',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { project_id, context_id, target_view, visibility } = req.query;
     const result = await questionService.counts(project_id, context_id, target_view, visibility);
@@ -99,7 +98,7 @@ router.get(
  */
 router.get(
   '/:id',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const questionId = req.params.id;
     const result = await questionService.getQuestion(questionId);
@@ -113,7 +112,7 @@ router.get(
  */
 router.delete(
   '/:id',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const questionId = req.params.id;
     const result = await questionService.remove(questionId);

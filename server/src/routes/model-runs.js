@@ -5,15 +5,14 @@ const maasService = rootRequire('/services/external/maas-service');
 const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
 
 /* Keycloak Authentication */
-const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
-const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 /**
  * Submit a new model run to Jataware and store information about it in ES.
  */
 router.post(
   '/',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, maasService.submitModelRun, [req.body]);
   })
@@ -24,7 +23,7 @@ router.post(
  */
 router.get(
   '/',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const filter = JSON.parse(req.query.filter);
     const result = await maasService.getAllModelRuns(filter, true);
@@ -37,7 +36,7 @@ router.get(
  */
 router.post(
   '/:runId/post-process',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, maasService.startModelOutputPostProcessing, [req.body]);
   })
@@ -48,7 +47,7 @@ router.post(
  */
 router.post(
   '/:runId/run-failed',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, maasService.markModelRunFailed, [req.body]);
   })
@@ -59,7 +58,7 @@ router.post(
  */
 router.get(
   '/:runId/status',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const runId = req.params.runId;
     const flowId = req.query.flow_id;
@@ -79,7 +78,7 @@ router.get(
  */
 router.get(
   '/:runId/logs',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const runId = req.params.runId;
     const flowId = req.query.flow_id;
@@ -99,7 +98,7 @@ router.get(
  */
 router.put(
   '/:modelRunId',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const modelRun = req.body;
     const result = await maasService.updateModelRun(modelRun);

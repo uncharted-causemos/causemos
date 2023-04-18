@@ -19,8 +19,7 @@ const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util'
 const modelUtil = rootRequire('util/model-util');
 
 /* Keycloak Authentication */
-const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
-const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 const TRANSACTION_LOCK_MSG = `Another transaction is running on model, please try again in ${
   LOCK_TIMEOUT / 1000
@@ -30,7 +29,7 @@ const TRANSACTION_LOCK_MSG = `Another transaction is running on model, please tr
 
 router.get(
   '/:modelId/history',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelId } = req.params;
     const historyConn = Adapter.get(RESOURCE.MODEL_HISTORY);
@@ -45,7 +44,7 @@ router.get(
 
 router.post(
   '/:modelId/history',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelId } = req.params;
     const { type, text } = req.body;
@@ -59,7 +58,7 @@ router.post(
  */
 router.post(
   '/:modelId/quantify-nodes',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelId } = req.params;
     const { resolution } = req.body;
@@ -76,7 +75,7 @@ router.post(
  */
 router.put(
   '/:modelId/model-metadata',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const editTime = moment().valueOf();
     const modelId = req.params.modelId;
@@ -98,7 +97,7 @@ router.put(
  */
 router.put(
   '/:modelId/model-parameter',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelId } = req.params;
     const editTime = moment().valueOf();
@@ -174,7 +173,7 @@ router.put(
 /* GET get models */
 router.get(
   '/',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { project_id, size, from } = req.query;
     const models = await modelService.find(project_id, size, from);
@@ -189,7 +188,7 @@ router.get(
 /* GET get model stats */
 router.get(
   '/model-stats',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelIds } = req.query;
     const modelStats = await modelService.getModelStats(modelIds);
@@ -200,7 +199,7 @@ router.get(
 /* GET retrieve single model */
 router.get(
   '/:modelId',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const model = await modelService.findOne(req.params.modelId);
     res.json(model);
@@ -210,7 +209,7 @@ router.get(
 /* POST new model */
 router.post(
   '/',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { name, project_id, description, thumbnail_source, edges, nodes } = req.body;
 
@@ -236,7 +235,7 @@ router.post(
  */
 router.delete(
   '/:modelId/',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const editTime = moment().valueOf();
     const modelId = req.params.modelId;
@@ -271,7 +270,7 @@ const buildCreateModelPayload = async (modelId) => {
  */
 router.get(
   '/:modelId/register-payload',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelId } = req.params;
     try {
@@ -361,7 +360,7 @@ const processInferredEdgeWeights = async (modelId, engine, inferredEdgeMap) => {
  */
 router.post(
   '/:modelId/register',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelId } = req.params;
     const { engine } = req.body;
@@ -445,7 +444,7 @@ router.post(
 
 router.get(
   '/:modelId/registered-status',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelId } = req.params;
     const engine = req.query.engine;
@@ -469,7 +468,7 @@ router.get(
 
 router.post(
   '/:modelId/projection',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     // 1. Initialize
     const { modelId } = req.params;
@@ -501,7 +500,7 @@ router.post(
 
 router.post(
   '/:modelId/sensitivity-analysis',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     // 1. Initialize
     const { modelId } = req.params;
@@ -539,7 +538,7 @@ router.post(
 
 router.get(
   '/:modelId/experiments',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelId } = req.params;
     const experimentId = req.query.experiment_id;
@@ -550,7 +549,7 @@ router.get(
 
 router.put(
   '/:modelId/nodes/:nodeId/clear-parameter',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelId, nodeId } = req.params;
     await modelService.clearNodeParameter(modelId, nodeId);
@@ -566,7 +565,7 @@ router.put(
  */
 router.post(
   '/:modelId/node-parameter',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelId } = req.params;
     const nodeParameter = req.body;
@@ -701,7 +700,7 @@ const clearEdgeWeightsForNode = async (modelId, nodeConcept) => {
  */
 router.post(
   '/:modelId/edge-parameter',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { modelId } = req.params;
     const { id, source, target, polarity, parameter } = req.body;

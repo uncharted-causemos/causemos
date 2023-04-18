@@ -5,8 +5,7 @@ const router = express.Router();
 const scenarioService = rootRequire('/services/scenario-service');
 
 /* Keycloak Authentication */
-const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
-const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 const DEFAULT_SCENARIO_SIZE = 50;
 
@@ -15,7 +14,7 @@ const DEFAULT_SCENARIO_SIZE = 50;
  */
 router.get(
   '/',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const modelId = req.query.model_id;
     const results = await scenarioService.find(modelId, { size: DEFAULT_SCENARIO_SIZE });
@@ -28,7 +27,7 @@ router.get(
  */
 router.get(
   '/:scenarioId',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { scenarioId } = req.params;
     const result = await scenarioService.findOne(scenarioId);
@@ -41,7 +40,7 @@ router.get(
  */
 router.post(
   '/',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { parameter, name, description, model_id, is_baseline: isBaseline } = req.body;
 
@@ -61,7 +60,7 @@ router.post(
  */
 router.put(
   '/:sId/',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const scenarioId = req.params.sId;
     const payload = req.body;
@@ -76,7 +75,7 @@ router.put(
  */
 router.delete(
   '/:sId/',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const scenarioId = req.params.sId;
     await scenarioService.remove(scenarioId);

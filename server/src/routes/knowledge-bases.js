@@ -4,13 +4,12 @@ const asyncHandler = require('express-async-handler');
 const { Adapter, RESOURCE } = rootRequire('adapters/es/adapter');
 
 /* Keycloak Authentication */
-const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
-const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 /* GET knowledge bases */
 router.get(
   '/',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const kb = Adapter.get(RESOURCE.KNOWLEDGE_BASE);
     const { size } = req.query;

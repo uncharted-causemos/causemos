@@ -5,13 +5,12 @@ const config = require('../config/yargs-wrapper');
 const schedules = _.isEmpty(config.schedules) ? [] : config.schedules.split(',');
 
 /* Keycloak Authentication */
-const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
-const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 const CLIENT_VAR_PREFIX = 'CLIENT__';
 
 /* GET server settings */
-router.get('/settings', keycloak.enforcer([PERMISSIONS.USER]), function (req, res, next) {
+router.get('/settings', authUtil.checkRole([authUtil.ROLES.USER]), function (req, res, next) {
   const env = process.env;
   res.json({
     logLevel: config.logLevel,
@@ -36,15 +35,19 @@ router.get('/settings', keycloak.enforcer([PERMISSIONS.USER]), function (req, re
 });
 
 /* GET client settings */
-router.get('/client-settings', keycloak.protect(), function (req, res, next) {
-  const env = process.env;
-  const clientSettings = {};
-  Object.entries(env).filter(([key, value]) => {
-    if (key.startsWith(CLIENT_VAR_PREFIX)) {
-      clientSettings[key] = value;
-    }
-  });
-  res.json(clientSettings);
-});
+router.get(
+  '/client-settings',
+  authUtil.checkRole([authUtil.ROLES.USER]),
+  function (req, res, next) {
+    const env = process.env;
+    const clientSettings = {};
+    Object.entries(env).filter(([key, value]) => {
+      if (key.startsWith(CLIENT_VAR_PREFIX)) {
+        clientSettings[key] = value;
+      }
+    });
+    res.json(clientSettings);
+  }
+);
 
 module.exports = router;

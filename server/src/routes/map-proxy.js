@@ -8,8 +8,7 @@ const Logger = rootRequire('/config/logger');
 const baseMapStyle = rootRequire('/basemap-style.json');
 
 /* Keycloak Authentication */
-const keycloak = rootRequire('/config/keycloak-config.js').getKeycloak();
-const { PERMISSIONS } = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 const CARTO_API_KEY = process.env.CARTO_MAP_API_KEY;
 const API_KEY_PARAM = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : '';
@@ -18,7 +17,7 @@ const API_KEY_PARAM = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : '';
  * Proxy map raster tile requests for leaflet map.
  * Leaflet map cannot handle vector tile maps without extension
  */
-router.get('/tiles', keycloak.enforcer([PERMISSIONS.USER]), (req, res) => {
+router.get('/tiles', authUtil.checkRole([authUtil.ROLES.USER]), (req, res) => {
   const { s, x, y, z } = req.query;
 
   // Enterprise and Public Domains for CARTO MAPS
@@ -69,7 +68,7 @@ const getBaseTiles = async (res, url) => {
  * Proxy map vector tile requests for mapbox-gl-js
  * Use Carto API Key if provided
  */
-router.get('/vector-tiles/:z/:x/:y', keycloak.enforcer([PERMISSIONS.USER]), (req, res) => {
+router.get('/vector-tiles/:z/:x/:y', authUtil.checkRole([authUtil.ROLES.USER]), (req, res) => {
   const { x, y, z } = req.params;
   const url = `https://tiles.basemaps.cartocdn.com/vectortiles/carto.streets/v1/${z}/${x}/${y}.mvt${API_KEY_PARAM}`;
   return getBaseTiles(res, url);
@@ -79,7 +78,7 @@ router.get('/vector-tiles/:z/:x/:y', keycloak.enforcer([PERMISSIONS.USER]), (req
  * Proxy map raster tile requests for mapbox-gl-js
  * Use Carto API Key if provided
  */
-router.get('/satellite-tiles/:z/:x/:y', keycloak.enforcer([PERMISSIONS.USER]), (req, res) => {
+router.get('/satellite-tiles/:z/:x/:y', authUtil.checkRole([authUtil.ROLES.USER]), (req, res) => {
   const { x, y, z } = req.params;
   const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}.png`;
   return getBaseTiles(res, url);
@@ -90,7 +89,7 @@ router.get('/satellite-tiles/:z/:x/:y', keycloak.enforcer([PERMISSIONS.USER]), (
  */
 router.get(
   '/styles/default',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const stylesheet = JSON.parse(JSON.stringify(baseMapStyle)); // Deep clone json file to prevent from mutation
     /**
@@ -120,7 +119,7 @@ router.get(
  */
 router.get(
   '/styles/satellite',
-  keycloak.enforcer([PERMISSIONS.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     res.json({
       version: 8,
