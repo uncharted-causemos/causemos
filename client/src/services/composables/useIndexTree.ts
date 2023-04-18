@@ -5,14 +5,16 @@ import {
   createNewOutputIndex,
   findNode as indexTreeUtilFindNode,
   createIndexTreeActions,
+  deleteEdgeFromIndexTree,
 } from '@/utils/index-tree-util';
+import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+import { IndexNodeType } from '@/types/Enums';
 
 // States
 
 const targetAnalysisId = ref('');
-
 const outputIndexTree = ref<OutputIndex>(createNewOutputIndex());
-
+const workbench = useIndexWorkBench();
 const triggerUpdate = () => {
   outputIndexTree.value = { ...outputIndexTree.value };
 };
@@ -48,6 +50,16 @@ export default function useIndexTree() {
     if (isDeleted) triggerUpdate();
   };
 
+  const deleteEdge = (nodeId: string) => {
+    const childNode = deleteEdgeFromIndexTree(outputIndexTree.value, nodeId);
+    if (childNode !== null && childNode.type !== IndexNodeType.OutputIndex) {
+      workbench.appendItem(childNode);
+      triggerUpdate();
+      return true;
+    }
+    return false;
+  };
+
   const {
     findAndRenameNode,
     findAndAddChild,
@@ -61,6 +73,7 @@ export default function useIndexTree() {
     findNode,
     findAndRenameNode,
     findAndDelete,
+    deleteEdge,
     findAndAddChild,
     attachDatasetToPlaceholder,
     getAnalysisId,

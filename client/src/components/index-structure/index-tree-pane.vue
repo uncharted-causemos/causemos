@@ -87,7 +87,7 @@ import { IndexNodeType } from '@/types/Enums';
 import { DatasetSearchResult, GridCell, IndexNode, SelectableIndexElementId } from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren } from '@/utils/index-tree-util';
+import { hasChildren, isEdge } from '@/utils/index-tree-util';
 import {
   convertTreeToGridCells,
   getGridColumnCount,
@@ -124,7 +124,7 @@ const { findNode } = indexTree;
 const workbench = useIndexWorkBench();
 
 const isOutgoingHighlighted = (id: string) => {
-  if (props.highlightEdgeId && typeof props.highlightEdgeId === 'object') {
+  if (props.highlightEdgeId && isEdge(props.highlightEdgeId)) {
     return props.highlightEdgeId.sourceId === id;
   }
   return false;
@@ -176,7 +176,7 @@ const connectorHover = (id: string) => {
   }
 };
 const isHigherThanSibling = (id: string, edgeId: SelectableIndexElementId) => {
-  if (typeof edgeId === 'object') {
+  if (isEdge(edgeId)) {
     const sourceId = edgeId.sourceId;
     if (sourceId === id) {
       return false;
@@ -204,7 +204,7 @@ const isOutgoingYHighlighted = (id: string) => {
   return false;
 };
 const isOutgoingSelected = (id: string) => {
-  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+  if (props.selectedElementId && isEdge(props.selectedElementId)) {
     return props.selectedElementId.sourceId === id;
   }
   return false;
@@ -216,13 +216,13 @@ const isOutgoingYSelected = (id: string) => {
   return false;
 };
 const isIncomingHighlighted = (id: string) => {
-  if (props.highlightEdgeId && typeof props.highlightEdgeId === 'object') {
+  if (props.highlightEdgeId && isEdge(props.highlightEdgeId)) {
     return props.highlightEdgeId.targetId === id;
   }
   return false;
 };
 const isIncomingSelected = (id: string) => {
-  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+  if (props.selectedElementId && isEdge(props.selectedElementId)) {
     return props.selectedElementId.targetId === id;
   }
   return false;
@@ -230,7 +230,7 @@ const isIncomingSelected = (id: string) => {
 const isSelected = (id: string) => {
   if (props.selectedElementId === id) {
     return true;
-  } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+  } else if (props.selectedElementId && isEdge(props.selectedElementId)) {
     if (props.selectedElementId.sourceId === id || props.selectedElementId.targetId === id) {
       return true;
     }
