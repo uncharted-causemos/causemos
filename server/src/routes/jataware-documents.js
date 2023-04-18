@@ -23,6 +23,7 @@ router.get(
 
 router.get(
   '/:docId/paragraphs',
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const docId = req.params.docId;
     const scrollId = req.query.scroll_id;
