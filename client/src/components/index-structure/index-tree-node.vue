@@ -86,6 +86,7 @@
 import { computed, ref } from 'vue';
 import { Dataset, DatasetSearchResult, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
+import { OptionButtonMenu } from '@/utils/index-common-util';
 import {
   duplicateNode,
   getIndexNodeTypeColor,
@@ -94,6 +95,7 @@ import {
   isParentNode,
   isPlaceholderNode,
 } from '@/utils/index-tree-util';
+
 import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
@@ -101,13 +103,6 @@ import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node
 import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
 
 const addInputDropdownOptions = [IndexNodeType.Index, IndexNodeType.Dataset];
-
-export enum OptionButtonMenu {
-  Rename = 'Rename',
-  Duplicate = 'Duplicate',
-  Delete = 'Delete',
-  DeleteEdge = 'DeleteEdge',
-}
 </script>
 <script setup lang="ts">
 interface Props {
@@ -302,9 +297,9 @@ const getDatasetFooterText = (data: Dataset) => {
 </script>
 
 <style scoped lang="scss">
-@import '~styles/variables';
-@import '~styles/uncharted-design-tokens';
-@import '~styles/common';
+@import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
+@import '@/styles/common';
 
 // The space between the edges of the node and the content within it.
 //  This would be applied to .index-tree-node-container directly, but some elements (namely the

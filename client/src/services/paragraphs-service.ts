@@ -7,7 +7,9 @@ const GET_HIGHLIGHTS = 'dojo/paragraphs/highlight';
 
 export const searchParagraphs = async (searchString: string) => {
   if (searchString) {
-    const result = await API.get(SEARCH_PATH, { params: { searchString } });
+    const result = await API.get(SEARCH_PATH, {
+      params: { searchString: encodeURI(searchString) },
+    });
     return result.data;
   }
 };
@@ -20,6 +22,7 @@ export const getDocument = async (docId: string) => {
 };
 
 export const getHighlights = async (details: DojoParagraphDetails) => {
+  details.query = encodeURI(details.query);
   const result = await API.post(GET_HIGHLIGHTS, details, {
     headers: {
       'Content-Type': 'application/json',
@@ -28,7 +31,19 @@ export const getHighlights = async (details: DojoParagraphDetails) => {
   return result.data;
 };
 
+export const getDocumentParagraphs = async (docId: string, scrollId: string | null) => {
+  if (docId) {
+    const result = await API.get(
+      `${GET_DOC_PATH}/${docId}/paragraphs${
+        scrollId !== null ? '?scroll_id='.concat(scrollId) : ''
+      }`
+    );
+    return result.data;
+  }
+};
+
 export default {
   searchParagraphs,
   getDocument,
+  getDocumentParagraphs,
 };
