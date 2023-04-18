@@ -7,7 +7,6 @@ import {
   deleteEdgeFromIndexTree,
 } from '@/utils/index-tree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import { IndexNodeType } from '@/types/Enums';
 import { ConceptNode } from '@/types/Index';
 
 // States
@@ -54,7 +53,7 @@ export default function useIndexTree() {
 
   const deleteEdge = (nodeId: string) => {
     const childNode = deleteEdgeFromIndexTree(outputIndexTree.value, nodeId);
-    if (childNode !== null && childNode.type !== IndexNodeType.OutputIndex) {
+    if (childNode !== null) {
       workbench.appendItem(childNode);
       triggerUpdate();
       return true;

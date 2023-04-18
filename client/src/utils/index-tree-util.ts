@@ -119,8 +119,10 @@ export const deleteEdgeFromIndexTree = (
 ): ConceptNode | null => {
   const result = findNode(indexNodeTree, nodeId);
   if (result?.parent && isConceptNodeWithoutDataset(result.parent)) {
-    result.parent.inputs = result.parent.inputs.filter((node) => node.id !== nodeId);
-    result.parent.inputs = rebalanceInputWeights(result.parent.inputs);
+    result.parent.components = result.parent.components.filter(
+      (node) => node.componentNode.id !== nodeId
+    );
+    result.parent.components = rebalanceInputWeights(result.parent.components);
     return result.found;
   }
   return null;

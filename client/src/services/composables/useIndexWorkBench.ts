@@ -8,7 +8,6 @@ import {
   findNode as indexTreeUtilFindNode,
   isEdge,
 } from '@/utils/index-tree-util';
-import { IndexNodeType } from '@/types/Enums';
 
 // States
 
@@ -74,7 +73,7 @@ export default function useIndexWorkBench() {
       const node = findNode(nodeIds.targetId);
       if (node && node?.found !== null) {
         const child = deleteEdgeFromIndexTree(node.found, nodeIds.sourceId);
-        if (child !== null && child.type !== IndexNodeType.OutputIndex) {
+        if (child !== null) {
           addItem(child);
         }
       }
