@@ -50,11 +50,15 @@
         </template>
       </OptionsButton>
     </div>
-    <p class="un-font-small content" :class="{ warning: isEmptyNode(props.nodeData) }">
+    <p
+      v-if="dataSourceText.length > 0 && !showDatasetSearch"
+      class="un-font-small content"
+      :class="{ warning: isEmptyNode(props.nodeData) }"
+    >
       {{ dataSourceText }}
     </p>
     <button
-      v-if="isConceptNodeWithoutDataset(props.nodeData) && !showEditName"
+      v-if="isConceptNodeWithoutDataset(props.nodeData) && !showEditName && !showDatasetSearch"
       class="btn btn-default full-width-button"
       @click="emit('create-child', props.nodeData.id)"
     >

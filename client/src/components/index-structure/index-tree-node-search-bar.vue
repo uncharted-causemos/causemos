@@ -7,7 +7,7 @@
         class="form-control"
         type="text"
         v-model="searchText"
-        placeholder="Search for a dataset"
+        placeholder="Type a concept"
       />
       <button class="btn btn-default" @click="emit('cancel')">Cancel</button>
     </div>
@@ -20,11 +20,11 @@
         >
           <span v-if="initialSearchText === ''">
             Add "<strong>{{ searchText }}</strong
-            >" as a placeholder
+            >" without data
           </span>
-          <span v-else-if="initialSearchText === searchText.trim()"> Leave as placeholder </span>
+          <span v-else-if="initialSearchText === searchText.trim()"> Leave without data </span>
           <span v-else>
-            Rename placeholder to "<strong>{{ searchText }}</strong
+            Rename to "<strong>{{ searchText }}</strong
             >"
           </span>
         </li>
@@ -37,7 +37,7 @@
             No datasets matching "{{ searchText }}" were found.
           </p>
           <ul v-else>
-            <h5 class="results-header">Choose a dataset</h5>
+            <h5 class="results-header">Add "{{ searchText }}" and attach a dataset</h5>
             <li
               v-for="(result, index) of results"
               :key="result.dataId + result.outputName"
