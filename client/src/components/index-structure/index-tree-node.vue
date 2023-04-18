@@ -50,40 +50,38 @@
         </template>
       </OptionsButton>
     </div>
-    <p
-      v-if="dataSourceText.length > 0 && !showDatasetSearch"
-      class="un-font-small content"
-      :class="{ warning: isEmptyNode(props.nodeData) }"
-    >
-      {{ dataSourceText }}
-    </p>
-    <button
-      v-if="isConceptNodeWithoutDataset(props.nodeData) && !showEditName && !showDatasetSearch"
-      class="btn btn-default full-width-button"
-      @click="emit('create-child', props.nodeData.id)"
-    >
-      Add input concept
-    </button>
-
-    <div
-      v-if="isConceptNodeWithDatasetAttached(props.nodeData)"
-      class="footer content un-font-small"
-    >
+    <div v-if="isConceptNodeWithoutDataset(props.nodeData) && !showDatasetSearch" class="content">
+      <p
+        v-if="dataSourceText.length > 0"
+        class="un-font-small"
+        :class="{ warning: isEmptyNode(props.nodeData) }"
+      >
+        {{ dataSourceText }}
+      </p>
+      <button
+        v-if="!showEditName"
+        class="btn btn-default full-width-button"
+        @click="emit('create-child', props.nodeData.id)"
+      >
+        Add input concept
+      </button>
+      <button
+        v-if="isEmptyNode(props.nodeData) && !showDatasetSearch && !showEditName"
+        class="btn btn-default full-width-button"
+        @click="isSearchingForDataset = true"
+      >
+        <i class="fa fa-fw" :class="DATASET_ICON" />
+        Attach dataset
+      </button>
+    </div>
+    <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)" class="content un-font-small">
       {{ dataSourceText }}
     </div>
-    <button
-      v-if="classObject['is-empty'] && !showDatasetSearch && !showEditName"
-      class="btn btn-default full-width-button"
-      @click="isSearchingForDataset = true"
-    >
-      <i class="fa fa-fw" :class="DATASET_ICON" />
-      Attach dataset
-    </button>
   </div>
 </template>
 <script lang="ts">
 import { computed, ref, watch } from 'vue';
-import { ConceptNode, ConceptNodeWithDatasetAttached, DatasetSearchResult } from '@/types/Index';
+import { ConceptNode, DatasetSearchResult } from '@/types/Index';
 import {
   duplicateNode,
   isEmptyNode,
@@ -115,7 +113,12 @@ const emit = defineEmits<{
   (e: 'duplicate', duplicated: ConceptNode): void;
   (e: 'select', nodeId: string): void;
   (e: 'create-child', parentNodeId: string): void;
-  (e: 'attach-dataset', nodeId: string, dataset: DatasetSearchResult): void;
+  (
+    e: 'attach-dataset',
+    nodeId: string,
+    dataset: DatasetSearchResult,
+    nodeNameAfterAttachingDataset: string
+  ): void;
 }>();
 
 const classObject = computed(() => {
@@ -243,8 +246,8 @@ const setNodeName = (value: string) => {
   emit('rename', props.nodeData.id, value);
   isSearchingForDataset.value = false;
 };
-const attachDataset = (dataset: DatasetSearchResult) => {
-  emit('attach-dataset', props.nodeData.id, dataset);
+const attachDataset = (dataset: DatasetSearchResult, nodeNameAfterAttachingDataset: string) => {
+  emit('attach-dataset', props.nodeData.id, dataset, nodeNameAfterAttachingDataset);
   isSearchingForDataset.value = false;
   // Once attach-dataset event is fired, further interaction with data search or selection should
   //  not be done until the node data is changed and the watcher above has fired to re-enable
@@ -254,7 +257,7 @@ const attachDataset = (dataset: DatasetSearchResult) => {
 
 const dataSourceText = computed(() => {
   if (!isConceptNodeWithoutDataset(props.nodeData)) {
-    return getDatasetFooterText(props.nodeData);
+    return props.nodeData.dataset.datasetName;
   }
   const componentCount = props.nodeData.components.length;
   switch (componentCount) {
@@ -266,10 +269,6 @@ const dataSourceText = computed(() => {
       return `Combination of ${componentCount} inputs.`;
   }
 });
-
-const getDatasetFooterText = (data: ConceptNodeWithDatasetAttached) => {
-  return data.name === data.dataset.datasetName ? '' : data.dataset.datasetName;
-};
 </script>
 
 <style scoped lang="scss">
@@ -374,7 +373,7 @@ $option-button-width: 16px;
     padding: $vertical-padding $horizontal-padding;
   }
   .full-width-button {
-    margin: $vertical-padding $horizontal-padding;
+    width: 100%;
   }
 
   .header {

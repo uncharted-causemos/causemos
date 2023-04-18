@@ -231,9 +231,13 @@ const createChild = (parentNodeId: string) => {
   indexTree.findAndAddChild(parentNodeId);
 };
 
-const attachDatasetToNode = (nodeId: string, dataset: DatasetSearchResult) => {
-  workbench.attachDatasetToNode(nodeId, dataset);
-  indexTree.attachDatasetToNode(nodeId, dataset);
+const attachDatasetToNode = (
+  nodeId: string,
+  dataset: DatasetSearchResult,
+  nodeNameAfterAttachingDataset: string
+) => {
+  workbench.attachDatasetToNode(nodeId, dataset, nodeNameAfterAttachingDataset);
+  indexTree.attachDatasetToNode(nodeId, dataset, nodeNameAfterAttachingDataset);
 };
 
 const clearAll = () => {

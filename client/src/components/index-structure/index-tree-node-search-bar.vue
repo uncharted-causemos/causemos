@@ -18,11 +18,11 @@
           @mousemove="setActiveResultIndexOnHover(-1)"
           @click="emit('set-node-name', searchText)"
         >
-          <span v-if="initialSearchText === ''">
+          <span v-if="!isModifyingExistingNode">
             Add "<strong>{{ searchText }}</strong
             >" without data
           </span>
-          <span v-else-if="initialSearchText === searchText.trim()"> Leave without data </span>
+          <span v-else-if="initialSearchText === searchText.trim()">Leave without data</span>
           <span v-else>
             Rename to "<strong>{{ searchText }}</strong
             >"
@@ -37,7 +37,8 @@
             No datasets matching "{{ searchText }}" were found.
           </p>
           <ul v-else>
-            <h5 class="results-header">Add "{{ searchText }}" and attach a dataset</h5>
+            <h5 v-if="isModifyingExistingNode" class="results-header">Attach a dataset</h5>
+            <h5 v-else class="results-header">Add "{{ searchText }}" and attach a dataset</h5>
             <li
               v-for="(result, index) of results"
               :key="result.dataId + result.outputName"
@@ -46,7 +47,7 @@
                 'de-emphasized': result.displayName === '',
               }"
               @mousemove="setActiveResultIndexOnHover(index)"
-              @click="emit('select-dataset', result)"
+              @click="selectDataset(result)"
             >
               {{ result.displayName === '' ? '(missing name)' : result.displayName }}
             </li>
@@ -123,8 +124,12 @@ interface Props {
 }
 const props = defineProps<Props>();
 
+// If `initialSearchText` is set, the node already exists and we're attaching data to it.
+//  If not, we're creating a new node.
+const isModifyingExistingNode = computed(() => props.initialSearchText !== '');
+
 const emit = defineEmits<{
-  (e: 'select-dataset', dataset: DatasetSearchResult): void;
+  (e: 'select-dataset', dataset: DatasetSearchResult, nodeNameAfterAttachingDataset: string): void;
   (e: 'set-node-name', value: string): void;
   (e: 'cancel'): void;
 }>();
@@ -219,7 +224,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
     case 'Enter':
       e.preventDefault();
       if (activeResultIndex.value === -1) return emit('set-node-name', searchText.value.trim());
-      if (activeResult.value !== null) return emit('select-dataset', activeResult.value);
+      if (activeResult.value !== null) return selectDataset(activeResult.value);
       return;
     case 'ArrowUp':
       e.preventDefault();
@@ -236,6 +241,15 @@ const shiftIndex = (direction: -1 | 1) => {
   } else if (direction === 1) {
     activeResultIndex.value = Math.min(results.value.length - 1, activeResultIndex.value + 1);
   }
+};
+
+const selectDataset = (dataset: DatasetSearchResult) => {
+  // If we're attaching a dataset to a node that already exists, don't change the node's name
+  // If we're attaching a dataset to a new node, set its name to the search text.
+  const nodeNameAfterAttachingDataset = isModifyingExistingNode.value
+    ? props.initialSearchText
+    : searchText.value;
+  emit('select-dataset', dataset, nodeNameAfterAttachingDataset);
 };
 </script>
 

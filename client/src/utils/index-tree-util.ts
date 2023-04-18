@@ -329,7 +329,11 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     onSuccess();
   };
 
-  const attachDatasetToNode = async (nodeId: string, dataset: DatasetSearchResult) => {
+  const attachDatasetToNode = async (
+    nodeId: string,
+    dataset: DatasetSearchResult,
+    nodeNameAfterAttachingDataset: string
+  ) => {
     const foundResult = findNode(nodeId);
     if (foundResult === undefined) {
       return;
@@ -340,7 +344,7 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
       // Set starting values for new dataset node
       // Store values from the search result and pre-calculated starting weight
       id: node.id,
-      name: node.name === '' ? dataset.displayName : node.name,
+      name: nodeNameAfterAttachingDataset,
       dataset: {
         datasetName: dataset.displayName,
         isInverted: false,
@@ -350,9 +354,13 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
       },
       isOutputNode: false,
     };
-    // Update the `node` object's properties in place, as a shortcut to removing the old object from
-    //  the parent's components list and then adding the new object to the component's list.
+    // HACK: Update the `node` object's properties in place, as a shortcut to removing the old
+    //  object from the parent's component list and then adding the new object to the component
+    //  list. We should replace this shortcut with the real thing, since we need to include logic
+    //  here to manually ensure the result doesn't have properties from both node types.
     Object.assign(node, datasetNode);
+    // @ts-ignore
+    delete node.components;
     // Parent should never be null unless we found a disconnected node.
     if (parent !== null) {
       // Update unset siblings with their new auto-balanced weight
