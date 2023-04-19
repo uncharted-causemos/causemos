@@ -80,6 +80,16 @@ export default function useIndexWorkBench() {
     }
   };
 
+  const popItem = (nodeId: string): IndexWorkBenchItem | null => {
+    const itemToPop = workBenchItems.value.filter((item) => item.id === nodeId);
+    console.log(`Popped item = ${JSON.stringify(itemToPop)}`);
+    if (itemToPop.length === 1) {
+      findAndDeleteItem(nodeId);
+      return itemToPop[0];
+    }
+    return null;
+  };
+
   const {
     findAndRenameNode,
     findAndAddChild,
@@ -100,5 +110,6 @@ export default function useIndexWorkBench() {
     attachDatasetToPlaceholder,
     getAnalysisId,
     deleteEdge,
+    popItem,
   };
 }
