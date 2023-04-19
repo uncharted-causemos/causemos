@@ -112,9 +112,9 @@ Note that these will impact Dojo's production environment. These should only be 
 yarn start-server --allow-model-runs
 ```
 
-### Build
+## Building for Production
 
-Bulding and packaging the code.
+Building and packaging the code.
 
 #### Build: Internal testing on Openstack
 
@@ -151,7 +151,7 @@ docker run -p 3000:3000 --env-file <envfile> -t docker.uncharted.software/worldm
 
 Note docker interprets envfiles differently, the variables cannot be quoted!! So it is A=123 and not A="123"
 
-### Release and Deployment
+## Release and Deployment
 
 #### Release new docker image (In Progress !!!)
 
