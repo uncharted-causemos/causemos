@@ -4,14 +4,13 @@
     https://v3-migration.vuejs.org/new/fragments.html
   -->
   <section v-bind="$attrs">
-    <h4 v-if="hasBeenRenamed">Original name: {{ props.node.datasetName }}</h4>
-    <h4 v-else>Description</h4>
+    <h4>Dataset name: {{ props.node.dataset.datasetName }}</h4>
     <p class="de-emphasized">
       {{ description }}
     </p>
   </section>
   <section v-bind="$attrs">
-    <h4>Source: {{ props.node.source }}</h4>
+    <h4>Source: {{ props.node.dataset.source }}</h4>
     <p class="de-emphasized">
       {{ props.datasetMetadata?.description ?? '' }}
     </p>
@@ -20,15 +19,13 @@
 
 <script setup lang="ts">
 import { Indicator } from '@/types/Datacube';
-import { Dataset } from '@/types/Index';
+import { ConceptNodeWithDatasetAttached } from '@/types/Index';
 import { computed } from 'vue';
 
 const props = defineProps<{
-  node: Dataset;
+  node: ConceptNodeWithDatasetAttached;
   datasetMetadata: Indicator | null;
 }>();
-
-const hasBeenRenamed = computed(() => props.node.datasetName !== props.node.name);
 
 const description = computed(() => {
   if (props.datasetMetadata === null) {

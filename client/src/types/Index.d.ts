@@ -50,7 +50,7 @@ export interface IndexResultsContributingDataset {
    */
   overallWeight: number;
   /** The dataset node in question. */
-  dataset: Dataset;
+  dataset: ConceptNodeWithDatasetAttached;
   /**
    * The normalized value of the country within the dataset.
    *  A value of null means the country was not found in the dataset.
