@@ -1,5 +1,3 @@
-import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
-import { OutputIndex } from '@/types/Index';
 import {
   convertTreeToGridCells,
   getGridColumnCount,
@@ -8,97 +6,7 @@ import {
 } from '@/utils/grid-cell-util';
 import { createNewOutputIndex } from '@/utils/index-tree-util';
 import { expect } from 'chai';
-
-const newTestTree = (): OutputIndex => ({
-  id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
-  type: IndexNodeType.OutputIndex,
-  name: 'Overall Priority',
-  inputs: [
-    {
-      id: '5ad78cb0-b923-48ef-9c1a-31219987ca16',
-      type: IndexNodeType.Index,
-      name: 'Highest risk of drought',
-      weight: 20,
-      isWeightUserSpecified: true,
-      inputs: [
-        {
-          id: 'a547b59f-9287-4991-a817-08ba54a0353f',
-          type: IndexNodeType.Placeholder,
-          name: 'Greatest reliance on fragile crops',
-        },
-      ],
-    },
-    {
-      id: '6db6284d-7879-4735-a460-5f2b273c0bf9',
-      type: IndexNodeType.Index,
-      name: 'Largest vulnerable population',
-      weight: 60,
-      isWeightUserSpecified: true,
-      inputs: [
-        {
-          id: '16caf563-548f-4e11-a488-a900f0d01c3b',
-          type: IndexNodeType.Dataset,
-          name: 'Highest poverty index ranking',
-          weight: 80,
-          isWeightUserSpecified: true,
-          datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-          datasetName: 'Poverty indicator index',
-          selectedTimestamp: 0,
-          isInverted: false,
-          source: 'UN',
-          outputVariable: 'test',
-          runId: 'indicators',
-          temporalResolution: TemporalResolutionOption.Month,
-          temporalAggregation: AggregationOption.Mean,
-          spatialAggregation: AggregationOption.Mean,
-        },
-        {
-          id: '2f624d92-efa0-431a-a3a1-5521871420ad',
-          type: IndexNodeType.Index,
-          name: 'Population Health',
-          weight: 0,
-          isWeightUserSpecified: true,
-          inputs: [
-            {
-              id: 'd851ac5d-2de2-475d-8ef7-5bd46a1a9016',
-              type: IndexNodeType.Dataset,
-              name: 'Malnutrition',
-              weight: 80,
-              isWeightUserSpecified: true,
-              datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-              datasetName: 'Malnutrition rates dataset',
-              selectedTimestamp: 0,
-              isInverted: false,
-              source: 'UN',
-              outputVariable: 'test',
-              runId: 'indicators',
-              temporalResolution: TemporalResolutionOption.Month,
-              temporalAggregation: AggregationOption.Mean,
-              spatialAggregation: AggregationOption.Mean,
-            },
-            {
-              id: 'ac56ea0f-3ca9-4aee-9c06-f98768b7bd2a',
-              type: IndexNodeType.Dataset,
-              name: 'Life expectancy by country',
-              weight: 20,
-              isWeightUserSpecified: true,
-              datasetId: 'dd7f69937-060d-44e8-8a04-22070ce35b27',
-              datasetName: 'Life expectancy by country',
-              selectedTimestamp: 0,
-              isInverted: false,
-              source: 'UN',
-              outputVariable: 'test',
-              runId: 'indicators',
-              temporalResolution: TemporalResolutionOption.Month,
-              temporalAggregation: AggregationOption.Mean,
-              spatialAggregation: AggregationOption.Mean,
-            },
-          ],
-        },
-      ],
-    },
-  ],
-});
+import { newTestTree } from './index-tree-util.spec';
 
 describe('grid-cell-util', () => {
   describe('convertTreeToGridCells', () => {
