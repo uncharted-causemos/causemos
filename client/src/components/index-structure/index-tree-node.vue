@@ -108,6 +108,7 @@ const addInputDropdownOptions = [IndexNodeType.Index, IndexNodeType.Dataset];
 interface Props {
   nodeData: IndexNode;
   isSelected: boolean;
+  isConnecting: boolean;
 }
 const props = defineProps<Props>();
 

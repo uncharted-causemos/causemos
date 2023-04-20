@@ -25,6 +25,7 @@
       <IndexTreeNode
         :node-data="cell.node"
         :is-selected="isSelected(cell.node.id)"
+        :is-connecting="isConnecting"
         class="index-tree-node"
         @rename="renameNode"
         @delete="deleteNode"
@@ -109,7 +110,7 @@ const props = defineProps<{
   highlightEdgeId: SelectableIndexElementId | null;
 }>();
 
-const connecting = ref<boolean>(false);
+const isConnecting = ref<boolean>(false);
 const connectingId = ref<string | null>(null);
 
 const emit = defineEmits<{
@@ -141,12 +142,12 @@ const handleHighlightEdge = (node: any) => {
   }
 };
 const handleConnect = (id: string) => {
-  if (connecting.value) {
-    connecting.value = false;
-    connectingId.value = null;
+  if (isConnecting.value) {
+    isConnecting.value = false;
+    isConnecting.value = null;
   } else {
-    connecting.value = true;
-    connectingId.value = id;
+    isConnecting.value = true;
+    isConnecting.value = id;
   }
   clearAll();
 };
@@ -166,12 +167,12 @@ const handleMouseClick = (sourceId: string) => {
 };
 
 const connectorHoverClear = () => {
-  if (!connecting.value) {
+  if (!isConnecting.value) {
     connectingId.value = null;
   }
 };
 const connectorHover = (id: string) => {
-  if (!connecting.value) {
+  if (!isConnecting.value) {
     connectingId.value = id;
   }
 };
