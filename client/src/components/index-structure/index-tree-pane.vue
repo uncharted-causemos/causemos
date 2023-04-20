@@ -144,10 +144,10 @@ const handleHighlightEdge = (node: any) => {
 const handleConnect = (id: string) => {
   if (isConnecting.value) {
     isConnecting.value = false;
-    isConnecting.value = null;
+    connectingId.value = null;
   } else {
     isConnecting.value = true;
-    isConnecting.value = id;
+    connectingId.value = id;
   }
   clearAll();
 };
