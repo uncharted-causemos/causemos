@@ -31,7 +31,13 @@ ${process.env.KC_TOKEN_SECRET}
 
     // authorize based on role
     (req, res, next) => {
-      if (roles.length && !roles.filter((value) => req.auth.realm_access.roles.includes(value))) {
+      // no need to perform role verification
+      if (!roles.length) {
+        next();
+      }
+
+      const roleIntersection = roles.filter((value) => req.auth.realm_access.roles.includes(value));
+      if (!roleIntersection.length) {
         // role is not authorized
         return res.status(401).json({ message: 'Unauthorized' });
       }
