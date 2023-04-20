@@ -336,6 +336,10 @@ $option-button-width: 16px;
   border: 1px solid $un-color-black-30;
   border-radius: 3px;
 
+  &.no-highlight:hover {
+    cursor: not-allowed;
+  }
+
   &:not(.placeholder):hover {
     &:not(.no-highlight):hover {
       border-color: $accent-main;

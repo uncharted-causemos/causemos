@@ -5,7 +5,7 @@
     :class="{
       'connecting-nodes': isConnecting,
     }"
-    @click.self="clearAll"
+    @click.self="clearEdgeConnect"
   >
     <div
       v-for="cell in gridCells"
@@ -154,8 +154,7 @@ const createEdge = (id: string) => {
       }
     }
   }
-  connectingId.value = null;
-  isConnecting.value = false;
+  clearEdgeConnect();
 };
 const handleClickSelectEdge = (node: any) => {
   if (node.inputs?.length > 0) {
@@ -169,8 +168,7 @@ const handleHighlightEdge = (node: any) => {
 };
 const handleConnect = (id: string) => {
   if (isConnecting.value && id === connectingId.value) {
-    isConnecting.value = false;
-    connectingId.value = null;
+    clearEdgeConnect();
   } else if (isConnecting.value && id !== connectingId.value) {
     connectingId.value = id;
   } else {
@@ -322,6 +320,12 @@ const createChild = (
 const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult) => {
   workbench.attachDatasetToPlaceholder(nodeId, dataset);
   indexTree.attachDatasetToPlaceholder(nodeId, dataset);
+};
+
+const clearEdgeConnect = () => {
+  isConnecting.value = false;
+  connectingId.value = null;
+  clearAll();
 };
 
 const clearAll = () => {
