@@ -1,5 +1,12 @@
 <template>
-  <div ref="tree-container" class="index-tree-pane-container" @click.self="clearAll">
+  <div
+    ref="tree-container"
+    class="index-tree-pane-container"
+    :class="{
+      'connecting-nodes': isConnecting,
+    }"
+    @click.self="clearAll"
+  >
     <div
       v-for="cell in gridCells"
       :key="cell.node.id"
@@ -18,9 +25,9 @@
           [EDGE_CLASS.HIGHLIGHTED]:
             isIncomingHighlighted(cell.node.id) && !isIncomingSelected(cell.node.id),
         }"
-        @mouseenter="() => handleHighlightEdge(cell.node)"
+        @mouseenter="() => !isConnecting && handleHighlightEdge(cell.node)"
         @mouseleave="highlightClear"
-        @click="() => handleClickSelectEdge(cell.node)"
+        @click="() => !isConnecting && handleClickSelectEdge(cell.node)"
       ></div>
       <IndexTreeNode
         :node-data="cell.node"
@@ -32,6 +39,7 @@
         @duplicate="duplicateNode"
         @select="(id) => emit('select-element', id)"
         @create-child="createChild"
+        @create-edge="createEdge"
         @attach-dataset="attachDatasetToPlaceholder"
         @mouseenter="highlightClear"
       />
@@ -50,9 +58,9 @@
           [EDGE_CLASS.HIGHLIGHTED_Y]:
             isOutgoingYHighlighted(cell.node.id) && !isOutgoingYSelected(cell.node.id),
         }"
-        @mouseenter="() => handleMouseEnter(cell.node.id)"
+        @mouseenter="() => !isConnecting && handleMouseEnter(cell.node.id)"
         @mouseleave="highlightClear"
-        @click="() => handleMouseClick(cell.node.id)"
+        @click="() => !isConnecting && handleMouseClick(cell.node.id)"
       />
       <div
         v-if="cell.node.type !== IndexNodeType.OutputIndex && !cell.hasOutputLine"
@@ -88,7 +96,7 @@ import { IndexNodeType } from '@/types/Enums';
 import { DatasetSearchResult, GridCell, IndexNode, SelectableIndexElementId } from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren, isEdge } from '@/utils/index-tree-util';
+import { hasChildren, isEdge, addChild, FindNodeResult } from '@/utils/index-tree-util';
 import {
   convertTreeToGridCells,
   getGridColumnCount,
@@ -131,6 +139,24 @@ const isOutgoingHighlighted = (id: string) => {
   return false;
 };
 
+const createEdge = (id: string) => {
+  if (connectingId.value !== null) {
+    const sourceNode: IndexNode | null = workbench.popItem(connectingId.value);
+    if (sourceNode !== null) {
+      const searchResults: FindNodeResult | null = indexTree.findNode(id) ?? null;
+      if (searchResults !== null) {
+        const found = searchResults.found;
+        if (found.type === IndexNodeType.OutputIndex) {
+          addChild(found, sourceNode);
+        } else if (found.type === IndexNodeType.Index) {
+          addChild(found, sourceNode);
+        }
+      }
+    }
+  }
+  connectingId.value = null;
+  isConnecting.value = false;
+};
 const handleClickSelectEdge = (node: any) => {
   if (node.inputs?.length > 0) {
     emit('select-element', { sourceId: node.inputs[0].id, targetId: node.id });
@@ -142,9 +168,11 @@ const handleHighlightEdge = (node: any) => {
   }
 };
 const handleConnect = (id: string) => {
-  if (isConnecting.value) {
+  if (isConnecting.value && id === connectingId.value) {
     isConnecting.value = false;
     connectingId.value = null;
+  } else if (isConnecting.value && id !== connectingId.value) {
+    connectingId.value = id;
   } else {
     isConnecting.value = true;
     connectingId.value = id;
@@ -350,6 +378,10 @@ $edge-selected: $accent-main;
   }
   .index-tree-node {
     pointer-events: auto;
+  }
+
+  &.connecting-nodes {
+    cursor: crosshair;
   }
   .edge {
     position: relative;
