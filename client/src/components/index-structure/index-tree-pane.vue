@@ -119,6 +119,11 @@ const props = defineProps<{
   highlightEdgeId: SelectableIndexElementId | null;
 }>();
 
+/**
+ * Track the state of creating a new edge (connecting)
+ * isConnecting is used to control logic and visual aspects
+ * connectingId tracks the currently selected "first node" in the edge set.
+ */
 const isConnecting = ref<boolean>(false);
 const connectingId = ref<string | null>(null);
 
