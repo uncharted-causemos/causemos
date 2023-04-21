@@ -474,7 +474,7 @@ $edge-selected: $accent-main;
     flex-direction: row;
     pointer-events: auto;
     button {
-      height: 2em;
+      height: 2.2em;
       background-color: white;
     }
     &.connecting {
