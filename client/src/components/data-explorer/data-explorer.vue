@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import { useStore } from 'vuex';
-import { ref, computed, onMounted, watch, defineEmits } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 
 import { Datacube } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
