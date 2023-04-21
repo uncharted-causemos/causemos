@@ -97,7 +97,7 @@ import { IndexNodeType } from '@/types/Enums';
 import { DatasetSearchResult, GridCell, IndexNode, SelectableIndexElementId } from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren, isEdge, addChild, FindNodeResult } from '@/utils/index-tree-util';
+import { hasChildren, isEdge, addChild } from '@/utils/index-tree-util';
 import {
   convertTreeToGridCells,
   getGridColumnCount,
@@ -153,23 +153,16 @@ const isOutgoingHighlighted = (id: string) => {
 
 const createEdge = (id: string) => {
   if (connectingId.value !== null) {
-    const foundInTree = (indexTree.findNode(id) ?? null) !== null;
-
+    const targetNode = searchForNode(id) ?? null;
     const sourceNode: IndexNode | null = workbench.popItem(connectingId.value);
-    if (sourceNode !== null) {
-      let searchResults: FindNodeResult | null;
-      if (foundInTree) {
-        searchResults = indexTree.findNode(id) ?? null;
-      } else {
-        searchResults = workbench.findNode(id) ?? null;
-      }
 
-      if (searchResults !== null) {
-        const found = searchResults.found;
-        if (found.type === IndexNodeType.OutputIndex || found.type === IndexNodeType.Index) {
-          addChild(found, sourceNode);
-        }
-      }
+    if (
+      targetNode !== null &&
+      sourceNode !== null &&
+      (targetNode.found.type === IndexNodeType.OutputIndex ||
+        targetNode.found.type === IndexNodeType.Index)
+    ) {
+      addChild(targetNode.found, sourceNode);
     }
   }
 
