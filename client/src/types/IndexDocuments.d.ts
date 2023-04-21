@@ -43,3 +43,30 @@ export interface Document {
   creator: string | null;
   id: string;
 }
+
+export interface DojoParagraphDetails {
+  query: string;
+  matches: string[];
+}
+
+export interface DojoParagraphHighlight {
+  text: string;
+  highlight: boolean;
+}
+export interface DojoParagraphHighlights {
+  highlights: [DojoParagraphHighlight[]];
+}
+
+export interface ScrollDataParagraph {
+  id: string;
+  document_id: string;
+  text: string;
+  page_no: number;
+  length: number;
+}
+export interface ScrollData {
+  hits: number;
+  items_in_page: number;
+  scroll_id: string;
+  paragraphs: ScrollDataParagraph[];
+}

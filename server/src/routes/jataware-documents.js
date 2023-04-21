@@ -17,4 +17,19 @@ router.get(
   })
 );
 
+router.get(
+  '/:docId/paragraphs',
+  asyncHandler(async (req, res) => {
+    const docId = req.params.docId;
+    const scrollId = req.query.scroll_id;
+    if (docId) {
+      const result = await paragraphSearchService.getDocumentParagraphs(docId, scrollId ?? null);
+      res.status(200);
+      res.json(result);
+    } else {
+      res.status(400).send('Bad request, missing docId parameter');
+    }
+  })
+);
+
 module.exports = router;

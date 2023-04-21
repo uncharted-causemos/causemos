@@ -17,7 +17,7 @@
             <close-button v-if="showCloseButton" @click="close()" />
           </div>
 
-          <div class="modal-body">
+          <div ref="modalBody" class="modal-body">
             <slot name="body" />
           </div>
 
@@ -83,7 +83,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/variables';
+@import '@/styles/variables';
 
 .modal-mask {
   position: fixed;
@@ -105,7 +105,7 @@ export default defineComponent({
 .modal-container {
   position: relative;
   width: 500px;
-  margin: 0px auto;
+  margin: 0 auto;
   background-color: #fff;
   border-radius: 2px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.33);

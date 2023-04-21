@@ -43,9 +43,10 @@ export type IndexNode = OutputIndex | Index | Dataset | Placeholder;
 export type IndexWorkBenchItem = Index | Dataset | Placeholder;
 export type ParentNode = OutputIndex | Index;
 
+export type IndexEdgeId = { sourceId: string; targetId: string };
 // If a node is selected, this is the node's ID
 // If an edge is selected, this contains the IDs of the edge's source and target nodes.
-export type SelectableIndexElementId = string | { sourceId: string; targetId: string };
+export type SelectableIndexElementId = string | IndexEdgeId;
 
 /**
  * Used to summarize a given dataset's contribution to a specific country.

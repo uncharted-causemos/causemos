@@ -1,6 +1,6 @@
 <template>
   <div class="index-drilldown-panel-container" :class="{ hidden: type === null }">
-    <template v-if="edgeSelected">
+    <template v-if="type === IndexEdgeType.Edge">
       <div>
         <div>
           <div
@@ -56,11 +56,13 @@
           </div>
         </div>
       </div>
-      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="selectedUpstreamNodeName"
+      />
     </template>
-
-    <template v-if="!edgeSelected && type === IndexNodeType.OutputIndex">
+    <template v-if="type === IndexNodeType.OutputIndex">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -87,12 +89,12 @@
           <button class="btn btn-sm" @click="startRenaming">Rename</button>
         </div>
       </header>
-      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
       <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
 
-    <template v-if="!edgeSelected && type === IndexNodeType.Index">
+    <template v-if="type === IndexNodeType.Index">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -134,11 +136,11 @@
           </div>
         </div>
       </header>
-      <IndexComponentWeights :inputs="selectedNode?.inputs ?? []" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
 
-    <template v-if="!edgeSelected && type === IndexNodeType.Dataset">
+    <template v-if="type === IndexNodeType.Dataset">
       <header>
         <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
           <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
@@ -197,23 +199,7 @@
           @toggle-inverted="() => toggleDatasetIsInverted(selectedNode.id)"
         />
       </section>
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
-    </template>
-
-    <template v-if="!edgeSelected && type === IndexEdgeType.Edge">
-      <header>
-        <div class="title-row space-between">
-          <div class="edge-source-and-target">
-            <h3>{{ 'Highest risk of drought' }}</h3>
-            <h3 class="edge-target">{{ panelTitle }}</h3>
-          </div>
-          <button class="btn btn-sm" disabled>
-            <i class="fa fa-ellipsis-v" />
-          </button>
-        </div>
-      </header>
-      <IndexComponentWeights />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" />
+      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
   </div>
 </template>
@@ -238,12 +224,17 @@ import {
   isOutputIndexNode,
   getIndexNodeTypeColor,
   getIndexNodeTypeIcon,
+  isEdge,
 } from '@/utils/index-tree-util';
-import { OptionButtonMenu } from './index-tree-node.vue';
+import { OptionButtonMenu } from '@/utils/index-common-util';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
+}>();
+
+const emit = defineEmits<{
+  (e: 'delete-edge', value: SelectableIndexElementId): void;
 }>();
 
 const indexTree = useIndexTree();
@@ -303,14 +294,16 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
 };
 
 const handleEdgeOptionsButtonClick = (option: OptionButtonMenu) => {
-  console.log(`WIP: do the edge delete here. ${JSON.stringify(option)}`);
+  if (option === OptionButtonMenu.DeleteEdge && props.selectedElementId) {
+    emit('delete-edge', props.selectedElementId);
+  }
 };
 
 const nodeName = computed<String | null>(() => {
   let idToSearch = null;
   if (props.selectedElementId && typeof props.selectedElementId === 'string') {
     idToSearch = props.selectedElementId;
-  } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+  } else if (props.selectedElementId && isEdge(props.selectedElementId)) {
     idToSearch = props.selectedElementId.targetId;
   }
 
@@ -324,7 +317,7 @@ const nodeName = computed<String | null>(() => {
 });
 
 const nodeUpstreamName = computed<String | null>(() => {
-  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+  if (props.selectedElementId && isEdge(props.selectedElementId)) {
     const node = searchForNode(props.selectedElementId.sourceId);
     if (node) {
       return node.found.name;
@@ -335,9 +328,9 @@ const nodeUpstreamName = computed<String | null>(() => {
 
 const selectedNode = computed<IndexNode | null>(() => {
   let idToSearch = null;
-  if (props.selectedElementId && typeof props.selectedElementId === 'string') {
+  if (props.selectedElementId && !isEdge(props.selectedElementId)) {
     idToSearch = props.selectedElementId;
-  } else if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+  } else if (props.selectedElementId && isEdge(props.selectedElementId)) {
     idToSearch = props.selectedElementId.targetId;
   } else {
     return null;
@@ -354,22 +347,13 @@ const selectedDatasetDataId = computed(() => {
 });
 
 const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode } | null>(() => {
-  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
+  if (props.selectedElementId && isEdge(props.selectedElementId)) {
     const sourceNode = searchForNode(props.selectedElementId.sourceId);
     if (sourceNode?.found && sourceNode?.parent) {
       return { source: sourceNode.found, target: sourceNode.parent };
     }
   }
   return null;
-});
-
-const edgeSelected = computed(() => {
-  if (props.selectedElementId && typeof props.selectedElementId === 'object') {
-    if (props.selectedElementId.sourceId) {
-      return true;
-    }
-  }
-  return false;
 });
 
 const type = computed<IndexElementType | null>(() => {
@@ -383,6 +367,13 @@ const type = computed<IndexElementType | null>(() => {
 
 const panelTitle = computed(() => {
   return selectedNode?.value?.name ?? '';
+});
+
+const selectedUpstreamNodeName = computed(() => {
+  if (selectedEdgeComponents.value) {
+    return selectedEdgeComponents.value.source.name;
+  }
+  return null;
 });
 
 const datasetMetadata = useModelMetadataSimple(selectedDatasetDataId);
