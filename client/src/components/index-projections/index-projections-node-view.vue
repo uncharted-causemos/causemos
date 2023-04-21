@@ -20,6 +20,14 @@
 // }>();
 
 // const indexTree = useIndexTree();
+
+// TODO: determine the segment of the graph we're interested in showing:
+// - selected node
+// - 1 parent if it exists
+// - any direct children
+// TODO: feed that into code to generate the grid cells
+// TODO: OR generate grid cells for full graph and then throw out unrelated ones
+// TODO: make selected node extra large and render differently
 </script>
 
 <style lang="scss" scoped>
