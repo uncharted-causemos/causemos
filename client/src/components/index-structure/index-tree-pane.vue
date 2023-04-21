@@ -148,19 +148,26 @@ const isOutgoingHighlighted = (id: string) => {
 
 const createEdge = (id: string) => {
   if (connectingId.value !== null) {
+    const foundInTree = (indexTree.findNode(id) ?? null) !== null;
+
     const sourceNode: IndexNode | null = workbench.popItem(connectingId.value);
     if (sourceNode !== null) {
-      const searchResults: FindNodeResult | null = indexTree.findNode(id) ?? null;
+      let searchResults: FindNodeResult | null;
+      if (foundInTree) {
+        searchResults = indexTree.findNode(id) ?? null;
+      } else {
+        searchResults = workbench.findNode(id) ?? null;
+      }
+
       if (searchResults !== null) {
         const found = searchResults.found;
-        if (found.type === IndexNodeType.OutputIndex) {
-          addChild(found, sourceNode);
-        } else if (found.type === IndexNodeType.Index) {
+        if (found.type === IndexNodeType.OutputIndex || found.type === IndexNodeType.Index) {
           addChild(found, sourceNode);
         }
       }
     }
   }
+
   clearEdgeConnect();
 };
 const handleClickSelectEdge = (node: any) => {
