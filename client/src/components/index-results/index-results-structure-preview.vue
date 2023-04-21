@@ -12,7 +12,7 @@
       <div class="edge incoming" :class="{ visible: hasChildren(cell.node) }" />
       <div
         class="node"
-        :class="{ selected: cell.node.type === IndexNodeType.OutputIndex }"
+        :class="{ selected: cell.node.id === props.selectedNodeId }"
         :style="{ color: getIndexNodeTypeColor(cell.node.type) }"
       >
         <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(cell.node.type)]" />
@@ -38,6 +38,7 @@ import { IndexNodeType } from '@/types/Enums';
 import { convertTreeToGridCells } from '@/utils/grid-cell-util';
 
 const { tree } = useIndexTree();
+const props = defineProps<{ selectedNodeId: string | null }>();
 
 const gridCells = computed(() => convertTreeToGridCells(tree.value));
 </script>

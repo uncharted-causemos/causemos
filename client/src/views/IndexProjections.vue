@@ -2,7 +2,10 @@
   <div class="index-projections-container">
     <div class="flex-col config-column">
       <header>
-        <button class="btn btn-sm" @click="modifyStructure">
+        <button v-if="selectedNodeId !== null" class="btn btn-sm" @click="deselectNode">
+          <i class="fa fa-fw fa-caret-left" />View all concepts
+        </button>
+        <button v-else class="btn btn-sm" @click="modifyStructure">
           <i class="fa fa-fw fa-caret-left" />Edit structure
         </button>
         <h3>Projections</h3>
@@ -13,7 +16,10 @@
           <h4>Index structure</h4>
           <button class="btn btn-sm" @click="modifyStructure">Edit</button>
         </header>
-        <IndexResultsStructurePreview class="index-structure-preview" />
+        <IndexResultsStructurePreview
+          class="index-structure-preview"
+          :selected-node-id="selectedNodeId"
+        />
       </section>
       <section>
         <header><h4>Settings</h4></header>
@@ -64,32 +70,7 @@
         @select-node="selectElement"
         @deselect-node="deselectNode"
       />
-      <div class="legend">
-        <!-- TODO: icons and styling -->
-        <div class="legend-column">
-          <p class="un-font-small">Concepts with datasets attached</p>
-          <p class="un-font-small">Constraint</p>
-          <p class="un-font-small">Dataset value</p>
-          <p class="un-font-small">Interpolated data</p>
-          <p class="un-font-small">Extrapolated data</p>
-        </div>
-        <div class="legend-column">
-          <p class="un-font-small">Concepts without datasets</p>
-          <p class="un-font-small">Constraint</p>
-          <p class="un-font-small">All components have values</p>
-          <p class="un-font-small">Some components do not have values</p>
-        </div>
-        <div class="legend-column">
-          <p class="un-font-small">Relationships</p>
-          <p class="un-font-small">High levels of A represent <span>high</span> levels of B</p>
-          <p class="un-font-small">Low levels of A represent <span>low</span> levels of B</p>
-        </div>
-        <div class="legend-column">
-          <p class="un-font-small">Data quality</p>
-          <p class="un-font-small">Old data</p>
-          <p class="un-font-small">Ignored due to insufficient data</p>
-        </div>
-      </div>
+      <IndexLegend class="legend" :is-projection-space="true" />
     </main>
   </div>
 </template>
@@ -107,6 +88,7 @@ import IndexProjectionsNodeView from '@/components/index-projections/index-proje
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import IndexLegend from '@/components/index-legend.vue';
 
 const store = useStore();
 const route = useRoute();
@@ -233,19 +215,6 @@ main {
     bottom: 0;
     left: 20px;
     right: 20px;
-    display: flex;
-    padding: 10px 20px;
-    background: white;
-    border-radius: 3px 3px 0 0;
-  }
-}
-
-.legend-column {
-  flex: 1;
-  min-width: 0;
-
-  p:not(:first-child) {
-    color: $un-color-black-40;
   }
 }
 </style>

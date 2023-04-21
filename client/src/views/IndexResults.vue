@@ -11,9 +11,9 @@
       <section>
         <header class="flex index-structure-header">
           <h4>Index structure</h4>
-          <button class="btn btn-sm" @click="modifyStructure">Modify</button>
+          <button class="btn btn-sm" @click="modifyStructure">Edit</button>
         </header>
-        <IndexResultsStructurePreview class="index-structure-preview" />
+        <IndexResultsStructurePreview class="index-structure-preview" :selected-node-id="tree.id" />
         <IndexResultsComponentList />
       </section>
       <section>
