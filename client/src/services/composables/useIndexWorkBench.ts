@@ -53,6 +53,17 @@ export default function useIndexWorkBench() {
     return undefined;
   };
 
+  const isDescendant = (descendantId: string, ancestorId: string): boolean => {
+    const results = findNode(ancestorId) ?? null;
+    if (results !== null) {
+      const findResults = indexTreeUtilFindNode(results.found, descendantId) ?? null;
+      if (findResults !== null) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const findAndDeleteItem = (nodeId: string) => {
     let isDeleted = false;
     // Search among root nodes first
@@ -110,5 +121,6 @@ export default function useIndexWorkBench() {
     getAnalysisId,
     deleteEdge,
     popItem,
+    isDescendant,
   };
 }

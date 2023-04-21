@@ -33,6 +33,7 @@
         :node-data="cell.node"
         :is-selected="isSelected(cell.node.id)"
         :is-connecting="isConnecting"
+        :has-loop="hasLoop(cell.node.id)"
         class="index-tree-node"
         @rename="renameNode"
         @delete="deleteNode"
@@ -132,6 +133,12 @@ const indexTree = useIndexTree();
 const { findNode } = indexTree;
 const workbench = useIndexWorkBench();
 
+const hasLoop = (targetId: string) => {
+  if (connectingId.value !== null) {
+    return workbench.isDescendant(targetId, connectingId.value);
+  }
+  return false;
+};
 const isOutgoingHighlighted = (id: string) => {
   if (props.highlightEdgeId && isEdge(props.highlightEdgeId)) {
     return props.highlightEdgeId.sourceId === id;

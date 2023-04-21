@@ -109,6 +109,7 @@ interface Props {
   nodeData: IndexNode;
   isSelected: boolean;
   isConnecting: boolean;
+  hasLoop: boolean;
 }
 const props = defineProps<Props>();
 
@@ -134,8 +135,9 @@ const classObject = computed(() => {
     disabled: disableInteraction.value,
     'no-highlight':
       props.isConnecting &&
-      props.nodeData.type !== IndexNodeType.OutputIndex &&
-      props.nodeData.type !== IndexNodeType.Index,
+      ((props.nodeData.type !== IndexNodeType.OutputIndex &&
+        props.nodeData.type !== IndexNodeType.Index) ||
+        props.hasLoop),
   };
 });
 
@@ -145,6 +147,7 @@ const selectNode = () => {
     emit('select', props.nodeData.id);
   } else if (
     props.isConnecting &&
+    !props.hasLoop &&
     (props.nodeData.type === IndexNodeType.OutputIndex ||
       props.nodeData.type === IndexNodeType.Index)
   ) {
