@@ -109,7 +109,7 @@ interface Props {
   nodeData: IndexNode;
   isSelected: boolean;
   isConnecting: boolean;
-  hasLoop: boolean;
+  isDescendentOfConnectingNode: boolean;
 }
 const props = defineProps<Props>();
 
@@ -137,7 +137,7 @@ const classObject = computed(() => {
       props.isConnecting &&
       ((props.nodeData.type !== IndexNodeType.OutputIndex &&
         props.nodeData.type !== IndexNodeType.Index) ||
-        props.hasLoop),
+        props.isDescendentOfConnectingNode),
   };
 });
 
@@ -147,7 +147,7 @@ const selectNode = () => {
     emit('select', props.nodeData.id);
   } else if (
     props.isConnecting &&
-    !props.hasLoop &&
+    !props.isDescendentOfConnectingNode &&
     (props.nodeData.type === IndexNodeType.OutputIndex ||
       props.nodeData.type === IndexNodeType.Index)
   ) {
