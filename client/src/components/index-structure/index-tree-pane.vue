@@ -69,17 +69,9 @@
         :class="{
           connecting: cell.node.id === connectingId,
         }"
-        @mouseenter="() => connectorHover(cell.node.id)"
-        @mouseleave="connectorHoverClear"
       >
         <div class="edge outgoing visible last-child"></div>
-        <button
-          type="button"
-          class="btn btn-sm"
-          @click="() => handleConnect(cell.node.id)"
-          @mouseenter="() => connectorHover(cell.node.id)"
-          @mouseleave="connectorHoverClear"
-        >
+        <button type="button" class="btn btn-sm" @click="() => handleConnect(cell.node.id)">
           Connect
         </button>
         <div class="edge outgoing visible last-child"></div>
@@ -204,16 +196,6 @@ const handleMouseClick = (sourceId: string) => {
   }
 };
 
-const connectorHoverClear = () => {
-  if (!isConnecting.value) {
-    connectingId.value = null;
-  }
-};
-const connectorHover = (id: string) => {
-  if (!isConnecting.value) {
-    connectingId.value = id;
-  }
-};
 const isHigherThanSibling = (id: string, edgeId: SelectableIndexElementId) => {
   if (isEdge(edgeId)) {
     const sourceId = edgeId.sourceId;
@@ -474,6 +456,18 @@ $edge-selected: $accent-main;
     button {
       height: 2.2em;
       background-color: white;
+    }
+    &:hover {
+      cursor: grabbing;
+      button {
+        border-color: $accent-light;
+      }
+      div.edge {
+        border-color: $accent-light;
+      }
+      div.input-arrow {
+        border-left: 5px solid $accent-light;
+      }
     }
     &.connecting {
       cursor: grabbing;
