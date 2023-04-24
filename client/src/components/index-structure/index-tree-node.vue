@@ -66,7 +66,7 @@
         Add input concept
       </button>
       <button
-        v-if="isEmptyNode(props.nodeData) && !showDatasetSearch && !showEditName"
+        v-if="showAttachDatasetButton"
         class="btn btn-default full-width-button"
         @click="isSearchingForDataset = true"
       >
@@ -88,6 +88,7 @@ import {
   isConceptNodeWithoutDataset,
   isConceptNodeWithDatasetAttached,
   DATASET_ICON,
+  isOutputIndexNode,
 } from '@/utils/index-tree-util';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
@@ -234,6 +235,14 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
       break;
   }
 };
+
+const showAttachDatasetButton = computed(
+  () =>
+    isEmptyNode(props.nodeData) &&
+    !isOutputIndexNode(props.nodeData) &&
+    !showDatasetSearch.value &&
+    !showEditName.value
+);
 
 // Dataset search
 
