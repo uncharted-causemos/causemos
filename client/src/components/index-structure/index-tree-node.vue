@@ -104,6 +104,8 @@ export enum OptionButtonMenu {
 interface Props {
   nodeData: ConceptNode;
   isSelected: boolean;
+  isConnecting: boolean;
+  isDescendentOfConnectingNode: boolean;
 }
 const props = defineProps<Props>();
 
@@ -119,6 +121,7 @@ const emit = defineEmits<{
     dataset: DatasetSearchResult,
     nodeNameAfterAttachingDataset: string
   ): void;
+  (e: 'create-edge', nodeId: string): void;
 }>();
 
 const classObject = computed(() => {
@@ -127,11 +130,23 @@ const classObject = computed(() => {
     selected: props.isSelected,
     'flexible-width': showDatasetSearch.value,
     disabled: disableInteraction.value,
+    'no-highlight':
+      props.isConnecting &&
+      (!isConceptNodeWithoutDataset(props.nodeData) || props.isDescendentOfConnectingNode),
   };
 });
 
 const selectNode = () => {
-  emit('select', props.nodeData.id);
+  // Can't select Placeholder nodes
+  if (!props.isConnecting) {
+    emit('select', props.nodeData.id);
+  } else if (
+    props.isConnecting &&
+    !props.isDescendentOfConnectingNode &&
+    isConceptNodeWithoutDataset(props.nodeData)
+  ) {
+    emit('create-edge', props.nodeData.id);
+  }
 };
 
 // Rename
@@ -299,7 +314,11 @@ $option-button-width: 16px;
   border: 1px solid $un-color-black-30;
   border-radius: 3px;
 
-  &:hover {
+  &.no-highlight:hover {
+    cursor: not-allowed;
+  }
+
+  &:not(.no-highlight):hover {
     border-color: $accent-main;
   }
 

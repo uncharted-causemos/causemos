@@ -1,5 +1,12 @@
 <template>
-  <div ref="tree-container" class="index-tree-pane-container" @click.self="clearAll">
+  <div
+    ref="tree-container"
+    class="index-tree-pane-container"
+    :class="{
+      'connecting-nodes': isConnecting,
+    }"
+    @click.self="clearEdgeConnect"
+  >
     <div
       v-for="cell in gridCells"
       :key="cell.node.id"
@@ -18,24 +25,15 @@
           [EDGE_CLASS.HIGHLIGHTED]:
             isIncomingHighlighted(cell.node.id) && !isIncomingSelected(cell.node.id),
         }"
-        @mouseenter="
-          emit('highlight-edge', {
-            sourceId: (cell.node as ConceptNodeWithoutDataset).components[0].componentNode.id,
-            targetId: cell.node.id,
-          })
-        "
+        @mouseenter="() => !isConnecting && handleHighlightEdge(cell.node)"
         @mouseleave="highlightClear"
-        @click="
-          () =>
-            emit('select-element', {
-              sourceId: (cell.node as ConceptNodeWithoutDataset).components[0].componentNode.id,
-              targetId: cell.node.id,
-            })
-        "
+        @click="() => !isConnecting && handleClickSelectEdge(cell.node)"
       ></div>
       <IndexTreeNode
         :node-data="cell.node"
         :is-selected="isSelected(cell.node.id)"
+        :is-connecting="isConnecting"
+        :is-descendent-of-connecting-node="isDescendentOfConnectingNode(cell.node.id)"
         class="index-tree-node"
         @rename="renameNode"
         @delete="deleteNode"
@@ -43,9 +41,11 @@
         @select="(id) => emit('select-element', id)"
         @create-child="createChild"
         @attach-dataset="attachDatasetToNode"
+        @create-edge="createEdge"
         @mouseenter="highlightClear"
       />
       <div
+        v-if="cell.node.type !== IndexNodeType.OutputIndex && cell.hasOutputLine"
         class="edge outgoing"
         :class="{
           visible: cell.hasOutputLine,
@@ -58,37 +58,52 @@
           [EDGE_CLASS.HIGHLIGHTED_Y]:
             isOutgoingYHighlighted(cell.node.id) && !isOutgoingYSelected(cell.node.id),
         }"
-        @mouseenter="
-          () => emit('highlight-edge', { sourceId: cell.node.id, targetId: parentId(cell.node.id) })
-        "
+        @mouseenter="() => !isConnecting && handleMouseEnter(cell.node.id)"
         @mouseleave="highlightClear"
-        @click="
-          () => emit('select-element', { sourceId: cell.node.id, targetId: parentId(cell.node.id) })
-        "
+        @click="() => !isConnecting && handleMouseClick(cell.node.id)"
       />
+      <div
+        v-if="cell.node.type !== IndexNodeType.OutputIndex && !cell.hasOutputLine"
+        class="connector"
+        :class="{
+          connecting: cell.node.id === connectingId,
+        }"
+      >
+        <div class="edge outgoing visible last-child"></div>
+        <button type="button" class="btn btn-sm" @click="() => handleConnect(cell.node.id)">
+          Connect
+        </button>
+        <div class="edge outgoing visible last-child"></div>
+        <div class="input-arrow"></div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import _ from 'lodash';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import {
   ConceptNode,
-  ConceptNodeWithoutDataset,
   DatasetSearchResult,
   GridCell,
   SelectableIndexElementId,
 } from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren, isOutputIndexNode, isEdge } from '@/utils/index-tree-util';
 import {
-  offsetGridCells,
-  getGridRowCount,
-  getGridColumnCount,
+  hasChildren,
+  isOutputIndexNode,
+  isEdge,
+  isConceptNodeWithoutDataset,
+  addChild,
+} from '@/utils/index-tree-util';
+import {
   convertTreeToGridCells,
+  getGridColumnCount,
+  getGridRowCount,
+  offsetGridCells,
 } from '@/utils/grid-cell-util';
 
 const EDGE_CLASS = {
@@ -105,6 +120,14 @@ const props = defineProps<{
   highlightEdgeId: SelectableIndexElementId | null;
 }>();
 
+/**
+ * Track the state of creating a new edge (connecting)
+ * isConnecting is used to control logic and visual aspects
+ * connectingId tracks the currently selected "first node" in the edge set.
+ */
+const isConnecting = ref<boolean>(false);
+const connectingId = ref<string | null>(null);
+
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
   (e: 'highlight-edge', selectedElement: SelectableIndexElementId): void;
@@ -116,11 +139,69 @@ const indexTree = useIndexTree();
 const { findNode } = indexTree;
 const workbench = useIndexWorkBench();
 
+const isDescendentOfConnectingNode = (targetId: string) => {
+  if (connectingId.value !== null) {
+    return workbench.isDescendant(targetId, connectingId.value);
+  }
+  return false;
+};
 const isOutgoingHighlighted = (id: string) => {
   if (props.highlightEdgeId && isEdge(props.highlightEdgeId)) {
     return props.highlightEdgeId.sourceId === id;
   }
   return false;
+};
+
+const createEdge = (id: string) => {
+  if (connectingId.value !== null) {
+    const targetNode = searchForNode(id) ?? null;
+    const sourceNode = workbench.popItem(connectingId.value);
+
+    if (
+      targetNode !== null &&
+      sourceNode !== null &&
+      isConceptNodeWithoutDataset(targetNode.found)
+    ) {
+      addChild(targetNode.found, sourceNode);
+    }
+  }
+
+  clearEdgeConnect();
+};
+const handleClickSelectEdge = (node: ConceptNode) => {
+  if (isConceptNodeWithoutDataset(node) && node.components.length > 0) {
+    emit('select-element', { sourceId: node.components[0].componentNode.id, targetId: node.id });
+  }
+};
+const handleHighlightEdge = (node: ConceptNode) => {
+  if (isConceptNodeWithoutDataset(node) && node.components.length > 0) {
+    emit('highlight-edge', { sourceId: node.components[0].componentNode.id, targetId: node.id });
+  }
+};
+const handleConnect = (id: string) => {
+  if (isConnecting.value && id === connectingId.value) {
+    clearEdgeConnect();
+  } else if (isConnecting.value && id !== connectingId.value) {
+    connectingId.value = id;
+  } else {
+    isConnecting.value = true;
+    connectingId.value = id;
+  }
+  clearAll();
+};
+
+const handleMouseEnter = (sourceId: string) => {
+  const targetId: string | null = parentId(sourceId);
+  if (targetId !== null) {
+    emit('highlight-edge', { sourceId, targetId });
+  }
+};
+
+const handleMouseClick = (sourceId: string) => {
+  const targetId = parentId(sourceId);
+  if (targetId !== null) {
+    emit('select-element', { sourceId, targetId });
+  }
 };
 
 const isHigherThanSibling = (id: string, edgeId: SelectableIndexElementId) => {
@@ -240,6 +321,12 @@ const attachDatasetToNode = (
   indexTree.attachDatasetToNode(nodeId, dataset, nodeNameAfterAttachingDataset);
 };
 
+const clearEdgeConnect = () => {
+  isConnecting.value = false;
+  connectingId.value = null;
+  clearAll();
+};
+
 const clearAll = () => {
   emit('deselect-all');
 };
@@ -295,6 +382,10 @@ $edge-selected: $accent-main;
   .index-tree-node {
     pointer-events: auto;
   }
+
+  &.connecting-nodes {
+    cursor: crosshair;
+  }
   .edge {
     position: relative;
     top: $edge-top-offset-from-node;
@@ -348,6 +439,49 @@ $edge-selected: $accent-main;
         border-right: none;
       }
     }
+  }
+  .connector {
+    display: flex;
+    flex-direction: row;
+    pointer-events: auto;
+    button {
+      height: 2.2em;
+      background-color: white;
+    }
+    &:hover {
+      cursor: grabbing;
+      button {
+        border-color: $accent-light;
+      }
+      div.edge {
+        border-color: $accent-light;
+      }
+      div.input-arrow {
+        border-left: 5px solid $accent-light;
+      }
+    }
+    &.connecting {
+      cursor: grabbing;
+      button {
+        border-color: $accent-light;
+      }
+      div.edge {
+        border-color: $accent-light;
+      }
+      div.input-arrow {
+        border-left: 5px solid $accent-light;
+      }
+    }
+  }
+
+  .input-arrow {
+    // position: absolute;
+    margin-top: 9px;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 5px solid #b3b4b5;
   }
 }
 </style>

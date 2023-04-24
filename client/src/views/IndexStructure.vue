@@ -83,9 +83,9 @@ onBeforeMount(() => {
 });
 // Set analysis name on the navbar
 onMounted(async () => {
-  store.dispatch('app/setAnalysisName', '');
+  await store.dispatch('app/setAnalysisName', '');
   await refresh();
-  store.dispatch('app/setAnalysisName', analysisName.value);
+  await store.dispatch('app/setAnalysisName', analysisName.value);
   isStateLoaded.value = true;
 });
 
