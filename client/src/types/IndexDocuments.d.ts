@@ -3,6 +3,7 @@
  */
 export interface Snippet {
   documentId: string | null;
+  fragmentParagraphLocation: number;
   text: string;
   documentTitle: string;
   documentAuthor: string;

@@ -52,7 +52,7 @@
       <div ref="content" v-html="formattedText"></div>
       <div ref="loadMoreText" class="load-more-text">
         <h5 v-if="useScrolling && hasScrollId">Loading body text ...</h5>
-        <h5 v-if="useScrolling && !hasScrollId">---- End of document ----</h5>
+        <h5 v-if="!isLoading && useScrolling && !hasScrollId">---- End of document ----</h5>
       </div>
     </template>
     <template #footer>
@@ -100,6 +100,10 @@ export default {
   props: {
     documentId: {
       type: String,
+      required: true,
+    },
+    fragmentParagraphLocation: {
+      type: Number,
       required: true,
     },
     textFragment: {
@@ -222,9 +226,12 @@ export default {
       }
 
       const content = this.useScrolling
-        ? await this.retrieveDocument(this.documentId, this.scrollId)
+        ? await this.retrieveDocument(
+            this.documentId,
+            this.scrollId,
+            this.fragmentParagraphLocation
+          )
         : await this.retrieveDocument(this.documentId);
-
       if (this.contentHandler) {
         this.scrollId = content.scroll_id ?? null;
         this.documentData = this.contentHandler(content, this.documentData, this.useScrolling);
@@ -232,7 +239,6 @@ export default {
         this.documentData = content.data;
       }
       this.isLoading = false;
-
       if (this.documentData) {
         if (this.documentMeta) {
           this.setFieldsFromDocumentMeta();
@@ -245,7 +251,6 @@ export default {
         } else {
           this.textViewer = createTextViewer(this.documentData.extracted_text);
         }
-
         const useDART = true;
 
         if (isPdf(this.documentData) && useDART) {
@@ -258,7 +263,6 @@ export default {
         } else {
           this.textOnly = true;
         }
-
         if (this.$refs.content.hasChildNodes()) {
           removeChildren(this.$refs.content);
         }
@@ -266,7 +270,7 @@ export default {
         if (this.textOnly === true) {
           this.$refs.content.appendChild(this.textViewer.element);
           if (this.textFragment) {
-            this.textViewer.search(this.textFragment);
+            this.textViewer.search(this.textFragment, this.contentHandler !== null);
           }
         } else {
           this.$refs.content.appendChild(this.pdfViewer.element);

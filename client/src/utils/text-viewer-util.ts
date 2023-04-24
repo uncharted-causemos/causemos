@@ -9,22 +9,31 @@ import { SELECTED_COLOR } from '@/utils/colors-util';
 // gradually loosen search requirements of a "regex and select punctuation"-sanitized
 // search string by progressively adding regex wildcards to account for skipped
 // characters, words and phrases in the text fragment being searched for.
-const iterativeRegexSearch = (text: string, fragment: string) => {
+const iterativeRegexSearch = (text: string, fragment: string, useWhitespace = false) => {
   let sanitizedSearch = fragment
     // remove some special characters, may need adjustment for edge cases but some are regex reserved
     .replace(/[/\\[\].+*?^$(){}|,]/g, '')
     .split(/\s+/)
     .join(' ')
     .trim();
+
   const spaceTotal = sanitizedSearch.split(' ').length;
   let count = 0;
+
   while (count <= spaceTotal) {
     const searchRegEx = new RegExp(sanitizedSearch);
     const searchIndex = text.search(searchRegEx);
+
     if (searchIndex > -1) {
       return text.replace(searchRegEx, reformat(fragment));
     }
-    sanitizedSearch = sanitizedSearch.replace(' ', '\\b.*?\\b');
+
+    if (useWhitespace) {
+      sanitizedSearch = sanitizedSearch.replace(' ', '\\w+');
+    } else {
+      sanitizedSearch = sanitizedSearch.replace(' ', '\\b.*?\\b');
+    }
+
     count++;
   }
   return text;
@@ -60,8 +69,9 @@ const createTextViewer = (text: string, isHTML = false) => {
   const el = document.createElement('div');
   const originalText = text;
 
-  function search(textFragment: string) {
+  function search(textFragment: string, useWhitespace = false) {
     let t = originalText;
+
     if (textFragment) {
       if (text.indexOf(textFragment) >= 0) {
         t = t.replace(textFragment, reformat(textFragment));
@@ -70,12 +80,14 @@ const createTextViewer = (text: string, isHTML = false) => {
       }
       // if all else fails, do this expensive regex search
       if (t === text) {
-        t = iterativeRegexSearch(t, textFragment);
+        t = iterativeRegexSearch(t, textFragment, useWhitespace);
       }
+
       el.innerHTML = t;
       const anchor: HTMLElement = document.getElementsByClassName(
         'extract-text-anchor'
       )[0] as HTMLElement;
+
       if (anchor) {
         const scroller = document.getElementsByClassName('modal-body')[0];
         scroller.scrollTop = anchor.offsetTop - 100;

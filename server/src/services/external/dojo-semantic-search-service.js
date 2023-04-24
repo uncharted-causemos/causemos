@@ -23,9 +23,9 @@ const getDocument = async (docId) => {
   return await requestAsPromise(requestOptions);
 };
 
-const getDocumentParagraphs = async (docId, scrollId) => {
+const getDocumentParagraphs = async (docId, minParagraphs, scrollId) => {
   const qs = {
-    size: DOJO_DOC_PARAGRAPH_LIMIT,
+    size: DOJO_DOC_PARAGRAPH_LIMIT < minParagraphs ? minParagraphs : DOJO_DOC_PARAGRAPH_LIMIT,
   };
 
   if (scrollId) {
@@ -109,8 +109,7 @@ const getHighlights = async (details) => {
       Authorization: DOJO_AUTH,
     },
   };
-  const response = await requestAsPromise(requestOptions);
-  return response;
+  return await requestAsPromise(requestOptions);
 };
 
 module.exports = {

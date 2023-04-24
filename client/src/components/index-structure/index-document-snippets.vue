@@ -32,6 +32,7 @@
                   () => {
                     prepareHighlightsForDocumentViewer(i);
                     expandedDocumentId = snippet.documentId;
+                    fragmentParagraphLocation = snippet.fragmentParagraphLocation;
                     textFragment = snippet.text;
                   }
                 "
@@ -48,6 +49,7 @@
     v-if="!!expandedDocumentId"
     :disable-edit="true"
     :document-id="expandedDocumentId"
+    :fragment-paragraph-location="fragmentParagraphLocation"
     :text-fragment="textFragment"
     :retrieve-document-meta="getDocument"
     :retrieve-document="getDocumentParagraphs"
@@ -82,6 +84,7 @@ const props = defineProps<{
 }>();
 const { selectedNodeName, selectedUpstreamNodeName } = toRefs(props);
 const expandedDocumentId = ref<string | null>(null);
+const fragmentParagraphLocation = ref<number>(-1);
 const textFragment = ref<string | null>(null);
 const SNIPPETS_LOADING = 'Loading snippets...';
 const NO_TITLE = 'Title not available';
@@ -114,8 +117,7 @@ const prepareHighlightsForDocumentViewer = (index: number) => {
       .filter((item) => item.highlight === true)
       .reduce((accumulator, item) => {
         const index = accumulator.findIndex((e: any) => {
-          if (e.text === item.text) return true;
-          return false;
+          return e.text === item.text;
         });
         if (index < 0) {
           return [...accumulator, item];
@@ -177,6 +179,7 @@ watch(
 
       return {
         documentId: result.document_id,
+        fragmentParagraphLocation: parseInt(result.id.split('-')[1]),
         text: allHighlights.value
           ? allHighlights.value.highlights[i].reduce(
               (paragraph, item) =>
