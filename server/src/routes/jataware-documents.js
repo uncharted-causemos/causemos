@@ -21,8 +21,9 @@ router.get(
   '/:docId/paragraphs',
   asyncHandler(async (req, res) => {
     const docId = req.params.docId;
+    const scrollId = req.query.scroll_id;
     if (docId) {
-      const result = await paragraphSearchService.getDocumentParagraphs(docId);
+      const result = await paragraphSearchService.getDocumentParagraphs(docId, scrollId ?? null);
       res.status(200);
       res.json(result);
     } else {

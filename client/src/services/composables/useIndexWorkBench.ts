@@ -1,11 +1,13 @@
-import _ from 'lodash';
-import { ref, computed } from 'vue';
-import { IndexWorkBenchItem } from '@/types/Index';
+import { computed, ref } from 'vue';
+import { IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
 import {
+  createIndexTreeActions,
+  deleteEdgeFromIndexTree,
   findAndRemoveChild,
   findNode as indexTreeUtilFindNode,
-  createIndexTreeActions,
+  isEdge,
 } from '@/utils/index-tree-util';
+import { IndexNodeType } from '@/types/Enums';
 
 // States
 
@@ -37,6 +39,10 @@ export default function useIndexWorkBench() {
     workBenchItems.value = [item, ...workBenchItems.value];
   };
 
+  const appendItem = (item: IndexWorkBenchItem) => {
+    workBenchItems.value = [...workBenchItems.value, item];
+  };
+
   const findNode = (nodeId: string) => {
     for (const tree of workBenchItems.value) {
       const found = indexTreeUtilFindNode(tree, nodeId);
@@ -45,6 +51,17 @@ export default function useIndexWorkBench() {
       }
     }
     return undefined;
+  };
+
+  const isDescendant = (descendantId: string, ancestorId: string): boolean => {
+    const results = findNode(ancestorId) ?? null;
+    if (results !== null) {
+      const findResults = indexTreeUtilFindNode(results.found, descendantId) ?? null;
+      if (findResults !== null) {
+        return true;
+      }
+    }
+    return false;
   };
 
   const findAndDeleteItem = (nodeId: string) => {
@@ -62,6 +79,27 @@ export default function useIndexWorkBench() {
     }
   };
 
+  const deleteEdge = (nodeIds: SelectableIndexElementId) => {
+    if (isEdge(nodeIds)) {
+      const node = findNode(nodeIds.targetId);
+      if (node && node?.found !== null) {
+        const child = deleteEdgeFromIndexTree(node.found, nodeIds.sourceId);
+        if (child !== null && child.type !== IndexNodeType.OutputIndex) {
+          addItem(child);
+        }
+      }
+    }
+  };
+
+  const popItem = (nodeId: string): IndexWorkBenchItem | null => {
+    const itemToPop = workBenchItems.value.filter((item) => item.id === nodeId);
+    if (itemToPop.length === 1) {
+      findAndDeleteItem(nodeId);
+      return itemToPop[0];
+    }
+    return null;
+  };
+
   const {
     findAndRenameNode,
     findAndAddChild,
@@ -73,6 +111,7 @@ export default function useIndexWorkBench() {
     items,
     initialize,
     addItem,
+    appendItem,
     findNode,
     findAndRenameNode,
     findAndDeleteItem,
@@ -80,5 +119,8 @@ export default function useIndexWorkBench() {
     toggleDatasetIsInverted,
     attachDatasetToPlaceholder,
     getAnalysisId,
+    deleteEdge,
+    popItem,
+    isDescendant,
   };
 }

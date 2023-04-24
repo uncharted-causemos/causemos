@@ -8,6 +8,8 @@ import {
   OutputIndex,
   Placeholder,
   DatasetSearchResult,
+  SelectableIndexElementId,
+  IndexEdgeId,
 } from '@/types/Index';
 import _ from 'lodash';
 import { DataConfig } from '@/types/Datacube';
@@ -60,7 +62,7 @@ export const getIndexNodeTypeColor = (type: IndexNodeType): string => {
 };
 
 export const createNewIndex = (): Index => {
-  const node: Index = {
+  return {
     id: uuidv4(),
     type: IndexNodeType.Index,
     name: '',
@@ -68,17 +70,15 @@ export const createNewIndex = (): Index => {
     isWeightUserSpecified: false,
     inputs: [],
   };
-  return node;
 };
 
-export const createNewOutputIndex = () => {
-  const node: OutputIndex = {
+export const createNewOutputIndex = (): OutputIndex => {
+  return {
     id: uuidv4(),
     type: IndexNodeType.OutputIndex,
     name: 'Overall priority',
     inputs: [],
   };
-  return node;
 };
 
 export const createNewPlaceholderDataset = () => {
@@ -156,6 +156,7 @@ export const duplicateNode = (indexNode: IndexNode): IndexNode => {
  * Removes the node with given nodeId from provided index node tree children
  * Returns boolean indicating if the node was found and removed successfully.
  * @param indexNodeTree An index node
+ * @param nodeId
  */
 export const findAndRemoveChild = (indexNodeTree: IndexNode, nodeId: string): boolean => {
   const result = findNode(indexNodeTree, nodeId);
@@ -166,6 +167,19 @@ export const findAndRemoveChild = (indexNodeTree: IndexNode, nodeId: string): bo
     return result.parent.inputs.length === beforeLength - 1;
   }
   return false;
+};
+
+export const deleteEdgeFromIndexTree = (
+  indexNodeTree: IndexNode,
+  nodeId: string
+): IndexNode | null => {
+  const result = findNode(indexNodeTree, nodeId);
+  if (result?.parent && isParentNode(result.parent)) {
+    result.parent.inputs = result.parent.inputs.filter((node) => node.id !== nodeId);
+    result.parent.inputs = rebalanceInputWeights(result.parent.inputs);
+    return result.found;
+  }
+  return null;
 };
 
 /**
@@ -239,7 +253,7 @@ export const rebalanceInputWeights = (inputs: (Dataset | Index | Placeholder)[])
   // Determine how much of the 100% is taken up by nodes with user-specified weights
   let specifiedWeightTotal = 0;
   updatedInputsList.forEach((input) => {
-    if (!isPlaceholderNode(input) && input.isWeightUserSpecified === true) {
+    if (!isPlaceholderNode(input) && input.isWeightUserSpecified) {
       specifiedWeightTotal += input.weight;
     }
   });
@@ -330,6 +344,10 @@ export const toggleIsInverted = (datasetNode: Dataset) => {
 export const addChild = (parentNode: ParentNode, child: Index | Dataset | Placeholder) => {
   parentNode.inputs.unshift(child);
   parentNode.inputs = rebalanceInputWeights(parentNode.inputs);
+};
+
+export const isEdge = (indexElementId: SelectableIndexElementId): indexElementId is IndexEdgeId => {
+  return typeof indexElementId === 'object';
 };
 
 export interface IndexTreeActionsBase {

@@ -86,6 +86,7 @@
 import { computed, ref } from 'vue';
 import { Dataset, DatasetSearchResult, IndexNode } from '@/types/Index';
 import { IndexNodeType } from '@/types/Enums';
+import { OptionButtonMenu } from '@/utils/index-common-util';
 import {
   duplicateNode,
   getIndexNodeTypeColor,
@@ -94,6 +95,7 @@ import {
   isParentNode,
   isPlaceholderNode,
 } from '@/utils/index-tree-util';
+
 import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
@@ -101,18 +103,13 @@ import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node
 import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
 
 const addInputDropdownOptions = [IndexNodeType.Index, IndexNodeType.Dataset];
-
-export enum OptionButtonMenu {
-  Rename = 'Rename',
-  Duplicate = 'Duplicate',
-  Delete = 'Delete',
-  DeleteEdge = 'DeleteEdge',
-}
 </script>
 <script setup lang="ts">
 interface Props {
   nodeData: IndexNode;
   isSelected: boolean;
+  isConnecting: boolean;
+  isDescendentOfConnectingNode: boolean;
 }
 const props = defineProps<Props>();
 
@@ -127,6 +124,7 @@ const emit = defineEmits<{
     childType: IndexNodeType.Index | IndexNodeType.Dataset
   ): void;
   (e: 'attach-dataset', nodeId: string, dataset: DatasetSearchResult): void;
+  (e: 'create-edge', nodeId: string): void;
 }>();
 
 const classObject = computed(() => {
@@ -135,13 +133,25 @@ const classObject = computed(() => {
     selected: props.isSelected,
     'flexible-width': showDatasetSearch.value,
     disabled: disableInteraction.value,
+    'no-highlight':
+      props.isConnecting &&
+      ((props.nodeData.type !== IndexNodeType.OutputIndex &&
+        props.nodeData.type !== IndexNodeType.Index) ||
+        props.isDescendentOfConnectingNode),
   };
 });
 
 const selectNode = () => {
   // Can't select Placeholder nodes
-  if (props.nodeData.type !== IndexNodeType.Placeholder) {
+  if (!props.isConnecting && props.nodeData.type !== IndexNodeType.Placeholder) {
     emit('select', props.nodeData.id);
+  } else if (
+    props.isConnecting &&
+    !props.isDescendentOfConnectingNode &&
+    (props.nodeData.type === IndexNodeType.OutputIndex ||
+      props.nodeData.type === IndexNodeType.Index)
+  ) {
+    emit('create-edge', props.nodeData.id);
   }
 };
 
@@ -302,9 +312,9 @@ const getDatasetFooterText = (data: Dataset) => {
 </script>
 
 <style scoped lang="scss">
-@import '~styles/variables';
-@import '~styles/uncharted-design-tokens';
-@import '~styles/common';
+@import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
+@import '@/styles/common';
 
 // The space between the edges of the node and the content within it.
 //  This would be applied to .index-tree-node-container directly, but some elements (namely the
@@ -329,8 +339,14 @@ $option-button-width: 16px;
   border: 1px solid $un-color-black-30;
   border-radius: 3px;
 
+  &.no-highlight:hover {
+    cursor: not-allowed;
+  }
+
   &:not(.placeholder):hover {
-    border-color: $accent-main;
+    &:not(.no-highlight):hover {
+      border-color: $accent-main;
+    }
   }
 
   // When node is selected, we want to show a 2px accent color border outside.

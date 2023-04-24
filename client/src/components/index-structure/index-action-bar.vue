@@ -9,14 +9,10 @@
   </div>
 </template>
 
-<script lang="ts">
-import DropdownButton from '@/components/dropdown-button.vue';
-export enum DropdownOptions {
-  Dataset = 'Dataset',
-  Index = 'Index',
-}
-</script>
 <script setup lang="ts">
+import { DropdownOptions } from '@/utils/index-common-util';
+import DropdownButton from '@/components/dropdown-button.vue';
+
 const emit = defineEmits<{
   (e: 'addDropdownChange', value: DropdownOptions): void;
 }>();
@@ -27,7 +23,7 @@ const handleDropdownSelection = (option: DropdownOptions) => {
 </script>
 
 <style scoped lang="scss">
-@import '~styles/uncharted-design-tokens';
+@import '@/styles/uncharted-design-tokens';
 
 .index-action-bar-container {
   display: flex;
