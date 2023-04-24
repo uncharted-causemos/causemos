@@ -16,13 +16,11 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
 import * as d3 from 'd3';
-// import { forecast } from '@/utils/holt-winters'
-import { holtWinters } from '@/utils/forecasting/holt-winters';
+import { forecast } from '@/utils/forecast';
 import {
   getMonthlyTimestampFromNumberOfMonth,
   getNumberOfMonthsPassedFromTimestamp,
 } from '@/utils/date-util';
-import { holt } from '@/utils/forecasting/holt';
 import ARIMAPromise from 'arima/async';
 import { getDatacubeByDataId } from '@/services/new-datacube-service';
 import { DataConfig } from '@/types/Datacube';
@@ -302,105 +300,6 @@ const renderChart = <T>(chartData: ChartData<T>[], xAccessor: any, yAccessor: an
   return svg;
 };
 
-interface hwObject<T> {
-  (): hwObject<T>;
-  data: (d: T[]) => hwObject<T>;
-  x: (v: (d: T) => number) => hwObject<T>;
-  y: (v: (d: T) => number) => hwObject<T>;
-  level: (alpha: number) => hwObject<T>;
-  trend: (beta: number) => hwObject<T>;
-  season: (gamma: number) => hwObject<T>;
-  period: (period: number) => hwObject<T>;
-  output: () => [number, number][];
-  forecast: (d: number) => [number, number][];
-  sumSquares: () => number;
-}
-
-// Residual Sum of Squares (RSS). This method calculates the difference between observed data (actual value) and its vertical distance from the proposed best-fitting line (predicted value). It squares each difference and adds all of them.
-// Minimize RSS (residual sum of squares). MSE (Mean squared error) = RSS / # of data points. RMSE (Root mean squared error) = square root of MSE
-// Run brute force grid search to find out optimized parameter combination that minimizes the residual sum of squares error.
-const optimizeParameters = (hw: any, iterations: number, maxPeriod = 13) => {
-  const increment = 1 / iterations;
-
-  let bestPeriod = 3;
-  let bestAlpha = 0.0;
-  let bestBeta = 0.0;
-  let bestGamma = 0.0;
-  let bestError = -1;
-
-  let curPeriod = 3;
-  let curAlpha = 0.0;
-  let curBeta = 0.0;
-  let curGamma = 0.0;
-  let curError = -1;
-
-  while (curPeriod < Math.min(maxPeriod, 13)) {
-    while (curAlpha < 1) {
-      while (curBeta < 1) {
-        while (curGamma < 1) {
-          hw.level(curAlpha).trend(curBeta).season(curGamma).period(curPeriod);
-          hw();
-          curError = hw.sumSquares();
-          if (curError < bestError || bestError === -1) {
-            bestPeriod = curPeriod;
-            bestAlpha = curAlpha;
-            bestBeta = curBeta;
-            bestGamma = curGamma;
-            bestError = curError;
-          }
-          curGamma += increment;
-        }
-        curGamma = 0;
-        curBeta += increment;
-      }
-      curBeta = 0;
-      curAlpha += increment;
-    }
-    curAlpha = 0;
-    curPeriod += 1;
-  }
-
-  curPeriod = bestPeriod;
-  curAlpha = bestAlpha;
-  curBeta = bestBeta;
-  curGamma = bestGamma;
-  hw.level(curAlpha).trend(curBeta).season(curGamma).period(curPeriod);
-  return { alpha: curAlpha, beta: curBeta, gamma: curGamma, period: curPeriod };
-};
-
-const optimizeParametersH = (hw: any, iterations: number) => {
-  const increment = 1 / iterations;
-
-  let bestAlpha = 0.0;
-  let bestBeta = 0.0;
-  let bestError = -1;
-
-  let curAlpha = 0.0;
-  let curBeta = 0.0;
-  let curError = -1;
-
-  while (curAlpha < 1) {
-    while (curBeta < 1) {
-      hw.factor(curAlpha).trend(curBeta);
-      hw();
-      curError = hw.sumSquares();
-      if (curError < bestError || bestError === -1) {
-        bestAlpha = curAlpha;
-        bestBeta = curBeta;
-        bestError = curError;
-      }
-      curBeta += increment;
-    }
-    curBeta = 0;
-    curAlpha += increment;
-  }
-
-  curAlpha = bestAlpha;
-  curBeta = bestBeta;
-  hw.factor(curAlpha).trend(curBeta);
-  return { alpha: curAlpha, beta: curBeta };
-};
-
 const runAr = async (data: [number, number][], backcastSteps: number, forecastSteps: number) => {
   // https://github.com/zemlyansky/arima#readme
 
@@ -442,115 +341,18 @@ const runAr = async (data: [number, number][], backcastSteps: number, forecastSt
   const forecast = pred.map((v: number, i: number) => [lastTimeValue + (i + 1) * distance, v]);
   const backcast = predBack.map((v: number, i: number) => [firstTimeValue - (i + 1) * distance, v]);
 
-  const prediction: [number, number][] = [];
-  const predictionBack: [number, number][] = [];
-  const rmse = NaN;
-
   return {
-    name: 'Arima',
-    observed: data,
-    prediction,
-    predictionBack,
-    forecast,
-    backcast,
-    error: rmse,
-    forecastParams: {},
-    backcastParams: {},
-  };
-};
-
-const runHoltWinters = (data: [number, number][], backcastSteps: number, forecastSteps: number) => {
-  /**
-   * number of season in a year. e.g for monthly data PERIOD = 12, and for quarterly data PERIOD = 4
-   */
-  const xAccessor = (d: [number, number]) => d[0];
-  const yAccessor = (d: [number, number]) => d[1];
-  const forecastHW = (holtWinters() as hwObject<[number, number]>)
-    .period(1)
-    .data(data)
-    .x(xAccessor)
-    .y(yAccessor);
-
-  const backcastHW = (holtWinters() as hwObject<[number, number]>)
-    .period(1)
-    .data([...data].reverse())
-    .x(xAccessor)
-    .y(yAccessor);
-  const optimizedParameters = optimizeParameters(
-    forecastHW,
-    iterationHW.value,
-    Math.floor(data.length / 2)
-  );
-  const optimizedParametersBK = optimizeParameters(
-    backcastHW,
-    iterationHW.value,
-    Math.floor(data.length / 2)
-  );
-  forecastHW();
-  backcastHW();
-
-  const prediction = forecastHW.output();
-  const predictionBack = backcastHW.output();
-
-  const forecast = forecastHW.forecast(forecastSteps);
-  const backcast = backcastHW.forecast(backcastSteps);
-  prediction.push(...forecast);
-  predictionBack.push(...backcast);
-  const rmse = Math.sqrt(forecastHW.sumSquares() / data.length);
-  return {
-    name: 'Holt Winters',
-    observed: data,
-    prediction,
-    predictionBack,
-    forecast,
-    backcast,
-    error: rmse,
-    forecastParams: optimizedParameters,
-    backcastParams: optimizedParametersBK,
-  };
-};
-
-const runHolt = (data: [number, number][], backcastSteps: number, forecastSteps: number) => {
-  const xAccessor = (d: [number, number]) => d[0];
-  const yAccessor = (d: [number, number]) => d[1];
-  // Holt
-  const dataReindexed = data.map((d: any, index: number) => [index, d[1]]);
-  const forecastH = (holt() as any)
-    .data(dataReindexed)
-    .x(xAccessor)
-    .y(yAccessor)
-    .initialTrendCalculation(2);
-  const backcastH = (holt() as any)
-    .data([...dataReindexed].reverse())
-    .x(xAccessor)
-    .y(yAccessor)
-    .initialTrendCalculation(2);
-  const optimizedParameters = optimizeParametersH(forecastH, iterationHolt.value);
-  const optimizedParametersBK = optimizeParametersH(backcastH, iterationHolt.value);
-  forecastH();
-  backcastH();
-  const prediction = forecastH.output();
-  const predictionBack = backcastH.output();
-
-  const forecast = [...Array(forecastSteps).keys()].map((i) => [
-    i + dataReindexed.length,
-    forecastH.forecast(i + 1),
-  ]);
-  const backcast = [...Array(backcastSteps).keys()].map((i) => [-i - 1, backcastH.forecast(i + 1)]);
-  prediction.push(...forecast);
-  predictionBack.push(...backcast);
-
-  const rmse = Math.sqrt(forecastH.sumSquares() / data.length);
-  return {
-    name: 'Holt',
-    observed: dataReindexed,
-    forecast,
-    backcast,
-    prediction,
-    predictionBack,
-    error: rmse,
-    forecastParams: optimizedParameters,
-    backcastParams: optimizedParametersBK,
+    method: 'Arima',
+    forecast: {
+      data: forecast,
+      parameters: {},
+      error: NaN,
+    },
+    backcast: {
+      data: backcast,
+      parameters: {},
+      error: NaN,
+    },
   };
 };
 
@@ -560,58 +362,41 @@ const runProjectionAndRender = async (
   forecastSteps = 24,
   name: string
 ) => {
-  let method;
-  let loser;
+  let result;
+  const engine = forecast(data, { forecastSteps, backcastSteps });
   if (forecastOption.value === 'holt') {
-    method = runHolt(data, backcastSteps, forecastSteps);
+    result = engine.runHolt();
   } else if (forecastOption.value === 'hw') {
-    method = runHoltWinters(data, backcastSteps, forecastSteps);
+    result = engine.runHoltWinters();
   } else if (forecastOption.value === 'arima') {
-    method = await runAr(data, backcastSteps, forecastSteps);
+    result = await runAr(data, backcastSteps, forecastSteps);
   } else {
-    const holt = runHolt(data, backcastSteps, forecastSteps);
-    const holtWinters = runHoltWinters(data, backcastSteps, forecastSteps);
-    method = holt.error < holtWinters.error ? holt : holtWinters;
-    loser = holt.error < holtWinters.error ? holtWinters : holt;
-    console.log('holt error', holt.error, 'holt winters error', holtWinters.error);
+    result = engine.runAuto();
   }
-
-  const { observed, prediction, predictionBack, forecast, backcast } = method;
+  const forecastData = result.forecast.data;
+  const backcastData = result.backcast.data;
+  const method = result.method;
+  const error = result.forecast.error;
 
   const toDate = (data: [number, number][]) => {
     return data.map(([m, v]) => [getMonthlyTimestampFromNumberOfMonth(m), v]) as [number, number][];
   };
 
-  const predictionLines = [
-    {
-      data: toDate(prediction),
-      color: 'pink',
-      dashed: true,
-      className: 'prediction-line',
-    },
-    {
-      data: toDate(predictionBack),
-      color: 'lightgrey',
-      dashed: true,
-      className: 'prediction-line',
-    },
-  ];
   const forecastLines = [
     {
-      data: toDate([observed[observed.length - 1], ...forecast] as [number, number][]),
+      data: toDate([data[data.length - 1], ...forecastData] as [number, number][]),
       color: 'red',
     },
     {
-      data: toDate([observed[0], ...backcast] as [number, number][]),
+      data: toDate([data[0], ...backcastData] as [number, number][]),
       color: 'black',
     },
   ];
   const chartData: ChartData<[number, number]>[] = [
     {
-      data: toDate(observed as [number, number][]),
+      data: toDate(data as [number, number][]),
       color: 'steelblue',
     },
-    ...predictionLines,
     ...forecastLines,
   ];
 
@@ -622,18 +407,19 @@ const runProjectionAndRender = async (
   );
   const el = document.createElement('div');
   const title = document.createElement('h6');
-  const methodNameColor = method.name === 'Holt' ? 'green' : 'blue';
-  const loserError = loser
-    ? `vs <span style="color: pink">${loser.error}</span> (${loser.name})`
-    : '';
+  const methodNameColor = method === 'Holt' ? 'green' : 'blue';
+  // const loserError = loser
+  //   ? `vs <span style="color: pink">${loser.error}</span> (${loser.name})`
+  //   : '';
+  const loserError = '';
   let htmlString = `<span>${name}</span></br>
-    <span>Winner: <span style="color: ${methodNameColor}"> ${method.name} -</span></span>`;
-  if (method.name !== 'Arima') {
-    htmlString += `<span style="color: grey"> Error: <span style="color: red">${method.error.toFixed(
+    <span>Winner: <span style="color: ${methodNameColor}"> ${method} -</span></span>`;
+  if (method !== 'Arima') {
+    htmlString += `<span style="color: grey"> Error: <span style="color: red">${error.toFixed(
       2
     )}</span> ${loserError}</span></br>
-      <span style=>forecast parameters: ${toStringParams(method.forecastParams)}</span></br>
-      <span>backcast parameters: ${toStringParams(method.backcastParams)}</span>
+      <span style=>forecast parameters: ${toStringParams(result.forecast.parameters)}</span></br>
+      <span>backcast parameters: ${toStringParams(result.backcast.parameters)}</span>
       `;
   }
   title.innerHTML = htmlString;
@@ -651,25 +437,6 @@ const toStringParams = (params: any) => {
   const { alpha, beta } = params;
   return `alpha(level): ${alpha}, beta(trend): ${beta}}`;
 };
-
-// const interpolate = (data: [number, number][]) => {
-//   const result = [];
-
-//   for (let index = 0; index < data.length - 1; index++) {
-//     const [x1, y1] = data[index];
-//     const [x2, y2] = data[index + 1];
-//     const slope = (y2 - y1) / (x2 - x1);
-//     const xDistance = x2 - x1;
-//     result.push([x1, y1]);
-//     // push interpolated points
-//     for (let j = 1; j < xDistance; j++) {
-//       const x = x1 + j
-//       result.push([x, (slope * j) + y1])
-//     }
-//     result.push([x2, y2]);
-//   }
-//   return result as [number, number][];
-// };
 
 const run = async (dataId: string, feature = '', namePrifix: any) => {
   const datacube = await getDatacubeByDataId(dataId);
@@ -723,7 +490,7 @@ const runExperiments = async (option: ForecastMethodOption = 'auto') => {
   await run('62fcdd55-1459-41c8-b815-e5fd90e06587', '', 3);
   await run('53004696-8ca3-41a7-957d-d9f73cc10ef4', '', 4);
   await run('371ca304-a94c-4c67-ae28-6933c7493e9a', '', 5);
-  await run('82e418bd-35e1-46df-86ba-75e33cb423ca', '', 6);
+  // await run('82e418bd-35e1-46df-86ba-75e33cb423ca', '', 6);
   await run('828750df-5c0f-4d19-b34b-334ad8b2d0c9', '', 7);
   await run('15a79a65-9e4d-42b0-a4b6-e2fb0e7ddcf5', '', 8);
 

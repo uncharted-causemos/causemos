@@ -1,3 +1,5 @@
+export const EPOCH_YEAR = 1970;
+
 export const getYearFromTimestamp = (timestamp: number) => {
   return new Date(timestamp).getUTCFullYear();
 };
@@ -38,16 +40,22 @@ export const getTimestampMillis = (year: number, month: number) => {
   return new Date(Date.UTC(year, month)).getTime();
 };
 
-const SINCE_YEAR = 1970;
-/** Returns the number of months passed since 00:00:00 UTC on 1 January 1970 */
+export const getTimestampMillisFromYear = (year: number) => {
+  return new Date(Date.UTC(year, 0)).getTime();
+};
+
+/**
+ * Returns the number of months passed since 00:00:00 UTC on 1 January 1970
+ * @param timestamp
+ */
 export const getNumberOfMonthsPassedFromTimestamp = (timestamp: number) => {
   const year = getYearFromTimestamp(timestamp);
   const month = getMonthFromTimestamp(timestamp);
-  return (year - SINCE_YEAR) * 12 + month;
+  return (year - EPOCH_YEAR) * 12 + month;
 };
 
 export const getMonthlyTimestampFromNumberOfMonth = (nMonths: number) => {
-  const year = Math.floor(nMonths / 12) + SINCE_YEAR;
+  const year = Math.floor(nMonths / 12) + EPOCH_YEAR;
   const month = (12 + (nMonths % 12)) % 12;
   return getTimestampMillis(year, month);
 };

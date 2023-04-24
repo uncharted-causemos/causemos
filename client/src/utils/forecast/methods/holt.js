@@ -24,7 +24,7 @@ export const holt = function () {
     2: t2,
     3: t3,
   };
-  let funcT = '1'; // Function to use to calculate the starting value of
+  let funcT = 1; // Function to use to calculate the starting value of
 
   /**
    * Initial average difference between first three pairs of points

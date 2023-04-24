@@ -6,6 +6,11 @@ export interface TimeseriesPoint {
   timestamp: number;
 }
 
+export interface TimeseriesPointProjected extends TimeseriesPoint {
+  isInterpolated: boolean;
+  extrapolation?: 'backcast' | 'forecast';
+}
+
 export interface TimeseriesDistributionPoint {
   values: number[];
   timestamp: number;
