@@ -45,7 +45,7 @@
         @mouseenter="highlightClear"
       />
       <div
-        v-if="cell.node.type !== IndexNodeType.OutputIndex && cell.hasOutputLine"
+        v-if="!cell.node.isOutputNode && cell.hasOutputLine"
         class="edge outgoing"
         :class="{
           visible: cell.hasOutputLine,
@@ -63,7 +63,7 @@
         @click="() => !isConnecting && handleMouseClick(cell.node.id)"
       />
       <div
-        v-if="cell.node.type !== IndexNodeType.OutputIndex && !cell.hasOutputLine"
+        v-if="!cell.node.isOutputNode && !cell.hasOutputLine"
         class="connector"
         :class="{
           connecting: cell.node.id === connectingId,
