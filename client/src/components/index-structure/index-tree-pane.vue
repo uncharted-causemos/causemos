@@ -97,7 +97,6 @@ import {
   isOutputIndexNode,
   isEdge,
   isConceptNodeWithoutDataset,
-  addChild,
 } from '@/utils/index-tree-util';
 import {
   convertTreeToGridCells,
@@ -154,15 +153,11 @@ const isOutgoingHighlighted = (id: string) => {
 
 const createEdge = (id: string) => {
   if (connectingId.value !== null) {
-    const targetNode = searchForNode(id) ?? null;
     const sourceNode = workbench.popItem(connectingId.value);
 
-    if (
-      targetNode !== null &&
-      sourceNode !== null &&
-      isConceptNodeWithoutDataset(targetNode.found)
-    ) {
-      addChild(targetNode.found, sourceNode);
+    if (sourceNode !== null) {
+      workbench.findAndAddChild(id, sourceNode);
+      indexTree.findAndAddChild(id, sourceNode);
     }
   }
 
@@ -308,8 +303,8 @@ const duplicateNode = (duplicated: ConceptNode) => {
 };
 
 const createChild = (parentNodeId: string) => {
-  workbench.findAndAddChild(parentNodeId);
-  indexTree.findAndAddChild(parentNodeId);
+  workbench.findAndAddNewChild(parentNodeId);
+  indexTree.findAndAddNewChild(parentNodeId);
 };
 
 const attachDatasetToNode = (

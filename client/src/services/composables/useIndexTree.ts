@@ -61,8 +61,13 @@ export default function useIndexTree() {
     return false;
   };
 
-  const { findAndRenameNode, findAndAddChild, attachDatasetToNode, toggleDatasetIsInverted } =
-    createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
+  const {
+    findAndRenameNode,
+    findAndAddNewChild,
+    findAndAddChild,
+    attachDatasetToNode,
+    toggleDatasetIsInverted,
+  } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
 
   return {
     tree,
@@ -71,6 +76,7 @@ export default function useIndexTree() {
     findAndRenameNode,
     findAndDelete,
     deleteEdge,
+    findAndAddNewChild,
     findAndAddChild,
     attachDatasetToNode,
     getAnalysisId,

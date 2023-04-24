@@ -91,8 +91,13 @@ export default function useIndexWorkBench() {
     }
   };
 
-  const { findAndRenameNode, findAndAddChild, attachDatasetToNode, toggleDatasetIsInverted } =
-    createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
+  const {
+    findAndRenameNode,
+    findAndAddNewChild,
+    findAndAddChild,
+    attachDatasetToNode,
+    toggleDatasetIsInverted,
+  } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
   const popItem = (nodeId: string): ConceptNode | null => {
     const itemToPop = workBenchItems.value.filter((item) => item.id === nodeId);
     if (itemToPop.length === 1) {
@@ -110,6 +115,7 @@ export default function useIndexWorkBench() {
     findNode,
     findAndRenameNode,
     findAndDeleteItem,
+    findAndAddNewChild,
     findAndAddChild,
     toggleDatasetIsInverted,
     attachDatasetToNode,

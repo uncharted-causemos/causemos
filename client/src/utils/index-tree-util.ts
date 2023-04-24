@@ -286,15 +286,31 @@ export const toggleIsInverted = (datasetNode: ConceptNodeWithDatasetAttached) =>
   datasetNode.dataset.isInverted = !datasetNode.dataset.isInverted;
 };
 
-export const addChild = (parentNode: ConceptNodeWithoutDataset, child: ConceptNode) => {
+/**
+ * Adds a node to `parentNode`'s components list, then rebalances `parentNode`'s weights.
+ * Note that this function also rebalances weights for `grandparentNode`(if it exists), because
+ * adding a child to `parentNode` can convert it from an empty node (no weight) to a valid
+ * combination of inputs (should have weight).
+ * @param parentNode The node to add the child to
+ * @param childNode The node that is being added to parentNode
+ * @param grandparentNode The parent of parentNode
+ */
+export const addChild = (
+  parentNode: ConceptNodeWithoutDataset,
+  childNode: ConceptNode,
+  grandparentNode: ConceptNodeWithoutDataset | null
+) => {
   const newWeightedComponent: WeightedComponent = {
-    componentNode: child,
+    componentNode: childNode,
     isOppositePolarity: false,
     weight: 0,
     isWeightUserSpecified: false,
   };
   parentNode.components.unshift(newWeightedComponent);
   parentNode.components = rebalanceInputWeights(parentNode.components);
+  if (grandparentNode !== null) {
+    grandparentNode.components = rebalanceInputWeights(grandparentNode.components);
+  }
 };
 
 export const isEdge = (indexElementId: SelectableIndexElementId): indexElementId is IndexEdgeId => {
@@ -319,13 +335,17 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     onSuccess();
   };
 
-  const findAndAddChild = (parentNodeId: string) => {
-    const parentNode = findNode(parentNodeId)?.found;
-    if (parentNode === undefined || !isConceptNodeWithoutDataset(parentNode)) {
+  const findAndAddChild = (parentNodeId: string, childNode: ConceptNode) => {
+    const parentNode = findNode(parentNodeId);
+    if (parentNode === undefined || !isConceptNodeWithoutDataset(parentNode.found)) {
       return;
     }
+    addChild(parentNode.found, childNode, parentNode.parent);
+  };
+
+  const findAndAddNewChild = (parentNodeId: string) => {
     const newNode = createNewConceptNode();
-    addChild(parentNode, newNode);
+    findAndAddChild(parentNodeId, newNode);
     onSuccess();
   };
 
@@ -380,6 +400,7 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
 
   return {
     findAndRenameNode,
+    findAndAddNewChild,
     findAndAddChild,
     attachDatasetToNode,
     toggleDatasetIsInverted,
