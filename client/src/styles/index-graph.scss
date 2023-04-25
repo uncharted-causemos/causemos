@@ -1,0 +1,85 @@
+$space-between-columns: 40px;
+$space-between-rows: 10px;
+
+$incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
+$outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-length);
+$edge-top-offset-from-node: 13px;
+$edge-styles: 2px solid $un-color-black-20;
+$edge-selected: $accent-main;
+
+.index-graph {
+  // The farthest left column will never have incoming edges, so it will have an empty space of
+  //  size `$incoming-edge-minimum-length` to the left of it. Remove that width from the padding.
+  padding: 40px 30px 40px calc(30px - #{$incoming-edge-minimum-length});
+  overflow: auto;
+  display: grid;
+  row-gap: $space-between-rows;
+
+  // When the graph is too small to take up the full available screen width, don't expand columns
+  //  to fill the empty space.
+  justify-content: flex-start;
+  align-content: flex-start;
+  .grid-cell {
+    position: relative;
+    display: flex;
+    pointer-events: none;
+  }
+  .index-tree-node {
+    pointer-events: auto;
+  }
+}
+
+.edge {
+  position: relative;
+  top: $edge-top-offset-from-node;
+  pointer-events: auto;
+
+  &.incoming {
+    max-height: 5px;
+    min-width: $incoming-edge-minimum-length;
+    // If one node in the column is wider than this one (e.g. placeholder in search mode), expand
+    //  the incoming edge to stay connected to children, and push the node to stay right-aligned.
+    flex: 1;
+    &.visible {
+      border-top: $edge-styles;
+      &.highlighted {
+        border-color: $accent-light;
+      }
+      &.selected-edge {
+        border-color: $edge-selected;
+      }
+    }
+    &.inactive {
+      pointer-events: none;
+    }
+  }
+
+  &.outgoing {
+    width: $outgoing-edge-length;
+    &.visible {
+      border-top: $edge-styles;
+      // Extend edge down to the sibling below this one
+      height: calc(100% + #{$space-between-rows});
+      border-right: $edge-styles;
+      &.highlighted {
+        border-top-color: $accent-light;
+      }
+      &.highlighted-y {
+        border-right-color: $accent-light;
+      }
+      &.selected-edge {
+        border-top-color: $edge-selected;
+      }
+      &.selected-y {
+        border-right-color: $edge-selected;
+      }
+    }
+    &.inactive {
+      pointer-events: none;
+    }
+
+    &.last-child {
+      border-right: none;
+    }
+  }
+}

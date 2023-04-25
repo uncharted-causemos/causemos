@@ -1,5 +1,5 @@
 <template>
-  <div class="index-projections-graph-container" @click.self="deselectEdge">
+  <div class="index-projections-graph-container index-graph" @click.self="deselectEdge">
     <div
       v-for="cell in gridCells"
       :key="cell.node.id"
@@ -38,6 +38,8 @@
       <IndexTreeNode
         :node-data="cell.node"
         :is-selected="false"
+        :is-connecting="false"
+        :is-descendent-of-connecting-node="false"
         class="index-tree-node"
         @select="(id) => emit('select-element', id)"
       />
@@ -135,17 +137,16 @@ const gridCells = computed<GridCell[]>(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
+@import '@/styles/index-graph';
+
 $space-between-columns: 20px;
 $space-between-rows: 20px;
 .index-projections-graph-container {
-  padding: 20px;
-  overflow: auto;
-  display: grid;
-  row-gap: $space-between-rows;
+}
 
-  // When the graph is too small to take up the full available screen width, don't expand columns
-  //  to fill the empty space.
-  justify-content: flex-start;
-  align-content: flex-start;
+.grid-cell {
+  position: relative;
 }
 </style>
