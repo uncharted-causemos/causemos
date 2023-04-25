@@ -1,5 +1,4 @@
 import { ref, computed } from 'vue';
-import { OutputIndex } from '@/types/Index';
 import {
   findAndRemoveChild,
   createNewOutputIndex,
@@ -8,13 +7,15 @@ import {
   deleteEdgeFromIndexTree,
 } from '@/utils/index-tree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import { IndexNodeType } from '@/types/Enums';
+import { ConceptNode } from '@/types/Index';
 
 // States
 
 const targetAnalysisId = ref('');
-const outputIndexTree = ref<OutputIndex>(createNewOutputIndex());
+
+const outputIndexTree = ref<ConceptNode>(createNewOutputIndex());
 const workbench = useIndexWorkBench();
+
 const triggerUpdate = () => {
   outputIndexTree.value = { ...outputIndexTree.value };
 };
@@ -27,7 +28,7 @@ export default function useIndexTree() {
 
   // Actions
 
-  const initialize = (analysisId: string, indexTree: OutputIndex) => {
+  const initialize = (analysisId: string, indexTree: ConceptNode) => {
     targetAnalysisId.value = analysisId;
     outputIndexTree.value = indexTree;
   };
@@ -52,7 +53,7 @@ export default function useIndexTree() {
 
   const deleteEdge = (nodeId: string) => {
     const childNode = deleteEdgeFromIndexTree(outputIndexTree.value, nodeId);
-    if (childNode !== null && childNode.type !== IndexNodeType.OutputIndex) {
+    if (childNode !== null) {
       workbench.appendItem(childNode);
       triggerUpdate();
       return true;
@@ -62,8 +63,9 @@ export default function useIndexTree() {
 
   const {
     findAndRenameNode,
+    findAndAddNewChild,
     findAndAddChild,
-    attachDatasetToPlaceholder,
+    attachDatasetToNode,
     toggleDatasetIsInverted,
   } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
 
@@ -74,8 +76,9 @@ export default function useIndexTree() {
     findAndRenameNode,
     findAndDelete,
     deleteEdge,
+    findAndAddNewChild,
     findAndAddChild,
-    attachDatasetToPlaceholder,
+    attachDatasetToNode,
     getAnalysisId,
     toggleDatasetIsInverted,
   };

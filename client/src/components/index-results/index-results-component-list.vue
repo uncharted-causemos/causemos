@@ -4,14 +4,9 @@
       v-for="item in componentListItems"
       :key="item.node.id"
       class="list-item"
-      :class="{ selected: item.node.type === IndexNodeType.OutputIndex }"
+      :class="{ selected: item.node.isOutputNode }"
       :style="{ 'padding-left': BASE_LEFT_PADDING_PX + item.depth * INDENT_AMOUNT_PX + 'px' }"
     >
-      <i
-        class="fa fa-fw"
-        :class="[getIndexNodeTypeIcon(item.node.type)]"
-        :style="{ color: getIndexNodeTypeColor(item.node.type) }"
-      />
       <span>{{ item.node.name }}</span>
     </div>
   </div>
@@ -19,9 +14,8 @@
 
 <script setup lang="ts">
 import useIndexTree from '@/services/composables/useIndexTree';
-import { IndexNodeType } from '@/types/Enums';
-import { IndexNode } from '@/types/Index';
-import { getIndexNodeTypeColor, getIndexNodeTypeIcon, isParentNode } from '@/utils/index-tree-util';
+import { ConceptNode } from '@/types/Index';
+import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 
 const INDENT_AMOUNT_PX = 20;
@@ -34,16 +28,16 @@ const { tree } = useIndexTree();
  * Performs a depth-first search of the tree.
  */
 const componentListItems = computed(() => {
-  const result: { depth: number; node: IndexNode }[] = [];
-  const _computeListItems = (node: IndexNode, depth: number) => {
+  const result: { depth: number; node: ConceptNode }[] = [];
+  const _computeListItems = (node: ConceptNode, depth: number) => {
     // Add current node to result list
     result.push({ depth, node });
-    if (!isParentNode(node)) {
+    if (!isConceptNodeWithoutDataset(node)) {
       return;
     }
     // Recurse through children
-    node.inputs.forEach((input) => {
-      _computeListItems(input, depth + 1);
+    node.components.forEach((input) => {
+      _computeListItems(input.componentNode, depth + 1);
     });
   };
   _computeListItems(tree.value, 0);

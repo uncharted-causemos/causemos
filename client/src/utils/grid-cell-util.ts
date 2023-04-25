@@ -1,6 +1,6 @@
-import { GridCell, IndexNode } from '@/types/Index';
+import { ConceptNode, GridCell } from '@/types/Index';
 import _ from 'lodash';
-import { isParentNode } from './index-tree-util';
+import { isConceptNodeWithoutDataset, isEmptyNode } from './index-tree-util';
 
 /**
  * This file contains helper functions to support the GridCell data structure, which is used when
@@ -13,11 +13,11 @@ import { isParentNode } from './index-tree-util';
  * @param tree The root node of the tree.
  * @returns A list of cells with enough information to render directly with CSS-grid.
  */
-export const convertTreeToGridCells = (tree: IndexNode): GridCell[] => {
+export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
   // The first row of a CSS grid can be accessed with `grid-row-start: 1`
   let currentRow = 1;
   const _convertTreeToGridCells = (
-    currentNode: IndexNode,
+    currentNode: ConceptNode,
     depth: number,
     isRootNode: boolean,
     isLastChild: boolean
@@ -34,7 +34,7 @@ export const convertTreeToGridCells = (tree: IndexNode): GridCell[] => {
       isLastChild,
     };
     // If this is a leaf node:
-    if (!isParentNode(currentNode) || currentNode.inputs.length === 0) {
+    if (!isConceptNodeWithoutDataset(currentNode) || isEmptyNode(currentNode)) {
       // The only time we start a new row is when we reach a leaf node.
       currentRow++;
       // There are no children to traverse, so we return.
@@ -45,11 +45,11 @@ export const convertTreeToGridCells = (tree: IndexNode): GridCell[] => {
     const descendentCells: GridCell[] = [];
     const directChildCells: GridCell[] = [];
     // We need to label the last child for when we render the edges between nodes.
-    const lastChildArrayPosition = currentNode.inputs.length - 1;
-    currentNode.inputs.forEach((input, i) => {
+    const lastChildArrayPosition = currentNode.components.length - 1;
+    currentNode.components.forEach((input, i) => {
       const isLastChild = i === lastChildArrayPosition;
       // Call the helper function with the same depth for each child, one greater than the parent.
-      const cells = _convertTreeToGridCells(input, depth + 1, false, isLastChild);
+      const cells = _convertTreeToGridCells(input.componentNode, depth + 1, false, isLastChild);
       directChildCells.push(cells[0]);
       cells.forEach((cell) => {
         descendentCells.push(cell);
