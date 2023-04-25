@@ -1,5 +1,12 @@
 <template>
-  <div ref="tree-container" class="index-tree-pane-container" @click.self="clearAll">
+  <div
+    ref="tree-container"
+    class="index-tree-pane-container"
+    :class="{
+      'connecting-nodes': isConnecting,
+    }"
+    @click.self="clearEdgeConnect"
+  >
     <div
       v-for="cell in gridCells"
       :key="cell.node.id"
@@ -18,27 +25,27 @@
           [EDGE_CLASS.HIGHLIGHTED]:
             isIncomingHighlighted(cell.node.id) && !isIncomingSelected(cell.node.id),
         }"
-        @mouseenter="
-          emit('highlight-edge', { sourceId: cell.node.inputs[0].id, targetId: cell.node.id })
-        "
+        @mouseenter="() => !isConnecting && handleHighlightEdge(cell.node)"
         @mouseleave="highlightClear"
-        @click="
-          () => emit('select-element', { sourceId: cell.node.inputs[0].id, targetId: cell.node.id })
-        "
+        @click="() => !isConnecting && handleClickSelectEdge(cell.node)"
       ></div>
       <IndexTreeNode
         :node-data="cell.node"
         :is-selected="isSelected(cell.node.id)"
+        :is-connecting="isConnecting"
+        :is-descendent-of-connecting-node="isDescendentOfConnectingNode(cell.node.id)"
         class="index-tree-node"
         @rename="renameNode"
         @delete="deleteNode"
         @duplicate="duplicateNode"
         @select="(id) => emit('select-element', id)"
         @create-child="createChild"
+        @create-edge="createEdge"
         @attach-dataset="attachDatasetToPlaceholder"
         @mouseenter="highlightClear"
       />
       <div
+        v-if="cell.node.type !== IndexNodeType.OutputIndex && cell.hasOutputLine"
         class="edge outgoing"
         :class="{
           visible: cell.hasOutputLine,
@@ -52,32 +59,42 @@
           [EDGE_CLASS.HIGHLIGHTED_Y]:
             isOutgoingYHighlighted(cell.node.id) && !isOutgoingYSelected(cell.node.id),
         }"
-        @mouseenter="
-          () => emit('highlight-edge', { sourceId: cell.node.id, targetId: parentId(cell.node.id) })
-        "
+        @mouseenter="() => !isConnecting && handleMouseEnter(cell.node.id)"
         @mouseleave="highlightClear"
-        @click="
-          () => emit('select-element', { sourceId: cell.node.id, targetId: parentId(cell.node.id) })
-        "
+        @click="() => !isConnecting && handleMouseClick(cell.node.id)"
       />
+      <div
+        v-if="cell.node.type !== IndexNodeType.OutputIndex && !cell.hasOutputLine"
+        class="connector"
+        :class="{
+          connecting: cell.node.id === connectingId,
+        }"
+      >
+        <div class="edge outgoing visible last-child"></div>
+        <button type="button" class="btn btn-sm" @click="() => handleConnect(cell.node.id)">
+          Connect
+        </button>
+        <div class="edge outgoing visible last-child"></div>
+        <div class="input-arrow"></div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import _ from 'lodash';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { IndexNodeType } from '@/types/Enums';
 import { DatasetSearchResult, GridCell, IndexNode, SelectableIndexElementId } from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren, isEdge } from '@/utils/index-tree-util';
+import { hasChildren, isEdge, addChild } from '@/utils/index-tree-util';
 import {
-  offsetGridCells,
-  getGridRowCount,
-  getGridColumnCount,
   convertTreeToGridCells,
+  getGridColumnCount,
+  getGridRowCount,
+  offsetGridCells,
 } from '@/utils/grid-cell-util';
 
 const EDGE_CLASS = {
@@ -94,6 +111,14 @@ const props = defineProps<{
   highlightEdgeId: SelectableIndexElementId | null;
 }>();
 
+/**
+ * Track the state of creating a new edge (connecting)
+ * isConnecting is used to control logic and visual aspects
+ * connectingId tracks the currently selected "first node" in the edge set.
+ */
+const isConnecting = ref<boolean>(false);
+const connectingId = ref<string | null>(null);
+
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
   (e: 'highlight-edge', selectedElement: SelectableIndexElementId): void;
@@ -105,11 +130,70 @@ const indexTree = useIndexTree();
 const { findNode } = indexTree;
 const workbench = useIndexWorkBench();
 
+const isDescendentOfConnectingNode = (targetId: string) => {
+  if (connectingId.value !== null) {
+    return workbench.isDescendant(targetId, connectingId.value);
+  }
+  return false;
+};
 const isOutgoingHighlighted = (id: string) => {
   if (props.highlightEdgeId && isEdge(props.highlightEdgeId)) {
     return props.highlightEdgeId.sourceId === id;
   }
   return false;
+};
+
+const createEdge = (id: string) => {
+  if (connectingId.value !== null) {
+    const targetNode = searchForNode(id) ?? null;
+    const sourceNode: IndexNode | null = workbench.popItem(connectingId.value);
+
+    if (
+      targetNode !== null &&
+      sourceNode !== null &&
+      (targetNode.found.type === IndexNodeType.OutputIndex ||
+        targetNode.found.type === IndexNodeType.Index)
+    ) {
+      addChild(targetNode.found, sourceNode);
+    }
+  }
+
+  clearEdgeConnect();
+};
+const handleClickSelectEdge = (node: any) => {
+  if (node.inputs?.length > 0) {
+    emit('select-element', { sourceId: node.inputs[0].id, targetId: node.id });
+  }
+};
+const handleHighlightEdge = (node: any) => {
+  if (node.inputs?.length > 0) {
+    emit('highlight-edge', { sourceId: node.inputs[0].id, targetId: node.id });
+  }
+};
+const handleConnect = (id: string) => {
+  if (isConnecting.value && id === connectingId.value) {
+    clearEdgeConnect();
+  } else if (isConnecting.value && id !== connectingId.value) {
+    connectingId.value = id;
+  } else {
+    isConnecting.value = true;
+    connectingId.value = id;
+  }
+  clearAll();
+};
+
+const handleMouseEnter = (sourceId: string) => {
+  const targetId: string | null = parentId(sourceId);
+  if (targetId !== null) {
+    emit('highlight-edge', { sourceId, targetId });
+  }
+};
+
+const handleMouseClick = (sourceId: string) => {
+  const targetId = parentId(sourceId);
+  if (targetId !== null) {
+    emit('select-element', { sourceId, targetId });
+  }
 };
 
 const isHigherThanSibling = (id: string, edgeId: SelectableIndexElementId) => {
@@ -232,6 +316,12 @@ const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult
   indexTree.attachDatasetToPlaceholder(nodeId, dataset);
 };
 
+const clearEdgeConnect = () => {
+  isConnecting.value = false;
+  connectingId.value = null;
+  clearAll();
+};
+
 const clearAll = () => {
   emit('deselect-all');
 };
@@ -286,6 +376,10 @@ $edge-selected: $accent-main;
   }
   .index-tree-node {
     pointer-events: auto;
+  }
+
+  &.connecting-nodes {
+    cursor: crosshair;
   }
   .edge {
     position: relative;
@@ -354,6 +448,49 @@ $edge-selected: $accent-main;
         border-right: none;
       }
     }
+  }
+  .connector {
+    display: flex;
+    flex-direction: row;
+    pointer-events: auto;
+    button {
+      height: 2.2em;
+      background-color: white;
+    }
+    &:hover {
+      cursor: grabbing;
+      button {
+        border-color: $accent-light;
+      }
+      div.edge {
+        border-color: $accent-light;
+      }
+      div.input-arrow {
+        border-left: 5px solid $accent-light;
+      }
+    }
+    &.connecting {
+      cursor: grabbing;
+      button {
+        border-color: $accent-light;
+      }
+      div.edge {
+        border-color: $accent-light;
+      }
+      div.input-arrow {
+        border-left: 5px solid $accent-light;
+      }
+    }
+  }
+
+  .input-arrow {
+    // position: absolute;
+    margin-top: 9px;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 5px solid #b3b4b5;
   }
 }
 </style>

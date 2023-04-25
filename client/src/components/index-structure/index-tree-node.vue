@@ -108,6 +108,8 @@ const addInputDropdownOptions = [IndexNodeType.Index, IndexNodeType.Dataset];
 interface Props {
   nodeData: IndexNode;
   isSelected: boolean;
+  isConnecting: boolean;
+  isDescendentOfConnectingNode: boolean;
 }
 const props = defineProps<Props>();
 
@@ -122,6 +124,7 @@ const emit = defineEmits<{
     childType: IndexNodeType.Index | IndexNodeType.Dataset
   ): void;
   (e: 'attach-dataset', nodeId: string, dataset: DatasetSearchResult): void;
+  (e: 'create-edge', nodeId: string): void;
 }>();
 
 const classObject = computed(() => {
@@ -130,13 +133,25 @@ const classObject = computed(() => {
     selected: props.isSelected,
     'flexible-width': showDatasetSearch.value,
     disabled: disableInteraction.value,
+    'no-highlight':
+      props.isConnecting &&
+      ((props.nodeData.type !== IndexNodeType.OutputIndex &&
+        props.nodeData.type !== IndexNodeType.Index) ||
+        props.isDescendentOfConnectingNode),
   };
 });
 
 const selectNode = () => {
   // Can't select Placeholder nodes
-  if (props.nodeData.type !== IndexNodeType.Placeholder) {
+  if (!props.isConnecting && props.nodeData.type !== IndexNodeType.Placeholder) {
     emit('select', props.nodeData.id);
+  } else if (
+    props.isConnecting &&
+    !props.isDescendentOfConnectingNode &&
+    (props.nodeData.type === IndexNodeType.OutputIndex ||
+      props.nodeData.type === IndexNodeType.Index)
+  ) {
+    emit('create-edge', props.nodeData.id);
   }
 };
 
@@ -324,8 +339,14 @@ $option-button-width: 16px;
   border: 1px solid $un-color-black-30;
   border-radius: 3px;
 
+  &.no-highlight:hover {
+    cursor: not-allowed;
+  }
+
   &:not(.placeholder):hover {
-    border-color: $accent-main;
+    &:not(.no-highlight):hover {
+      border-color: $accent-main;
+    }
   }
 
   // When node is selected, we want to show a 2px accent color border outside.

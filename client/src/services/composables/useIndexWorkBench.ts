@@ -53,6 +53,17 @@ export default function useIndexWorkBench() {
     return undefined;
   };
 
+  const isDescendant = (descendantId: string, ancestorId: string): boolean => {
+    const results = findNode(ancestorId) ?? null;
+    if (results !== null) {
+      const findResults = indexTreeUtilFindNode(results.found, descendantId) ?? null;
+      if (findResults !== null) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const findAndDeleteItem = (nodeId: string) => {
     let isDeleted = false;
     // Search among root nodes first
@@ -80,6 +91,15 @@ export default function useIndexWorkBench() {
     }
   };
 
+  const popItem = (nodeId: string): IndexWorkBenchItem | null => {
+    const itemToPop = workBenchItems.value.filter((item) => item.id === nodeId);
+    if (itemToPop.length === 1) {
+      findAndDeleteItem(nodeId);
+      return itemToPop[0];
+    }
+    return null;
+  };
+
   const {
     findAndRenameNode,
     findAndAddChild,
@@ -100,5 +120,7 @@ export default function useIndexWorkBench() {
     attachDatasetToPlaceholder,
     getAnalysisId,
     deleteEdge,
+    popItem,
+    isDescendant,
   };
 }
