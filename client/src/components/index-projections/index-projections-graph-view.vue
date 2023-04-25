@@ -81,7 +81,7 @@
 import _ from 'lodash';
 
 import { hasChildren } from '@/utils/index-tree-util';
-import IndexTreeNode from '../index-structure/index-tree-node.vue';
+import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { GridCell, SelectableIndexElementId } from '@/types/Index';
 import { computed } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
