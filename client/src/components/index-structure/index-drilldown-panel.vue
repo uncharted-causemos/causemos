@@ -1,24 +1,17 @@
 <template>
-  <div class="index-drilldown-panel-container" :class="{ hidden: type === null }">
-    <template v-if="type === IndexEdgeType.Edge">
+  <!-- If an edge or node is selected, selectedNode will not be null -->
+  <div class="index-drilldown-panel-container" :class="{ hidden: selectedNode === null }">
+    <!--
+    If an edge is selected, `selectedEdgeComponents` will be an object and `selectedNode` will be a
+    node with one or more inputs
+    -->
+    <template
+      v-if="
+        selectedEdgeComponents !== null && selectedNode && isConceptNodeWithoutDataset(selectedNode)
+      "
+    >
       <div>
-        <div>
-          <div
-            class="header content"
-            :style="{ color: getIndexNodeTypeColor(selectedEdgeComponents?.source.type) }"
-          >
-            <i
-              class="fa fa-fw un-font-small"
-              :class="[getIndexNodeTypeIcon(selectedEdgeComponents?.source.type)]"
-            />
-            <span class="un-font-small">
-              {{ selectedEdgeComponents?.source.type }}
-            </span>
-          </div>
-          <div>
-            <h4>{{ nodeUpstreamName }}</h4>
-          </div>
-        </div>
+        <h4>{{ nodeUpstreamName }}</h4>
         <div class="title-row space-between centered">
           <i class="fa fa-long-arrow-right" />
           <div class="button-group">
@@ -37,37 +30,17 @@
             </OptionsButton>
           </div>
         </div>
-
-        <div>
-          <div
-            class="header content"
-            :style="{ color: getIndexNodeTypeColor(selectedEdgeComponents?.target.type) }"
-          >
-            <i
-              class="fa fa-fw un-font-small"
-              :class="[getIndexNodeTypeIcon(selectedEdgeComponents?.target.type)]"
-            />
-            <span class="un-font-small">
-              {{ selectedEdgeComponents?.target.type }}
-            </span>
-          </div>
-          <div>
-            <h4>{{ nodeName }}</h4>
-          </div>
-        </div>
+        <h4>{{ nodeName }}</h4>
       </div>
-      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="selectedUpstreamNodeName"
       />
     </template>
-    <template v-if="type === IndexNodeType.OutputIndex">
+    <!-- Output node is selected -->
+    <template v-else-if="selectedNode?.isOutputNode && isConceptNodeWithoutDataset(selectedNode)">
       <header>
-        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
-          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
-          Output Index
-        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -89,17 +62,13 @@
           <button class="btn btn-sm" @click="startRenaming">Rename</button>
         </div>
       </header>
-      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
       <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
       <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
-
-    <template v-if="type === IndexNodeType.Index">
+    <!-- Node without dataset is selected -->
+    <template v-else-if="selectedNode && isConceptNodeWithoutDataset(selectedNode)">
       <header>
-        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
-          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
-          Index
-        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -136,14 +105,14 @@
           </div>
         </div>
       </header>
-      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
       <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
-
-    <template v-if="type === IndexNodeType.Dataset">
+    <!-- Node with dataset is selected -->
+    <template v-else-if="selectedNode && isConceptNodeWithDatasetAttached(selectedNode)">
       <header>
-        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
-          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
+        <span class="type-label" :style="{ color: DATASET_COLOR }">
+          <i class="fa fa-fw" :class="[DATASET_ICON]" />
           Dataset
         </span>
         <div v-if="isRenaming" class="rename-controls">
@@ -153,7 +122,7 @@
             type="text"
             v-model="renameInputText"
             v-on:keyup.enter="handleRenameDone"
-            :placeholder="selectedNode.datasetName"
+            :placeholder="selectedNode.dataset.datasetName"
           />
           <button class="btn btn-default" @click="handleRenameDone">Done</button>
         </div>
@@ -186,8 +155,8 @@
       <IndexDatasetMetadata :node="selectedNode" :dataset-metadata="datasetMetadata" />
       <section>
         <IndexDatasetSelectedDate
-          :dataset-id="selectedNode.datasetId"
-          :selected-timestamp="selectedNode.selectedTimestamp"
+          :dataset-id="selectedNode.dataset.config.datasetId"
+          :selected-timestamp="selectedNode.dataset.config.selectedTimestamp"
           :metadata="datasetMetadata"
         />
       </section>
@@ -195,7 +164,7 @@
         <IndexInvertData
           :selected-node-name="panelTitle"
           :output-index-name="tree.name"
-          :is-inverted="selectedNode.isInverted"
+          :is-inverted="selectedNode.dataset.isInverted"
           @toggle-inverted="() => toggleDatasetIsInverted(selectedNode.id)"
         />
       </section>
@@ -205,7 +174,6 @@
 </template>
 
 <script setup lang="ts">
-import { IndexNodeType, IndexElementType, IndexEdgeType } from '@/types/Enums';
 import OptionsButton from '../widgets/options-button.vue';
 import IndexComponentWeights from './index-component-weights.vue';
 import IndexDocumentSnippets from './index-document-snippets.vue';
@@ -217,13 +185,14 @@ import IndexInvertData from './index-invert-data.vue';
 import { computed, watch, ref } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { IndexNode, IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
+import { ConceptNode, SelectableIndexElementId } from '@/types/Index';
 import {
   duplicateNode,
-  isDatasetNode,
   isOutputIndexNode,
-  getIndexNodeTypeColor,
-  getIndexNodeTypeIcon,
+  DATASET_COLOR,
+  DATASET_ICON,
+  isConceptNodeWithoutDataset,
+  isConceptNodeWithDatasetAttached,
   isEdge,
 } from '@/utils/index-tree-util';
 import { OptionButtonMenu } from '@/utils/index-common-util';
@@ -284,7 +253,7 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   }
   switch (option) {
     case OptionButtonMenu.Duplicate:
-      workbench.addItem(duplicateNode(node) as IndexWorkBenchItem);
+      workbench.addItem(duplicateNode(node));
       break;
     case OptionButtonMenu.Delete:
       workbench.findAndDeleteItem(node.id);
@@ -299,7 +268,7 @@ const handleEdgeOptionsButtonClick = (option: OptionButtonMenu) => {
   }
 };
 
-const nodeName = computed<String | null>(() => {
+const nodeName = computed<string | null>(() => {
   let idToSearch = null;
   if (props.selectedElementId && typeof props.selectedElementId === 'string') {
     idToSearch = props.selectedElementId;
@@ -316,7 +285,7 @@ const nodeName = computed<String | null>(() => {
   return null;
 });
 
-const nodeUpstreamName = computed<String | null>(() => {
+const nodeUpstreamName = computed<string | null>(() => {
   if (props.selectedElementId && isEdge(props.selectedElementId)) {
     const node = searchForNode(props.selectedElementId.sourceId);
     if (node) {
@@ -326,7 +295,7 @@ const nodeUpstreamName = computed<String | null>(() => {
   return null;
 });
 
-const selectedNode = computed<IndexNode | null>(() => {
+const selectedNode = computed<ConceptNode | null>(() => {
   let idToSearch = null;
   if (props.selectedElementId && !isEdge(props.selectedElementId)) {
     idToSearch = props.selectedElementId;
@@ -340,27 +309,18 @@ const selectedNode = computed<IndexNode | null>(() => {
 });
 
 const selectedDatasetDataId = computed(() => {
-  if (selectedNode.value === null || !isDatasetNode(selectedNode.value)) {
+  if (selectedNode.value === null || !isConceptNodeWithDatasetAttached(selectedNode.value)) {
     return null;
   }
-  return selectedNode.value.datasetId;
+  return selectedNode.value.dataset.config.datasetId;
 });
 
-const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode } | null>(() => {
+const selectedEdgeComponents = computed<{ source: ConceptNode; target: ConceptNode } | null>(() => {
   if (props.selectedElementId && isEdge(props.selectedElementId)) {
     const sourceNode = searchForNode(props.selectedElementId.sourceId);
     if (sourceNode?.found && sourceNode?.parent) {
       return { source: sourceNode.found, target: sourceNode.parent };
     }
-  }
-  return null;
-});
-
-const type = computed<IndexElementType | null>(() => {
-  if (selectedEdgeComponents.value !== null) {
-    return IndexEdgeType.Edge;
-  } else if (selectedNode.value !== null) {
-    return selectedNode.value.type;
   }
   return null;
 });
@@ -392,14 +352,14 @@ const handleRenameDone = () => {
   if (
     selectedNode.value === null ||
     // Can't exit the flow with an empty rename bar unless this is a dataset node
-    (renameInputText.value === '' && !isDatasetNode(selectedNode.value))
+    (renameInputText.value === '' && !isConceptNodeWithDatasetAttached(selectedNode.value))
   ) {
     return;
   }
   const shouldRevertToDatasetName =
-    renameInputText.value === '' && isDatasetNode(selectedNode.value);
+    renameInputText.value === '' && isConceptNodeWithDatasetAttached(selectedNode.value);
   const newNodeName = shouldRevertToDatasetName
-    ? selectedNode.value.datasetName
+    ? selectedNode.value.dataset.datasetName
     : renameInputText.value;
   renameNode(newNodeName);
   isRenaming.value = false;

@@ -25,10 +25,27 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
   const _analysisState = ref<IndexAnalysisState>(createIndexAnalysisObject());
   const _analysisName = ref('');
 
+  const isDeprecatedDataStructure = ref(true);
+  watch([analysisId], () => {
+    // Assume the analysis uses the deprecated data structure until we can confirm that it doesn't.
+    isDeprecatedDataStructure.value = true;
+  });
+
   const fetchAnalysis = async () => {
     if (!analysisId.value) return;
     const analysis = await getAnalysis(analysisId.value);
     _analysisName.value = analysis.title;
+
+    if (analysis.state?.index?.type !== undefined) {
+      // This analysis uses the deprecated data structure.
+      console.log(
+        'This analysis uses a deprecated data structure and cannot be viewed or modified.'
+      );
+      return;
+    } else {
+      isDeprecatedDataStructure.value = false;
+    }
+
     // ensure default values
     _analysisState.value = { ...createIndexAnalysisObject(), ...analysis.state };
     // Initialize workbench items and the index tree
@@ -42,6 +59,11 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
 
   // Update and save the state whenever items are updated
   watch([workbench.items, indexTree.tree], () => {
+    if (isDeprecatedDataStructure.value) {
+      // Don't update the backend if the data structure is deprecated
+      console.log('Not updating backend because this analysis uses a deprecated data structure.');
+      return;
+    }
     const workbenchAnalysisId = workbench.getAnalysisId();
     const indexTreeAnalysisId = indexTree.getAnalysisId();
     if (workbenchAnalysisId === analysisId.value && workbenchAnalysisId === indexTreeAnalysisId) {

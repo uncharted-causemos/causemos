@@ -6,13 +6,9 @@
     </header>
     <div class="list-items">
       <div v-for="item of listItems" :key="item.dataset.id" class="list-item">
-        <i
-          class="fa fa-fw"
-          :style="{ color: getIndexNodeTypeColor(IndexNodeType.Dataset) }"
-          :class="[getIndexNodeTypeIcon(IndexNodeType.Dataset)]"
-        />
+        <i class="fa fa-fw" :style="{ color: DATASET_COLOR }" :class="[DATASET_ICON]" />
         <span class="name">{{ item.dataset.name }}</span>
-        <InvertedDatasetLabel v-if="item.dataset.isInverted" />
+        <InvertedDatasetLabel v-if="item.dataset.dataset.isInverted" />
         <IndexResultsDatasetWeight class="dataset-weight" :weight="item.overallWeight" />
       </div>
     </div>
@@ -25,11 +21,10 @@ import useIndexTree from '@/services/composables/useIndexTree';
 import {
   calculateOverallWeight,
   findAllDatasets,
-  getIndexNodeTypeColor,
-  getIndexNodeTypeIcon,
+  DATASET_COLOR,
+  DATASET_ICON,
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
-import { IndexNodeType } from '@/types/Enums';
 import IndexResultsDatasetWeight from './index-results-dataset-weight.vue';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
 
