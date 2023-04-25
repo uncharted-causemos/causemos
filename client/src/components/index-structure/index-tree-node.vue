@@ -131,7 +131,6 @@ const classObject = computed(() => {
 });
 
 const selectNode = () => {
-  // Can't select Placeholder nodes
   if (!props.isConnecting) {
     emit('select', props.nodeData.id);
   } else if (
