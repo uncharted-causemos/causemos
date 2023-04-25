@@ -79,7 +79,7 @@
     </div>
   </div>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { ConceptNode, DatasetSearchResult } from '@/types/Index';
 import {
@@ -93,15 +93,8 @@ import {
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
 import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
+import { OptionButtonMenu } from '@/utils/index-common-util';
 
-export enum OptionButtonMenu {
-  Rename = 'Rename',
-  Duplicate = 'Duplicate',
-  Delete = 'Delete',
-  DeleteEdge = 'DeleteEdge',
-}
-</script>
-<script setup lang="ts">
 interface Props {
   nodeData: ConceptNode;
   isSelected: boolean;

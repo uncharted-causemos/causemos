@@ -7,8 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { useRoute } from 'vue-router';
-import router from '@/router';
+import { useRoute, useRouter } from 'vue-router';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';
 
@@ -18,6 +17,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const route = useRoute();
+const router = useRouter();
 const openDataExplorer = () => {
   const filters = filtersUtil.newFilters();
   filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
