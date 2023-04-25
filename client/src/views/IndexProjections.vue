@@ -67,7 +67,7 @@
       <IndexProjectionsNodeView
         v-else
         :selected-node-id="selectedNodeId"
-        @select-node="selectElement"
+        @select-element="selectElement"
         @deselect-node="deselectNode"
       />
       <IndexLegend class="legend" :is-projection-space="true" />
@@ -166,7 +166,7 @@ const isSingleCountryModeActive = ref(true);
 
 .config-column {
   background: white;
-  width: 400px;
+  width: 300px;
   padding: 20px;
   overflow-y: auto;
   border-right: 1px solid $un-color-black-10;
