@@ -213,10 +213,6 @@ header {
   flex-direction: column;
 }
 
-.subdued {
-  color: $un-color-black-40;
-}
-
 section {
   display: flex;
   flex-direction: column;

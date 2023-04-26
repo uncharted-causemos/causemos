@@ -34,12 +34,8 @@
           () => emit('select-element', { sourceId: cell.node.inputs[0].id, targetId: cell.node.id })
         "
       ></div> -->
-      <!-- TODO: don't show hover menu in this view -->
-      <IndexTreeNode
+      <IndexProjectionsNode
         :node-data="cell.node"
-        :is-selected="false"
-        :is-connecting="false"
-        :is-descendent-of-connecting-node="false"
         class="index-tree-node"
         @select="(id) => emit('select-element', id)"
       />
@@ -81,7 +77,6 @@
 import _ from 'lodash';
 
 import { hasChildren } from '@/utils/index-tree-util';
-import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import { GridCell, SelectableIndexElementId } from '@/types/Index';
 import { computed } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
@@ -92,6 +87,7 @@ import {
   getGridRowCount,
   offsetGridCells,
 } from '@/utils/grid-cell-util';
+import IndexProjectionsNode from './index-projections-node.vue';
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
@@ -140,11 +136,6 @@ const gridCells = computed<GridCell[]>(() => {
 @import '@/styles/variables';
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/index-graph';
-
-$space-between-columns: 20px;
-$space-between-rows: 20px;
-.index-projections-graph-container {
-}
 
 .grid-cell {
   position: relative;

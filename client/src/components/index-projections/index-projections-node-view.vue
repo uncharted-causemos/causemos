@@ -1,29 +1,31 @@
 <template>
   <div class="index-projections-pane-container">
-    <div class="child-nodes-column">
-      <IndexTreeNode
-        v-for="childNode of childNodes"
-        :key="childNode.id"
-        :is-connecting="false"
-        :is-descendent-of-connecting-node="false"
-        :is-selected="false"
-        :node-data="childNode"
-        @select="emit('select-element', childNode.id)"
-      />
+    <div class="node-column child-column">
+      <div v-for="(childNode, i) of childNodes" :key="childNode.id" class="node-and-edge-container">
+        <IndexProjectionsNode
+          :node-data="childNode"
+          @select="emit('select-element', childNode.id)"
+        />
+        <div class="edge outgoing visible" :class="{ 'last-child': i === childNodes.length - 1 }" />
+      </div>
     </div>
-    <div class="selected-node">
-      <p>{{ selectedNode?.found.name ?? 'none' }}</p>
-      <p class="subdued un-font-small">{{ 'Weighted sum of 2 components.' }}</p>
+    <div class="node-and-edge-container">
+      <div class="edge incoming" :class="{ visible: childNodes.length > 0 }" />
+      <div class="selected-node">
+        <p>{{ selectedNode?.found.name ?? 'none' }}</p>
+        <span v-if="selectedNode?.found.name.length === 0" class="subdued">(Missing name)</span>
+        <p class="subdued un-font-small">{{ 'Weighted sum of 2 components.' }}</p>
+      </div>
+      <div class="edge outgoing last-child" :class="{ visible: parentNode !== null }" />
     </div>
-    <div class="parent-node-column">
-      <IndexTreeNode
-        v-if="parentNode !== null"
-        :is-connecting="false"
-        :is-descendent-of-connecting-node="false"
-        :is-selected="false"
-        :node-data="parentNode"
-        @select="emit('select-element', parentNode.id)"
-      />
+    <div class="node-column">
+      <div v-if="parentNode !== null" class="node-and-edge-container">
+        <div class="edge incoming visible" />
+        <IndexProjectionsNode
+          :node-data="parentNode"
+          @select="emit('select-element', parentNode.id)"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -32,9 +34,9 @@
 import useIndexTree from '@/services/composables/useIndexTree';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { computed } from 'vue';
-import IndexTreeNode from '../index-structure/index-tree-node.vue';
 import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import { SelectableIndexElementId } from '@/types/Index';
+import IndexProjectionsNode from './index-projections-node.vue';
 
 const props = defineProps<{
   selectedNodeId: string | null;
@@ -72,31 +74,40 @@ const parentNode = computed(() => {
 
 <style lang="scss" scoped>
 @import '@/styles/uncharted-design-tokens';
-$space-between-columns: 20px;
-$space-between-rows: 20px;
+@import '@/styles/index-graph';
 .index-projections-pane-container {
-  padding: 20px;
+  padding: $index-graph-padding-vertical $index-graph-padding-horizontal;
   overflow: auto;
   display: flex;
-  gap: 40px;
   // When the graph is too small to take up the full available screen width, don't expand columns
   //  to fill the empty space.
   justify-content: flex-start;
-  align-content: flex-start;
 }
 
 .selected-node {
-  background: white;
-  border: 1px solid $un-color-black-30;
+  @include index-tree-node;
   padding: 10px 20px;
-  display: flex;
-  flex-direction: column;
   gap: 10px;
-  border-radius: 3px;
   width: 500px;
 }
 
-.subdued {
-  color: $un-color-black-40;
+.node-column {
+  // Make sure columns take the width of a node even if the column is empty.
+  width: calc($index-tree-node-width + $incoming-edge-minimum-length);
+}
+
+.child-column {
+  display: flex;
+  flex-direction: column;
+  gap: $space-between-rows;
+}
+
+.node-and-edge-container {
+  position: relative;
+  display: flex;
+}
+
+.edge.incoming {
+  flex: 0;
 }
 </style>

@@ -61,11 +61,13 @@
       </div>
       <IndexProjectionsGraphView
         v-if="selectedNodeId === null"
+        class="fill-space"
         @select-element="selectElement"
         @deselect-edge="deselectEdge"
       />
       <IndexProjectionsNodeView
         v-else
+        class="fill-space"
         :selected-node-id="selectedNodeId"
         @select-element="selectElement"
         @deselect-node="deselectNode"
@@ -215,6 +217,11 @@ main {
     bottom: 0;
     left: 20px;
     right: 20px;
+  }
+
+  .fill-space {
+    flex: 1;
+    min-height: 0;
   }
 }
 </style>

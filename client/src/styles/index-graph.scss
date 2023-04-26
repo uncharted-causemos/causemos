@@ -10,10 +10,14 @@ $edge-top-offset-from-node: 13px;
 $edge-styles: 2px solid $un-color-black-20;
 $edge-selected: $accent-main;
 
+$index-graph-padding-horizontal: 30px;
+$index-graph-padding-vertical: 40px;
+
 .index-graph {
   // The farthest left column will never have incoming edges, so it will have an empty space of
   //  size `$incoming-edge-minimum-length` to the left of it. Remove that width from the padding.
-  padding: 40px 30px 40px calc(30px - #{$incoming-edge-minimum-length});
+  padding: $index-graph-padding-vertical $index-graph-padding-horizontal;
+  padding-left: calc(#{$index-graph-padding-horizontal} - #{$incoming-edge-minimum-length});
   overflow: auto;
   display: grid;
   row-gap: $space-between-rows;
@@ -85,4 +89,33 @@ $edge-selected: $accent-main;
       border-right: none;
     }
   }
+}
+
+$index-tree-node-width: 240px;
+
+@mixin index-tree-node() {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+
+  background: white;
+  width: $index-tree-node-width;
+  height: fit-content;
+  border: 1px solid $un-color-black-30;
+  border-radius: 3px;
+}
+
+@mixin index-tree-node-hover() {
+  border-color: $accent-main;
+  cursor: pointer;
+}
+
+// The space between the edges of the node and the content within it.
+//  This would be applied to .index-tree-node-container directly, but some elements (namely the
+//  search results) need to expand to take the full width of the node.
+$node-content-horizontal-padding: 10px;
+// Standard padding that's applied to each element within the node by default
+$node-content-vertical-padding: 5px;
+@mixin index-tree-node-content() {
+  padding: $node-content-vertical-padding $node-content-horizontal-padding;
 }
