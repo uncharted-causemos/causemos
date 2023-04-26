@@ -1,7 +1,8 @@
-import _ from 'lodash';
-import { Subset } from '@/types/Common';
+import merge from 'lodash/merge';
 import { HoltFunctionObject, holt } from './methods/holt';
 import { HoltWintersFunctionObject, holtWinters } from './methods/holt-winters';
+
+import { Subset } from '@/types/Common';
 
 export enum ForecastMethod {
   Holt = 'Holt',
@@ -140,11 +141,11 @@ const runHWWithOptimizedParams = (
   return { alpha: curAlpha, beta: curBeta, gamma: curGamma, period: curPeriod };
 };
 
-export const forecast = (data: [number, number][], options: Subset<ForecastOptions>) => {
+export const initialize = (data: [number, number][], options: Subset<ForecastOptions> = {}) => {
   const observedData = [...data];
   const dataReversed = [...data].reverse();
   // Default options
-  const opt = _.merge(
+  const opt = merge(
     {
       forecastSteps: 12,
       backcastSteps: 12,
@@ -212,6 +213,11 @@ export const forecast = (data: [number, number][], options: Subset<ForecastOptio
     },
 
     runHoltWinters(): ForecastResult<ForecastMethod.HoltWinters> {
+      if (observedData.length <= MIN_PERIOD * 2) {
+        throw new Error(
+          'Not enough data to estimate forecasts - need at least 7 data points ( > 2*MIN_PERIOD)'
+        );
+      }
       const forecast = holtWinters().period(MIN_PERIOD).data(observedData);
       const backcast = holtWinters().period(MIN_PERIOD).data(dataReversed);
       const maxPeriod = Math.floor(observedData.length / 2);
@@ -242,4 +248,9 @@ export const forecast = (data: [number, number][], options: Subset<ForecastOptio
       };
     },
   };
+};
+
+export default {
+  ForecastMethod,
+  initialize,
 };
