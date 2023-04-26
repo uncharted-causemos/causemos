@@ -1,24 +1,16 @@
 <template>
   <div class="index-action-bar-container">
-    <DropdownButton
-      :is-dropdown-left-aligned="true"
-      :items="Object.values(DropdownOptions)"
-      :selected-item="'Add component'"
-      @item-selected="handleDropdownSelection"
-    />
+    <button class="btn btn-default" @click="addConcept">Add concept</button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { DropdownOptions } from '@/utils/index-common-util';
-import DropdownButton from '@/components/dropdown-button.vue';
-
 const emit = defineEmits<{
-  (e: 'addDropdownChange', value: DropdownOptions): void;
+  (e: 'add-concept'): void;
 }>();
 
-const handleDropdownSelection = (option: DropdownOptions) => {
-  emit('addDropdownChange', option);
+const addConcept = () => {
+  emit('add-concept');
 };
 </script>
 

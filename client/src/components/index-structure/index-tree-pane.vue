@@ -40,17 +40,16 @@
         @duplicate="duplicateNode"
         @select="(id) => emit('select-element', id)"
         @create-child="createChild"
+        @attach-dataset="attachDatasetToNode"
         @create-edge="createEdge"
-        @attach-dataset="attachDatasetToPlaceholder"
         @mouseenter="highlightClear"
       />
       <div
-        v-if="cell.node.type !== IndexNodeType.OutputIndex && cell.hasOutputLine"
+        v-if="!cell.node.isOutputNode && cell.hasOutputLine"
         class="edge outgoing"
         :class="{
           visible: cell.hasOutputLine,
           inactive: !cell.hasOutputLine,
-          dashed: cell.node.type === IndexNodeType.Placeholder,
           'last-child': cell.isLastChild,
           [EDGE_CLASS.SELECTED]: isOutgoingSelected(cell.node.id),
           [EDGE_CLASS.SELECTED_Y]: isOutgoingYSelected(cell.node.id),
@@ -64,7 +63,7 @@
         @click="() => !isConnecting && handleMouseClick(cell.node.id)"
       />
       <div
-        v-if="cell.node.type !== IndexNodeType.OutputIndex && !cell.hasOutputLine"
+        v-if="!cell.node.isOutputNode && !cell.hasOutputLine"
         class="connector"
         :class="{
           connecting: cell.node.id === connectingId,
@@ -85,11 +84,20 @@
 import _ from 'lodash';
 import { computed, ref } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
-import { IndexNodeType } from '@/types/Enums';
-import { DatasetSearchResult, GridCell, IndexNode, SelectableIndexElementId } from '@/types/Index';
+import {
+  ConceptNode,
+  DatasetSearchResult,
+  GridCell,
+  SelectableIndexElementId,
+} from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren, isEdge, addChild } from '@/utils/index-tree-util';
+import {
+  hasChildren,
+  isOutputIndexNode,
+  isEdge,
+  isConceptNodeWithoutDataset,
+} from '@/utils/index-tree-util';
 import {
   convertTreeToGridCells,
   getGridColumnCount,
@@ -145,29 +153,24 @@ const isOutgoingHighlighted = (id: string) => {
 
 const createEdge = (id: string) => {
   if (connectingId.value !== null) {
-    const targetNode = searchForNode(id) ?? null;
-    const sourceNode: IndexNode | null = workbench.popItem(connectingId.value);
+    const sourceNode = workbench.popItem(connectingId.value);
 
-    if (
-      targetNode !== null &&
-      sourceNode !== null &&
-      (targetNode.found.type === IndexNodeType.OutputIndex ||
-        targetNode.found.type === IndexNodeType.Index)
-    ) {
-      addChild(targetNode.found, sourceNode);
+    if (sourceNode !== null) {
+      workbench.findAndAddChild(id, sourceNode);
+      indexTree.findAndAddChild(id, sourceNode);
     }
   }
 
   clearEdgeConnect();
 };
-const handleClickSelectEdge = (node: any) => {
-  if (node.inputs?.length > 0) {
-    emit('select-element', { sourceId: node.inputs[0].id, targetId: node.id });
+const handleClickSelectEdge = (node: ConceptNode) => {
+  if (isConceptNodeWithoutDataset(node) && node.components.length > 0) {
+    emit('select-element', { sourceId: node.components[0].componentNode.id, targetId: node.id });
   }
 };
-const handleHighlightEdge = (node: any) => {
-  if (node.inputs?.length > 0) {
-    emit('highlight-edge', { sourceId: node.inputs[0].id, targetId: node.id });
+const handleHighlightEdge = (node: ConceptNode) => {
+  if (isConceptNodeWithoutDataset(node) && node.components.length > 0) {
+    emit('highlight-edge', { sourceId: node.components[0].componentNode.id, targetId: node.id });
   }
 };
 const handleConnect = (id: string) => {
@@ -204,14 +207,10 @@ const isHigherThanSibling = (id: string, edgeId: SelectableIndexElementId) => {
     }
     const targetNode = searchForNode(edgeId.sourceId);
 
-    if (
-      targetNode &&
-      targetNode.parent &&
-      (targetNode.parent.type === 'Index' || targetNode.parent.type === 'OutputIndex')
-    ) {
-      const allInputs = targetNode.parent.inputs;
-      const idIndex = allInputs.findIndex((item) => item.id === sourceId);
-      const selection = allInputs.slice(0, idIndex).map((item) => item.id);
+    if (targetNode && targetNode.parent) {
+      const allInputs = targetNode.parent.components;
+      const idIndex = allInputs.findIndex((item) => item.componentNode.id === sourceId);
+      const selection = allInputs.slice(0, idIndex).map((item) => item.componentNode.id);
 
       return selection.includes(id);
     }
@@ -292,28 +291,29 @@ const renameNode = (nodeId: string, newName: string) => {
   indexTree.findAndRenameNode(nodeId, newName);
 };
 
-const deleteNode = (deleteNode: IndexNode) => {
+const deleteNode = (deleteNode: ConceptNode) => {
   // Find from both places and delete the node.
   workbench.findAndDeleteItem(deleteNode.id);
   indexTree.findAndDelete(deleteNode.id);
 };
 
-const duplicateNode = (duplicated: IndexNode) => {
-  if (duplicated.type === IndexNodeType.OutputIndex) return;
+const duplicateNode = (duplicated: ConceptNode) => {
+  if (isOutputIndexNode(duplicated)) return;
   workbench.addItem(duplicated);
 };
 
-const createChild = (
-  parentNodeId: string,
-  childType: IndexNodeType.Index | IndexNodeType.Dataset
-) => {
-  workbench.findAndAddChild(parentNodeId, childType);
-  indexTree.findAndAddChild(parentNodeId, childType);
+const createChild = (parentNodeId: string) => {
+  workbench.findAndAddNewChild(parentNodeId);
+  indexTree.findAndAddNewChild(parentNodeId);
 };
 
-const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult) => {
-  workbench.attachDatasetToPlaceholder(nodeId, dataset);
-  indexTree.attachDatasetToPlaceholder(nodeId, dataset);
+const attachDatasetToNode = (
+  nodeId: string,
+  dataset: DatasetSearchResult,
+  nodeNameAfterAttachingDataset: string
+) => {
+  workbench.attachDatasetToNode(nodeId, dataset, nodeNameAfterAttachingDataset);
+  indexTree.attachDatasetToNode(nodeId, dataset, nodeNameAfterAttachingDataset);
 };
 
 const clearEdgeConnect = () => {
@@ -429,21 +429,7 @@ $edge-selected: $accent-main;
       &.inactive {
         pointer-events: none;
       }
-      &.dashed {
-        border-top-style: dashed;
-        &.highlighted {
-          border-top-color: $accent-light;
-        }
-        &.highlighted-y {
-          border-right-color: $accent-light;
-        }
-        &.selected-edge {
-          border-top-color: $edge-selected;
-        }
-        &.selected-y {
-          border-right-color: $edge-selected;
-        }
-      }
+
       &.last-child {
         border-right: none;
       }

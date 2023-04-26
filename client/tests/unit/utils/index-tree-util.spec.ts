@@ -7,104 +7,178 @@ import {
   createNewOutputIndex,
   indexNodeTreeContainsDataset,
   rebalanceInputWeights,
-  createNewIndex,
-  createNewPlaceholderDataset,
   findAllDatasets,
   calculateOverallWeight,
+  isConceptNodeWithoutDataset,
+  isConceptNodeWithDatasetAttached,
+  createNewConceptNode,
 } from '@/utils/index-tree-util';
-import { AggregationOption, IndexNodeType, TemporalResolutionOption } from '@/types/Enums';
-import { OutputIndex, Index, Dataset, ParentNode } from '@/types/Index';
+import { AggregationOption, ProjectionAlgorithm, TemporalResolutionOption } from '@/types/Enums';
+import { ConceptNodeWithoutDataset } from '@/types/Index';
+import { WeightedComponent } from '@/types/WeightedComponent';
 
-const newTestTree = (): OutputIndex => ({
+export const newTestTree = (): ConceptNodeWithoutDataset => ({
   id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
-  type: IndexNodeType.OutputIndex,
   name: 'Overall Priority',
-  inputs: [
+  isOutputNode: true,
+  components: [
     {
-      id: '5ad78cb0-b923-48ef-9c1a-31219987ca16',
-      type: IndexNodeType.Index,
-      name: 'Highest risk of drought',
-      weight: 20,
+      componentNode: {
+        id: '5ad78cb0-b923-48ef-9c1a-31219987ca16',
+        name: 'Highest risk of drought',
+        isOutputNode: false,
+        components: [
+          {
+            isOppositePolarity: false,
+            isWeightUserSpecified: false,
+            weight: 0,
+            componentNode: {
+              id: 'a547b59f-9287-4991-a817-08ba54a0353f',
+              name: 'Greatest reliance on fragile crops',
+              isOutputNode: false,
+              components: [],
+            },
+          },
+        ],
+      },
+      isOppositePolarity: false,
       isWeightUserSpecified: true,
-      inputs: [
-        {
-          id: 'a547b59f-9287-4991-a817-08ba54a0353f',
-          type: IndexNodeType.Placeholder,
-          name: 'Greatest reliance on fragile crops',
-        },
-      ],
+      weight: 20,
     },
     {
-      id: '6db6284d-7879-4735-a460-5f2b273c0bf9',
-      type: IndexNodeType.Index,
-      name: 'Largest vulnerable population',
-      weight: 60,
+      componentNode: {
+        id: '6db6284d-7879-4735-a460-5f2b273c0bf9',
+        // type: IndexNodeType.Index,
+        name: 'Largest vulnerable population',
+        isOutputNode: false,
+        components: [
+          {
+            isOppositePolarity: false,
+            isWeightUserSpecified: true,
+            weight: 80,
+            componentNode: {
+              id: '16caf563-548f-4e11-a488-a900f0d01c3b',
+              name: 'Highest poverty index ranking',
+              isOutputNode: false,
+              dataset: {
+                datasetName: 'Poverty indicator index',
+                config: {
+                  datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
+                  selectedTimestamp: 0,
+                  outputVariable: 'test',
+                  runId: 'indicators',
+                  temporalResolution: TemporalResolutionOption.Month,
+                  temporalAggregation: AggregationOption.Mean,
+                  spatialAggregation: AggregationOption.Mean,
+                },
+                isInverted: false,
+                projectionAlgorithm: ProjectionAlgorithm.Auto,
+                source: 'UN',
+              },
+            },
+          },
+          {
+            isOppositePolarity: false,
+            isWeightUserSpecified: true,
+            weight: 0,
+            componentNode: {
+              id: '2f624d92-efa0-431a-a3a1-5521871420ad',
+              name: 'Population Health',
+              isOutputNode: false,
+              components: [
+                {
+                  isOppositePolarity: false,
+                  isWeightUserSpecified: true,
+                  weight: 80,
+                  componentNode: {
+                    id: 'd851ac5d-2de2-475d-8ef7-5bd46a1a9016',
+                    name: 'Malnutrition',
+                    isOutputNode: false,
+                    dataset: {
+                      datasetName: 'Malnutrition rates dataset',
+                      source: 'UN',
+                      isInverted: false,
+                      projectionAlgorithm: ProjectionAlgorithm.Auto,
+                      config: {
+                        datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
+                        selectedTimestamp: 0,
+                        outputVariable: 'test',
+                        runId: 'indicators',
+                        temporalResolution: TemporalResolutionOption.Month,
+                        temporalAggregation: AggregationOption.Mean,
+                        spatialAggregation: AggregationOption.Mean,
+                      },
+                    },
+                  },
+                },
+                {
+                  isOppositePolarity: false,
+                  isWeightUserSpecified: true,
+                  weight: 20,
+                  componentNode: {
+                    id: 'ac56ea0f-3ca9-4aee-9c06-f98768b7bd2a',
+                    name: 'Life expectancy by country',
+                    isOutputNode: false,
+                    dataset: {
+                      datasetName: 'Life expectancy by country',
+                      source: 'UN',
+                      isInverted: false,
+                      projectionAlgorithm: ProjectionAlgorithm.Auto,
+                      config: {
+                        datasetId: 'dd7f69937-060d-44e8-8a04-22070ce35b27',
+                        selectedTimestamp: 0,
+                        outputVariable: 'test',
+                        runId: 'indicators',
+                        temporalResolution: TemporalResolutionOption.Month,
+                        temporalAggregation: AggregationOption.Mean,
+                        spatialAggregation: AggregationOption.Mean,
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      isOppositePolarity: false,
       isWeightUserSpecified: true,
-      inputs: [
-        {
-          id: '16caf563-548f-4e11-a488-a900f0d01c3b',
-          type: IndexNodeType.Dataset,
-          name: 'Highest poverty index ranking',
-          weight: 80,
-          isWeightUserSpecified: true,
-          datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-          datasetName: 'Poverty indicator index',
-          selectedTimestamp: 0,
-          isInverted: false,
-          source: 'UN',
-          outputVariable: 'test',
-          runId: 'indicators',
-          temporalResolution: TemporalResolutionOption.Month,
-          temporalAggregation: AggregationOption.Mean,
-          spatialAggregation: AggregationOption.Mean,
-        },
-        {
-          id: '2f624d92-efa0-431a-a3a1-5521871420ad',
-          type: IndexNodeType.Index,
-          name: 'Population Health',
-          weight: 0,
-          isWeightUserSpecified: true,
-          inputs: [
-            {
-              id: 'd851ac5d-2de2-475d-8ef7-5bd46a1a9016',
-              type: IndexNodeType.Dataset,
-              name: 'Malnutrition',
-              weight: 80,
-              isWeightUserSpecified: true,
-              datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-              datasetName: 'Malnutrition rates dataset',
-              selectedTimestamp: 0,
-              isInverted: false,
-              source: 'UN',
-              outputVariable: 'test',
-              runId: 'indicators',
-              temporalResolution: TemporalResolutionOption.Month,
-              temporalAggregation: AggregationOption.Mean,
-              spatialAggregation: AggregationOption.Mean,
-            },
-            {
-              id: 'ac56ea0f-3ca9-4aee-9c06-f98768b7bd2a',
-              type: IndexNodeType.Dataset,
-              name: 'Life expectancy by country',
-              weight: 20,
-              isWeightUserSpecified: true,
-              datasetId: 'dd7f69937-060d-44e8-8a04-22070ce35b27',
-              datasetName: 'Life expectancy by country',
-              selectedTimestamp: 0,
-              isInverted: false,
-              source: 'UN',
-              outputVariable: 'test',
-              runId: 'indicators',
-              temporalResolution: TemporalResolutionOption.Month,
-              temporalAggregation: AggregationOption.Mean,
-              spatialAggregation: AggregationOption.Mean,
-            },
-          ],
-        },
-      ],
+      weight: 60,
     },
   ],
 });
+
+const weightedDatasetComponent: WeightedComponent = {
+  isOppositePolarity: false,
+  isWeightUserSpecified: false,
+  weight: 0,
+  componentNode: {
+    id: '16caf563-548f-4e11-a488-a900f0d01c3b',
+    name: 'Highest poverty index ranking',
+    isOutputNode: false,
+    dataset: {
+      datasetName: 'Poverty indicator index',
+      config: {
+        datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
+        selectedTimestamp: 0,
+        outputVariable: 'test',
+        runId: 'indicators',
+        temporalResolution: TemporalResolutionOption.Month,
+        temporalAggregation: AggregationOption.Mean,
+        spatialAggregation: AggregationOption.Mean,
+      },
+      isInverted: false,
+      projectionAlgorithm: ProjectionAlgorithm.Auto,
+      source: 'UN',
+    },
+  },
+};
+const emptyWeightedComponent = {
+  isOppositePolarity: false,
+  isWeightUserSpecified: false,
+  weight: 80,
+  componentNode: createNewConceptNode(),
+};
 
 describe('index-tree-util', () => {
   describe('findNode', () => {
@@ -115,7 +189,7 @@ describe('index-tree-util', () => {
       expect(result?.parent).equal(null);
 
       expect(result?.found.id).equal('6e4adcee-c3af-4696-b84c-ee1169adcd4c');
-      expect(result?.found.type).equal(IndexNodeType.OutputIndex);
+      expect(result?.found.isOutputNode).equal(true);
       expect(result?.found.name).equal('Overall Priority');
     });
     it('should find a node from direct children', () => {
@@ -125,7 +199,7 @@ describe('index-tree-util', () => {
       expect(result?.parent?.id).equal('6e4adcee-c3af-4696-b84c-ee1169adcd4c');
 
       expect(result?.found.id).equal('6db6284d-7879-4735-a460-5f2b273c0bf9');
-      expect(result?.found.type).equal(IndexNodeType.Index);
+      expect(result?.found && isConceptNodeWithoutDataset(result.found)).equal(true);
       expect(result?.found.name).equal('Largest vulnerable population');
     });
     it('should find a node from leaf nodes', () => {
@@ -135,7 +209,7 @@ describe('index-tree-util', () => {
       expect(result?.parent?.id).equal('2f624d92-efa0-431a-a3a1-5521871420ad');
 
       expect(result?.found.id).equal('ac56ea0f-3ca9-4aee-9c06-f98768b7bd2a');
-      expect(result?.found.type).equal(IndexNodeType.Dataset);
+      expect(result?.found && isConceptNodeWithDatasetAttached(result.found)).equal(true);
       expect(result?.found.name).equal('Life expectancy by country');
     });
     it('should return undefined when node not found', () => {
@@ -148,35 +222,39 @@ describe('index-tree-util', () => {
   describe('findAndUpdateNode', () => {
     it('should update root node', () => {
       const tree = newTestTree();
-      const update: OutputIndex = {
-        type: IndexNodeType.OutputIndex,
+      const update: ConceptNodeWithoutDataset = {
+        isOutputNode: true,
         id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
         name: 'Updated node',
-        inputs: [],
+        components: [],
       };
       const isUpdated = findAndUpdateNode(tree, update);
 
       expect(isUpdated).equal(true);
       expect(tree).deep.equal({
-        type: IndexNodeType.OutputIndex,
+        isOutputNode: true,
         id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
         name: 'Updated node',
-        inputs: [],
+        components: [],
       });
     });
     it('should update a node', () => {
       const tree = newTestTree();
-      const update: Index = {
+      const update: ConceptNodeWithoutDataset = {
         id: '6db6284d-7879-4735-a460-5f2b273c0bf9',
-        type: IndexNodeType.Index,
         name: 'Largest vulnerable population',
-        weight: 0,
-        isWeightUserSpecified: false,
-        inputs: [
+        isOutputNode: false,
+        components: [
           {
-            id: '16caf563-548f-4e11-a488-a900f0d01c3b',
-            type: IndexNodeType.Placeholder,
-            name: 'Updated Placeholder',
+            weight: 0,
+            isWeightUserSpecified: false,
+            isOppositePolarity: false,
+            componentNode: {
+              id: '16caf563-548f-4e11-a488-a900f0d01c3b',
+              name: 'Updated Placeholder',
+              isOutputNode: false,
+              components: [],
+            },
           },
         ],
       };
@@ -185,24 +263,38 @@ describe('index-tree-util', () => {
       expect(isUpdated).equal(true);
       expect(tree).deep.equal({
         id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
-        type: IndexNodeType.OutputIndex,
         name: 'Overall Priority',
-        inputs: [
+        isOutputNode: true,
+        components: [
           {
-            id: '5ad78cb0-b923-48ef-9c1a-31219987ca16',
-            type: IndexNodeType.Index,
-            name: 'Highest risk of drought',
-            weight: 20,
+            componentNode: {
+              id: '5ad78cb0-b923-48ef-9c1a-31219987ca16',
+              name: 'Highest risk of drought',
+              isOutputNode: false,
+              components: [
+                {
+                  isOppositePolarity: false,
+                  isWeightUserSpecified: false,
+                  weight: 0,
+                  componentNode: {
+                    id: 'a547b59f-9287-4991-a817-08ba54a0353f',
+                    name: 'Greatest reliance on fragile crops',
+                    isOutputNode: false,
+                    components: [],
+                  },
+                },
+              ],
+            },
+            isOppositePolarity: false,
             isWeightUserSpecified: true,
-            inputs: [
-              {
-                id: 'a547b59f-9287-4991-a817-08ba54a0353f',
-                type: IndexNodeType.Placeholder,
-                name: 'Greatest reliance on fragile crops',
-              },
-            ],
+            weight: 20,
           },
-          update,
+          {
+            isOppositePolarity: false,
+            isWeightUserSpecified: true,
+            weight: 60,
+            componentNode: update,
+          },
         ],
       });
     });
@@ -210,8 +302,9 @@ describe('index-tree-util', () => {
       const tree = newTestTree();
       const isUpdated = findAndUpdateNode(tree, {
         id: 'not-found-id',
-        type: IndexNodeType.Placeholder,
         name: 'Greatest reliance on fragile crops',
+        components: [],
+        isOutputNode: false,
       });
       expect(isUpdated).deep.equal(false);
     });
@@ -224,22 +317,31 @@ describe('index-tree-util', () => {
       expect(isRemoved);
       expect(tree).deep.equal({
         id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
-        type: IndexNodeType.OutputIndex,
         name: 'Overall Priority',
-        inputs: [
+        isOutputNode: true,
+        components: [
           {
-            id: '5ad78cb0-b923-48ef-9c1a-31219987ca16',
-            type: IndexNodeType.Index,
-            name: 'Highest risk of drought',
-            weight: 20,
+            componentNode: {
+              id: '5ad78cb0-b923-48ef-9c1a-31219987ca16',
+              name: 'Highest risk of drought',
+              isOutputNode: false,
+              components: [
+                {
+                  isOppositePolarity: false,
+                  isWeightUserSpecified: false,
+                  weight: 0,
+                  componentNode: {
+                    id: 'a547b59f-9287-4991-a817-08ba54a0353f',
+                    name: 'Greatest reliance on fragile crops',
+                    isOutputNode: false,
+                    components: [],
+                  },
+                },
+              ],
+            },
+            isOppositePolarity: false,
             isWeightUserSpecified: true,
-            inputs: [
-              {
-                id: 'a547b59f-9287-4991-a817-08ba54a0353f',
-                type: IndexNodeType.Placeholder,
-                name: 'Greatest reliance on fragile crops',
-              },
-            ],
+            weight: 20,
           },
         ],
       });
@@ -265,8 +367,13 @@ describe('index-tree-util', () => {
       expect(tree.name).equal(duplicated.name);
 
       // check grandchild
-      const node = (tree.inputs[1] as Index).inputs[0];
-      const dNode = ((duplicated as OutputIndex).inputs[1] as Index).inputs[0];
+      const node = (
+        (tree as ConceptNodeWithoutDataset).components[1].componentNode as ConceptNodeWithoutDataset
+      ).components[0].componentNode;
+      const dNode = (
+        (duplicated as ConceptNodeWithoutDataset).components[1]
+          .componentNode as ConceptNodeWithoutDataset
+      ).components[0].componentNode;
 
       expect(node.id).not.equal(dNode.id);
       expect(node.name).equal(dNode.name);
@@ -280,27 +387,35 @@ describe('index-tree-util', () => {
       expect(containsDataset).to.equal(false);
     });
     it('should return true for a tree with a height of 1 that includes a dataset', () => {
-      const tree: OutputIndex = {
+      const tree: ConceptNodeWithoutDataset = {
         id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
-        type: IndexNodeType.OutputIndex,
         name: 'Overall Priority',
-        inputs: [
+        isOutputNode: true,
+        components: [
           {
-            id: '16caf563-548f-4e11-a488-a900f0d01c3b',
-            type: IndexNodeType.Dataset,
-            name: 'Highest poverty index ranking',
-            weight: 100,
+            isOppositePolarity: false,
             isWeightUserSpecified: true,
-            datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-            datasetName: 'Poverty indicator index',
-            selectedTimestamp: 0,
-            isInverted: false,
-            source: 'UN',
-            outputVariable: 'test',
-            runId: 'indicators',
-            temporalResolution: TemporalResolutionOption.Month,
-            temporalAggregation: AggregationOption.Mean,
-            spatialAggregation: AggregationOption.Mean,
+            weight: 100,
+            componentNode: {
+              id: '16caf563-548f-4e11-a488-a900f0d01c3b',
+              name: 'Highest poverty index ranking',
+              isOutputNode: false,
+              dataset: {
+                datasetName: 'Poverty indicator index',
+                config: {
+                  datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
+                  selectedTimestamp: 0,
+                  outputVariable: 'test',
+                  runId: 'indicators',
+                  temporalResolution: TemporalResolutionOption.Month,
+                  temporalAggregation: AggregationOption.Mean,
+                  spatialAggregation: AggregationOption.Mean,
+                },
+                isInverted: false,
+                projectionAlgorithm: ProjectionAlgorithm.Auto,
+                source: 'UN',
+              },
+            },
           },
         ],
       };
@@ -315,78 +430,61 @@ describe('index-tree-util', () => {
   });
 
   describe('rebalanceInputWeights', () => {
-    const mock_dataset: Dataset = {
-      id: '16caf563-548f-4e11-a488-a900f0d01c3b',
-      type: IndexNodeType.Dataset,
-      name: 'Highest poverty index ranking',
-      weight: 0,
-      isWeightUserSpecified: false,
-      datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
-      datasetName: 'Poverty indicator index',
-      selectedTimestamp: 0,
-      isInverted: false,
-      source: 'UN',
-      outputVariable: 'test',
-      runId: 'indicators',
-      temporalResolution: TemporalResolutionOption.Month,
-      temporalAggregation: AggregationOption.Mean,
-      spatialAggregation: AggregationOption.Mean,
-    };
-    const mock_placeholder_dataset = createNewPlaceholderDataset();
     it('should return [] when passed an outputIndex with no inputs', () => {
       const tree = createNewOutputIndex();
-      const inputs = rebalanceInputWeights(tree.inputs);
+      const inputs = rebalanceInputWeights(tree.components);
       expect(inputs.length).to.equal(0);
     });
     it('should return [] when passed an index with no inputs', () => {
-      const tree = createNewIndex();
-      const inputs = rebalanceInputWeights(tree.inputs);
+      const tree = createNewConceptNode();
+      const inputs = rebalanceInputWeights(tree.components);
       expect(inputs.length).to.equal(0);
     });
-    it("should set the index's weight to 100% when passed a list of one index", () => {
-      const index = createNewIndex();
-      const inputs = rebalanceInputWeights([index]);
-      expect((inputs[0] as Index).weight).to.equal(100);
+    it("should set the index's weight to 100% when passed a list of one dataset", () => {
+      const inputs = rebalanceInputWeights([weightedDatasetComponent]);
+      expect(inputs[0].weight).to.equal(100);
     });
-    it('should set all weights to 50% when passed two indices as children', () => {
-      const index1 = createNewIndex();
-      const index2 = createNewIndex();
-      const inputs = rebalanceInputWeights([index1, index2]);
-      expect((inputs[0] as Index).weight).to.equal(50);
-      expect((inputs[1] as Index).weight).to.equal(50);
+    it('should set all weights to 50% when passed two datasets as children', () => {
+      const inputs = rebalanceInputWeights([weightedDatasetComponent, weightedDatasetComponent]);
+      expect(inputs[0].weight).to.equal(50);
+      expect(inputs[1].weight).to.equal(50);
     });
     it('should set all weights to 25% when passed 4 datasets as children', () => {
       const unbalanced_inputs = [
-        { ...mock_dataset },
-        { ...mock_dataset },
-        { ...mock_dataset },
-        { ...mock_dataset },
+        { ...weightedDatasetComponent },
+        { ...weightedDatasetComponent },
+        { ...weightedDatasetComponent },
+        { ...weightedDatasetComponent },
       ];
       const inputs = rebalanceInputWeights(unbalanced_inputs);
-      expect((inputs[0] as Dataset).weight).to.equal(25);
-      expect((inputs[1] as Dataset).weight).to.equal(25);
-      expect((inputs[2] as Dataset).weight).to.equal(25);
-      expect((inputs[3] as Dataset).weight).to.equal(25);
+      expect(inputs[0].weight).to.equal(25);
+      expect(inputs[1].weight).to.equal(25);
+      expect(inputs[2].weight).to.equal(25);
+      expect(inputs[3].weight).to.equal(25);
     });
-    it('should correctly handle placeholder nodes', () => {
+    it('should correctly handle empty nodes', () => {
       const unbalanced_inputs = [
-        { ...mock_dataset },
-        { ...mock_placeholder_dataset },
-        { ...mock_dataset },
-        { ...mock_placeholder_dataset },
+        { ...weightedDatasetComponent },
+        { ...emptyWeightedComponent },
+        { ...weightedDatasetComponent },
+        { ...emptyWeightedComponent },
       ];
       const inputs = rebalanceInputWeights(unbalanced_inputs);
-      expect((inputs[0] as Dataset).weight).to.equal(50);
-      expect((inputs[2] as Dataset).weight).to.equal(50);
+      expect(inputs[0].weight).to.equal(50);
+      expect(inputs[2].weight).to.equal(50);
     });
     it('should correctly handle user-specified weights', () => {
-      const weightedDataset = { ...mock_dataset };
-      weightedDataset.isWeightUserSpecified = true;
-      weightedDataset.weight = 40;
-      const unbalanced_inputs = [{ ...mock_dataset }, weightedDataset, { ...mock_dataset }];
+      const manuallyWeightedDataset = { ...weightedDatasetComponent };
+      manuallyWeightedDataset.isWeightUserSpecified = true;
+      manuallyWeightedDataset.weight = 40;
+      const unbalanced_inputs = [
+        { ...weightedDatasetComponent },
+        manuallyWeightedDataset,
+        { ...weightedDatasetComponent },
+      ];
       const inputs = rebalanceInputWeights(unbalanced_inputs);
-      expect((inputs[0] as Dataset).weight).to.equal(30);
-      expect((inputs[2] as Dataset).weight).to.equal(30);
+      expect(inputs[0].weight).to.equal(30);
+      expect(inputs[2].weight).to.equal(30);
     });
   });
 
@@ -398,9 +496,15 @@ describe('index-tree-util', () => {
     it('should correctly find all datasets', () => {
       const tree = newTestTree();
       const allDatasets = [
-        (tree.inputs[1] as ParentNode).inputs[0],
-        ((tree.inputs[1] as ParentNode).inputs[1] as ParentNode).inputs[0],
-        ((tree.inputs[1] as ParentNode).inputs[1] as ParentNode).inputs[1],
+        (tree.components[1].componentNode as ConceptNodeWithoutDataset).components[0].componentNode,
+        (
+          (tree.components[1].componentNode as ConceptNodeWithoutDataset).components[1]
+            .componentNode as ConceptNodeWithoutDataset
+        ).components[0].componentNode,
+        (
+          (tree.components[1].componentNode as ConceptNodeWithoutDataset).components[1]
+            .componentNode as ConceptNodeWithoutDataset
+        ).components[1].componentNode,
       ];
       const result = findAllDatasets(tree);
       expect(result).to.include.all.members(allDatasets);
@@ -409,21 +513,21 @@ describe('index-tree-util', () => {
 
   describe('calculateOverallWeight', () => {
     const tree = newTestTree();
-    it('should return 0 if the target node is a Placeholder Dataset', () => {
-      const placeholderNode = createNewPlaceholderDataset();
+    it('should return 0 if the target node is an empty node', () => {
       const tree = createNewOutputIndex();
-      tree.inputs.push(placeholderNode);
-      const result = calculateOverallWeight(tree, placeholderNode);
+      tree.components.push(emptyWeightedComponent);
+      const result = calculateOverallWeight(tree, emptyWeightedComponent.componentNode);
       expect(result).to.equal(0);
     });
     it('should return 0 if the target node is not found in the tree', () => {
-      const result = calculateOverallWeight(tree, createNewIndex());
+      const result = calculateOverallWeight(tree, createNewConceptNode());
       expect(result).to.equal(0);
     });
     it('should correctly multiply ancestor weights', () => {
-      const targetNode = (tree.inputs[1] as Index).inputs[0] as Dataset;
-      const expectedWeight = ((tree.inputs[1] as Index).weight * targetNode.weight) / 100;
-      const result = calculateOverallWeight(tree, targetNode);
+      const targetComponent = (tree.components[1].componentNode as ConceptNodeWithoutDataset)
+        .components[0];
+      const expectedWeight = (tree.components[1].weight * targetComponent.weight) / 100;
+      const result = calculateOverallWeight(tree, targetComponent.componentNode);
       expect(result).to.equal(expectedWeight);
     });
   });

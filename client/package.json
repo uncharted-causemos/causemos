@@ -11,7 +11,7 @@
     "lint": "eslint . --fix --ext .js,.ts,.vue",
     "lint:ci": "eslint . --ext .js,.ts,.vue",
     "postinstall": "check-node-version --package",
-    "prep": "npm run lint && npm run test:unit"
+    "prep": "vue-tsc && npm run lint && npm run test:unit"
   },
   "lint-staged": {
     "*.{js,ts,vue}": [
