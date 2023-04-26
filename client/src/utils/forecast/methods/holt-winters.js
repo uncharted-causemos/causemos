@@ -1,5 +1,6 @@
-// http://www.surveyscience.co.uk/html/ssci/ssci_js.html
-// https://otexts.com/fpp2/holt-winters.html
+// This code is copied from https://github.com/muonsw/ssci/blob/master/src/fore/foreHW.js
+// with slight modification to meet modern ES standard
+// Doc: http://www.surveyscience.co.uk/html/ssci/ssci_js.html
 
 /**
  * Holt Winters exponential smoothing

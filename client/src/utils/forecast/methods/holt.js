@@ -1,3 +1,7 @@
+// This code is copied from https://github.com/muonsw/ssci/blob/master/src/fore/foreHolt.js
+// with slight modification to meet modern ES standard
+// Doc: http://www.surveyscience.co.uk/html/ssci/ssci_js.html
+
 /**
  * Holt's Exponential Smoothing
  * @returns {object} Object containing the forecast points, the residuals, the sum of squares of the residuals and the factor
