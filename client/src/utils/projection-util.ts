@@ -1,7 +1,7 @@
 import forecast from './forecast';
 import {
   getYearFromTimestamp,
-  getNumberOfMonthsPassedFromTimestamp,
+  getNumberOfMonthsSinceEpoch,
   getTimestampMillisFromYear,
   getMonthlyTimestampFromNumberOfMonths,
 } from '@/utils/date-util';
@@ -20,7 +20,7 @@ const getTimeStampConvertFunctions = (
   const fromTimestamp =
     dataResOption === TemporalResolutionOption.Year
       ? getYearFromTimestamp
-      : getNumberOfMonthsPassedFromTimestamp;
+      : getNumberOfMonthsSinceEpoch;
   const toTimestamp =
     dataResOption === TemporalResolutionOption.Year
       ? getTimestampMillisFromYear

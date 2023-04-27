@@ -49,10 +49,10 @@ export const getTimestampMillisFromYear = (year: number) => {
 };
 
 /**
- * Returns the number of months passed since 00:00:00 UTC on 1 January 1970
+ * For given timestamp, returns the number of months passed since 00:00:00 UTC on 1 January 1970
  * @param timestamp An unix timestamp in milliseconds
  */
-export const getNumberOfMonthsPassedFromTimestamp = (timestamp: number) => {
+export const getNumberOfMonthsSinceEpoch = (timestamp: number) => {
   const year = getYearFromTimestamp(timestamp);
   const month = getMonthFromTimestamp(timestamp);
   return (year - EPOCH_YEAR) * 12 + month;

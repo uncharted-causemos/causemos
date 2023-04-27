@@ -5,7 +5,7 @@ import { expect } from 'chai';
 import {
   getTimestampMillis as getTsM,
   getTimestampMillisFromYear as getTsY,
-  getNumberOfMonthsPassedFromTimestamp,
+  getNumberOfMonthsSinceEpoch,
 } from '@/utils/date-util';
 import { runProjection } from '@/utils/projection-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
@@ -13,7 +13,7 @@ import { TemporalResolutionOption } from '@/types/Enums';
 import { Subset } from '@/types/Common';
 
 const getNumM = (year: number, month: number) => {
-  return getNumberOfMonthsPassedFromTimestamp(getTsM(year, month));
+  return getNumberOfMonthsSinceEpoch(getTsM(year, month));
 };
 
 const montlyTestData: TimeseriesPoint[] = [
