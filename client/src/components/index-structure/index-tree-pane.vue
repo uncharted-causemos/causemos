@@ -98,12 +98,7 @@ import {
   isEdge,
   isConceptNodeWithoutDataset,
 } from '@/utils/index-tree-util';
-import {
-  convertTreeToGridCells,
-  getGridColumnCount,
-  getGridRowCount,
-  offsetGridCells,
-} from '@/utils/grid-cell-util';
+import { getGridCellsFromIndexTreeAndWorkbench } from '@/utils/grid-cell-util';
 
 const EDGE_CLASS = {
   SELECTED: 'selected-edge',
@@ -257,33 +252,11 @@ const isSelected = (id: string) => {
   }
   return false;
 };
+
 // A list of grid cells with enough information to render with CSS-grid.
 //  Represents a combination of all workbench trees and the main index tree.
 const gridCells = computed<GridCell[]>(() => {
-  // Convert each workbench tree to grid cells.
-  const overlappingWorkbenchTreeCellLists = workbench.items.value.map(convertTreeToGridCells);
-  // Move each grid down so that they're not overlapping
-  let currentRow = 0;
-  const workbenchTreeCellLists: GridCell[][] = [];
-  overlappingWorkbenchTreeCellLists.forEach((cellList) => {
-    // Translate down by "currentRow"
-    const translatedList = offsetGridCells(cellList, currentRow, 0);
-    // Append to workbenchTreeCellLists
-    workbenchTreeCellLists.push(translatedList);
-    // Increase currentRow by the current tree's rowCount
-    currentRow += getGridRowCount(translatedList);
-  });
-  // Convert main tree to grid cells.
-  const overlappingMainTreeCellList = convertTreeToGridCells(indexTree.tree.value);
-  // Move main tree grid below the workbench tree grids.
-  const mainTreeCellList = offsetGridCells(overlappingMainTreeCellList, currentRow, 0);
-  // Extra requirement: Shift all workbench trees to the left of the main tree.
-  const mainTreeColumnCount = getGridColumnCount(mainTreeCellList);
-  const shiftedWorkbenchTreeCellLists = workbenchTreeCellLists.map((cellList) =>
-    offsetGridCells(cellList, 0, -mainTreeColumnCount)
-  );
-  // Flatten list of grids into one list of grid cells.
-  return _.flatten([...shiftedWorkbenchTreeCellLists, mainTreeCellList]);
+  return getGridCellsFromIndexTreeAndWorkbench(indexTree.tree.value, workbench.items.value);
 });
 
 const renameNode = (nodeId: string, newName: string) => {

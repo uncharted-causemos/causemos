@@ -95,13 +95,14 @@ const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 @import '@/styles/index-graph';
 @import '@/styles/common';
 
+$expanded-node-width: $index-tree-node-width * 2 + $space-between-columns;
 $horizontal-margin: 20px;
 
 .index-projections-expanded-node-container {
   @include index-tree-node;
   padding: 10px 0;
   gap: 10px;
-  width: 500px;
+  width: $expanded-node-width;
 
   &:hover {
     @include index-tree-node-hover;
@@ -126,8 +127,7 @@ $horizontal-margin: 20px;
 
 .timeseries {
   border: 1px solid $un-color-black-10;
-  height: 60px;
-  $timeseriesWidth: 500px - 2 * $horizontal-margin;
+  $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin;
   width: $timeseriesWidth;
   height: 1 / 4 * $timeseriesWidth;
   margin-top: 5px;

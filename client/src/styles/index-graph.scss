@@ -1,6 +1,7 @@
 @import '@/styles/variables';
 @import '@/styles/uncharted-design-tokens';
 
+$index-tree-node-width: 240px;
 $space-between-columns: 40px;
 $space-between-rows: 10px;
 
@@ -90,8 +91,6 @@ $index-graph-padding-vertical: 40px;
     }
   }
 }
-
-$index-tree-node-width: 240px;
 
 @mixin index-tree-node() {
   display: flex;
