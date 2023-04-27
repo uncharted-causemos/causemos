@@ -103,10 +103,6 @@ $horizontal-margin: 20px;
   padding: 10px 0;
   gap: 10px;
   width: $expanded-node-width;
-
-  &:hover {
-    @include index-tree-node-hover;
-  }
 }
 
 .add-horizontal-margin {
