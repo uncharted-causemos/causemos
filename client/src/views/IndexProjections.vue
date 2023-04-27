@@ -44,8 +44,10 @@
             <p>Time range</p>
             <button class="btn btn-sm disabled" @click="() => {}">Edit</button>
           </header>
-          <!-- TODO: this will be dynamic -->
-          <p class="un-font-small subtitle">January 2011 - January 2025</p>
+          <p class="un-font-small subtitle">
+            {{ timestampFormatter(projectionStartDate, null, null) }} -
+            {{ timestampFormatter(projectionEndDate, null, null) }}
+          </p>
         </section>
         <section>
           <p class="un-font-small subtitle">
@@ -91,6 +93,8 @@ import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
+import { getTimestampMillis } from '@/utils/date-util';
+import timestampFormatter from '@/formatters/timestamp-formatter';
 
 const store = useStore();
 const route = useRoute();
@@ -155,6 +159,9 @@ const COUNTRY_MODES: DropdownItem[] = [
   { displayName: 'Multiple countries', value: false },
 ];
 const isSingleCountryModeActive = ref(true);
+
+const projectionStartDate = ref(getTimestampMillis(2011, 0));
+const projectionEndDate = ref(getTimestampMillis(2025, 0));
 </script>
 
 <style lang="scss" scoped>
