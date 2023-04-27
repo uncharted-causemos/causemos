@@ -1,3 +1,7 @@
+// Copyright 2017 Simon West
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
 // This code is copied from https://github.com/muonsw/ssci/blob/master/src/fore/foreHolt.js
 // with slight modification to meet modern ES standard
 // Doc: http://www.surveyscience.co.uk/html/ssci/ssci_js.html
