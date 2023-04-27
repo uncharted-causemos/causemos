@@ -89,6 +89,7 @@ import {
   isConceptNodeWithDatasetAttached,
   DATASET_ICON,
   isOutputIndexNode,
+  getNodeDataSourceText,
 } from '@/utils/index-tree-util';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
@@ -270,20 +271,7 @@ const attachDataset = (dataset: DatasetSearchResult, nodeNameAfterAttachingDatas
   disableInteraction.value = true;
 };
 
-const dataSourceText = computed(() => {
-  if (!isConceptNodeWithoutDataset(props.nodeData)) {
-    return props.nodeData.dataset.datasetName;
-  }
-  const componentCount = props.nodeData.components.length;
-  switch (componentCount) {
-    case 0:
-      return props.nodeData.name ? 'No dataset or inputs.' : '';
-    case 1:
-      return '1 input.';
-    default:
-      return `Combination of ${componentCount} inputs.`;
-  }
-});
+const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 </script>
 
 <style scoped lang="scss">
@@ -419,5 +407,9 @@ $option-button-width: 16px;
   .advanced-search-button {
     margin: 5px 0 10px 10px;
   }
+}
+
+.warning {
+  color: $un-color-feedback-warning;
 }
 </style>

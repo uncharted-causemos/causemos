@@ -11,11 +11,7 @@
     </div>
     <div class="node-and-edge-container">
       <div class="edge incoming" :class="{ visible: childNodes.length > 0 }" />
-      <div class="selected-node">
-        <p>{{ selectedNode?.found.name ?? 'none' }}</p>
-        <span v-if="selectedNode?.found.name.length === 0" class="subdued">(Missing name)</span>
-        <p class="subdued un-font-small">{{ 'Weighted sum of 2 components.' }}</p>
-      </div>
+      <IndexProjectionsExpandedNode v-if="selectedNode !== null" :node-data="selectedNode.found" />
       <div class="edge outgoing last-child" :class="{ visible: parentNode !== null }" />
     </div>
     <div class="node-column">
@@ -37,6 +33,7 @@ import { computed } from 'vue';
 import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import { SelectableIndexElementId } from '@/types/Index';
 import IndexProjectionsNode from './index-projections-node.vue';
+import IndexProjectionsExpandedNode from './index-projections-expanded-node.vue';
 
 const props = defineProps<{
   selectedNodeId: string | null;
@@ -82,13 +79,6 @@ const parentNode = computed(() => {
   // When the graph is too small to take up the full available screen width, don't expand columns
   //  to fill the empty space.
   justify-content: flex-start;
-}
-
-.selected-node {
-  @include index-tree-node;
-  padding: 10px 20px;
-  gap: 10px;
-  width: 500px;
 }
 
 .node-column {
