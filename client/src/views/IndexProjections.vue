@@ -58,8 +58,9 @@
     </div>
     <main class="flex-col">
       <div class="editing-state-indicator">
-        Editing <strong>{{ 'Untitled Scenario' }}</strong
-        >'s constraints
+        <p class="subdued un-font-small">Click a concept to enlarge it.</p>
+        <!-- TODO: Editing <strong>{{ 'Untitled Scenario' }}</strong>'s constraints -->
+        <!-- <p class="subdued un-font-small">Click a concept to add or edit constraints.</p> -->
       </div>
       <IndexProjectionsGraphView
         v-if="selectedNodeId === null"
@@ -167,6 +168,7 @@ const projectionEndDate = ref(getTimestampMillis(2025, 0));
 <style lang="scss" scoped>
 @import '@/styles/variables';
 @import '@/styles/uncharted-design-tokens';
+@import '@/styles/index-graph';
 
 .index-projections-container {
   display: flex;
@@ -230,5 +232,10 @@ main {
     flex: 1;
     min-height: 0;
   }
+}
+
+.editing-state-indicator {
+  padding: 10px $index-graph-padding-horizontal;
+  height: $navbar-outer-height;
 }
 </style>
