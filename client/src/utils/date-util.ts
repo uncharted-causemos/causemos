@@ -62,7 +62,7 @@ export const getNumberOfMonthsSinceEpoch = (timestamp: number) => {
  * Returns the unix timestamp in milliseconds
  * @param nMonths Number of months since unix epoch time
  */
-export const getMonthlyTimestampFromNumberOfMonths = (nMonths: number) => {
+export const getTimestampFromNumberOfMonths = (nMonths: number) => {
   const year = Math.floor(nMonths / 12) + EPOCH_YEAR;
   const month = (12 + (nMonths % 12)) % 12;
   return getTimestampMillis(year, month);

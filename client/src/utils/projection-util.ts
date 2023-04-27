@@ -3,7 +3,7 @@ import {
   getYearFromTimestamp,
   getNumberOfMonthsSinceEpoch,
   getTimestampMillisFromYear,
-  getMonthlyTimestampFromNumberOfMonths,
+  getTimestampFromNumberOfMonths,
 } from '@/utils/date-util';
 
 import { TemporalResolutionOption } from '@/types/Enums';
@@ -24,7 +24,7 @@ const getTimeStampConvertFunctions = (
   const toTimestamp =
     dataResOption === TemporalResolutionOption.Year
       ? getTimestampMillisFromYear
-      : getMonthlyTimestampFromNumberOfMonths;
+      : getTimestampFromNumberOfMonths;
   return {
     fromTimestamp,
     toTimestamp,
