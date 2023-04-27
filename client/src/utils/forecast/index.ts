@@ -14,6 +14,11 @@ export interface ForecastOptions {
   backcastSteps: number;
   holt: {
     iterations: number;
+    /**
+     * 1: Initial average difference between first three pairs of points.
+     * 2: Trend for first to second point.
+     * 3: Trend between first and last point.
+     */
     initialTrendCalculationMethod: 1 | 2 | 3;
   };
   holtWinters: {
@@ -45,6 +50,12 @@ export interface ForecastResult<Method> {
   backcast: ForecastOutput<Method>;
 }
 
+/**
+ * This is the start value of the period parameter used in parameter optimization
+ * Since it's not likely for a data to have a repeating seasonal pattern for every 2 or less data points, set it to 3 as minimum period.
+ * Also note that Holt winter's algorithm expect > period*2 number of data points so that it can use first period # of data points as a
+ * sampling points to come up with the seasonal component of the equation.
+ */
 const MIN_PERIOD = 3;
 
 const runHoltWithOptimizedParams = (holt: HoltFunctionObject, iterations: number) => {
@@ -141,6 +152,11 @@ const runHWWithOptimizedParams = (
   return { alpha: curAlpha, beta: curBeta, gamma: curGamma, period: curPeriod };
 };
 
+/**
+ * Initialize the forecast runner
+ * @param data Data points in a format of [x, y][] or [times step, value][]
+ * @param options Forecast options object
+ */
 export const initialize = (data: [number, number][], options: Subset<ForecastOptions> = {}) => {
   const observedData = [...data];
   const dataReversed = [...data].reverse();

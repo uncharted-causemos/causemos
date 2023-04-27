@@ -1,4 +1,4 @@
-import { IncompleteDataCorrectiveAction } from '@/types/Enums';
+import { IncompleteDataCorrectiveAction, ProjectionPointType } from '@/types/Enums';
 
 export interface TimeseriesPoint {
   value: number;
@@ -7,8 +7,7 @@ export interface TimeseriesPoint {
 }
 
 export interface TimeseriesPointProjected extends TimeseriesPoint {
-  isInterpolated: boolean;
-  extrapolation?: 'backcast' | 'forecast';
+  projectionType: ProjectionPointType;
 }
 
 export interface TimeseriesDistributionPoint {

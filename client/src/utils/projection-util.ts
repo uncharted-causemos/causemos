@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import forecast from './forecast';
 import {
   getYearFromTimestamp,
@@ -6,15 +7,21 @@ import {
   getTimestampFromNumberOfMonths,
 } from '@/utils/date-util';
 
-import { TemporalResolutionOption } from '@/types/Enums';
+import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
+
+type ProjectionPoint = {
+  x: number;
+  y: number;
+  projectionType: ProjectionPointType;
+};
 
 /**
  * Return function that convert timestamp value to yearly or monthly step
  * based on the provided data resolution option
  * @param dataResOption Data temporal resolution option
  */
-const getTimeStampConvertFunctions = (
+const getTimestampCovertFunctions = (
   dataResOption: TemporalResolutionOption.Year | TemporalResolutionOption.Month
 ) => {
   const fromTimestamp =
@@ -47,13 +54,42 @@ const calculateNumberOfForecastStepsNeeded = (
   };
 };
 
+const concatAndInterpolate = (
+  backcast: ProjectionPoint[],
+  historical: ProjectionPoint[],
+  forecast: ProjectionPoint[]
+) => {
+  const interpolationResult = interpolateLinear([...backcast, ...historical, ...forecast]);
+  const isDataPointHistorical = (d: any) =>
+    d.dataPoint.projectionType === ProjectionPointType.Historical;
+  const firstHistoricalDataPointIndex = _.findIndex(interpolationResult, isDataPointHistorical);
+  const lastHistoricalDataPointIndex = _.findLastIndex(interpolationResult, isDataPointHistorical);
+
+  // Assign correct projectionType to each data point
+  return interpolationResult.map((v, index) => {
+    let projectionType = ProjectionPointType.Historical;
+    if (index < firstHistoricalDataPointIndex) {
+      projectionType = ProjectionPointType.Backcasted;
+    } else if (index > lastHistoricalDataPointIndex) {
+      projectionType = ProjectionPointType.Forecasted;
+    } else if (v.isInterpolated) {
+      projectionType = ProjectionPointType.Interpolated;
+    }
+    return {
+      x: v.dataPoint.x,
+      y: v.dataPoint.y,
+      projectionType,
+    };
+  });
+};
+
 /**
  * Run linear interpolation on the data so that missing data between two adjacent data points are filled
  * by making sure that the distance between each two points are consistently 1.
  * @param data Data with {x, y} coordinates
  */
 export const interpolateLinear = <T extends { x: number; y: number }>(data: T[]) => {
-  const result: (T & { isInterpolated: boolean })[] = [];
+  const result: { dataPoint: T | { x: number; y: number }; isInterpolated: boolean }[] = [];
   const lastPoint = data[data.length - 1];
   for (let index = 0; index < data.length - 1; index++) {
     const curPoint = data[index];
@@ -61,14 +97,14 @@ export const interpolateLinear = <T extends { x: number; y: number }>(data: T[])
     const { x: x2, y: y2 } = data[index + 1];
     const slope = (y2 - y1) / (x2 - x1);
     const xDistance = x2 - x1;
-    result.push({ ...curPoint, x: x1, y: y1, isInterpolated: false });
+    result.push({ dataPoint: { ...curPoint, x: x1, y: y1 }, isInterpolated: false });
     // push interpolated points
     for (let j = 1; j < xDistance; j++) {
       const x = x1 + j;
-      result.push({ ...curPoint, x: x, y: slope * j + y1, isInterpolated: true });
+      result.push({ dataPoint: { x: x, y: slope * j + y1 }, isInterpolated: true });
     }
   }
-  result.push({ ...lastPoint, x: lastPoint.x, y: lastPoint.y, isInterpolated: false });
+  result.push({ dataPoint: { ...lastPoint }, isInterpolated: false });
   return result;
 };
 
@@ -84,7 +120,7 @@ export const runProjection = (
   targetPeriod: { start: number; end: number },
   dataResOption: TemporalResolutionOption.Year | TemporalResolutionOption.Month
 ) => {
-  const { fromTimestamp, toTimestamp } = getTimeStampConvertFunctions(dataResOption);
+  const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(dataResOption);
 
   // convert timeseries data to [x, y][] format
   const inputData = timeseries.map(
@@ -107,52 +143,37 @@ export const runProjection = (
   const runner = forecast.initialize(inputData, { forecastSteps, backcastSteps });
   const fResult = runner.runAuto();
 
-  const dataPoints = [
-    ...fResult.backcast.data.map(([x, y]) => ({
-      x,
-      y,
-      extrapolation: 'backcast',
-      isInterpolated: false,
-    })),
-
-    ...inputData.map(([x, y]) => ({ x, y, isInterpolated: false })),
-
-    ...fResult.forecast.data.map(([x, y]) => ({
-      x,
-      y,
-      extrapolation: 'forecast',
-      isInterpolated: false,
-    })),
-  ] as { x: number; y: number; extrapolation?: 'backcast' | 'forecast'; isInterpolated: boolean }[];
-
-  // Temporally treat the last point of input data as first data point of forecasted data so that interpolated data points between
-  // the last data point of the observed data and the first data point of the forecast data are labeled as forecasted data points.
-  const lastObservedPoint = dataPoints[fResult.backcast.data.length + inputData.length - 1];
-  lastObservedPoint.extrapolation = 'forecast';
+  const backcastPoints = fResult.backcast.data.map(([x, y]) => ({
+    x,
+    y,
+    projectionType: ProjectionPointType.Backcasted,
+  }));
+  const historicalPoints = inputData.map(([x, y]) => ({
+    x,
+    y,
+    projectionType: ProjectionPointType.Historical,
+  }));
+  const forecastPoints = fResult.forecast.data.map(([x, y]) => ({
+    x,
+    y,
+    projectionType: ProjectionPointType.Forecasted,
+  }));
 
   // Fill missing data between each adjcent data points using linear interpolation and cut data to fit within the given period.
-  const timesriesProjectd = interpolateLinear(dataPoints)
+  const timeseriesProjected = concatAndInterpolate(backcastPoints, historicalPoints, forecastPoints)
     // Only consider points within the range provided by the period
     .filter((dp) => dp.x >= startX && dp.x <= endX)
-    .map(({ x, y, isInterpolated, extrapolation }) => {
+    .map(({ x, y, projectionType }) => {
       const item: TimeseriesPointProjected = {
         timestamp: toTimestamp(x),
         value: y,
-        isInterpolated,
+        projectionType,
       };
-      if (extrapolation) item.extrapolation = extrapolation;
       return item;
     });
 
-  const lastObservedDp = timesriesProjectd.find(
-    (item) => item.timestamp === toTimestamp(lastObservedPoint.x)
-  );
-  if (lastObservedDp) {
-    delete lastObservedDp.extrapolation;
-  }
-
   return {
-    projectionData: timesriesProjectd,
+    projectionData: timeseriesProjected,
     ...fResult,
   };
 };

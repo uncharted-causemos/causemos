@@ -208,21 +208,21 @@ describe('projection-util', () => {
 
       expect(initialize.args[0][1]).to.deep.equal({ backcastSteps: 1, forecastSteps: 2 });
       expect(result.projectionData).to.deep.equal([
-        { timestamp: getTsM(2021, 11), value: 2, extrapolation: 'backcast', isInterpolated: true },
-        { timestamp: getTsM(2022, 0), value: 3, isInterpolated: false }, // input dp
-        { timestamp: getTsM(2022, 1), value: 4, isInterpolated: true },
-        { timestamp: getTsM(2022, 2), value: 5, isInterpolated: true },
-        { timestamp: getTsM(2022, 3), value: 6, isInterpolated: false }, // input dp
-        { timestamp: getTsM(2022, 4), value: 8, isInterpolated: true },
-        { timestamp: getTsM(2022, 5), value: 10, isInterpolated: true },
-        { timestamp: getTsM(2022, 6), value: 12, isInterpolated: false }, // input dp
-        { timestamp: getTsM(2022, 7), value: 10, isInterpolated: true },
-        { timestamp: getTsM(2022, 8), value: 8, isInterpolated: true },
-        { timestamp: getTsM(2022, 9), value: 6, isInterpolated: false }, // input dp
-        { timestamp: getTsM(2022, 10), value: 8, extrapolation: 'forecast', isInterpolated: true },
-        { timestamp: getTsM(2022, 11), value: 10, extrapolation: 'forecast', isInterpolated: true },
-        { timestamp: getTsM(2023, 0), value: 12, extrapolation: 'forecast', isInterpolated: false },
-        { timestamp: getTsM(2023, 1), value: 13, extrapolation: 'forecast', isInterpolated: true },
+        { timestamp: getTsM(2021, 11), value: 2, projectionType: 'backcasted' },
+        { timestamp: getTsM(2022, 0), value: 3, projectionType: 'historical' }, // input dp
+        { timestamp: getTsM(2022, 1), value: 4, projectionType: 'interpolated' },
+        { timestamp: getTsM(2022, 2), value: 5, projectionType: 'interpolated' },
+        { timestamp: getTsM(2022, 3), value: 6, projectionType: 'historical' }, // input dp
+        { timestamp: getTsM(2022, 4), value: 8, projectionType: 'interpolated' },
+        { timestamp: getTsM(2022, 5), value: 10, projectionType: 'interpolated' },
+        { timestamp: getTsM(2022, 6), value: 12, projectionType: 'historical' }, // input dp
+        { timestamp: getTsM(2022, 7), value: 10, projectionType: 'interpolated' },
+        { timestamp: getTsM(2022, 8), value: 8, projectionType: 'interpolated' },
+        { timestamp: getTsM(2022, 9), value: 6, projectionType: 'historical' }, // input dp
+        { timestamp: getTsM(2022, 10), value: 8, projectionType: 'forecasted' },
+        { timestamp: getTsM(2022, 11), value: 10, projectionType: 'forecasted' },
+        { timestamp: getTsM(2023, 0), value: 12, projectionType: 'forecasted' },
+        { timestamp: getTsM(2023, 1), value: 13, projectionType: 'forecasted' },
       ]);
     });
 
@@ -249,11 +249,11 @@ describe('projection-util', () => {
 
       expect(initialize.args[0][1]).to.deep.equal({ backcastSteps: 1, forecastSteps: 0 });
       expect(result.projectionData).to.deep.equal([
-        { timestamp: getTsY(1977), value: 1, extrapolation: 'backcast', isInterpolated: false },
-        { timestamp: getTsY(1978), value: 3, isInterpolated: false },
-        { timestamp: getTsY(1979), value: 6, isInterpolated: false },
-        { timestamp: getTsY(1980), value: 12, isInterpolated: false },
-        { timestamp: getTsY(1981), value: 6, isInterpolated: false },
+        { timestamp: getTsY(1977), value: 1, projectionType: 'backcasted' },
+        { timestamp: getTsY(1978), value: 3, projectionType: 'historical' },
+        { timestamp: getTsY(1979), value: 6, projectionType: 'historical' },
+        { timestamp: getTsY(1980), value: 12, projectionType: 'historical' },
+        { timestamp: getTsY(1981), value: 6, projectionType: 'historical' },
       ]);
     });
 
@@ -274,10 +274,10 @@ describe('projection-util', () => {
       );
 
       expect(result.projectionData).to.deep.equal([
-        { timestamp: getTsY(1972), value: 5, isInterpolated: true },
-        { timestamp: getTsY(1973), value: 6, isInterpolated: false },
-        { timestamp: getTsY(1974), value: 8, isInterpolated: true },
-        { timestamp: getTsY(1975), value: 10, isInterpolated: true },
+        { timestamp: getTsY(1972), value: 5, projectionType: 'interpolated' },
+        { timestamp: getTsY(1973), value: 6, projectionType: 'historical' },
+        { timestamp: getTsY(1974), value: 8, projectionType: 'interpolated' },
+        { timestamp: getTsY(1975), value: 10, projectionType: 'interpolated' },
       ]);
     });
 
