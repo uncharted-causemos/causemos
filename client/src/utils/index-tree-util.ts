@@ -406,3 +406,18 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     toggleDatasetIsInverted,
   };
 }
+
+export const getNodeDataSourceText = (node: ConceptNode) => {
+  if (!isConceptNodeWithoutDataset(node)) {
+    return node.dataset.datasetName;
+  }
+  const componentCount = node.components.length;
+  switch (componentCount) {
+    case 0:
+      return node.name ? 'No dataset or inputs.' : '';
+    case 1:
+      return '1 input.';
+    default:
+      return `Weighted sum of ${componentCount} inputs.`;
+  }
+};
