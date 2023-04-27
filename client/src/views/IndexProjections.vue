@@ -9,7 +9,6 @@
           <i class="fa fa-fw fa-caret-left" />Edit structure
         </button>
         <h3>Projections</h3>
-        <p class="subtitle">{{ paneSubtitle }}</p>
       </header>
       <section v-if="selectedNodeId !== null">
         <header class="flex index-structure-header">
@@ -88,9 +87,7 @@ import { ProjectType } from '@/types/Enums';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
-import useIndexTree from '@/services/composables/useIndexTree';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
-import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
@@ -103,8 +100,6 @@ const router = useRouter();
 
 const analysisId = computed(() => route.params.analysisId as string);
 const { analysisName, refresh } = useIndexAnalysis(analysisId);
-const { findNode } = useIndexTree();
-const workbench = useIndexWorkBench();
 // If selectedNodeId === null, no node is selected and we're looking at the graph view
 const selectedNodeId = ref<string | null>(null);
 const selectElement = (id: SelectableIndexElementId) => {
@@ -118,18 +113,6 @@ const selectElement = (id: SelectableIndexElementId) => {
 const deselectNode = () => {
   selectedNodeId.value = null;
 };
-
-const searchForNode = (id: string) => {
-  const foundInTree = findNode(id);
-  return foundInTree ?? workbench.findNode(id);
-};
-
-const paneSubtitle = computed(() => {
-  if (selectedNodeId.value === null) {
-    return 'Click a concept to enlarge it';
-  }
-  return searchForNode(selectedNodeId.value)?.found.name ?? '';
-});
 
 const deselectEdge = () => {
   // TODO
