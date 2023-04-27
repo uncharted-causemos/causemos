@@ -87,6 +87,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { getDocument, updateDocument } from '@/services/document-service';
 import { createTextViewer } from '@/utils/text-viewer-util';
 
+const PARAGRAPH_FETCH_LIMIT = 50;
 const isPdf = (data) => {
   const fileType = data && data.file_type;
   return fileType === 'pdf' || fileType === 'application/pdf';
@@ -155,6 +156,7 @@ export default {
     scrollPlaceholder: null,
     scrollObserver: null,
     formattedText: null,
+    paragraphCounter: 0,
   }),
   mounted() {
     this.refresh();
@@ -177,43 +179,58 @@ export default {
     ...mapActions({
       addSearchTerm: 'query/addSearchTerm',
     }),
-    applyHighlights(content) {
+    applyHighlights(text) {
+      let highlightContent = text;
+
       if (this.highlightsForSelected !== null) {
-        let highlightContent = content;
         this.highlightsForSelected.forEach((highlight) => {
-          highlightContent = highlightContent.replaceAll(
-            highlight.text,
-            `<span class="dojo-mark">${highlight.text}</span>`
-          );
+          const regex = new RegExp(highlight.text, 'ig');
+          const matches = highlightContent.matchAll(regex);
+
+          let accumulatedOffset = 0;
+          for (const match of matches) {
+            const offsetIndex = match.index + accumulatedOffset; // track change in offset due to previous sub
+            const beginning = highlightContent.slice(0, offsetIndex);
+            const end = highlightContent.slice(offsetIndex + match[0].length);
+            const substitutionText = `<span class="dojo-mark">${match[0]}</span>`;
+            highlightContent = beginning.concat(`<span class="dojo-mark">${match[0]}</span>`, end);
+            accumulatedOffset += substitutionText.length - match[0].length;
+          }
         });
-        return highlightContent;
       }
-      return content;
+      return highlightContent;
     },
     dateFormatter,
     async getScrollData() {
+      if ((this.scroll_id ?? null) === null) {
+        this.scrollId = null;
+        this.scrollObserver = null; // end of scroll loading.
+      }
+
       if (this.scrollId !== null && this.contentHandler !== null) {
+        this.paragraphCounter += 50;
         const content = await this.retrieveDocument(this.documentId, this.scrollId);
-        this.documentData = this.contentHandler(content, this.documentData);
-        this.textViewer = createTextViewer(this.applyHighlights(this.documentData), true);
+        if ((content ?? null) !== null) {
+          this.scrollId = content.scrollId;
+          const contentEl = new DOMParser().parseFromString(
+            this.applyHighlights(content.data),
+            'text/html'
+          );
+          if (contentEl !== null) {
+            if (this.textOnly === true) {
+              this.$refs.content.appendChild(contentEl);
+            }
 
-        // brute force the entire view
-        if (this.$refs.content.hasChildNodes()) {
-          removeChildren(this.$refs.content);
-        }
-
-        if (this.textOnly === true) {
-          this.$refs.content.appendChild(this.textViewer.element);
-          if (this.textFragment) {
-            this.textViewer.search(this.textFragment);
+            if ((content.scroll_id ?? null) === null) {
+              this.scrollId = null;
+              this.scrollObserver = null; // end of scroll loading.
+            }
           }
         }
-
-        if (content.scroll_id === null) {
-          this.scrollId = null;
-          this.scrollObserver = null; // end of scroll loading.
-        }
       }
+      console.log(
+        `PARAGRAPH COUNT: ${this.paragraphCounter} (location: ${this.fragmentParagraphLocation})`
+      );
     },
     refresh() {
       this.fetchReaderContent();
@@ -225,19 +242,41 @@ export default {
         this.documentMeta = await this.retrieveDocumentMeta(this.documentId);
       }
 
-      const content = this.useScrolling
-        ? await this.retrieveDocument(
+      let content = null;
+      let partialContent = null;
+      let partialContentExtracted = null;
+      if (this.useScrolling && this.paragraphCounter < this.fragmentParagraphLocation) {
+        while (this.paragraphCounter < this.fragmentParagraphLocation) {
+          partialContent = await this.retrieveDocument(
             this.documentId,
             this.scrollId,
-            this.fragmentParagraphLocation
-          )
-        : await this.retrieveDocument(this.documentId);
+            PARAGRAPH_FETCH_LIMIT
+          );
+
+          this.paragraphCounter += PARAGRAPH_FETCH_LIMIT;
+          // if the next fetch exceeds the location, then our snippet should be in this partial text
+          // partial content will be appended separately below (partialContent)
+          if (content === null) {
+            content = partialContent; // first set
+          } else if (
+            this.fragmentParagraphLocation >
+            this.paragraphCounter + PARAGRAPH_FETCH_LIMIT
+          ) {
+            content.paragraphs = [...content.paragraphs, ...partialContent.paragraphs];
+          }
+        }
+      } else {
+        content = await this.retrieveDocument(this.documentId);
+      }
+
       if (this.contentHandler) {
         this.scrollId = content.scroll_id ?? null;
-        this.documentData = this.contentHandler(content, this.documentData, this.useScrolling);
+        this.documentData = this.contentHandler(content, null, this.useScrolling);
+        partialContentExtracted = this.contentHandler(partialContent, null, this.useScrolling);
       } else {
         this.documentData = content.data;
       }
+
       this.isLoading = false;
       if (this.documentData) {
         if (this.documentMeta) {
@@ -247,7 +286,8 @@ export default {
         }
 
         if (this.contentHandler) {
-          this.textViewer = createTextViewer(this.applyHighlights(this.documentData), true); // provided contentHandler has generated a simple HTML string.
+          const documentWithHighlights = this.applyHighlights(this.documentData);
+          this.textViewer = createTextViewer(documentWithHighlights, this.textFragment, true); // provided contentHandler has generated a simple HTML string.
         } else {
           this.textViewer = createTextViewer(this.documentData.extracted_text);
         }
@@ -269,8 +309,12 @@ export default {
 
         if (this.textOnly === true) {
           this.$refs.content.appendChild(this.textViewer.element);
-          if (this.textFragment) {
+          // if there is no scrollId (scrolling not expected) search entire text, otherwise only append/search partial content
+          if (this.textFragment && this.scrollId === null) {
             this.textViewer.search(this.textFragment, this.contentHandler !== null);
+          } else if ((partialContentExtracted ?? null) !== null) {
+            const highlightedText = this.applyHighlights(partialContentExtracted);
+            this.textViewer.appendText(highlightedText);
           }
         } else {
           this.$refs.content.appendChild(this.pdfViewer.element);

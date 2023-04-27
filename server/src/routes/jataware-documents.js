@@ -23,6 +23,7 @@ router.get(
     const docId = req.params.docId;
     const scrollId = req.query.scroll_id;
     const minParagraphs = req.query.min_paragraphs;
+
     if (docId) {
       const result = await paragraphSearchService.getDocumentParagraphs(
         docId,

@@ -84,7 +84,7 @@ const props = defineProps<{
 }>();
 const { selectedNodeName, selectedUpstreamNodeName } = toRefs(props);
 const expandedDocumentId = ref<string | null>(null);
-const fragmentParagraphLocation = ref<number>(-1);
+const fragmentParagraphLocation = ref<number>(1);
 const textFragment = ref<string | null>(null);
 const SNIPPETS_LOADING = 'Loading snippets...';
 const NO_TITLE = 'Title not available';
@@ -97,7 +97,7 @@ const snippetsForSelectedNode = ref<Snippet[] | null>(null);
 const highlightsForSelected = ref<DojoParagraphHighlight[]>([]);
 const allHighlights = ref<DojoParagraphHighlights | null>(null);
 const handleReturnedData = (data: ScrollData, previousContent: string | null) => {
-  const content = previousContent || '';
+  const content: string = previousContent || '';
   return content.concat(
     data?.paragraphs?.reduce((bodyText: string, p: any) => `${bodyText}<p>${p.text}</p>`, '')
   );

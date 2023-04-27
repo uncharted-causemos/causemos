@@ -34,7 +34,7 @@ export const getHighlights = async (details: DojoParagraphDetails) => {
 export const getDocumentParagraphs = async (
   docId: string,
   scrollId: string | null,
-  minParagraphs = -1
+  minParagraphs = 1
 ) => {
   if (docId) {
     const result = await API.get(

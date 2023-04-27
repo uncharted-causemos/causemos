@@ -65,48 +65,101 @@ const reformat = (v: string) => {
   return `<span class='extract-text-anchor' style='border-bottom: 2px solid${SELECTED_COLOR}'>${v}</span>`;
 };
 
-const createTextViewer = (text: string, isHTML = false) => {
-  const el = document.createElement('div');
-  const originalText = text;
+const combinedSearch = (text: string, phrase: string, useWhitespace = false): string => {
+  let t = text;
+  if (text.indexOf(phrase) >= 0) {
+    t = t.replace(phrase, reformat(phrase));
+  } else {
+    t = lossySearch(t, phrase);
+  }
+  // if all else fails, do this expensive regex search
+  if (t === text) {
+    t = iterativeRegexSearch(t, phrase, useWhitespace);
+  }
+  return t;
+};
 
-  function search(textFragment: string, useWhitespace = false) {
-    let t = originalText;
+const updateElement = (element: HTMLElement, updatedText: string) => {
+  element.innerHTML = updatedText;
+  const anchor: HTMLElement = document.getElementsByClassName(
+    'extract-text-anchor'
+  )[0] as HTMLElement;
 
-    if (textFragment) {
-      if (text.indexOf(textFragment) >= 0) {
-        t = t.replace(textFragment, reformat(textFragment));
-      } else {
-        t = lossySearch(t, textFragment);
-      }
-      // if all else fails, do this expensive regex search
-      if (t === text) {
-        t = iterativeRegexSearch(t, textFragment, useWhitespace);
-      }
+  if (anchor) {
+    const scroller = document.getElementsByClassName('modal-body')[0];
+    scroller.scrollTop = anchor.offsetTop - 100;
+  }
+};
+export const textSearch = (
+  element: HTMLElement,
+  bodyText: string,
+  textFragment: string,
+  useWhitespace = false
+): boolean => {
+  let t = bodyText;
 
-      el.innerHTML = t;
-      const anchor: HTMLElement = document.getElementsByClassName(
-        'extract-text-anchor'
-      )[0] as HTMLElement;
-
-      if (anchor) {
-        const scroller = document.getElementsByClassName('modal-body')[0];
-        scroller.scrollTop = anchor.offsetTop - 100;
-      }
+  if ((bodyText ?? null) !== null && (textFragment ?? null) === null) {
+    element.innerHTML = bodyText;
+  } else {
+    if ((textFragment ?? null) !== null) {
+      t = combinedSearch(bodyText, textFragment, useWhitespace);
+      updateElement(element, t);
     }
   }
+  return t === bodyText;
+};
 
-  if (isHTML) {
-    const parsedText = new DOMParser().parseFromString(originalText, 'text/html');
-    el.appendChild(parsedText.body);
-  } else {
-    el.innerHTML = originalText;
-  }
+export const parseHtmlString = (textToParse: string): HTMLElement => {
+  const parsedText = new DOMParser().parseFromString(textToParse, 'text/html').body;
+  return parsedText;
+};
+
+const createTextViewer = (text = '', snippet: string | null = null, isHTML = false) => {
+  let phraseFound = false;
+  const phrase = snippet;
+  let originalText = text;
+  const el = document.createElement('div');
   el.style.paddingTop = '30px';
   el.style.paddingLeft = '15px';
   el.style.paddingRight = '15px';
   el.style.paddingBottom = '15px';
 
+  const search = (textFragment: string, useWhitespace = false) => {
+    phraseFound = textSearch(el, text, textFragment, useWhitespace);
+  };
+
+  const partialSearch = (partialText: string, useWhitespace = false) => {
+    if (phrase !== null) {
+      const t = combinedSearch(partialText, phrase, useWhitespace);
+      phraseFound = t !== partialText;
+      if (phraseFound) {
+        updateElement(el, t);
+      }
+      el.innerHTML = el.innerHTML.concat(partialText);
+    }
+  };
+
+  const phraseWasFound = () => {
+    return phraseFound;
+  };
+
+  const appendText = (additionalBodyText: string, useWhitespace = true) => {
+    originalText = originalText.concat(additionalBodyText);
+    partialSearch(additionalBodyText, useWhitespace);
+  };
+
+  if (isHTML) {
+    const parsed = parseHtmlString(originalText);
+    for (let i = 0; i < parsed.children.length; i++) {
+      el.append(parsed.children[i]);
+    }
+  } else {
+    el.innerHTML = originalText;
+  }
+
   return {
+    phraseWasFound,
+    appendText,
     search,
     element: el,
   };
