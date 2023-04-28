@@ -79,17 +79,27 @@ const combinedSearch = (text: string, phrase: string, useWhitespace = false): st
   return t;
 };
 
-const updateElement = (element: HTMLElement, updatedText: string) => {
-  element.innerHTML = updatedText;
-  const anchor: HTMLElement = document.getElementsByClassName(
-    'extract-text-anchor'
-  )[0] as HTMLElement;
+const updateElement = (element: HTMLElement, updatedText: string, needsScrollTo = false) => {
+  element.innerHTML = element.innerHTML.concat(updatedText);
+  if (needsScrollTo) {
+    const anchor: HTMLElement = document.getElementsByClassName(
+      'extract-text-anchor'
+    )[0] as HTMLElement;
 
-  if (anchor) {
-    const scroller = document.getElementsByClassName('modal-body')[0];
-    scroller.scrollTop = anchor.offsetTop - 100;
+    if (anchor) {
+      const scroller = document.getElementsByClassName('modal-body')[0];
+      scroller.scrollTop = anchor.offsetTop - 100;
+    }
   }
 };
+
+/**
+ *
+ * @param element
+ * @param bodyText
+ * @param textFragment
+ * @param useWhitespace
+ */
 export const textSearch = (
   element: HTMLElement,
   bodyText: string,
@@ -98,23 +108,16 @@ export const textSearch = (
 ): boolean => {
   let t = bodyText;
 
-  if ((bodyText ?? null) !== null && (textFragment ?? null) === null) {
-    element.innerHTML = bodyText;
-  } else {
-    if ((textFragment ?? null) !== null) {
-      t = combinedSearch(bodyText, textFragment, useWhitespace);
-      updateElement(element, t);
-    }
+  if ((bodyText ?? null) !== null && (textFragment ?? null) !== null) {
+    t = combinedSearch(bodyText, textFragment, useWhitespace);
   }
-  return t === bodyText;
+  const textFound = !(t === bodyText);
+  updateElement(element, t, textFound);
+
+  return textFound;
 };
 
-export const parseHtmlString = (textToParse: string): HTMLElement => {
-  const parsedText = new DOMParser().parseFromString(textToParse, 'text/html').body;
-  return parsedText;
-};
-
-const createTextViewer = (text = '', snippet: string | null = null, isHTML = false) => {
+const createTextViewer = (text = '', snippet: string | null = null) => {
   let phraseFound = false;
   const phrase = snippet;
   let originalText = text;
@@ -124,38 +127,57 @@ const createTextViewer = (text = '', snippet: string | null = null, isHTML = fal
   el.style.paddingRight = '15px';
   el.style.paddingBottom = '15px';
 
+  /**
+   * Original search of entire document body text (non scroll loading).
+   *
+   * @param textFragment
+   * @param useWhitespace
+   */
   const search = (textFragment: string, useWhitespace = false) => {
     phraseFound = textSearch(el, text, textFragment, useWhitespace);
   };
 
+  /**
+   * Used when data scrolling is enabled
+   *
+   * @param partialText
+   * @param useWhitespace
+   */
   const partialSearch = (partialText: string, useWhitespace = false) => {
     if (phrase !== null) {
       const t = combinedSearch(partialText, phrase, useWhitespace);
       phraseFound = t !== partialText;
-      if (phraseFound) {
-        updateElement(el, t);
-      }
-      el.innerHTML = el.innerHTML.concat(partialText);
+      return t;
+    } else {
+      return partialText;
     }
   };
 
   const phraseWasFound = () => {
     return phraseFound;
   };
-
-  const appendText = (additionalBodyText: string, useWhitespace = true) => {
-    originalText = originalText.concat(additionalBodyText);
-    partialSearch(additionalBodyText, useWhitespace);
+  /**
+   * Interface may be in a scrolling data mode (partial loads in response to the user interaction)
+   * subsequent data is added to the view here.
+   *
+   * Search required parameter may only be required for a single addition (phrase anchor).  Disable searching
+   * as a default for all other appends.
+   *
+   * @param additionalBodyText - text to be added.
+   * @param useWhitespace - regex search to use simple whitespace
+   * @param searchRequired - is search required
+   */
+  const appendText = (additionalBodyText: string, useWhitespace = true, searchRequired = true) => {
+    if (searchRequired) {
+      originalText = originalText.concat(partialSearch(additionalBodyText, useWhitespace));
+    } else {
+      originalText = originalText.concat(additionalBodyText);
+    }
+    updateElement(el, originalText);
+    // partialSearch(additionalBodyText, useWhitespace);
   };
 
-  if (isHTML) {
-    const parsed = parseHtmlString(originalText);
-    for (let i = 0; i < parsed.children.length; i++) {
-      el.append(parsed.children[i]);
-    }
-  } else {
-    el.innerHTML = originalText;
-  }
+  el.innerHTML = originalText;
 
   return {
     phraseWasFound,

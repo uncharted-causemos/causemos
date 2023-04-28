@@ -201,40 +201,42 @@ export default {
       return highlightContent;
     },
     dateFormatter,
+    /**
+     * When in scroll mode, this function will be triggered by the scrollObserver to fetch as required.
+     * @returns {Promise<void>}
+     */
     async getScrollData() {
-      if ((this.scroll_id ?? null) === null) {
-        this.scrollId = null;
-        this.scrollObserver = null; // end of scroll loading.
-      }
-
-      if (this.scrollId !== null && this.contentHandler !== null) {
-        this.paragraphCounter += 50;
-        const content = await this.retrieveDocument(this.documentId, this.scrollId);
-        if ((content ?? null) !== null) {
-          this.scrollId = content.scrollId;
-          const contentEl = new DOMParser().parseFromString(
-            this.applyHighlights(content.data),
-            'text/html'
+      if (this.hasScrollId && this.contentHandler !== null) {
+        this.paragraphCounter += PARAGRAPH_FETCH_LIMIT;
+        const partialContent = await this.retrieveDocument(this.documentId, this.scrollId);
+        if ((partialContent ?? null) !== null) {
+          this.paragraphCounter += PARAGRAPH_FETCH_LIMIT;
+          const partialContentExtracted = this.contentHandler(
+            partialContent,
+            null,
+            this.useScrolling
           );
-          if (contentEl !== null) {
-            if (this.textOnly === true) {
-              this.$refs.content.appendChild(contentEl);
-            }
+          const highlightedText = this.applyHighlights(partialContentExtracted);
+          this.textViewer.appendText(highlightedText, true, false);
 
-            if ((content.scroll_id ?? null) === null) {
-              this.scrollId = null;
-              this.scrollObserver = null; // end of scroll loading.
-            }
+          if (partialContent.scroll_id === null) {
+            this.scrollId = null;
+            this.scrollObserver = null;
           }
         }
       }
-      console.log(
-        `PARAGRAPH COUNT: ${this.paragraphCounter} (location: ${this.fragmentParagraphLocation})`
-      );
     },
     refresh() {
       this.fetchReaderContent();
     },
+    /**
+     * Serves as the initial viewer load.  Documents may be loaded in scroll mode or not.
+     * Scroll mode involves secondary loads (getScrollData) that are triggered by user activity in the interface.
+     * If scroll mode is active and there is a search fragment to highlight, fetch data until the desired segment is
+     * located, highlight and append the data, then move into scroll mode (where subsequent data fetches are done in
+     * getScrollData function).
+     * @returns {Promise<void>}
+     */
     async fetchReaderContent() {
       this.isLoading = true;
 
@@ -272,7 +274,9 @@ export default {
       if (this.contentHandler) {
         this.scrollId = content.scroll_id ?? null;
         this.documentData = this.contentHandler(content, null, this.useScrolling);
-        partialContentExtracted = this.contentHandler(partialContent, null, this.useScrolling);
+        if (content.paragraphs.length !== partialContent.paragraphs.length) {
+          partialContentExtracted = this.contentHandler(partialContent, null, this.useScrolling);
+        }
       } else {
         this.documentData = content.data;
       }
@@ -287,7 +291,7 @@ export default {
 
         if (this.contentHandler) {
           const documentWithHighlights = this.applyHighlights(this.documentData);
-          this.textViewer = createTextViewer(documentWithHighlights, this.textFragment, true); // provided contentHandler has generated a simple HTML string.
+          this.textViewer = createTextViewer(documentWithHighlights, this.textFragment); // provided contentHandler has generated a simple HTML string.
         } else {
           this.textViewer = createTextViewer(this.documentData.extracted_text);
         }
@@ -310,11 +314,12 @@ export default {
         if (this.textOnly === true) {
           this.$refs.content.appendChild(this.textViewer.element);
           // if there is no scrollId (scrolling not expected) search entire text, otherwise only append/search partial content
-          if (this.textFragment && this.scrollId === null) {
-            this.textViewer.search(this.textFragment, this.contentHandler !== null);
-          } else if ((partialContentExtracted ?? null) !== null) {
+
+          if ((partialContentExtracted ?? null) !== null) {
             const highlightedText = this.applyHighlights(partialContentExtracted);
             this.textViewer.appendText(highlightedText);
+          } else if (this.textFragment !== null) {
+            this.textViewer.search(this.textFragment, this.contentHandler !== null);
           }
         } else {
           this.$refs.content.appendChild(this.pdfViewer.element);
