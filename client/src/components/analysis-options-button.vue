@@ -14,10 +14,10 @@ import { useStore } from 'vuex';
 import useToaster from '@/services/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import { ANALYSIS } from '@/utils/messages-util';
-import router from '@/router';
 import { ProjectType } from '@/types/Enums';
 import AnalysisOptionsButtonWidget from '@/components/widgets/analysis-options-button-widget.vue';
 import { isIndexAnalysisState } from '@/utils/insight-util';
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   components: { AnalysisOptionsButtonWidget },
@@ -32,6 +32,7 @@ export default defineComponent({
     const { analysisId } = toRefs(props);
     const toast = useToaster();
     const store = useStore();
+    const router = useRouter();
     const analysisName = computed(() => store.getters['app/analysisName']);
     const project = computed(() => store.getters['app/project']);
 

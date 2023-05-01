@@ -1,7 +1,7 @@
 <template>
   <div
     ref="tree-container"
-    class="index-tree-pane-container"
+    class="index-tree-pane-container index-graph"
     :class="{
       'connecting-nodes': isConnecting,
     }"
@@ -98,12 +98,7 @@ import {
   isEdge,
   isConceptNodeWithoutDataset,
 } from '@/utils/index-tree-util';
-import {
-  convertTreeToGridCells,
-  getGridColumnCount,
-  getGridRowCount,
-  offsetGridCells,
-} from '@/utils/grid-cell-util';
+import { getGridCellsFromIndexTreeAndWorkbench } from '@/utils/grid-cell-util';
 
 const EDGE_CLASS = {
   SELECTED: 'selected-edge',
@@ -257,33 +252,11 @@ const isSelected = (id: string) => {
   }
   return false;
 };
+
 // A list of grid cells with enough information to render with CSS-grid.
 //  Represents a combination of all workbench trees and the main index tree.
 const gridCells = computed<GridCell[]>(() => {
-  // Convert each workbench tree to grid cells.
-  const overlappingWorkbenchTreeCellLists = workbench.items.value.map(convertTreeToGridCells);
-  // Move each grid down so that they're not overlapping
-  let currentRow = 0;
-  const workbenchTreeCellLists: GridCell[][] = [];
-  overlappingWorkbenchTreeCellLists.forEach((cellList) => {
-    // Translate down by "currentRow"
-    const translatedList = offsetGridCells(cellList, currentRow, 0);
-    // Append to workbenchTreeCellLists
-    workbenchTreeCellLists.push(translatedList);
-    // Increase currentRow by the current tree's rowCount
-    currentRow += getGridRowCount(translatedList);
-  });
-  // Convert main tree to grid cells.
-  const overlappingMainTreeCellList = convertTreeToGridCells(indexTree.tree.value);
-  // Move main tree grid below the workbench tree grids.
-  const mainTreeCellList = offsetGridCells(overlappingMainTreeCellList, currentRow, 0);
-  // Extra requirement: Shift all workbench trees to the left of the main tree.
-  const mainTreeColumnCount = getGridColumnCount(mainTreeCellList);
-  const shiftedWorkbenchTreeCellLists = workbenchTreeCellLists.map((cellList) =>
-    offsetGridCells(cellList, 0, -mainTreeColumnCount)
-  );
-  // Flatten list of grids into one list of grid cells.
-  return _.flatten([...shiftedWorkbenchTreeCellLists, mainTreeCellList]);
+  return getGridCellsFromIndexTreeAndWorkbench(indexTree.tree.value, workbench.items.value);
 });
 
 const renameNode = (nodeId: string, newName: string) => {
@@ -347,94 +320,13 @@ const searchForNode = (id: string) => {
 <style scoped lang="scss">
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/variables';
-
-$space-between-columns: 40px;
-$space-between-rows: 10px;
-
-$incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
-$outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-length);
-$edge-top-offset-from-node: 13px;
-$edge-styles: 2px solid $un-color-black-20;
-$edge-selected: $accent-main;
+@import '@/styles/index-graph';
 
 .index-tree-pane-container {
-  // The farthest left column will never have incoming edges, so it will have an empty space of
-  //  size `$incoming-edge-minimum-length` to the left of it. Remove that width from the padding.
-  padding: 40px 30px 40px calc(30px - #{$incoming-edge-minimum-length});
-  overflow: auto;
-  display: grid;
-  row-gap: $space-between-rows;
-
-  // When the graph is too small to take up the full available screen width, don't expand columns
-  //  to fill the empty space.
-  justify-content: flex-start;
-  align-content: flex-start;
-  .grid-cell {
-    position: relative;
-    display: flex;
-    pointer-events: none;
-  }
-  .index-tree-node {
-    pointer-events: auto;
-  }
-
   &.connecting-nodes {
     cursor: crosshair;
   }
-  .edge {
-    position: relative;
-    top: $edge-top-offset-from-node;
-    pointer-events: auto;
 
-    &.incoming {
-      max-height: 5px;
-      min-width: $incoming-edge-minimum-length;
-      // If one node in the column is wider than this one (e.g. placeholder in search mode), expand
-      //  the incoming edge to stay connected to children, and push the node to stay right-aligned.
-      flex: 1;
-      &.visible {
-        border-top: $edge-styles;
-        &.highlighted {
-          border-color: $accent-light;
-        }
-        &.selected-edge {
-          border-color: $edge-selected;
-        }
-      }
-      &.inactive {
-        pointer-events: none;
-      }
-    }
-
-    &.outgoing {
-      width: $outgoing-edge-length;
-      &.visible {
-        border-top: $edge-styles;
-        // Extend edge down to the sibling below this one
-        height: calc(100% + #{$space-between-rows});
-        border-right: $edge-styles;
-        &.highlighted {
-          border-top-color: $accent-light;
-        }
-        &.highlighted-y {
-          border-right-color: $accent-light;
-        }
-        &.selected-edge {
-          border-top-color: $edge-selected;
-        }
-        &.selected-y {
-          border-right-color: $edge-selected;
-        }
-      }
-      &.inactive {
-        pointer-events: none;
-      }
-
-      &.last-child {
-        border-right: none;
-      }
-    }
-  }
   .connector {
     display: flex;
     flex-direction: row;

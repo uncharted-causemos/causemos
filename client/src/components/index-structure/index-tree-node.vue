@@ -79,7 +79,7 @@
     </div>
   </div>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { ConceptNode, DatasetSearchResult } from '@/types/Index';
 import {
@@ -89,19 +89,13 @@ import {
   isConceptNodeWithDatasetAttached,
   DATASET_ICON,
   isOutputIndexNode,
+  getNodeDataSourceText,
 } from '@/utils/index-tree-util';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
 import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
+import { OptionButtonMenu } from '@/utils/index-common-util';
 
-export enum OptionButtonMenu {
-  Rename = 'Rename',
-  Duplicate = 'Duplicate',
-  Delete = 'Delete',
-  DeleteEdge = 'DeleteEdge',
-}
-</script>
-<script setup lang="ts">
 interface Props {
   nodeData: ConceptNode;
   isSelected: boolean;
@@ -127,7 +121,6 @@ const emit = defineEmits<{
 
 const classObject = computed(() => {
   return {
-    'is-empty': isEmptyNode(props.nodeData),
     selected: props.isSelected,
     'flexible-width': showDatasetSearch.value,
     disabled: disableInteraction.value,
@@ -138,7 +131,6 @@ const classObject = computed(() => {
 });
 
 const selectNode = () => {
-  // Can't select Placeholder nodes
   if (!props.isConnecting) {
     emit('select', props.nodeData.id);
   } else if (
@@ -279,56 +271,30 @@ const attachDataset = (dataset: DatasetSearchResult, nodeNameAfterAttachingDatas
   disableInteraction.value = true;
 };
 
-const dataSourceText = computed(() => {
-  if (!isConceptNodeWithoutDataset(props.nodeData)) {
-    return props.nodeData.dataset.datasetName;
-  }
-  const componentCount = props.nodeData.components.length;
-  switch (componentCount) {
-    case 0:
-      return props.nodeData.name ? 'No dataset or inputs.' : '';
-    case 1:
-      return '1 input.';
-    default:
-      return `Combination of ${componentCount} inputs.`;
-  }
-});
+const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 </script>
 
 <style scoped lang="scss">
 @import '@/styles/variables';
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/common';
-
-// The space between the edges of the node and the content within it.
-//  This would be applied to .index-tree-node-container directly, but some elements (namely the
-//  search results) need to expand to take the full width of the node.
-$horizontal-padding: 10px;
-// Standard padding that's applied to each element within the node by default
-$vertical-padding: 5px;
+@import '@/styles/index-graph';
 
 $option-button-width: 16px;
 
 .index-tree-node-container {
-  display: flex;
-  flex-direction: column;
-  position: relative;
+  @include index-tree-node;
 
-  background: white;
-  width: 240px;
   &.flexible-width {
     width: auto;
   }
-  height: fit-content;
-  border: 1px solid $un-color-black-30;
-  border-radius: 3px;
 
   &.no-highlight:hover {
     cursor: not-allowed;
   }
 
   &:not(.no-highlight):hover {
-    border-color: $accent-main;
+    @include index-tree-node-hover;
   }
 
   // When node is selected, we want to show a 2px accent color border outside.
@@ -398,7 +364,7 @@ $option-button-width: 16px;
   }
 
   .content {
-    padding: $vertical-padding $horizontal-padding;
+    @include index-tree-node-content;
   }
   .full-width-button {
     width: 100%;
@@ -411,7 +377,7 @@ $option-button-width: 16px;
     > i {
       display: grid;
       align-items: center;
-      margin-right: $horizontal-padding;
+      margin-right: $node-content-horizontal-padding;
     }
 
     > span {
@@ -438,15 +404,12 @@ $option-button-width: 16px;
     flex: 1;
   }
 
-  .footer {
-    color: $un-color-black-40;
-    padding-top: 0px;
-  }
-  &.placeholder {
-    border-style: dashed;
-  }
   .advanced-search-button {
     margin: 5px 0 10px 10px;
   }
+}
+
+.warning {
+  color: $un-color-feedback-warning;
 }
 </style>

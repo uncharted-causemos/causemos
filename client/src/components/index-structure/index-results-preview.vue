@@ -12,11 +12,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import router from '@/router';
 import { useStore } from 'vuex';
 import { ProjectType } from '@/types/Enums';
 import { indexNodeTreeContainsDataset } from '@/utils/index-tree-util';
 import useIndexTree from '@/services/composables/useIndexTree';
+import { useRouter } from 'vue-router';
 
 const props = defineProps<{
   analysisId: string;
@@ -25,6 +25,7 @@ const props = defineProps<{
 const indexTree = useIndexTree();
 const canViewResults = computed(() => indexNodeTreeContainsDataset(indexTree.tree.value));
 
+const router = useRouter();
 const store = useStore();
 const project = computed(() => store.getters['app/project']);
 const seeResults = () => {

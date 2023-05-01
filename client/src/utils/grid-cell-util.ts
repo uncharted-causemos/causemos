@@ -103,3 +103,35 @@ export const offsetGridCells = (
     startColumn: cell.startColumn + horizontalOffset,
   }));
 };
+
+// Calculate a list of grid cells with enough information to render with CSS-grid.
+//  Represents a combination of all workbench trees and the main index tree.
+export const getGridCellsFromIndexTreeAndWorkbench = (
+  indexTree: ConceptNode,
+  workbenchItems: ConceptNode[]
+) => {
+  // Convert each workbench tree to grid cells.
+  const overlappingWorkbenchTreeCellLists = workbenchItems.map(convertTreeToGridCells);
+  // Move each grid down so that they're not overlapping
+  let currentRow = 0;
+  const workbenchTreeCellLists: GridCell[][] = [];
+  overlappingWorkbenchTreeCellLists.forEach((cellList) => {
+    // Translate down by "currentRow"
+    const translatedList = offsetGridCells(cellList, currentRow, 0);
+    // Append to workbenchTreeCellLists
+    workbenchTreeCellLists.push(translatedList);
+    // Increase currentRow by the current tree's rowCount
+    currentRow += getGridRowCount(translatedList);
+  });
+  // Convert main tree to grid cells.
+  const overlappingMainTreeCellList = convertTreeToGridCells(indexTree);
+  // Move main tree grid below the workbench tree grids.
+  const mainTreeCellList = offsetGridCells(overlappingMainTreeCellList, currentRow, 0);
+  // Extra requirement: Shift all workbench trees to the left of the main tree.
+  const mainTreeColumnCount = getGridColumnCount(mainTreeCellList);
+  const shiftedWorkbenchTreeCellLists = workbenchTreeCellLists.map((cellList) =>
+    offsetGridCells(cellList, 0, -mainTreeColumnCount)
+  );
+  // Flatten list of grids into one list of grid cells.
+  return _.flatten([...shiftedWorkbenchTreeCellLists, mainTreeCellList]);
+};

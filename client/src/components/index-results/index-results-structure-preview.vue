@@ -10,7 +10,7 @@
       class="grid-cell"
     >
       <div class="edge incoming" :class="{ visible: hasChildren(cell.node) }" />
-      <div class="node" :class="{ selected: cell.node.isOutputNode }">
+      <div class="node" :class="{ selected: cell.node.id === props.selectedNodeId }">
         <i class="fa fa-fw fa-th" />
       </div>
       <div
@@ -32,6 +32,7 @@ import { computed } from 'vue';
 import { convertTreeToGridCells } from '@/utils/grid-cell-util';
 
 const { tree } = useIndexTree();
+const props = defineProps<{ selectedNodeId: string | null }>();
 
 const gridCells = computed(() => convertTreeToGridCells(tree.value));
 </script>

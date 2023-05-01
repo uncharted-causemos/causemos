@@ -10,6 +10,7 @@ import GraphExperiment from '@/views/GraphExperiment.vue';
 import QualitativeView from '@/views/QualitativeView.vue';
 import IndexStructure from '@/views/IndexStructure.vue';
 import IndexResults from '@/views/IndexResults.vue';
+import IndexProjections from '@/views/IndexProjections.vue';
 import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
@@ -102,6 +103,11 @@ const routes = [
     path: '/:projectType/:project/index-results/:analysisId',
     name: 'indexResults',
     component: IndexResults,
+  },
+  {
+    path: '/:projectType/:project/index-projections/:analysisId',
+    name: 'indexProjections',
+    component: IndexProjections,
   },
   {
     path: '/:projectType/:project/model-publishing-experiment',
