@@ -79,17 +79,24 @@ const combinedSearch = (text: string, phrase: string, useWhitespace = false): st
   return t;
 };
 
-const updateElement = (element: HTMLElement, updatedText: string, needsScrollTo = false) => {
-  element.innerHTML = element.innerHTML.concat(updatedText);
-  if (needsScrollTo) {
-    const anchor: HTMLElement = document.getElementsByClassName(
-      'extract-text-anchor'
-    )[0] as HTMLElement;
+const scrollToAnchor = () => {
+  const anchor: HTMLElement = document.getElementsByClassName(
+    'extract-text-anchor'
+  )[0] as HTMLElement;
 
-    if (anchor) {
-      const scroller = document.getElementsByClassName('modal-body')[0];
-      scroller.scrollTop = anchor.offsetTop - 100;
-    }
+  if (anchor) {
+    console.log('ANCHOR FOUND');
+    const scroller = document.getElementsByClassName('modal-body')[0];
+    scroller.scrollTop = anchor.offsetTop - 100;
+  } else {
+    console.log('ANCHOR NOT FOUND');
+  }
+};
+const updateElement = (element: HTMLElement, updatedText: string, needsScrollTo = true) => {
+  // console.log(`ELEMENT UPDATE: ${updatedText}`);
+  element.innerHTML = updatedText;
+  if (needsScrollTo) {
+    scrollToAnchor();
   }
 };
 
@@ -117,7 +124,7 @@ export const textSearch = (
   return textFound;
 };
 
-const createTextViewer = (text = '', snippet: string | null = null) => {
+const createTextViewer = (text = '', snippet: string | null = null, doSearch = false) => {
   let phraseFound = false;
   const phrase = snippet;
   let originalText = text;
@@ -167,19 +174,29 @@ const createTextViewer = (text = '', snippet: string | null = null) => {
    * @param useWhitespace - regex search to use simple whitespace
    * @param searchRequired - is search required
    */
-  const appendText = (additionalBodyText: string, useWhitespace = true, searchRequired = true) => {
+  const appendText = (
+    additionalBodyText: string,
+    useWhitespace = true,
+    searchRequired = true,
+    highlightFragment = true
+  ) => {
     if (searchRequired) {
       originalText = originalText.concat(partialSearch(additionalBodyText, useWhitespace));
     } else {
       originalText = originalText.concat(additionalBodyText);
     }
-    updateElement(el, originalText);
+    updateElement(el, originalText, highlightFragment);
     // partialSearch(additionalBodyText, useWhitespace);
   };
 
   el.innerHTML = originalText;
 
+  if (doSearch && phrase !== null) {
+    search(phrase);
+  }
+
   return {
+    scrollToAnchor,
     phraseWasFound,
     appendText,
     search,
