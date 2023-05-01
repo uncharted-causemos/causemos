@@ -85,15 +85,12 @@ const scrollToAnchor = () => {
   )[0] as HTMLElement;
 
   if (anchor) {
-    console.log('ANCHOR FOUND');
     const scroller = document.getElementsByClassName('modal-body')[0];
     scroller.scrollTop = anchor.offsetTop - 100;
-  } else {
-    console.log('ANCHOR NOT FOUND');
   }
 };
+
 const updateElement = (element: HTMLElement, updatedText: string, needsScrollTo = true) => {
-  // console.log(`ELEMENT UPDATE: ${updatedText}`);
   element.innerHTML = updatedText;
   if (needsScrollTo) {
     scrollToAnchor();

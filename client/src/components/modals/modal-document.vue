@@ -326,6 +326,13 @@ export default {
         }
 
         if (this.textOnly === true) {
+          /**
+           * Special case: multiple fetches (fragment not in first fetch)
+           * Append and search the last to avoid searching large body text.
+           *
+           * Note: if the fragment is in the first fetch, it will be handled above when the textViewer is created
+           * and the search will be issued here after the element has been added (2nd if)
+           */
           if (partialContentExtracted !== null && this.paragraphCounter > PARAGRAPH_FETCH_LIMIT) {
             this.textViewer.appendText(
               this.applyHighlights(partialContentExtracted),
@@ -333,15 +340,14 @@ export default {
               true,
               true
             );
+            this.$refs.content.appendChild(this.textViewer.element);
             this.textViewer.scrollToAnchor();
-          }
-
-          this.$refs.content.appendChild(this.textViewer.element);
-          // if there is no scrollId (scrolling not expected) search entire text, otherwise only append/search partial content
-          if (this.textFragment !== null) {
-            if (this.paragraphCounter === PARAGRAPH_FETCH_LIMIT) {
-              this.textViewer.search(this.textFragment, this.contentHandler !== null);
-            }
+          } else if (
+            this.textFragment !== null &&
+            this.paragraphCounter === PARAGRAPH_FETCH_LIMIT
+          ) {
+            this.$refs.content.appendChild(this.textViewer.element);
+            this.textViewer.search(this.textFragment, this.contentHandler !== null);
           }
         } else {
           this.$refs.content.appendChild(this.pdfViewer.element);
