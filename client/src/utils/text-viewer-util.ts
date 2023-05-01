@@ -5,6 +5,7 @@
  */
 
 import { SELECTED_COLOR } from '@/utils/colors-util';
+import { Highlight } from '@/types/IndexDocuments';
 
 // gradually loosen search requirements of a "regex and select punctuation"-sanitized
 // search string by progressively adding regex wildcards to account for skipped
@@ -65,6 +66,32 @@ const reformat = (v: string) => {
   return `<span class='extract-text-anchor' style='border-bottom: 2px solid${SELECTED_COLOR}'>${v}</span>`;
 };
 
+const applyHighlights = (text: string, highlights: Highlight[]) => {
+  let highlightContent = text;
+
+  if (highlights !== null) {
+    const highlightsDone: string[] = []; // ensure we don't double highlight
+    highlights.forEach((highlight) => {
+      if (!highlightsDone.includes(highlight.text.toUpperCase())) {
+        highlightsDone.push(highlight.text.toUpperCase());
+        const regex = new RegExp(highlight.text, 'ig');
+        const matches = highlightContent.matchAll(regex);
+
+        let accumulatedOffset = 0;
+        for (const match of matches) {
+          const offsetIndex = (match.index ?? 0) + accumulatedOffset; // track change in offset due to previous sub
+          const beginning = highlightContent.slice(0, offsetIndex);
+          const end = highlightContent.slice(offsetIndex + match[0].length);
+          const substitutionText = `<span class="dojo-mark">${match[0]}</span>`;
+          highlightContent = beginning.concat(substitutionText, end);
+          accumulatedOffset += substitutionText.length - match[0].length;
+        }
+      }
+    });
+  }
+  return highlightContent;
+};
+
 const combinedSearch = (text: string, phrase: string, useWhitespace = false): string => {
   let t = text;
   if (text.indexOf(phrase) >= 0) {
@@ -111,7 +138,6 @@ export const textSearch = (
   useWhitespace = false
 ): boolean => {
   let t = bodyText;
-
   if ((bodyText ?? null) !== null && (textFragment ?? null) !== null) {
     t = combinedSearch(bodyText, textFragment, useWhitespace);
   }
@@ -201,4 +227,4 @@ const createTextViewer = (text = '', snippet: string | null = null, doSearch = f
   };
 };
 
-export { createTextViewer };
+export { createTextViewer, applyHighlights };

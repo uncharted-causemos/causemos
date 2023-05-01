@@ -85,7 +85,7 @@ import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';
 import dateFormatter from '@/formatters/date-formatter';
 import { getDocument, updateDocument } from '@/services/document-service';
-import { createTextViewer } from '@/utils/text-viewer-util';
+import { createTextViewer, applyHighlights } from '@/utils/text-viewer-util';
 
 const PARAGRAPH_FETCH_LIMIT = 200;
 const isPdf = (data) => {
@@ -107,7 +107,7 @@ export default {
       type: Number,
       required: true,
     },
-    textFragment: {
+    textFragmentRaw: {
       type: String,
       default: null,
     },
@@ -175,36 +175,31 @@ export default {
     hasScrollId() {
       return this.scrollId !== null;
     },
+    /**
+     * A compensation method to help bridge the gap between highlights provided by Jataware
+     * and our highlights.  Some words may or may not be highlighted consistently in the "highlights"
+     * data.  This method ensures the highlighting will match between the fragment phrase and the
+     * full body document (otherwise, fragment anchor doesn't work).
+     *
+     * @returns {string}
+     */
+    textFragment() {
+      if (this.textFragmentRaw !== null && this.highlightsForSelected !== null) {
+        const regex1 = new RegExp('<span class="dojo-mark">', 'ig');
+        const regex2 = new RegExp('</span>', 'ig');
+
+        let text = this.textFragmentRaw.replaceAll(regex1, '');
+        text = text.replaceAll(regex2, '');
+        text = applyHighlights(text, this.highlightsForSelected);
+        return text;
+      }
+      return this.textFragmentRaw;
+    },
   },
   methods: {
     ...mapActions({
       addSearchTerm: 'query/addSearchTerm',
     }),
-    applyHighlights(text) {
-      let highlightContent = text;
-
-      if (this.highlightsForSelected !== null) {
-        const highlightsDone = []; // ensure we don't double highlight
-        this.highlightsForSelected.forEach((highlight) => {
-          if (!highlightsDone.includes(highlight.text.toUpperCase())) {
-            highlightsDone.push(highlight.text.toUpperCase());
-            const regex = new RegExp(highlight.text, 'ig');
-            const matches = highlightContent.matchAll(regex);
-
-            let accumulatedOffset = 0;
-            for (const match of matches) {
-              const offsetIndex = match.index + accumulatedOffset; // track change in offset due to previous sub
-              const beginning = highlightContent.slice(0, offsetIndex);
-              const end = highlightContent.slice(offsetIndex + match[0].length);
-              const substitutionText = `<span class="dojo-mark">${match[0]}</span>`;
-              highlightContent = beginning.concat(substitutionText, end);
-              accumulatedOffset += substitutionText.length - match[0].length;
-            }
-          }
-        });
-      }
-      return highlightContent;
-    },
     dateFormatter,
     /**
      * When in scroll mode, this function will be triggered by the scrollObserver to fetch as required.
@@ -222,8 +217,11 @@ export default {
             null,
             this.useScrolling
           );
-          const highlightedText = this.applyHighlights(partialContentExtracted);
-          this.textViewer.appendText(highlightedText, true, false, this.scrollAttemptCount < 4);
+          const highlightedText = applyHighlights(
+            partialContentExtracted,
+            this.highlightsForSelected
+          );
+          this.textViewer.appendText(highlightedText, false, false, this.scrollAttemptCount < 4);
 
           if (partialContent.scroll_id === null) {
             this.scrollId = null;
@@ -302,7 +300,7 @@ export default {
 
         if (this.contentHandler) {
           this.textViewer = createTextViewer(
-            this.applyHighlights(this.documentData),
+            applyHighlights(partialContentExtracted, this.highlightsForSelected),
             this.textFragment,
             false
           );
@@ -335,8 +333,8 @@ export default {
            */
           if (partialContentExtracted !== null && this.paragraphCounter > PARAGRAPH_FETCH_LIMIT) {
             this.textViewer.appendText(
-              this.applyHighlights(partialContentExtracted),
-              true,
+              applyHighlights(partialContentExtracted, this.highlightsForSelected),
+              false,
               true,
               true
             );

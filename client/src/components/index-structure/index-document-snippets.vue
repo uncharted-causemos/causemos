@@ -50,7 +50,7 @@
     :disable-edit="true"
     :document-id="expandedDocumentId"
     :fragment-paragraph-location="fragmentParagraphLocation"
-    :text-fragment="textFragment"
+    :text-fragment-raw="textFragment"
     :retrieve-document-meta="getDocument"
     :retrieve-document="getDocumentParagraphs"
     :content-handler="handleReturnedData"
@@ -176,7 +176,6 @@ watch(
     // Form list of snippets by pulling out relevant fields from query results and document data.
     snippetsForSelectedNode.value = queryResults.results.map((result, i) => {
       const metadata = metadataResults[i];
-
       return {
         documentId: result.document_id,
         fragmentParagraphLocation: parseInt(result.id.split('-')[1]),

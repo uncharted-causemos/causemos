@@ -71,3 +71,8 @@ export interface ScrollData {
   scroll_id: string;
   paragraphs: ScrollDataParagraph[];
 }
+
+export interface Highlight {
+  highlight: boolean;
+  text: string;
+}
