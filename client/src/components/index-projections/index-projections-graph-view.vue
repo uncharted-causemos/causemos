@@ -1,5 +1,5 @@
 <template>
-  <div class="index-projections-graph-container index-graph" @click.self="deselectEdge">
+  <div class="index-projections-graph-view-container index-graph" @click.self="deselectEdge">
     <div
       v-for="cell in gridCells"
       :key="cell.node.id"

@@ -1,5 +1,5 @@
 <template>
-  <div class="index-projections-pane-container">
+  <div class="index-projections-node-view-container">
     <div class="node-column child-column">
       <div v-for="(childNode, i) of childNodes" :key="childNode.id" class="node-and-edge-container">
         <IndexProjectionsNode
@@ -72,7 +72,7 @@ const parentNode = computed(() => {
 <style lang="scss" scoped>
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/index-graph';
-.index-projections-pane-container {
+.index-projections-node-view-container {
   padding: $index-graph-padding-vertical $index-graph-padding-horizontal;
   overflow: auto;
   display: flex;
