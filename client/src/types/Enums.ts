@@ -203,3 +203,10 @@ export enum ProjectionAlgorithm {
   Holt,
   HoltWinters,
 }
+
+export enum ProjectionPointType {
+  Forecasted = 'forecasted',
+  Backcasted = 'backcasted',
+  Interpolated = 'interpolated',
+  Historical = 'historical',
+}

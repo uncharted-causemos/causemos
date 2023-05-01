@@ -1,9 +1,13 @@
-import { IncompleteDataCorrectiveAction } from '@/types/Enums';
+import { IncompleteDataCorrectiveAction, ProjectionPointType } from '@/types/Enums';
 
 export interface TimeseriesPoint {
   value: number;
   normalizedValue?: number;
   timestamp: number;
+}
+
+export interface TimeseriesPointProjected extends TimeseriesPoint {
+  projectionType: ProjectionPointType;
 }
 
 export interface TimeseriesDistributionPoint {
