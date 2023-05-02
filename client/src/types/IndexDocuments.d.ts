@@ -3,6 +3,7 @@
  */
 export interface Snippet {
   documentId: string | null;
+  fragmentParagraphLocation: number;
   text: string;
   documentTitle: string;
   documentAuthor: string;
@@ -69,4 +70,9 @@ export interface ScrollData {
   items_in_page: number;
   scroll_id: string;
   paragraphs: ScrollDataParagraph[];
+}
+
+export interface Highlight {
+  highlight: boolean;
+  text: string;
 }

@@ -31,11 +31,15 @@ export const getHighlights = async (details: DojoParagraphDetails) => {
   return result.data;
 };
 
-export const getDocumentParagraphs = async (docId: string, scrollId: string | null) => {
+export const getDocumentParagraphs = async (
+  docId: string,
+  scrollId: string | null,
+  minParagraphs = 1
+) => {
   if (docId) {
     const result = await API.get(
-      `${GET_DOC_PATH}/${docId}/paragraphs${
-        scrollId !== null ? '?scroll_id='.concat(scrollId) : ''
+      `${GET_DOC_PATH}/${docId}/paragraphs?min_paragraphs=${minParagraphs}${
+        scrollId !== null ? '&scroll_id='.concat(scrollId) : ''
       }`
     );
     return result.data;

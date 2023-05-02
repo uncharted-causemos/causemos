@@ -52,7 +52,7 @@
       <div ref="content" v-html="formattedText"></div>
       <div ref="loadMoreText" class="load-more-text">
         <h5 v-if="useScrolling && hasScrollId">Loading body text ...</h5>
-        <h5 v-if="useScrolling && !hasScrollId">---- End of document ----</h5>
+        <h5 v-if="!isLoading && useScrolling && !hasScrollId">---- End of document ----</h5>
       </div>
     </template>
     <template #footer>
@@ -85,8 +85,9 @@ import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';
 import dateFormatter from '@/formatters/date-formatter';
 import { getDocument, updateDocument } from '@/services/document-service';
-import { createTextViewer } from '@/utils/text-viewer-util';
+import { createTextViewer, applyHighlights } from '@/utils/text-viewer-util';
 
+const PARAGRAPH_FETCH_LIMIT = 200;
 const isPdf = (data) => {
   const fileType = data && data.file_type;
   return fileType === 'pdf' || fileType === 'application/pdf';
@@ -102,7 +103,11 @@ export default {
       type: String,
       required: true,
     },
-    textFragment: {
+    fragmentParagraphLocation: {
+      type: Number,
+      required: true,
+    },
+    textFragmentRaw: {
       type: String,
       default: null,
     },
@@ -151,6 +156,8 @@ export default {
     scrollPlaceholder: null,
     scrollObserver: null,
     formattedText: null,
+    paragraphCounter: 0,
+    scrollAttemptCount: 0,
   }),
   mounted() {
     this.refresh();
@@ -168,52 +175,73 @@ export default {
     hasScrollId() {
       return this.scrollId !== null;
     },
+    /**
+     * A compensation method to help bridge the gap between highlights provided by Jataware
+     * and our highlights.  Some words may or may not be highlighted consistently in the "highlights"
+     * data.  This method ensures the highlighting will match between the fragment phrase and the
+     * full body document (otherwise, fragment anchor doesn't work).
+     *
+     * @returns {string}
+     */
+    textFragment() {
+      if (this.textFragmentRaw !== null && this.highlightsForSelected !== null) {
+        const regex1 = new RegExp('<span class="dojo-mark">', 'ig');
+        const regex2 = new RegExp('</span>', 'ig');
+
+        let text = this.textFragmentRaw.replaceAll(regex1, '');
+        text = text.replaceAll(regex2, '');
+        text = applyHighlights(text, this.highlightsForSelected);
+        return text;
+      }
+      return this.textFragmentRaw;
+    },
   },
   methods: {
     ...mapActions({
       addSearchTerm: 'query/addSearchTerm',
     }),
-    applyHighlights(content) {
-      if (this.highlightsForSelected !== null) {
-        let highlightContent = content;
-        this.highlightsForSelected.forEach((highlight) => {
-          highlightContent = highlightContent.replaceAll(
-            highlight.text,
-            `<span class="dojo-mark">${highlight.text}</span>`
-          );
-        });
-        return highlightContent;
-      }
-      return content;
-    },
     dateFormatter,
+    /**
+     * When in scroll mode, this function will be triggered by the scrollObserver to fetch as required.
+     * @returns {Promise<void>}
+     */
     async getScrollData() {
-      if (this.scrollId !== null && this.contentHandler !== null) {
-        const content = await this.retrieveDocument(this.documentId, this.scrollId);
-        this.documentData = this.contentHandler(content, this.documentData);
-        this.textViewer = createTextViewer(this.applyHighlights(this.documentData), true);
+      if (this.hasScrollId && this.contentHandler !== null && this.scrollAttemptCount > 1) {
+        const partialContent = await this.retrieveDocument(this.documentId, this.scrollId);
 
-        // brute force the entire view
-        if (this.$refs.content.hasChildNodes()) {
-          removeChildren(this.$refs.content);
-        }
+        if ((partialContent ?? null) !== null) {
+          this.paragraphCounter += PARAGRAPH_FETCH_LIMIT;
+          const partialContentExtracted = this.contentHandler(
+            partialContent,
+            null,
+            this.useScrolling
+          );
+          const highlightedText = applyHighlights(
+            partialContentExtracted,
+            this.highlightsForSelected
+          );
+          this.textViewer.appendText(highlightedText, false, false, false);
 
-        if (this.textOnly === true) {
-          this.$refs.content.appendChild(this.textViewer.element);
-          if (this.textFragment) {
-            this.textViewer.search(this.textFragment);
+          // Once scroll_id is null there are no more paragraphs. Clear the scrollId and the observer.
+          if (partialContent.scroll_id === null) {
+            this.scrollId = null;
+            this.scrollObserver = null;
           }
         }
-
-        if (content.scroll_id === null) {
-          this.scrollId = null;
-          this.scrollObserver = null; // end of scroll loading.
-        }
       }
+      this.scrollAttemptCount += 1;
     },
     refresh() {
       this.fetchReaderContent();
     },
+    /**
+     * Serves as the initial viewer load.  Documents may be loaded in scroll mode or not.
+     * Scroll mode involves secondary loads (getScrollData) that are triggered by user activity in the interface.
+     * If scroll mode is active and there is a search fragment to highlight, fetch data until the desired segment is
+     * located, highlight and append the data, then move into scroll mode (where subsequent data fetches are done in
+     * getScrollData function).
+     * @returns {Promise<void>}
+     */
     async fetchReaderContent() {
       this.isLoading = true;
 
@@ -221,16 +249,46 @@ export default {
         this.documentMeta = await this.retrieveDocumentMeta(this.documentId);
       }
 
-      const content = this.useScrolling
-        ? await this.retrieveDocument(this.documentId, this.scrollId)
-        : await this.retrieveDocument(this.documentId);
+      let content = null;
+      let partialContent = null;
+      let partialContentExtracted = null;
+
+      if (this.useScrolling && this.paragraphCounter < this.fragmentParagraphLocation) {
+        while (this.paragraphCounter < this.fragmentParagraphLocation) {
+          partialContent = await this.retrieveDocument(
+            this.documentId,
+            this.scrollId,
+            PARAGRAPH_FETCH_LIMIT
+          );
+
+          if (this.paragraphCounter === 0) {
+            this.scrollId = partialContent.scroll_id;
+          }
+
+          // if the next fetch exceeds the location, then our snippet should be in this partial text
+          // partial content will be appended separately below (partialContent)
+          if (content === null) {
+            content = partialContent; // first set
+          } else if (
+            this.fragmentParagraphLocation >
+            this.paragraphCounter + PARAGRAPH_FETCH_LIMIT
+          ) {
+            content.paragraphs = [...content.paragraphs, ...partialContent.paragraphs];
+          }
+
+          this.paragraphCounter += PARAGRAPH_FETCH_LIMIT;
+        }
+      } else {
+        content = await this.retrieveDocument(this.documentId);
+      }
 
       if (this.contentHandler) {
-        this.scrollId = content.scroll_id ?? null;
-        this.documentData = this.contentHandler(content, this.documentData, this.useScrolling);
+        this.documentData = this.contentHandler(content, null, this.useScrolling);
+        partialContentExtracted = this.contentHandler(partialContent, null, this.useScrolling);
       } else {
         this.documentData = content.data;
       }
+
       this.isLoading = false;
 
       if (this.documentData) {
@@ -241,11 +299,14 @@ export default {
         }
 
         if (this.contentHandler) {
-          this.textViewer = createTextViewer(this.applyHighlights(this.documentData), true); // provided contentHandler has generated a simple HTML string.
+          this.textViewer = createTextViewer(
+            applyHighlights(partialContentExtracted, this.highlightsForSelected),
+            this.textFragment,
+            false
+          );
         } else {
           this.textViewer = createTextViewer(this.documentData.extracted_text);
         }
-
         const useDART = true;
 
         if (isPdf(this.documentData) && useDART) {
@@ -258,15 +319,33 @@ export default {
         } else {
           this.textOnly = true;
         }
-
         if (this.$refs.content.hasChildNodes()) {
           removeChildren(this.$refs.content);
         }
 
         if (this.textOnly === true) {
-          this.$refs.content.appendChild(this.textViewer.element);
-          if (this.textFragment) {
-            this.textViewer.search(this.textFragment);
+          /**
+           * Special case: multiple fetches (fragment not in first fetch)
+           * Append and search the last to avoid searching large body text.
+           *
+           * Note: if the fragment is in the first fetch, it will be handled above when the textViewer is created
+           * and the search will be issued here after the element has been added (2nd if)
+           */
+          if (partialContentExtracted !== null && this.paragraphCounter > PARAGRAPH_FETCH_LIMIT) {
+            this.textViewer.appendText(
+              applyHighlights(partialContentExtracted, this.highlightsForSelected),
+              false,
+              true,
+              true
+            );
+            this.$refs.content.appendChild(this.textViewer.element);
+            this.textViewer.scrollToAnchor();
+          } else if (
+            this.textFragment !== null &&
+            this.paragraphCounter === PARAGRAPH_FETCH_LIMIT
+          ) {
+            this.$refs.content.appendChild(this.textViewer.element);
+            this.textViewer.search(this.textFragment, this.contentHandler !== null);
           }
         } else {
           this.$refs.content.appendChild(this.pdfViewer.element);

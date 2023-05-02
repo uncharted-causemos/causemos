@@ -32,6 +32,7 @@
                   () => {
                     prepareHighlightsForDocumentViewer(i);
                     expandedDocumentId = snippet.documentId;
+                    fragmentParagraphLocation = snippet.fragmentParagraphLocation;
                     textFragment = snippet.text;
                   }
                 "
@@ -48,7 +49,8 @@
     v-if="!!expandedDocumentId"
     :disable-edit="true"
     :document-id="expandedDocumentId"
-    :text-fragment="textFragment"
+    :fragment-paragraph-location="fragmentParagraphLocation"
+    :text-fragment-raw="textFragment"
     :retrieve-document-meta="getDocument"
     :retrieve-document="getDocumentParagraphs"
     :content-handler="handleReturnedData"
@@ -82,6 +84,7 @@ const props = defineProps<{
 }>();
 const { selectedNodeName, selectedUpstreamNodeName } = toRefs(props);
 const expandedDocumentId = ref<string | null>(null);
+const fragmentParagraphLocation = ref<number>(1);
 const textFragment = ref<string | null>(null);
 const SNIPPETS_LOADING = 'Loading snippets...';
 const NO_TITLE = 'Title not available';
@@ -94,7 +97,7 @@ const snippetsForSelectedNode = ref<Snippet[] | null>(null);
 const highlightsForSelected = ref<DojoParagraphHighlight[]>([]);
 const allHighlights = ref<DojoParagraphHighlights | null>(null);
 const handleReturnedData = (data: ScrollData, previousContent: string | null) => {
-  const content = previousContent || '';
+  const content: string = previousContent || '';
   return content.concat(
     data?.paragraphs?.reduce((bodyText: string, p: any) => `${bodyText}<p>${p.text}</p>`, '')
   );
@@ -114,8 +117,7 @@ const prepareHighlightsForDocumentViewer = (index: number) => {
       .filter((item) => item.highlight === true)
       .reduce((accumulator, item) => {
         const index = accumulator.findIndex((e: any) => {
-          if (e.text === item.text) return true;
-          return false;
+          return e.text === item.text;
         });
         if (index < 0) {
           return [...accumulator, item];
@@ -174,9 +176,9 @@ watch(
     // Form list of snippets by pulling out relevant fields from query results and document data.
     snippetsForSelectedNode.value = queryResults.results.map((result, i) => {
       const metadata = metadataResults[i];
-
       return {
         documentId: result.document_id,
+        fragmentParagraphLocation: parseInt(result.id.split('-')[1]),
         text: allHighlights.value
           ? allHighlights.value.highlights[i].reduce(
               (paragraph, item) =>
