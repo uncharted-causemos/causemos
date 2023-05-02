@@ -208,7 +208,6 @@ const createTextViewer = (text = '', snippet: string | null = null, doSearch = f
       originalText = originalText.concat(additionalBodyText);
     }
     updateElement(el, originalText, highlightFragment);
-    // partialSearch(additionalBodyText, useWhitespace);
   };
 
   el.innerHTML = originalText;
