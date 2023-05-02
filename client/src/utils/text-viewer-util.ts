@@ -69,26 +69,25 @@ const reformat = (v: string) => {
 const applyHighlights = (text: string, highlights: Highlight[]) => {
   let highlightContent = text;
 
-  if (highlights !== null) {
-    const highlightsDone: string[] = []; // ensure we don't double highlight
-    highlights.forEach((highlight) => {
-      if (!highlightsDone.includes(highlight.text.toUpperCase())) {
-        highlightsDone.push(highlight.text.toUpperCase());
-        const regex = new RegExp(highlight.text, 'ig');
-        const matches = highlightContent.matchAll(regex);
+  const highlightsDone: string[] = []; // ensure we don't double highlight
+  highlights.forEach((highlight) => {
+    if (!highlightsDone.includes(highlight.text.toUpperCase())) {
+      highlightsDone.push(highlight.text.toUpperCase());
+      const regex = new RegExp(highlight.text, 'ig');
+      const matches = highlightContent.matchAll(regex);
 
-        let accumulatedOffset = 0;
-        for (const match of matches) {
-          const offsetIndex = (match.index ?? 0) + accumulatedOffset; // track change in offset due to previous sub
-          const beginning = highlightContent.slice(0, offsetIndex);
-          const end = highlightContent.slice(offsetIndex + match[0].length);
-          const substitutionText = `<span class="dojo-mark">${match[0]}</span>`;
-          highlightContent = beginning.concat(substitutionText, end);
-          accumulatedOffset += substitutionText.length - match[0].length;
-        }
+      let accumulatedOffset = 0;
+      for (const match of matches) {
+        const offsetIndex = (match.index ?? 0) + accumulatedOffset; // track change in offset due to previous sub
+        const beginning = highlightContent.slice(0, offsetIndex);
+        const end = highlightContent.slice(offsetIndex + match[0].length);
+        const substitutionText = `<span class="dojo-mark">${match[0]}</span>`;
+        highlightContent = beginning.concat(substitutionText, end);
+        accumulatedOffset += substitutionText.length - match[0].length;
       }
-    });
-  }
+    }
+  });
+
   return highlightContent;
 };
 
