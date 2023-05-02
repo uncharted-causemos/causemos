@@ -222,6 +222,7 @@ export default {
           );
           this.textViewer.appendText(highlightedText, false, false, this.scrollAttemptCount < 4);
 
+          // Once scroll_id is null there are no more paragraphs. Clear the scrollId and the observer.
           if (partialContent.scroll_id === null) {
             this.scrollId = null;
             this.scrollObserver = null;
