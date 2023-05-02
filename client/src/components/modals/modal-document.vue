@@ -207,7 +207,6 @@ export default {
      */
     async getScrollData() {
       if (this.hasScrollId && this.contentHandler !== null && this.scrollAttemptCount > 1) {
-        this.paragraphCounter += PARAGRAPH_FETCH_LIMIT;
         const partialContent = await this.retrieveDocument(this.documentId, this.scrollId);
 
         if ((partialContent ?? null) !== null) {
