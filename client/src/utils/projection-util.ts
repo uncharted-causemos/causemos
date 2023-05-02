@@ -1,19 +1,25 @@
 import _ from 'lodash';
-import forecast from './forecast';
+import forecast, { ForecastResult, ForecastMethod } from './forecast';
 import {
   getYearFromTimestamp,
   getNumberOfMonthsSinceEpoch,
   getTimestampMillisFromYear,
   getTimestampFromNumberOfMonths,
 } from '@/utils/date-util';
+import { isConceptNodeWithDatasetAttached } from '@/utils/index-tree-util';
 
 import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
+import { ConceptNode, ConceptNodeWithoutDataset } from '@/types/Index';
 
 type ProjectionPoint = {
   x: number;
   y: number;
   projectionType: ProjectionPointType;
+};
+
+type ProjectionResults = {
+  [nodeId: string]: TimeseriesPointProjected[];
 };
 
 /**
@@ -176,4 +182,132 @@ export const runProjection = (
     projectionData: timeseriesProjected,
     ...fResult,
   };
+};
+
+const multiply = (data: TimeseriesPointProjected[], factor: number) =>
+  data.map((d) => ({ ...d, value: factor * d.value }));
+
+const invert = (data: TimeseriesPointProjected[]) => {
+  return data.map((d) => ({ ...d, value: 1 - d.value }));
+};
+
+const invertData = (data: TimeseriesPointProjected[], isInvert = true) => {
+  return isInvert ? invert(data) : data;
+};
+
+const sum = (...data: TimeseriesPointProjected[][]) => {
+  const _sum = (dataA: TimeseriesPointProjected[], dataB: TimeseriesPointProjected[]) => {
+    const result: TimeseriesPointProjected[] = [];
+    const length = Math.max(dataA.length, dataB.length);
+    for (let index = 0; index < length; index++) {
+      const pointA = dataA[index];
+      const pointB = dataB[index];
+      const point: TimeseriesPointProjected = {
+        projectionType:
+          pointA?.projectionType === ProjectionPointType.Historical &&
+          pointB?.projectionType === ProjectionPointType.Historical
+            ? ProjectionPointType.Historical
+            : ProjectionPointType.Interpolated,
+        timestamp: pointA?.timestamp || pointB?.timestamp || 0,
+        value: (pointA?.value || 0) + (pointB?.value || 0),
+      };
+      result.push(point);
+    }
+    return result;
+  };
+  const [first, ...rest] = data;
+  return rest.length === 0 ? first : rest.reduce((prev, cur) => _sum(prev, cur), first);
+};
+
+export const createProjectionRunner = (
+  conceptTree: ConceptNodeWithoutDataset,
+  historicalData: { [nodeId: string]: TimeseriesPoint[] },
+  targetPeriod: { start: number; end: number },
+  dataResOption: TemporalResolutionOption.Year | TemporalResolutionOption.Month
+) => {
+  const tree = conceptTree;
+  const data = historicalData;
+  const period = targetPeriod;
+  const resultForDatasetNode: ProjectionResults = {};
+  const resultForNoneDatasetNode: ProjectionResults = {};
+  const runInfo: { [nodeId: string]: ForecastResult<ForecastMethod> } = {};
+
+  const _calculateWeightedSum = (node: ConceptNode) => {
+    if (isConceptNodeWithDatasetAttached(node)) {
+      const projectedSeries = resultForDatasetNode[node.id];
+      return invertData(projectedSeries, node.dataset.isInverted);
+    }
+
+    // Retrieve the weighted projected timeseries data from children
+    const childProjectionSeriesData = node.components
+      .map((c) => {
+        const timeseries = _calculateWeightedSum(c.componentNode);
+        return timeseries !== null
+          ? invertData(multiply(timeseries, c.weight / 100), c.isOppositePolarity)
+          : null;
+      })
+      .filter((s): s is TimeseriesPointProjected[] => s !== null);
+
+    if (childProjectionSeriesData.length === 0) {
+      return null;
+    }
+
+    // Calculate the sum of children's weighted projected timeseries data
+    const weightedSumSeries = sum(...childProjectionSeriesData);
+    resultForNoneDatasetNode[node.id] = weightedSumSeries;
+    return weightedSumSeries;
+  };
+
+  const runner = {
+    projectAllDatasetNodes() {
+      for (const [nodeId, series] of Object.entries(data)) {
+        const { method, forecast, backcast, projectionData } = runProjection(
+          series,
+          period,
+          dataResOption
+        );
+        runInfo[nodeId] = {
+          method,
+          forecast,
+          backcast,
+        };
+        resultForDatasetNode[nodeId] = projectionData;
+      }
+      return runner;
+    },
+    // /**
+    //  * Project a single dataset node with an optional configuration
+    //  * @param nodeId
+    //  * @param options
+    //  */
+    // projectDatasetNode(nodeId: string, options: string) {}
+    // updateHistoricalData(nodeId: string, data: TimeseriesPoint[]) {
+
+    // },
+    // updateProjectedData(nodeId: string, data: TimeseriesPointProjected[])
+    calculateWeightedSum() {
+      _calculateWeightedSum(tree);
+      return runner;
+    },
+    runProjection() {
+      runner.projectAllDatasetNodes().calculateWeightedSum();
+      return runner;
+    },
+    getResults() {
+      return {
+        ...runner.getProjectionResultForNoneDatasetNodes(),
+        ...runner.getProjectionResultForDatasetNodes(),
+      };
+    },
+    getRunInfo() {
+      return runInfo;
+    },
+    getProjectionResultForNoneDatasetNodes() {
+      return resultForNoneDatasetNode;
+    },
+    getProjectionResultForDatasetNodes() {
+      return resultForDatasetNode;
+    },
+  };
+  return runner;
 };
