@@ -220,7 +220,7 @@ export default {
             partialContentExtracted,
             this.highlightsForSelected
           );
-          this.textViewer.appendText(highlightedText, false, false, this.scrollAttemptCount < 4);
+          this.textViewer.appendText(highlightedText, false, false, false);
 
           // Once scroll_id is null there are no more paragraphs. Clear the scrollId and the observer.
           if (partialContent.scroll_id === null) {
