@@ -187,4 +187,30 @@ router.get(
   })
 );
 
+/**
+ * GET Return a list of all countries covered by one or more datacubes.
+ * `req.query.data_ids` is an array of strings IDs for the datacubes.
+ * Note that countries are returned in no particular order, and include no duplicates.
+ */
+router.get(
+  '/coverage',
+  asyncHandler(async (req, res) => {
+    const dataIds = req.query.data_ids || [];
+    // Get metadata for each datacube with a dataId in the array
+    const datacubes = await datacubeService.getDatacubes(
+      { clauses: [{ field: 'dataId', operand: 'or', isNot: false, values: dataIds }] },
+      {}
+    );
+    // Construct a Set of all countries found in the `geography.country` of all of the datacubes
+    const countries = new Set();
+    datacubes.forEach((datacube) => {
+      datacube.geography.country.forEach((country) => {
+        countries.add(country);
+      });
+    });
+    // Convert the Set to an array and return (no guaranteed order)
+    res.json(Array.from(countries));
+  })
+);
+
 module.exports = router;
