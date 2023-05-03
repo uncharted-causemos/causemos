@@ -21,7 +21,11 @@
           </template>
         </OptionsButton>
       </div>
-      <div class="timeseries add-horizontal-margin"><!-- TODO: --></div>
+      <IndexProjectionsExpandedNodeTimeseries
+        class="timeseries add-horizontal-margin"
+        :projection-start-timestamp="788918400000"
+        :projection-end-timestamp="1577836800000"
+      />
 
       <div class="dataset-metadata add-horizontal-margin">
         <p class="margin-top">Dataset description</p>
@@ -45,7 +49,11 @@
       <div class="add-horizontal-margin timeseries-label">
         <span class="subdued un-font-small">{{ dataSourceText }}</span>
       </div>
-      <div class="timeseries add-horizontal-margin"><!-- TODO: --></div>
+      <IndexProjectionsExpandedNodeTimeseries
+        class="timeseries add-horizontal-margin"
+        :projection-start-timestamp="788918400000"
+        :projection-end-timestamp="1577836800000"
+      />
     </div>
   </div>
 </template>
@@ -61,6 +69,7 @@ import {
 } from '@/utils/index-tree-util';
 import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
+import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
 
 const optionsButtonMenu = [
   {
@@ -122,10 +131,9 @@ $horizontal-margin: 20px;
 }
 
 .timeseries {
-  border: 1px solid $un-color-black-10;
   $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin;
   width: $timeseriesWidth;
-  height: 1 / 4 * $timeseriesWidth;
+  height: 1 / 4 * $timeseriesWidth + 40px;
   margin-top: 5px;
 
   &.warning {
