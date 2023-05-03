@@ -199,7 +199,11 @@ router.get(
     // Get metadata for each datacube with a dataId in the array
     const datacubes = await datacubeService.getDatacubes(
       { clauses: [{ field: 'dataId', operand: 'or', isNot: false, values: dataIds }] },
-      {}
+      {
+        collapse: {
+          field: 'data_id',
+        },
+      }
     );
     // Construct a Set of all countries found in the `geography.country` of all of the datacubes
     const countries = new Set();
