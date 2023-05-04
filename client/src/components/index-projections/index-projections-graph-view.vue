@@ -21,6 +21,7 @@
         class="index-tree-node"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
+        :timeseries="getProjectionsForNode(cell.node.id)"
         @select="(id) => emit('select-element', id)"
       />
       <div
@@ -45,10 +46,12 @@ import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { getGridCellsFromIndexTreeAndWorkbench } from '@/utils/grid-cell-util';
 import IndexProjectionsNode from './index-projections-node.vue';
+import { TimeseriesPoint } from '@/types/Timeseries';
 
-defineProps<{
+const props = defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
+  projections: Map<string, TimeseriesPoint[]>;
 }>();
 
 const emit = defineEmits<{
@@ -68,6 +71,10 @@ const workbench = useIndexWorkBench();
 const gridCells = computed<GridCell[]>(() => {
   return getGridCellsFromIndexTreeAndWorkbench(indexTree.tree.value, workbench.items.value);
 });
+
+const getProjectionsForNode = (nodeId: string) => {
+  return props.projections.get(nodeId) ?? [];
+};
 </script>
 
 <style lang="scss" scoped>

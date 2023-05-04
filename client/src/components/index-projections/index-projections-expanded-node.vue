@@ -25,6 +25,7 @@
         class="timeseries add-horizontal-margin"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
+        :timeseries="timeseries"
       />
 
       <div class="dataset-metadata add-horizontal-margin">
@@ -53,6 +54,7 @@
         class="timeseries add-horizontal-margin"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
+        :timeseries="timeseries"
       />
     </div>
   </div>
@@ -70,6 +72,7 @@ import {
 import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
+import { TimeseriesPoint } from '@/types/Timeseries';
 
 const optionsButtonMenu = [
   {
@@ -96,6 +99,7 @@ const props = defineProps<{
   nodeData: ConceptNode;
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
+  timeseries: TimeseriesPoint[];
 }>();
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));

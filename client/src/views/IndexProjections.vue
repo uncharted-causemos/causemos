@@ -65,6 +65,7 @@
         class="fill-space"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
+        :projections="historicalData"
         @select-element="selectElement"
         @deselect-edge="deselectEdge"
       />
@@ -74,6 +75,7 @@
         :selected-node-id="selectedNodeId"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
+        :projections="historicalData"
         @select-element="selectElement"
         @deselect-node="deselectNode"
       />
