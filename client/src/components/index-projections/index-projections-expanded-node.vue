@@ -23,8 +23,8 @@
       </div>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
-        :projection-start-timestamp="788918400000"
-        :projection-end-timestamp="1577836800000"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
       />
 
       <div class="dataset-metadata add-horizontal-margin">
@@ -51,8 +51,8 @@
       </div>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
-        :projection-start-timestamp="788918400000"
-        :projection-end-timestamp="1577836800000"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
       />
     </div>
   </div>
@@ -94,6 +94,8 @@ const optionsButtonMenu = [
 
 const props = defineProps<{
   nodeData: ConceptNode;
+  projectionStartTimestamp: number;
+  projectionEndTimestamp: number;
 }>();
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));

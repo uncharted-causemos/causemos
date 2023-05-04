@@ -12,8 +12,8 @@
       </div>
       <IndexProjectionsNodeTimeseries
         class="timeseries"
-        :projection-start-timestamp="788918400000"
-        :projection-end-timestamp="1577836800000"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
       />
     </div>
 
@@ -28,8 +28,8 @@
       </div>
       <IndexProjectionsNodeTimeseries
         class="timeseries"
-        :projection-start-timestamp="788918400000"
-        :projection-end-timestamp="1577836800000"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
       />
     </div>
   </div>
@@ -49,6 +49,8 @@ import IndexProjectionsNodeTimeseries from './index-projections-node-timeseries.
 
 const props = defineProps<{
   nodeData: ConceptNode;
+  projectionStartTimestamp: number;
+  projectionEndTimestamp: number;
 }>();
 
 const emit = defineEmits<{

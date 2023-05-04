@@ -44,8 +44,8 @@
             <button class="btn btn-sm disabled" @click="() => {}">Edit</button>
           </header>
           <p class="un-font-small subtitle">
-            {{ timestampFormatter(projectionStartDate, null, null) }} -
-            {{ timestampFormatter(projectionEndDate, null, null) }}
+            {{ timestampFormatter(projectionStartTimestamp, null, null) }} -
+            {{ timestampFormatter(projectionEndTimestamp, null, null) }}
           </p>
         </section>
         <section>
@@ -64,6 +64,8 @@
       <IndexProjectionsGraphView
         v-if="selectedNodeId === null"
         class="fill-space"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
         @select-element="selectElement"
         @deselect-edge="deselectEdge"
       />
@@ -71,6 +73,8 @@
         v-else
         class="fill-space"
         :selected-node-id="selectedNodeId"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
         @select-element="selectElement"
         @deselect-node="deselectNode"
       />
@@ -144,8 +148,8 @@ const COUNTRY_MODES: DropdownItem[] = [
 ];
 const isSingleCountryModeActive = ref(true);
 
-const projectionStartDate = ref(getTimestampMillis(2011, 0));
-const projectionEndDate = ref(getTimestampMillis(2025, 0));
+const projectionStartTimestamp = ref(getTimestampMillis(1990, 0));
+const projectionEndTimestamp = ref(getTimestampMillis(2025, 0));
 </script>
 
 <style lang="scss" scoped>

@@ -19,6 +19,8 @@
       <IndexProjectionsNode
         :node-data="cell.node"
         class="index-tree-node"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
         @select="(id) => emit('select-element', id)"
       />
       <div
@@ -43,6 +45,11 @@ import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { getGridCellsFromIndexTreeAndWorkbench } from '@/utils/grid-cell-util';
 import IndexProjectionsNode from './index-projections-node.vue';
+
+defineProps<{
+  projectionStartTimestamp: number;
+  projectionEndTimestamp: number;
+}>();
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
