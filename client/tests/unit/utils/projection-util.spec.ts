@@ -11,8 +11,6 @@ import { runProjection, createProjectionRunner } from '@/utils/projection-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { TemporalResolutionOption, AggregationOption, ProjectionAlgorithm } from '@/types/Enums';
 import { Subset } from '@/types/Common';
-// import { ConceptNodeWithoutDataset } from '@/types/Index';
-// import { WeightedComponent } from '@/types/WeightedComponent';
 
 const getNumM = (year: number, month: number) => {
   return getNumberOfMonthsSinceEpoch(getTsM(year, month));
@@ -180,6 +178,20 @@ describe('projection-util', () => {
         );
         expect(initialize.args[0][1]).to.deep.equal({ backcastSteps: 1, forecastSteps: 2 });
       });
+
+      it('case 5: target period does not overlap with data coverage', () => {
+        const initialize = createStub();
+        const targetPeriod = { start: getTsY(1980), end: getTsY(1982) };
+        runProjection(
+          [
+            { timestamp: getTsY(1984), value: 3 },
+            { timestamp: getTsY(1985), value: 6 },
+          ],
+          targetPeriod,
+          TemporalResolutionOption.Year
+        );
+        expect(initialize.args[0][1]).to.deep.equal({ backcastSteps: 4, forecastSteps: 0 });
+      });
     });
 
     it('returns correct projection result with linear interpolation', () => {
@@ -299,26 +311,40 @@ describe('projection-util', () => {
       expect(result).to.deep.include(DEFAULT_TEST_FORECAST_RESULT);
     });
 
-    it('throws error when none of data point falls within target period', () => {
+    it('should still return projection data when start date of target period > last date of the input data', () => {
       sinon.stub(fm.default, 'initialize').returns({
-        runAuto: () => createTestForecastResult(),
+        runAuto: () =>
+          createTestForecastResult({
+            forecast: {
+              data: [
+                [1984, 1],
+                [1985, 2],
+                [1986, 3],
+                [1987, 4],
+              ],
+            },
+            backcast: { data: [] },
+          }),
       } as any);
-      const targetPeriod = { start: getTsY(1990), end: getTsY(2000) };
-      expect(() => {
-        runProjection(
-          [
-            { timestamp: getTsY(1980), value: 3 },
-            { timestamp: getTsY(1982), value: 6 },
-          ],
-          targetPeriod,
-          TemporalResolutionOption.Year
-        );
-      }).to.throw('Invalid target period');
+      const targetPeriod = { start: getTsY(1985), end: getTsY(1987) };
+      const result = runProjection(
+        [
+          { timestamp: getTsY(1982), value: 3 },
+          { timestamp: getTsY(1983), value: 6 },
+        ],
+        targetPeriod,
+        TemporalResolutionOption.Year
+      );
+      expect(result.projectionData).to.deep.equal([
+        { timestamp: getTsY(1985), value: 2, projectionType: 'forecasted' },
+        { timestamp: getTsY(1986), value: 3, projectionType: 'forecasted' },
+        { timestamp: getTsY(1987), value: 4, projectionType: 'forecasted' },
+      ]);
     });
   });
-  describe.only('createProjectionRunner', () => {
+  describe('createProjectionRunner', () => {
     const testTree = {
-      id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
+      id: 'output-node',
       name: 'Overall Priority',
       isOutputNode: true,
       components: [
@@ -347,7 +373,7 @@ describe('projection-util', () => {
         },
         {
           componentNode: {
-            id: '6db6284d-7879-4735-a460-5f2b273c0bf9',
+            id: 'weighted-sum-node-2',
             name: 'Largest vulnerable population',
             isOutputNode: false,
             components: [
@@ -381,7 +407,7 @@ describe('projection-util', () => {
                 isWeightUserSpecified: true,
                 weight: 60,
                 componentNode: {
-                  id: '2f624d92-efa0-431a-a3a1-5521871420ad',
+                  id: 'weighted-sum-node-1',
                   name: 'Population Health',
                   isOutputNode: false,
                   components: [
@@ -451,14 +477,6 @@ describe('projection-util', () => {
       'data-node-1': [
         { timestamp: getTsM(1980, 2), value: 0.2 },
         { timestamp: getTsM(1980, 4), value: 0.4 },
-        // corresponding forecast values will look like following
-        // { timestamp: getTsM(1980, 0), value: 0, projectionType: 'backcasted' },
-        // { timestamp: getTsM(1980, 1), value: 0.1, projectionType: 'backcasted' },
-        // { timestamp: getTsM(1980, 2), value: 0.2, projectionType: 'historical' },
-        // { timestamp: getTsM(1980, 3), value: 0.3, projectionType: 'interpolated' },
-        // { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
-        // { timestamp: getTsM(1980, 5), value: 0.5, projectionType: 'forecasted' },
-        // { timestamp: getTsM(1980, 6), value: 0.6, projectionType 'forecasted' },
       ],
       'data-node-2': [
         { timestamp: getTsM(1980, 0), value: 0.4 },
@@ -468,60 +486,14 @@ describe('projection-util', () => {
         { timestamp: getTsM(1980, 4), value: 0.4 },
         { timestamp: getTsM(1980, 5), value: 0.6 },
         { timestamp: getTsM(1980, 6), value: 0.4 },
-        // corresponding forecast values will look like following
-        // { timestamp: getTsM(1980, 0), value: 0.4, projectionType: 'historical' },
-        // { timestamp: getTsM(1980, 1), value: 0.6, projectionType: 'historical' },
-        // { timestamp: getTsM(1980, 2), value: 0.4, projectionType: 'historical' },
-        // { timestamp: getTsM(1980, 3), value: 0.6, projectionType: 'historical' },
-        // { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
-        // { timestamp: getTsM(1980, 5), value: 0.6, projectionType: 'historical' },
-        // { timestamp: getTsM(1980, 6), value: 0.4, projectionType 'historical' },
       ],
       'data-node-3': [
         { timestamp: getTsM(1980, 0), value: 1 },
         { timestamp: getTsM(1980, 2), value: 0.6 },
         { timestamp: getTsM(1980, 4), value: 0.2 },
         { timestamp: getTsM(1980, 6), value: 0 },
-        // corresponding forecast values will look like following
-        // { timestamp: getTsM(1980, 0), value: 1, projectionType: 'historical' },
-        // { timestamp: getTsM(1980, 1), value: 0.8, projectionType: 'interpolated' },
-        // { timestamp: getTsM(1980, 2), value: 0.6 projectionType: 'historical' },
-        // { timestamp: getTsM(1980, 3), value: 0.4, projectionType: 'interpolated' },
-        // { timestamp: getTsM(1980, 4), value: 0.2, projectionType: 'historical' },
-        // { timestamp: getTsM(1980, 5), value: 0.1, projectionType: 'interpolated' },
-        // { timestamp: getTsM(1980, 6), value: 0, projectionType 'historical' },
       ],
     };
-    // corresponding forecast values will look like following
-    // const expectedProjectionForHistoricalData = {
-    //   'data-node-1': [
-    //     { timestamp: getTsM(1980, 0), value: 0, projectionType: 'backcasted' },
-    //     { timestamp: getTsM(1980, 1), value: 0.1, projectionType: 'backcasted' },
-    //     { timestamp: getTsM(1980, 2), value: 0.2, projectionType: 'historical' },
-    //     { timestamp: getTsM(1980, 3), value: 0.30000000000000004, projectionType: 'interpolated' },
-    //     { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
-    //     { timestamp: getTsM(1980, 5), value: 0.5, projectionType: 'forecasted' },
-    //     { timestamp: getTsM(1980, 6), value: 0.6, projectionType: 'forecasted' },
-    //   ],
-    //   'data-node-2': [
-    //     { timestamp: getTsM(1980, 0), value: 0.4, projectionType: 'historical' },
-    //     { timestamp: getTsM(1980, 1), value: 0.6, projectionType: 'historical' },
-    //     { timestamp: getTsM(1980, 2), value: 0.4, projectionType: 'historical' },
-    //     { timestamp: getTsM(1980, 3), value: 0.6, projectionType: 'historical' },
-    //     { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
-    //     { timestamp: getTsM(1980, 5), value: 0.6, projectionType: 'historical' },
-    //     { timestamp: getTsM(1980, 6), value: 0.4, projectionType: 'historical' },
-    //   ],
-    //   'data-node-3': [
-    //     { timestamp: getTsM(1980, 0), value: 1, projectionType: 'historical' },
-    //     { timestamp: getTsM(1980, 1), value: 0.8, projectionType: 'interpolated' },
-    //     { timestamp: getTsM(1980, 2), value: 0.6, projectionType: 'historical' },
-    //     { timestamp: getTsM(1980, 3), value: 0.4, projectionType: 'interpolated' },
-    //     { timestamp: getTsM(1980, 4), value: 0.2, projectionType: 'historical' },
-    //     { timestamp: getTsM(1980, 5), value: 0.1, projectionType: 'interpolated' },
-    //     { timestamp: getTsM(1980, 6), value: 0, projectionType: 'historical' },
-    //   ],
-    // }
     beforeEach(() => {
       // set up fake forecast function that returns backcast and foreacast results only with
       // first input data ('data-node-1')
@@ -658,7 +630,7 @@ describe('projection-util', () => {
         },
       });
     });
-    it('should calculate weighted sum of its children for each index node in the tree', () => {
+    it('should calculate weighted sum of its children for each weighted sum node in the tree', () => {
       // Tree structure with weights
       // root = 50% of 40% of data-node-1
       //                +
@@ -679,7 +651,7 @@ describe('projection-util', () => {
         // +
         // 50% of inverted 'data-node-3'
         // [0,   0.1, 0.2, 0.3, 0.4, 0.45, 0.5]
-        '2f624d92-efa0-431a-a3a1-5521871420ad': [
+        'weighted-sum-node-1': [
           { timestamp: getTsM(1980, 0), value: 0.3, projectionType: 'historical' },
           { timestamp: getTsM(1980, 1), value: 0.3, projectionType: 'interpolated' },
           { timestamp: getTsM(1980, 2), value: 0.5, projectionType: 'historical' },
@@ -688,12 +660,12 @@ describe('projection-util', () => {
           { timestamp: getTsM(1980, 5), value: 0.65, projectionType: 'interpolated' },
           { timestamp: getTsM(1980, 6), value: 0.8, projectionType: 'historical' },
         ],
-        // 60 % of '2f624d92-efa0-431a-a3a1-5521871420ad'
+        // 60 % of 'weighted-sum-node-1'
         // [0.18, 0.18, 0.3, 0.3, 0.42, 0.39, 0.48]
         // +
         // 40 % of 'data-node-1'
         // [0, 0.04, 0.08, 0.12, 0.16, 0.20, 0.24]
-        '6db6284d-7879-4735-a460-5f2b273c0bf9': [
+        'weighted-sum-node-2': [
           { timestamp: getTsM(1980, 0), value: 0.18, projectionType: 'interpolated' },
           { timestamp: getTsM(1980, 1), value: 0.22, projectionType: 'interpolated' },
           { timestamp: getTsM(1980, 2), value: 0.38, projectionType: 'historical' },
@@ -702,8 +674,8 @@ describe('projection-util', () => {
           { timestamp: getTsM(1980, 5), value: 0.59, projectionType: 'interpolated' },
           { timestamp: getTsM(1980, 6), value: 0.72, projectionType: 'interpolated' },
         ],
-        // 50% of '6db6284d-7879-4735-a460-5f2b273c0bf9'
-        '6e4adcee-c3af-4696-b84c-ee1169adcd4c': [
+        // 50% of 'weighted-sum-node-2'
+        'output-node': [
           { timestamp: getTsM(1980, 0), value: 0.09, projectionType: 'interpolated' },
           { timestamp: getTsM(1980, 1), value: 0.11, projectionType: 'interpolated' },
           { timestamp: getTsM(1980, 2), value: 0.19, projectionType: 'historical' },
@@ -721,6 +693,152 @@ describe('projection-util', () => {
 
       expect(runner.getProjectionResultForNoneDatasetNodes()).to.deep.equal(expected);
       expect(runner.getResults()).to.deep.include(expected);
+    });
+    it('should run projection fine with missing historical data', () => {
+      // remove data-node-1
+      const historicalData: any = _.cloneDeep(testHistoricalData);
+      historicalData['data-node-1'] = undefined;
+      const result = createProjectionRunner(
+        testTree,
+        historicalData,
+        testTargetPeriod,
+        TemporalResolutionOption.Month
+      )
+        .runProjection()
+        .getResults();
+      expect(result).to.deep.equal({
+        // 50% of opposite 'data-node-2'
+        // [0.3, 0.2, 0.3, 0.2, 0.3, 0.2,  0.3]
+        // +
+        // 50% of inverted 'data-node-3'
+        // [0,   0.1, 0.2, 0.3, 0.4, 0.45, 0.5]
+        'weighted-sum-node-1': [
+          { timestamp: getTsM(1980, 0), value: 0.3, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 1), value: 0.3, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.5, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.5, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.7, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.65, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0.8, projectionType: 'historical' },
+        ],
+        // 60 % of 'weighted-sum-node-1'
+        'weighted-sum-node-2': [
+          { timestamp: getTsM(1980, 0), value: 0.18, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 1), value: 0.18, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.3, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.3, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.42, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.39, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0.48, projectionType: 'historical' },
+        ],
+        // 50% of 'weighted-sum-node-2'
+        'output-node': [
+          { timestamp: getTsM(1980, 0), value: 0.09, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 1), value: 0.09, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.15, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.15, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.21, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.195, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0.24, projectionType: 'historical' },
+        ],
+        'data-node-2': [
+          { timestamp: getTsM(1980, 0), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 1), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 2), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 6), value: 0.4, projectionType: 'historical' },
+        ],
+        'data-node-3': [
+          { timestamp: getTsM(1980, 0), value: 1, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 1), value: 0.8, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.4, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.2, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.1, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0, projectionType: 'historical' },
+        ],
+      });
+    });
+    it('should return projection run information for each node', () => {
+      const runInfo = createProjectionRunner(
+        testTree,
+        testHistoricalData,
+        testTargetPeriod,
+        TemporalResolutionOption.Month
+      )
+        .runProjection()
+        .getRunInfo();
+
+      expect(runInfo).to.deep.equal({
+        'data-node-1': {
+          method: 'Holt',
+          forecast: {
+            data: [[126, 0.6]],
+            error: 1,
+            parameters: {
+              alpha: 0.1,
+              beta: 0.4,
+            },
+          },
+          backcast: {
+            data: [[120, 0]],
+            error: 2,
+            parameters: {
+              alpha: 0.2,
+              beta: 0.5,
+            },
+          },
+        },
+        'data-node-2': {
+          method: 'Holt',
+          forecast: {
+            data: [],
+            error: 1,
+            parameters: {
+              alpha: 0.1,
+              beta: 0.4,
+            },
+          },
+          backcast: {
+            data: [],
+            error: 2,
+            parameters: {
+              alpha: 0.2,
+              beta: 0.5,
+            },
+          },
+        },
+        'data-node-3': {
+          method: 'Holt',
+          forecast: {
+            data: [],
+            error: 1,
+            parameters: {
+              alpha: 0.1,
+              beta: 0.4,
+            },
+          },
+          backcast: {
+            data: [],
+            error: 2,
+            parameters: {
+              alpha: 0.2,
+              beta: 0.5,
+            },
+          },
+        },
+        'weighted-sum-node-1': {
+          method: 'Weighted Sum',
+        },
+        'weighted-sum-node-2': {
+          method: 'Weighted Sum',
+        },
+        'output-node': {
+          method: 'Weighted Sum',
+        },
+      });
     });
   });
 });

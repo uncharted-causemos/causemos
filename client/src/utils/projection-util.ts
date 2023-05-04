@@ -22,6 +22,43 @@ type ProjectionResults = {
   [nodeId: string]: TimeseriesPointProjected[];
 };
 
+type WEIGHTED_SUM = 'Weighted Sum';
+
+const multiply = (data: TimeseriesPointProjected[], factor: number) =>
+  data.map((d) => ({ ...d, value: factor * d.value }));
+
+const invert = (data: TimeseriesPointProjected[]) => {
+  return data.map((d) => ({ ...d, value: 1 - d.value }));
+};
+
+const invertData = (data: TimeseriesPointProjected[], isInvert = true) => {
+  return isInvert ? invert(data) : data;
+};
+
+const sum = (...data: TimeseriesPointProjected[][]) => {
+  const _sum = (dataA: TimeseriesPointProjected[], dataB: TimeseriesPointProjected[]) => {
+    const result: TimeseriesPointProjected[] = [];
+    const length = Math.max(dataA.length, dataB.length);
+    for (let index = 0; index < length; index++) {
+      const pointA = dataA[index];
+      const pointB = dataB[index];
+      const point: TimeseriesPointProjected = {
+        projectionType:
+          pointA?.projectionType === ProjectionPointType.Historical &&
+          pointB?.projectionType === ProjectionPointType.Historical
+            ? ProjectionPointType.Historical
+            : ProjectionPointType.Interpolated,
+        timestamp: pointA?.timestamp || pointB?.timestamp || 0,
+        value: (pointA?.value || 0) + (pointB?.value || 0),
+      };
+      result.push(point);
+    }
+    return result;
+  };
+  const [first, ...rest] = data;
+  return rest.length === 0 ? first : rest.reduce((prev, cur) => _sum(prev, cur), first);
+};
+
 /**
  * Return function that convert timestamp value to yearly or monthly step
  * based on the provided data resolution option
@@ -135,10 +172,6 @@ export const runProjection = (
   const startX = fromTimestamp(targetPeriod.start);
   const endX = fromTimestamp(targetPeriod.end);
 
-  if (startX >= inputData[inputData.length - 1][0] || endX <= inputData[0][0]) {
-    throw new Error('Invalid target period');
-  }
-
   const { forecastSteps, backcastSteps } = calculateNumberOfForecastStepsNeeded(
     inputData,
     startX,
@@ -184,41 +217,6 @@ export const runProjection = (
   };
 };
 
-const multiply = (data: TimeseriesPointProjected[], factor: number) =>
-  data.map((d) => ({ ...d, value: factor * d.value }));
-
-const invert = (data: TimeseriesPointProjected[]) => {
-  return data.map((d) => ({ ...d, value: 1 - d.value }));
-};
-
-const invertData = (data: TimeseriesPointProjected[], isInvert = true) => {
-  return isInvert ? invert(data) : data;
-};
-
-const sum = (...data: TimeseriesPointProjected[][]) => {
-  const _sum = (dataA: TimeseriesPointProjected[], dataB: TimeseriesPointProjected[]) => {
-    const result: TimeseriesPointProjected[] = [];
-    const length = Math.max(dataA.length, dataB.length);
-    for (let index = 0; index < length; index++) {
-      const pointA = dataA[index];
-      const pointB = dataB[index];
-      const point: TimeseriesPointProjected = {
-        projectionType:
-          pointA?.projectionType === ProjectionPointType.Historical &&
-          pointB?.projectionType === ProjectionPointType.Historical
-            ? ProjectionPointType.Historical
-            : ProjectionPointType.Interpolated,
-        timestamp: pointA?.timestamp || pointB?.timestamp || 0,
-        value: (pointA?.value || 0) + (pointB?.value || 0),
-      };
-      result.push(point);
-    }
-    return result;
-  };
-  const [first, ...rest] = data;
-  return rest.length === 0 ? first : rest.reduce((prev, cur) => _sum(prev, cur), first);
-};
-
 export const createProjectionRunner = (
   conceptTree: ConceptNodeWithoutDataset,
   historicalData: { [nodeId: string]: TimeseriesPoint[] },
@@ -231,7 +229,7 @@ export const createProjectionRunner = (
   const resultForDatasetNode: ProjectionResults = {};
   const resultForNoneDatasetNode: ProjectionResults = {};
   const runInfo: {
-    [nodeId: string]: ForecastResult<ForecastMethod> | { method: 'Weighted Sum' };
+    [nodeId: string]: ForecastResult<ForecastMethod> | { method: WEIGHTED_SUM };
   } = {};
 
   const _calculateWeightedSum = (node: ConceptNode) => {
@@ -247,8 +245,7 @@ export const createProjectionRunner = (
         const timeseries = _calculateWeightedSum(c.componentNode);
         return timeseries !== null
           ? multiply(invertData(timeseries, c.isOppositePolarity), c.weight / 100)
-          : // ? invertData(multiply(timeseries, c.weight / 100), c.isOppositePolarity)
-            null;
+          : null;
       })
       .filter((s): s is TimeseriesPointProjected[] => s !== null);
 
@@ -302,7 +299,6 @@ export const createProjectionRunner = (
       // TODO: Implement this method
       return runner;
     },
-
     calculateWeightedSum() {
       _calculateWeightedSum(tree);
       return runner;
