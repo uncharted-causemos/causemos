@@ -95,4 +95,10 @@ export interface GridCell {
   startColumn: number;
   hasOutputLine: boolean;
   isLastChild: boolean;
+  isOppositePolarity: boolean;
+}
+
+export interface PolarityColors {
+  positive: string;
+  negative: string;
 }

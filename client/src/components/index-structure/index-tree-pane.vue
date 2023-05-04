@@ -24,6 +24,8 @@
           [EDGE_CLASS.SELECTED]: isIncomingSelected(cell.node.id),
           [EDGE_CLASS.HIGHLIGHTED]:
             isIncomingHighlighted(cell.node.id) && !isIncomingSelected(cell.node.id),
+          [EDGE_CLASS.POLARITY_POS]: !isInboundPolarityNegative(cell.node.id),
+          [EDGE_CLASS.POLARITY_NEG]: isInboundPolarityNegative(cell.node.id),
         }"
         @mouseenter="() => !isConnecting && handleHighlightEdge(cell.node)"
         @mouseleave="highlightClear"
@@ -57,6 +59,8 @@
             isOutgoingHighlighted(cell.node.id) && !isOutgoingSelected(cell.node.id),
           [EDGE_CLASS.HIGHLIGHTED_Y]:
             isOutgoingYHighlighted(cell.node.id) && !isOutgoingYSelected(cell.node.id),
+          [EDGE_CLASS.POLARITY_POS]: !cell.isOppositePolarity,
+          [EDGE_CLASS.POLARITY_NEG]: cell.isOppositePolarity,
         }"
         @mouseenter="() => !isConnecting && handleMouseEnter(cell.node.id)"
         @mouseleave="highlightClear"
@@ -107,6 +111,8 @@ const EDGE_CLASS = {
   HIGHLIGHTED_Y: 'highlighted-y',
   OUTGOING: 'outgoing',
   INCOMING: 'incoming',
+  POLARITY_POS: 'polarity-pos',
+  POLARITY_NEG: 'polarity-neg',
 };
 
 const props = defineProps<{
@@ -132,7 +138,6 @@ const emit = defineEmits<{
 const indexTree = useIndexTree();
 const { findNode } = indexTree;
 const workbench = useIndexWorkBench();
-
 const isDescendentOfConnectingNode = (targetId: string) => {
   if (connectingId.value !== null) {
     return workbench.isDescendant(targetId, connectingId.value);
@@ -258,6 +263,18 @@ const isSelected = (id: string) => {
 const gridCells = computed<GridCell[]>(() => {
   return getGridCellsFromIndexTreeAndWorkbench(indexTree.tree.value, workbench.items.value);
 });
+
+const isInboundPolarityNegative = (nodeId: string) => {
+  const parentCell = gridCells.value.filter((cell) => cell.node.id === nodeId)[0];
+  const adjacentChildCell = gridCells.value.filter(
+    (cell) =>
+      cell.startRow === parentCell.startRow && parentCell.startColumn === parentCell.startColumn - 1
+  );
+  if (adjacentChildCell.length > 0) {
+    return adjacentChildCell[0].isOppositePolarity ?? false;
+  }
+  return false;
+};
 
 const renameNode = (nodeId: string, newName: string) => {
   workbench.findAndRenameNode(nodeId, newName);

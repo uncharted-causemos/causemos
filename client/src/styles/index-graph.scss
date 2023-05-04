@@ -50,6 +50,12 @@ $index-graph-padding-vertical: 40px;
     flex: 1;
     &.visible {
       border-top: $edge-styles;
+      &.polarity-pos {
+        border-color: $positive;
+      }
+      &.polarity-neg {
+        border-color: $negative;
+      }
       &.highlighted {
         border-color: $accent-light;
       }
@@ -69,6 +75,12 @@ $index-graph-padding-vertical: 40px;
       // Extend edge down to the sibling below this one
       height: calc(100% + #{$space-between-rows});
       border-right: $edge-styles;
+      &.polarity-pos {
+        border-color: $positive;
+      }
+      &.polarity-neg {
+        border-color: $negative;
+      }
       &.highlighted {
         border-top-color: $accent-light;
       }

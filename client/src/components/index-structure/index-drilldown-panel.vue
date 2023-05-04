@@ -31,6 +31,21 @@
           </div>
         </div>
         <h4>{{ nodeName }}</h4>
+        <div class="polarity-select-container">
+          <div class="polarity-statement start">
+            <h5>High {{ nodeUpstreamName }} represents</h5>
+          </div>
+          <dropdown-button
+            :is-dropdown-left-aligned="true"
+            :inner-button-label="''"
+            :items="isPolarityOppositeOptions"
+            :selected-item="isUpstreamNodePolarityNegative"
+            @item-selected="null"
+          />&nbsp;
+          <div class="polarity-statement end">
+            <h5>{{ nodeName }} values.</h5>
+          </div>
+        </div>
       </div>
       <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
       <IndexDocumentSnippets
@@ -185,7 +200,7 @@ import IndexInvertData from './index-invert-data.vue';
 import { computed, watch, ref } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { ConceptNode, SelectableIndexElementId } from '@/types/Index';
+import { ConceptNode, SelectableIndexElementId, PolarityColors } from '@/types/Index';
 import {
   duplicateNode,
   isOutputIndexNode,
@@ -197,6 +212,7 @@ import {
 } from '@/utils/index-tree-util';
 import { OptionButtonMenu } from '@/utils/index-common-util';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
+import DropdownButton from '@/components/dropdown-button.vue';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -222,6 +238,31 @@ const renameNode = (newName: string) => {
   workbench.findAndRenameNode(selectedNode.value.id, newName);
   indexTree.findAndRenameNode(selectedNode.value.id, newName);
 };
+
+const polarityColors = computed<PolarityColors>(() => {
+  const root = document.querySelector(':root') ?? null;
+  if (root !== null) {
+    const computedStyle = getComputedStyle(root) ?? null;
+
+    if (computedStyle !== null) {
+      const p = computedStyle.getPropertyValue('positive');
+      const n = computedStyle.getPropertyValue('negative');
+      const colors: PolarityColors = {
+        positive: p.length > 0 ? p : '#0072b2',
+        negative: n.length > 0 ? n : '#d55e00',
+      };
+      return colors;
+    }
+  }
+  return {
+    positive: '#0072b2',
+    negative: '#d55e00',
+  };
+});
+const isPolarityOppositeOptions = [
+  { displayName: 'high', value: false, color: polarityColors.value.positive },
+  { displayName: 'low', value: true, color: polarityColors.value.negative },
+];
 
 // Options button
 
@@ -336,6 +377,19 @@ const selectedUpstreamNodeName = computed(() => {
   return null;
 });
 
+const isUpstreamNodePolarityNegative = computed(() => {
+  const edges = selectedEdgeComponents.value;
+  if (edges !== null && 'components' in edges.target) {
+    const childNode = edges.target.components.filter(
+      (component) => component.componentNode.id === edges.source.id
+    );
+    if (childNode.length > 0 && 'isOppositePolarity' in childNode[0]) {
+      return childNode[0].isOppositePolarity;
+    }
+  }
+  return false;
+});
+
 const datasetMetadata = useModelMetadataSimple(selectedDatasetDataId);
 
 const isRenaming = ref(false);
@@ -373,8 +427,8 @@ const searchForNode = (id: string) => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/variables.scss';
-@import '@/styles/uncharted-design-tokens.scss';
+@import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
 
 .fa-long-arrow-right {
   color: $un-color-black-20;
@@ -444,5 +498,24 @@ section {
 
 .edge-target {
   border-top: 1px solid $separator;
+}
+
+.polarity-select-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  .polarity-statement {
+    padding-top: 3px;
+    &.start {
+      margin-right: 5px;
+    }
+    &.end {
+      margin-left: 5px;
+    }
+  }
+}
+
+.dropdown-button-container button span strong {
+  color: green;
 }
 </style>
