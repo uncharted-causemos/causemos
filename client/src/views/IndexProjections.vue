@@ -307,14 +307,9 @@ main {
   flex: 1;
   min-width: 0;
   position: relative;
-  // Make sure you can always scroll down to see nodes that are hidden behind the legend
-  padding-bottom: 100px;
 
   .legend {
-    position: absolute;
-    bottom: 0;
-    left: 20px;
-    right: 20px;
+    margin: 0 20px;
   }
 
   .fill-space {
