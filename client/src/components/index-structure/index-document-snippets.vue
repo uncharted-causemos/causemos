@@ -20,7 +20,7 @@
         <div class="snippet" v-for="(snippet, i) in snippetsForSelectedNode" :key="i">
           <span class="open-quote">"</span>
           <div class="snippet-body">
-            <p><span v-html="snippet.text" /></p>
+            <p class="overflow-auto"><span v-html="snippet.text" /></p>
             <div class="bottom-row">
               <div class="metadata">
                 <p>{{ snippet.documentTitle }}</p>
@@ -279,5 +279,9 @@ section {
       padding: 0 2px;
     }
   }
+}
+
+.overflow-auto {
+  overflow: auto;
 }
 </style>
