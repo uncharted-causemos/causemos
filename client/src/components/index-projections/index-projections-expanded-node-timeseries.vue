@@ -8,8 +8,7 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
 import { ref, toRefs, watch } from 'vue';
-import initializeChart from '@/charts/projections-renderer';
-import { TimeseriesPoint } from '@/types/Timeseries';
+import renderChart from '@/charts/projections-renderer';
 
 // TODO: replace with real data
 const TEST_TIMESERIES = [
@@ -49,16 +48,6 @@ const props = defineProps<{
 const { projectionStartTimestamp, projectionEndTimestamp } = toRefs(props);
 const chartRef = ref<HTMLElement | null>(null);
 
-let updateChart:
-  | ((
-      timeseries: TimeseriesPoint[],
-      projectionStartTimestamp: number,
-      projectionEndTimestamp: number,
-      width: number,
-      height: number
-    ) => void)
-  | null = null;
-
 watch([projectionStartTimestamp, projectionEndTimestamp, chartRef], () => {
   const parentElement = chartRef.value?.parentElement;
   const svg = chartRef.value ? d3.select<HTMLElement, null>(chartRef.value) : null;
@@ -68,26 +57,14 @@ watch([projectionStartTimestamp, projectionEndTimestamp, chartRef], () => {
   const { clientWidth: width, clientHeight: height } = parentElement;
   // Set new size
   svg.attr('width', width).attr('height', height);
-  if (updateChart === null) {
-    const result = initializeChart(
-      svg,
-      TEST_TIMESERIES,
-      width,
-      height,
-      projectionStartTimestamp.value,
-      projectionEndTimestamp.value
-    );
-    updateChart = result.updateChart;
-  } else {
-    // Rerender whenever dependencies change
-    updateChart(
-      TEST_TIMESERIES,
-      width,
-      height,
-      projectionStartTimestamp.value,
-      projectionEndTimestamp.value
-    );
-  }
+  renderChart(
+    svg,
+    TEST_TIMESERIES,
+    width,
+    height,
+    projectionStartTimestamp.value,
+    projectionEndTimestamp.value
+  );
 });
 </script>
 

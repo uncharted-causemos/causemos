@@ -105,7 +105,7 @@ const renderScrollBarLabels = (
   scrollBarGroupElement.selectAll('text').style('pointer-events', 'none');
 };
 
-export default function initialize(
+export default function render(
   selection: D3Selection,
   timeseries: TimeseriesPoint[],
   totalWidth: number,
@@ -131,145 +131,119 @@ export default function initialize(
   // Initialize focused range to the entire time range
   let focusedTimeRange: [number, number] = [projectionStartTimestamp, projectionEndTimestamp];
 
-  const updateChart = (
-    timeseries: TimeseriesPoint[],
-    projectionStartTimestamp: number,
-    projectionEndTimestamp: number,
-    totalWidth: number,
-    totalHeight: number
-  ) => {
-    /**
-     * Validates that the new time range values are within the projection range, and that the start
-     * is less than or equal to the end.
-     * Invalid focus ranges can occur if the page is resized or if the projection ranges change.
-     */
-    const setFocusedTimeRange = (newValues: [number, number]) => {
-      const focusEndBeforeProjectionEnd = Math.min(projectionEndTimestamp, newValues[1]);
-      const focusRangeStartAfterProjectionStart = Math.max(projectionStartTimestamp, newValues[0]);
-      const focusRangeStartBeforeFocusEnd = Math.min(
-        focusRangeStartAfterProjectionStart,
-        focusEndBeforeProjectionEnd
-      );
-      focusedTimeRange = [focusRangeStartBeforeFocusEnd, focusEndBeforeProjectionEnd];
-    };
-
-    // Determine data value ranges
-    const dataValueRange = d3.extent(timeseries.map((point) => point.value));
-    // Calculate scales to map the date and value ranges to pixels for the main "focus" area
-    const focusHeight = totalHeight - PADDING_TOP - X_AXIS_HEIGHT - SCROLL_BAR_HEIGHT;
-    const chartWidth = totalWidth - PADDING_LEFT - PADDING_RIGHT;
-
-    const renderFocusChart = () => {
-      focusGroupElement.selectAll('*').remove();
-
-      const xScaleFocus = d3
-        .scaleLinear()
-        .domain(focusedTimeRange)
-        .range([PADDING_LEFT, chartWidth]);
-
-      // Render focus chart X axis
-      const xAxisTicks = calculateYearlyTicks(
-        xScaleFocus.domain()[0],
-        xScaleFocus.domain()[1],
-        totalWidth
-      );
-      const yOffset = focusHeight - X_AXIS_HEIGHT;
-      renderXaxis(focusGroupElement, xScaleFocus, xAxisTicks, yOffset, DATE_FORMATTER);
-
-      // Render timeseries itself
-      if (dataValueRange[0] !== undefined) {
-        const yScaleFocus = d3
-          .scaleLinear()
-          .domain(dataValueRange)
-          .range([focusHeight - X_AXIS_HEIGHT, PADDING_TOP]);
-        renderTimeseries(timeseries, focusGroupElement, xScaleFocus, yScaleFocus);
-      }
-
-      // Don't render anything outside the main graph area (except the axes)
-      focusGroupElement
-        .selectChildren('*:not(.xAxis):not(.yAxis)')
-        .attr('clip-path', 'url(#clipping-mask)');
-    };
-
-    // Scroll bar (lets the user zoom and pan)
-    const xScaleScrollbar = d3
-      .scaleLinear()
-      .domain([projectionStartTimestamp, projectionEndTimestamp])
-      .range([PADDING_LEFT, chartWidth]);
-    // Move scrollBarGroupElement below the focus group element and resize it horizontally.
-    scrollBarGroupElement.attr('transform', translate(0, focusHeight));
-    scrollBarBackground.attr('width', chartWidth);
-    // Render timeseries to scrollbar and fade it out.
-    if (dataValueRange[0] !== undefined) {
-      const yScaleScrollbar = d3.scaleLinear().domain(dataValueRange).range([SCROLL_BAR_HEIGHT, 0]);
-      renderTimeseries(timeseries, focusGroupElement, xScaleScrollbar, yScaleScrollbar);
-      scrollBarGroupElement
-        .selectAll('.segment-line')
-        .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
-    }
-    // Render time range labels
-    renderScrollBarLabels(
-      scrollBarGroupElement,
-      chartWidth,
-      projectionStartTimestamp,
-      projectionEndTimestamp
+  /**
+   * Validates that the new time range values are within the projection range, and that the start
+   * is less than or equal to the end.
+   * Invalid focus ranges can occur if the page is resized or if the projection ranges change.
+   */
+  const setFocusedTimeRange = (newValues: [number, number]) => {
+    const focusEndBeforeProjectionEnd = Math.min(projectionEndTimestamp, newValues[1]);
+    const focusRangeStartAfterProjectionStart = Math.max(projectionStartTimestamp, newValues[0]);
+    const focusRangeStartBeforeFocusEnd = Math.min(
+      focusRangeStartAfterProjectionStart,
+      focusEndBeforeProjectionEnd
     );
-    // Add brush element to the scroll bar
-    scrollBarGroupElement.select('.brush').remove();
-    const brushElement = scrollBarGroupElement.append('g').classed('brush', true);
-    // Add background to selected range
-    selection
-      .selectAll('.brush > .selection')
-      .attr('fill', SCROLL_BAR_RANGE_FILL)
-      .attr('stroke', SCROLL_BAR_RANGE_STROKE)
-      .attr('opacity', SCROLL_BAR_RANGE_OPACITY);
-    // Update brush element size/position and handlers
-    const handleScrollBarChange = ({ selection }: { selection: number[] | null }) => {
-      if (selection === null) {
-        return;
-      }
-      // Convert positions to timestamps and store the new values
-      setFocusedTimeRange([
-        xScaleScrollbar.invert(selection[0]),
-        xScaleScrollbar.invert(selection[1]),
-      ]);
-      // Update brush handle positions
-      brushElement.call(renderBrushHandles, focusedTimeRange.map(xScaleScrollbar));
-      // Re-render the chart using the new focused range
-      renderFocusChart();
-    };
-    const d3BrushBehaviour = d3
-      .brushX()
-      .extent([
-        [xScaleScrollbar.range()[0], 0],
-        [xScaleScrollbar.range()[1], SCROLL_BAR_HEIGHT],
-      ])
-      .on('start brush end', handleScrollBarChange);
-    // Connect behaviour to element
-    brushElement.call(d3BrushBehaviour);
-    // Move handles to focusedTimeRange
-    brushElement.call(d3BrushBehaviour.move, focusedTimeRange.map(xScaleScrollbar));
-
-    // Add clipping mask to hide elements that are outside the focus chart area when zoomed in
-    selection
-      .append('defs')
-      .append('clipPath')
-      .attr('id', 'clipping-mask')
-      .append('rect')
-      .attr('width', chartWidth)
-      .attr('height', focusHeight)
-      .attr('transform', translate(PADDING_RIGHT, PADDING_TOP));
+    focusedTimeRange = [focusRangeStartBeforeFocusEnd, focusEndBeforeProjectionEnd];
   };
 
-  updateChart(
-    timeseries,
+  // Determine data value ranges
+  const dataValueRange = d3.extent(timeseries.map((point) => point.value));
+  // Calculate scales to map the date and value ranges to pixels for the main "focus" area
+  const focusHeight = totalHeight - PADDING_TOP - X_AXIS_HEIGHT - SCROLL_BAR_HEIGHT;
+  const chartWidth = totalWidth - PADDING_LEFT - PADDING_RIGHT;
+
+  const renderFocusChart = () => {
+    focusGroupElement.selectAll('*').remove();
+
+    // Render focus chart X axis
+    const xScaleFocus = d3.scaleLinear().domain(focusedTimeRange).range([PADDING_LEFT, chartWidth]);
+    const xAxisTicks = calculateYearlyTicks(
+      xScaleFocus.domain()[0],
+      xScaleFocus.domain()[1],
+      totalWidth
+    );
+    const yOffset = focusHeight - X_AXIS_HEIGHT;
+    renderXaxis(focusGroupElement, xScaleFocus, xAxisTicks, yOffset, DATE_FORMATTER);
+
+    // Render timeseries itself
+    if (dataValueRange[0] !== undefined) {
+      const yScaleFocus = d3
+        .scaleLinear()
+        .domain(dataValueRange)
+        .range([focusHeight - X_AXIS_HEIGHT, PADDING_TOP]);
+      renderTimeseries(timeseries, focusGroupElement, xScaleFocus, yScaleFocus);
+    }
+
+    // Don't render anything outside the main graph area (except the axes)
+    focusGroupElement
+      .selectChildren('*:not(.xAxis):not(.yAxis)')
+      .attr('clip-path', 'url(#clipping-mask)');
+  };
+
+  // Scroll bar (lets the user zoom and pan)
+  const xScaleScrollbar = d3
+    .scaleLinear()
+    .domain([projectionStartTimestamp, projectionEndTimestamp])
+    .range([PADDING_LEFT, chartWidth]);
+  // Move scrollBarGroupElement below the focus group element and resize it horizontally.
+  scrollBarGroupElement.attr('transform', translate(0, focusHeight));
+  scrollBarBackground.attr('width', chartWidth);
+  // Render timeseries to scrollbar and fade it out.
+  if (dataValueRange[0] !== undefined) {
+    const yScaleScrollbar = d3.scaleLinear().domain(dataValueRange).range([SCROLL_BAR_HEIGHT, 0]);
+    renderTimeseries(timeseries, focusGroupElement, xScaleScrollbar, yScaleScrollbar);
+    scrollBarGroupElement.selectAll('.segment-line').attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
+  }
+  // Render time range labels
+  renderScrollBarLabels(
+    scrollBarGroupElement,
+    chartWidth,
     projectionStartTimestamp,
-    projectionEndTimestamp,
-    totalWidth,
-    totalHeight
+    projectionEndTimestamp
   );
-
-  return {
-    updateChart,
+  // Add brush element to the scroll bar
+  scrollBarGroupElement.select('.brush').remove();
+  const brushElement = scrollBarGroupElement.append('g').classed('brush', true);
+  // Add background to selected range
+  selection
+    .selectAll('.brush > .selection')
+    .attr('fill', SCROLL_BAR_RANGE_FILL)
+    .attr('stroke', SCROLL_BAR_RANGE_STROKE)
+    .attr('opacity', SCROLL_BAR_RANGE_OPACITY);
+  // Update brush element size/position and handlers
+  const handleScrollBarChange = ({ selection }: { selection: number[] | null }) => {
+    if (selection === null) {
+      return;
+    }
+    // Convert positions to timestamps and store the new values
+    setFocusedTimeRange([
+      xScaleScrollbar.invert(selection[0]),
+      xScaleScrollbar.invert(selection[1]),
+    ]);
+    // Update brush handle positions
+    brushElement.call(renderBrushHandles, focusedTimeRange.map(xScaleScrollbar));
+    // Re-render the chart using the new focused range
+    renderFocusChart();
   };
+  const d3BrushBehaviour = d3
+    .brushX()
+    .extent([
+      [xScaleScrollbar.range()[0], 0],
+      [xScaleScrollbar.range()[1], SCROLL_BAR_HEIGHT],
+    ])
+    .on('start brush end', handleScrollBarChange);
+  // Connect behaviour to element
+  brushElement.call(d3BrushBehaviour);
+  // Move handles to focusedTimeRange
+  brushElement.call(d3BrushBehaviour.move, focusedTimeRange.map(xScaleScrollbar));
+
+  // Add clipping mask to hide elements that are outside the focus chart area when zoomed in
+  selection
+    .append('defs')
+    .append('clipPath')
+    .attr('id', 'clipping-mask')
+    .append('rect')
+    .attr('width', chartWidth)
+    .attr('height', focusHeight)
+    .attr('transform', translate(PADDING_RIGHT, PADDING_TOP));
 }
