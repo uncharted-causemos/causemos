@@ -374,6 +374,15 @@ export const getDefaultDataConfig = async (dataId: string, outputVariable: strin
   return config;
 };
 
+export const getSpatialCoverageOverlap = async (dataIds: string[]) => {
+  const { data } = await API.get('maas/datacubes/coverage', {
+    params: {
+      data_ids: dataIds,
+    },
+  });
+  return data as string[];
+};
+
 export default {
   updateDatacube,
   getDatacubes,

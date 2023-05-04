@@ -346,6 +346,9 @@ class Datacube {
         includes: options.includes,
       };
     }
+    if (options.collapse) {
+      searchPayload.body.collapse = options.collapse;
+    }
     const response = await this.client.search(searchPayload);
     return response.body;
   }
