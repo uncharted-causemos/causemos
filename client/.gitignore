@@ -11,3 +11,7 @@
 /.idea
 
 .vscode
+
+test.html
+mocha-setup.js
+test-loader.js

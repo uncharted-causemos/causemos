@@ -7,10 +7,12 @@ import {
   getTimestampMillisFromYear as getTsY,
   getNumberOfMonthsSinceEpoch,
 } from '@/utils/date-util';
-import { runProjection } from '@/utils/projection-util';
+import { runProjection, createProjectionRunner } from '@/utils/projection-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
-import { TemporalResolutionOption } from '@/types/Enums';
+import { TemporalResolutionOption, AggregationOption, ProjectionAlgorithm } from '@/types/Enums';
 import { Subset } from '@/types/Common';
+// import { ConceptNodeWithoutDataset } from '@/types/Index';
+// import { WeightedComponent } from '@/types/WeightedComponent';
 
 const getNumM = (year: number, month: number) => {
   return getNumberOfMonthsSinceEpoch(getTsM(year, month));
@@ -81,7 +83,7 @@ const DEFAULT_TEST_FORECAST_RESULT: fm.ForecastResult<fm.ForecastMethod.Holt> = 
   },
 };
 const createTestForecastResult = (partial?: Subset<fm.ForecastResult<fm.ForecastMethod>>) => {
-  return _.merge(DEFAULT_TEST_FORECAST_RESULT, partial);
+  return _.merge({}, DEFAULT_TEST_FORECAST_RESULT, partial);
 };
 describe('projection-util', () => {
   afterEach(() => {
@@ -312,6 +314,413 @@ describe('projection-util', () => {
           TemporalResolutionOption.Year
         );
       }).to.throw('Invalid target period');
+    });
+  });
+  describe.only('createProjectionRunner', () => {
+    const testTree = {
+      id: '6e4adcee-c3af-4696-b84c-ee1169adcd4c',
+      name: 'Overall Priority',
+      isOutputNode: true,
+      components: [
+        {
+          componentNode: {
+            id: '5ad78cb0-b923-48ef-9c1a-31219987ca16',
+            name: 'Highest risk of drought',
+            isOutputNode: false,
+            components: [
+              {
+                isOppositePolarity: false,
+                isWeightUserSpecified: false,
+                weight: 0,
+                componentNode: {
+                  id: 'a547b59f-9287-4991-a817-08ba54a0353f',
+                  name: 'Greatest reliance on fragile crops',
+                  isOutputNode: false,
+                  components: [],
+                },
+              },
+            ],
+          },
+          isOppositePolarity: false,
+          isWeightUserSpecified: true,
+          weight: 50,
+        },
+        {
+          componentNode: {
+            id: '6db6284d-7879-4735-a460-5f2b273c0bf9',
+            name: 'Largest vulnerable population',
+            isOutputNode: false,
+            components: [
+              {
+                isOppositePolarity: false,
+                isWeightUserSpecified: true,
+                weight: 40,
+                componentNode: {
+                  id: 'data-node-1',
+                  name: 'Highest poverty index ranking',
+                  isOutputNode: false,
+                  dataset: {
+                    datasetName: 'Poverty indicator index',
+                    config: {
+                      datasetId: 'b935f602-30b2-48bc-bdc8-10351bbffa67',
+                      selectedTimestamp: 0,
+                      outputVariable: 'test',
+                      runId: 'indicators',
+                      temporalResolution: TemporalResolutionOption.Month,
+                      temporalAggregation: AggregationOption.Mean,
+                      spatialAggregation: AggregationOption.Mean,
+                    },
+                    isInverted: false,
+                    projectionAlgorithm: ProjectionAlgorithm.Auto,
+                    source: 'UN',
+                  },
+                },
+              },
+              {
+                isOppositePolarity: false,
+                isWeightUserSpecified: true,
+                weight: 60,
+                componentNode: {
+                  id: '2f624d92-efa0-431a-a3a1-5521871420ad',
+                  name: 'Population Health',
+                  isOutputNode: false,
+                  components: [
+                    {
+                      isOppositePolarity: true,
+                      isWeightUserSpecified: true,
+                      weight: 50,
+                      componentNode: {
+                        id: 'data-node-2',
+                        name: 'Malnutrition',
+                        isOutputNode: false,
+                        dataset: {
+                          datasetName: 'Malnutrition rates dataset',
+                          source: 'UN',
+                          isInverted: false,
+                          projectionAlgorithm: ProjectionAlgorithm.Auto,
+                          config: {
+                            datasetId: '45bbec86-221a-4936-ae41-a85e4d7088cb',
+                            selectedTimestamp: 0,
+                            outputVariable: 'test',
+                            runId: 'indicators',
+                            temporalResolution: TemporalResolutionOption.Month,
+                            temporalAggregation: AggregationOption.Mean,
+                            spatialAggregation: AggregationOption.Mean,
+                          },
+                        },
+                      },
+                    },
+                    {
+                      isOppositePolarity: false,
+                      isWeightUserSpecified: true,
+                      weight: 50,
+                      componentNode: {
+                        id: 'data-node-3',
+                        name: 'Life expectancy by country',
+                        isOutputNode: false,
+                        dataset: {
+                          datasetName: 'Life expectancy by country',
+                          source: 'UN',
+                          isInverted: true,
+                          projectionAlgorithm: ProjectionAlgorithm.Auto,
+                          config: {
+                            datasetId: '56773014-bc09-4bd8-a328-9c61923078e0',
+                            selectedTimestamp: 0,
+                            outputVariable: 'test',
+                            runId: 'indicators',
+                            temporalResolution: TemporalResolutionOption.Month,
+                            temporalAggregation: AggregationOption.Mean,
+                            spatialAggregation: AggregationOption.Mean,
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+          isOppositePolarity: false,
+          isWeightUserSpecified: true,
+          weight: 50,
+        },
+      ],
+    };
+    const testTargetPeriod = { start: getTsM(1980, 0), end: getTsM(1980, 6) };
+    const testHistoricalData = {
+      'data-node-1': [
+        { timestamp: getTsM(1980, 2), value: 0.2 },
+        { timestamp: getTsM(1980, 4), value: 0.4 },
+        // corresponding forecast values will look like following
+        // { timestamp: getTsM(1980, 0), value: 0, projectionType: 'backcasted' },
+        // { timestamp: getTsM(1980, 1), value: 0.1, projectionType: 'backcasted' },
+        // { timestamp: getTsM(1980, 2), value: 0.2, projectionType: 'historical' },
+        // { timestamp: getTsM(1980, 3), value: 0.3, projectionType: 'interpolated' },
+        // { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
+        // { timestamp: getTsM(1980, 5), value: 0.5, projectionType: 'forecasted' },
+        // { timestamp: getTsM(1980, 6), value: 0.6, projectionType 'forecasted' },
+      ],
+      'data-node-2': [
+        { timestamp: getTsM(1980, 0), value: 0.4 },
+        { timestamp: getTsM(1980, 1), value: 0.6 },
+        { timestamp: getTsM(1980, 2), value: 0.4 },
+        { timestamp: getTsM(1980, 3), value: 0.6 },
+        { timestamp: getTsM(1980, 4), value: 0.4 },
+        { timestamp: getTsM(1980, 5), value: 0.6 },
+        { timestamp: getTsM(1980, 6), value: 0.4 },
+        // corresponding forecast values will look like following
+        // { timestamp: getTsM(1980, 0), value: 0.4, projectionType: 'historical' },
+        // { timestamp: getTsM(1980, 1), value: 0.6, projectionType: 'historical' },
+        // { timestamp: getTsM(1980, 2), value: 0.4, projectionType: 'historical' },
+        // { timestamp: getTsM(1980, 3), value: 0.6, projectionType: 'historical' },
+        // { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
+        // { timestamp: getTsM(1980, 5), value: 0.6, projectionType: 'historical' },
+        // { timestamp: getTsM(1980, 6), value: 0.4, projectionType 'historical' },
+      ],
+      'data-node-3': [
+        { timestamp: getTsM(1980, 0), value: 1 },
+        { timestamp: getTsM(1980, 2), value: 0.6 },
+        { timestamp: getTsM(1980, 4), value: 0.2 },
+        { timestamp: getTsM(1980, 6), value: 0 },
+        // corresponding forecast values will look like following
+        // { timestamp: getTsM(1980, 0), value: 1, projectionType: 'historical' },
+        // { timestamp: getTsM(1980, 1), value: 0.8, projectionType: 'interpolated' },
+        // { timestamp: getTsM(1980, 2), value: 0.6 projectionType: 'historical' },
+        // { timestamp: getTsM(1980, 3), value: 0.4, projectionType: 'interpolated' },
+        // { timestamp: getTsM(1980, 4), value: 0.2, projectionType: 'historical' },
+        // { timestamp: getTsM(1980, 5), value: 0.1, projectionType: 'interpolated' },
+        // { timestamp: getTsM(1980, 6), value: 0, projectionType 'historical' },
+      ],
+    };
+    // corresponding forecast values will look like following
+    // const expectedProjectionForHistoricalData = {
+    //   'data-node-1': [
+    //     { timestamp: getTsM(1980, 0), value: 0, projectionType: 'backcasted' },
+    //     { timestamp: getTsM(1980, 1), value: 0.1, projectionType: 'backcasted' },
+    //     { timestamp: getTsM(1980, 2), value: 0.2, projectionType: 'historical' },
+    //     { timestamp: getTsM(1980, 3), value: 0.30000000000000004, projectionType: 'interpolated' },
+    //     { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
+    //     { timestamp: getTsM(1980, 5), value: 0.5, projectionType: 'forecasted' },
+    //     { timestamp: getTsM(1980, 6), value: 0.6, projectionType: 'forecasted' },
+    //   ],
+    //   'data-node-2': [
+    //     { timestamp: getTsM(1980, 0), value: 0.4, projectionType: 'historical' },
+    //     { timestamp: getTsM(1980, 1), value: 0.6, projectionType: 'historical' },
+    //     { timestamp: getTsM(1980, 2), value: 0.4, projectionType: 'historical' },
+    //     { timestamp: getTsM(1980, 3), value: 0.6, projectionType: 'historical' },
+    //     { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
+    //     { timestamp: getTsM(1980, 5), value: 0.6, projectionType: 'historical' },
+    //     { timestamp: getTsM(1980, 6), value: 0.4, projectionType: 'historical' },
+    //   ],
+    //   'data-node-3': [
+    //     { timestamp: getTsM(1980, 0), value: 1, projectionType: 'historical' },
+    //     { timestamp: getTsM(1980, 1), value: 0.8, projectionType: 'interpolated' },
+    //     { timestamp: getTsM(1980, 2), value: 0.6, projectionType: 'historical' },
+    //     { timestamp: getTsM(1980, 3), value: 0.4, projectionType: 'interpolated' },
+    //     { timestamp: getTsM(1980, 4), value: 0.2, projectionType: 'historical' },
+    //     { timestamp: getTsM(1980, 5), value: 0.1, projectionType: 'interpolated' },
+    //     { timestamp: getTsM(1980, 6), value: 0, projectionType: 'historical' },
+    //   ],
+    // }
+    beforeEach(() => {
+      // set up fake forecast function that returns backcast and foreacast results only with
+      // first input data ('data-node-1')
+      sinon.replace(fm.default, 'initialize', (data: [number, number][]) => {
+        const runAutoResult =
+          data.length === 2
+            ? createTestForecastResult({
+                backcast: { data: [[getNumM(1980, 0), 0]] },
+                forecast: { data: [[getNumM(1980, 6), 0.6]] },
+              })
+            : createTestForecastResult();
+        return {
+          runAuto() {
+            return runAutoResult;
+          },
+        } as any;
+      });
+    });
+    it('should create a new projection runner', () => {
+      const runner = createProjectionRunner(
+        testTree,
+        testHistoricalData,
+        testTargetPeriod,
+        TemporalResolutionOption.Month
+      );
+
+      expect(runner.getProjectionResultForDatasetNodes()).to.deep.equal({});
+      expect(runner.getProjectionResultForNoneDatasetNodes()).to.deep.equal({});
+      expect(runner.getResults()).to.deep.equal({});
+      expect(runner.getRunInfo()).to.deep.equal({});
+    });
+    it('should run projection for all dataset nodes', () => {
+      const runner = createProjectionRunner(
+        testTree,
+        testHistoricalData,
+        testTargetPeriod,
+        TemporalResolutionOption.Month
+      ).projectAllDatasetNodes();
+
+      const expected = {
+        'data-node-1': [
+          { timestamp: getTsM(1980, 0), value: 0, projectionType: 'backcasted' },
+          { timestamp: getTsM(1980, 1), value: 0.1, projectionType: 'backcasted' },
+          { timestamp: getTsM(1980, 2), value: 0.2, projectionType: 'historical' },
+          {
+            timestamp: getTsM(1980, 3),
+            value: 0.30000000000000004,
+            projectionType: 'interpolated',
+          },
+          { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.5, projectionType: 'forecasted' },
+          { timestamp: getTsM(1980, 6), value: 0.6, projectionType: 'forecasted' },
+        ],
+        'data-node-2': [
+          { timestamp: getTsM(1980, 0), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 1), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 2), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 6), value: 0.4, projectionType: 'historical' },
+        ],
+        'data-node-3': [
+          { timestamp: getTsM(1980, 0), value: 1, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 1), value: 0.8, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.4, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.2, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.1, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0, projectionType: 'historical' },
+        ],
+      };
+
+      expect(runner.getProjectionResultForDatasetNodes()).to.deep.equal(expected);
+      expect(runner.getProjectionResultForNoneDatasetNodes()).to.deep.equal({});
+      expect(runner.getResults()).to.deep.equal(expected);
+      expect(runner.getRunInfo()).to.deep.equal({
+        'data-node-1': {
+          method: 'Holt',
+          forecast: {
+            data: [[126, 0.6]],
+            error: 1,
+            parameters: {
+              alpha: 0.1,
+              beta: 0.4,
+            },
+          },
+          backcast: {
+            data: [[120, 0]],
+            error: 2,
+            parameters: {
+              alpha: 0.2,
+              beta: 0.5,
+            },
+          },
+        },
+        'data-node-2': {
+          method: 'Holt',
+          forecast: {
+            data: [],
+            error: 1,
+            parameters: {
+              alpha: 0.1,
+              beta: 0.4,
+            },
+          },
+          backcast: {
+            data: [],
+            error: 2,
+            parameters: {
+              alpha: 0.2,
+              beta: 0.5,
+            },
+          },
+        },
+        'data-node-3': {
+          method: 'Holt',
+          forecast: {
+            data: [],
+            error: 1,
+            parameters: {
+              alpha: 0.1,
+              beta: 0.4,
+            },
+          },
+          backcast: {
+            data: [],
+            error: 2,
+            parameters: {
+              alpha: 0.2,
+              beta: 0.5,
+            },
+          },
+        },
+      });
+    });
+    it('should calculate weighted sum of its children for each index node in the tree', () => {
+      // Tree structure with weights
+      // root = 50% of 40% of data-node-1
+      //                +
+      //               60% of 50% of data-node-2 (opposite polarity)
+      //                       +
+      //                      50% of data-node-3 (inverted)
+      const runner = createProjectionRunner(
+        testTree,
+        testHistoricalData,
+        testTargetPeriod,
+        TemporalResolutionOption.Month
+      )
+        .projectAllDatasetNodes()
+        .calculateWeightedSum();
+      const expected = {
+        // 50% of opposite 'data-node-2'
+        // [0.3, 0.2, 0.3, 0.2, 0.3, 0.2,  0.3]
+        // +
+        // 50% of inverted 'data-node-3'
+        // [0,   0.1, 0.2, 0.3, 0.4, 0.45, 0.5]
+        '2f624d92-efa0-431a-a3a1-5521871420ad': [
+          { timestamp: getTsM(1980, 0), value: 0.3, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 1), value: 0.3, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.5, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.5, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.7, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.65, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0.8, projectionType: 'historical' },
+        ],
+        // 60 % of '2f624d92-efa0-431a-a3a1-5521871420ad'
+        // [0.18, 0.18, 0.3, 0.3, 0.42, 0.39, 0.48]
+        // +
+        // 40 % of 'data-node-1'
+        // [0, 0.04, 0.08, 0.12, 0.16, 0.20, 0.24]
+        '6db6284d-7879-4735-a460-5f2b273c0bf9': [
+          { timestamp: getTsM(1980, 0), value: 0.18, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 1), value: 0.22, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.38, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.42, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.58, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.59, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0.72, projectionType: 'interpolated' },
+        ],
+        // 50% of '6db6284d-7879-4735-a460-5f2b273c0bf9'
+        '6e4adcee-c3af-4696-b84c-ee1169adcd4c': [
+          { timestamp: getTsM(1980, 0), value: 0.09, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 1), value: 0.11, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.19, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.21, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.29, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.3, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0.36, projectionType: 'interpolated' },
+        ],
+      };
+      const result = runner.getProjectionResultForNoneDatasetNodes();
+      // round up numbers for easy comparison
+      for (const [_, series] of Object.entries(result)) {
+        series.forEach((v) => (v.value = +v.value.toFixed(2)));
+      }
+
+      expect(runner.getProjectionResultForNoneDatasetNodes()).to.deep.equal(expected);
+      expect(runner.getResults()).to.deep.include(expected);
     });
   });
 });
