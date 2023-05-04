@@ -42,7 +42,7 @@ export const isEmptyNode = (indexNode: ConceptNode) => {
   return !isConceptNodeWithDatasetAttached(indexNode) && !hasChildren(indexNode);
 };
 
-export const DATASET_ICON = 'fa-th';
+export const DATASET_ICON = 'fa-table';
 export const DATASET_COLOR = '#1b9e77';
 
 export const createNewOutputIndex = () => {
