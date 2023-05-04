@@ -1,9 +1,5 @@
 <template>
-  <!--
-    v-bind="$attrs" is required to allow multiple root elements
-    https://v3-migration.vuejs.org/new/fragments.html
-  -->
-  <section v-bind="$attrs">
+  <section>
     <h4 class="type-label" :style="{ color: DATASET_COLOR }">
       <i class="fa fa-fw" :class="[DATASET_ICON]" />
       Dataset
