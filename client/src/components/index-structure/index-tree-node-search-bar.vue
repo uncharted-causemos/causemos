@@ -86,36 +86,24 @@ import { DatasetSearchResult } from '@/types/Index';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
-// import {
-//   searchFeatures,
-//   DojoFeatureSearchResult,
-// } from '@/services/semantic-feature-search-service';
+import {
+  searchFeatures,
+  DojoFeatureSearchResult,
+} from '@/services/semantic-feature-search-service';
 import { capitalizeEachWord } from '@/utils/string-util';
-import newDatacubeService from '@/services/new-datacube-service';
 
-// const convertFeatureSearchResultToDatasetSearchResult = (
-//   feature: DojoFeatureSearchResult
-// ): DatasetSearchResult => {
-//   const displayName =
-//     feature.display_name === '' ? capitalizeEachWord(feature.name) : feature.display_name;
-//   return {
-//     displayName,
-//     dataId: feature.owner_dataset.id,
-//     description: feature.description,
-//     familyName: feature.owner_dataset.name,
-//     // We need this to distinguish between results with the same dataId and to fetch the actual data for calculating index results.
-//     outputName: feature.name,
-//   };
-// };
-
-const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult => {
-  const displayName = doc.display_name === '' ? capitalizeEachWord(doc.feature) : doc.display_name;
+const convertFeatureSearchResultToDatasetSearchResult = (
+  feature: DojoFeatureSearchResult
+): DatasetSearchResult => {
+  const displayName =
+    feature.display_name === '' ? capitalizeEachWord(feature.name) : feature.display_name;
   return {
     displayName,
-    dataId: doc.data_id,
-    description: doc.description,
-    familyName: doc.family_name,
-    outputName: doc.feature,
+    dataId: feature.owner_dataset.id,
+    description: feature.description,
+    familyName: feature.owner_dataset.name,
+    // We need this to distinguish between results with the same dataId and to fetch the actual data for calculating index results.
+    outputName: feature.name,
   };
 };
 
@@ -161,15 +149,13 @@ watch([searchText], async () => {
   }
   isFetchingResults.value = true;
   try {
-    // const dojoFeatureSearchResults = await searchFeatures(queryString);
-    const esDocResults = await newDatacubeService.getDatacubeSuggestions(queryString);
+    const dojoFeatureSearchResults = await searchFeatures(queryString);
     if (queryString !== searchText.value) {
       // Search text has changed since we started fetching results, so let the more recent call
       //  modify state.
       return;
     }
-    // results.value = dojoFeatureSearchResults.map(convertFeatureSearchResultToDatasetSearchResult);
-    results.value = esDocResults.map(convertESDocToDatasetSearchResult);
+    results.value = dojoFeatureSearchResults.map(convertFeatureSearchResultToDatasetSearchResult);
     isFetchingResults.value = false;
   } catch (e) {
     console.error('Unable to fetch search results for query', searchText.value);
