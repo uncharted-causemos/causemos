@@ -54,10 +54,15 @@ export default function useModelMetadataCoverage(metadata: Ref<Model | Indicator
     minimum: _.min(sparkline.value),
     maximum: _.max(sparkline.value),
   }));
+  const temporalCoverageTimestamps = computed(() => ({
+    from: metadata.value?.period?.gte ?? null,
+    to: metadata.value?.period?.lte ?? null,
+  }));
 
   return {
     sparklineData,
     temporalCoverage,
+    temporalCoverageTimestamps,
     range,
   };
 }

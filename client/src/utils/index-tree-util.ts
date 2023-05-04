@@ -282,8 +282,8 @@ export const rename = (node: ConceptNode, newName: string) => {
   node.name = newName;
 };
 
-export const toggleIsInverted = (datasetNode: ConceptNodeWithDatasetAttached) => {
-  datasetNode.dataset.isInverted = !datasetNode.dataset.isInverted;
+export const setIsInverted = (datasetNode: ConceptNodeWithDatasetAttached, newValue: boolean) => {
+  datasetNode.dataset.isInverted = newValue;
 };
 
 /**
@@ -389,12 +389,12 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     onSuccess();
   };
 
-  const toggleDatasetIsInverted = (nodeId: string) => {
+  const setDatasetIsInverted = (nodeId: string, newValue: boolean) => {
     const dataset = findNode(nodeId)?.found;
     if (dataset === undefined || !isConceptNodeWithDatasetAttached(dataset)) {
       return;
     }
-    toggleIsInverted(dataset);
+    setIsInverted(dataset, newValue);
     onSuccess();
   };
 
@@ -403,7 +403,7 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     findAndAddNewChild,
     findAndAddChild,
     attachDatasetToNode,
-    toggleDatasetIsInverted,
+    setDatasetIsInverted,
   };
 }
 
