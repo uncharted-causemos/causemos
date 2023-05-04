@@ -53,7 +53,7 @@
     <div v-if="isConceptNodeWithoutDataset(props.nodeData) && !showDatasetSearch" class="content">
       <p
         v-if="dataSourceText.length > 0"
-        class="un-font-small data-source-text"
+        class="un-font-small data-source-text subdued"
         :class="{ warning: isEmptyNode(props.nodeData) }"
       >
         {{ dataSourceText }}
