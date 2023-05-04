@@ -5,13 +5,6 @@ import { D3GElementSelection, D3Selection } from '@/types/D3';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { calculateYearlyTicks, renderLine, renderXaxis } from '@/utils/timeseries-util';
 import { translate } from '@/utils/svg-util';
-import { getTimestampAfterMonths } from '@/utils/date-util';
-import {
-  getMonthsPerTimestepFromTimeScale,
-  getStepCountFromTimeScale,
-} from '@/utils/time-scale-util';
-
-import { TimeScale } from '@/types/Enums';
 
 const HISTORICAL_DATA_COLOR = '#888';
 const HISTORICAL_RANGE_OPACITY = 0.05;
@@ -22,7 +15,6 @@ const SCROLL_BAR_RANGE_OPACITY = 0.8;
 const SCROLL_BAR_BACKGROUND_COLOR = HISTORICAL_DATA_COLOR;
 const SCROLL_BAR_BACKGROUND_OPACITY = HISTORICAL_RANGE_OPACITY;
 const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
-const GRIDLINE_COLOR = '#eee';
 
 const X_AXIS_HEIGHT = 20;
 const PADDING_TOP = 10;
@@ -170,35 +162,10 @@ export default function initialize(
     const renderFocusChart = () => {
       focusGroupElement.selectAll('*').remove();
 
-      // Render a vertical line at each step
       const xScaleFocus = d3
         .scaleLinear()
         .domain(focusedTimeRange)
         .range([PADDING_LEFT, chartWidth]);
-      const timeScale = TimeScale.Months;
-      const stepCount = getStepCountFromTimeScale(timeScale);
-      const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
-      const stepTimestamps = _.range(stepCount).map((stepIndex) =>
-        getTimestampAfterMonths(projectionStartTimestamp, stepIndex * monthsPerTimestep)
-      );
-      const bottomYValue = focusHeight - X_AXIS_HEIGHT;
-      const lineGenerator = d3
-        .line<{ timestamp: number; isBottom: boolean }>()
-        .x((d) => xScaleFocus(d.timestamp))
-        .y((d) => (d.isBottom ? bottomYValue : PADDING_TOP));
-      focusGroupElement
-        .selectAll('.grid-timestamp-line')
-        .data(stepTimestamps)
-        .join('path')
-        .attr('d', (timestamp) =>
-          lineGenerator([
-            { timestamp, isBottom: false },
-            { timestamp, isBottom: true },
-          ])
-        )
-        .classed('grid-timestamp-line', true)
-        .style('fill', 'none')
-        .style('stroke', GRIDLINE_COLOR);
 
       // Render focus chart X axis
       const xAxisTicks = calculateYearlyTicks(
