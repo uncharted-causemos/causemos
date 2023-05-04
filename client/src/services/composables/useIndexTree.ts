@@ -5,6 +5,7 @@ import {
   findNode as indexTreeUtilFindNode,
   createIndexTreeActions,
   deleteEdgeFromIndexTree,
+  findAndUpdateIsOppositePolarity,
 } from '@/utils/index-tree-util';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { ConceptNode } from '@/types/Index';
@@ -39,6 +40,14 @@ export default function useIndexTree() {
 
   const findNode = (nodeId: string) => {
     return indexTreeUtilFindNode(outputIndexTree.value, nodeId);
+  };
+
+  const updateIsOppositePolarity = (nodeId: string, value: boolean) => {
+    const success = findAndUpdateIsOppositePolarity(outputIndexTree.value, nodeId, value);
+    if (success) {
+      triggerUpdate();
+    }
+    return success;
   };
 
   const findAndDelete = (nodeId: string) => {
@@ -81,5 +90,6 @@ export default function useIndexTree() {
     attachDatasetToNode,
     getAnalysisId,
     toggleDatasetIsInverted,
+    updateIsOppositePolarity,
   };
 }

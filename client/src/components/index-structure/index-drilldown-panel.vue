@@ -40,7 +40,7 @@
             :inner-button-label="''"
             :items="isPolarityOppositeOptions"
             :selected-item="isUpstreamNodePolarityNegative"
-            @item-selected="null"
+            @item-selected="selectPolarity"
           />&nbsp;
           <div class="polarity-statement end">
             <h5>{{ nodeName }} values.</h5>
@@ -223,7 +223,7 @@ const emit = defineEmits<{
 }>();
 
 const indexTree = useIndexTree();
-const { findNode, tree } = indexTree;
+const { findNode, tree, updateIsOppositePolarity } = indexTree;
 const workbench = useIndexWorkBench();
 
 const toggleDatasetIsInverted = (nodeId: string) => {
@@ -287,6 +287,14 @@ const edgeOptionsButtonMenu = [
   },
 ];
 
+const selectPolarity = (value: boolean) => {
+  const edge = selectedEdgeComponents.value;
+  if (edge !== null) {
+    if (!updateIsOppositePolarity(edge.source.id, value)) {
+      workbench.updateIsOppositePolarity(edge.source.id, value);
+    }
+  }
+};
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   const node = selectedNode.value;
   if (node === null || isOutputIndexNode(node)) {
