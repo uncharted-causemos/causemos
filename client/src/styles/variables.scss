@@ -1,7 +1,7 @@
 /*
   This file contains SCSS variables that are useful for a variety
   of different components across the app.
-  
+
   Add `@import '@/styles/variables'` to the top of your component's
   scoped SCSS section to be able to use these variables.
 
@@ -14,10 +14,12 @@
     later.
 */
 
-// Positive values
-$positive: #0072b2;
-// Negative values
-$negative: #d55e00;
+// Positive values #0072b2
+$positive: hsl(202, 100%, 35%);
+$positive-bright: hsl(202, 100%, 60%);
+// Negative values #d55e00
+$negative: hsl(26, 100%, 42%);
+$negative-bright: hsl(26, 100%, 60%);
 
 // Accent colors
 $accent-lightest: hsl(265, 100%, 99%);
