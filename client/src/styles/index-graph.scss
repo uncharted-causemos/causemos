@@ -58,9 +58,33 @@ $index-graph-padding-vertical: 40px;
       }
       &.highlighted {
         border-color: $accent-light;
+        &.polarity-pos {
+          border-color: $positive-bright;
+          &.highlighted-source-neg {
+            border-color: $negative-bright;
+          }
+        }
+        &.polarity-neg {
+          border-color: $negative-bright;
+          &.highlighted-source-pos {
+            border-color: $positive-bright;
+          }
+        }
       }
       &.selected-edge {
         border-color: $edge-selected;
+        &.polarity-pos {
+          border-color: $positive-bright;
+          &.selected-source-neg {
+            border-color: $negative-bright;
+          }
+        }
+        &.polarity-neg {
+          border-color: $negative-bright;
+          &.selected-source-pos {
+            border-color: $positive-bright;
+          }
+        }
       }
     }
     &.inactive {
@@ -77,21 +101,63 @@ $index-graph-padding-vertical: 40px;
       border-right: $edge-styles;
       &.polarity-pos {
         border-color: $positive;
+        &.next-sibling-polarity-neg {
+          border-right-color: $negative;
+        }
       }
       &.polarity-neg {
         border-color: $negative;
+        &.next-sibling-polarity-pos {
+          border-right-color: $positive;
+        }
       }
       &.highlighted {
         border-top-color: $accent-light;
+        &.polarity-neg {
+          border-top-color: $negative-bright;
+        }
+        &.polarity-pos {
+          border-top-color: $positive-bright;
+        }
       }
       &.highlighted-y {
         border-right-color: $accent-light;
+        &.polarity-neg {
+          border-right-color: $negative-bright;
+          &.next-sibling-polarity-pos {
+            border-right-color: $positive-bright;
+          }
+        }
+        &.polarity-pos {
+          border-right-color: $positive-bright;
+          &.next-sibling-polarity-neg {
+            border-right-color: $negative-bright;
+          }
+        }
       }
       &.selected-edge {
         border-top-color: $edge-selected;
+        &.polarity-neg {
+          border-top-color: $negative-bright;
+        }
+        &.polarity-pos {
+          border-top-color: $positive-bright;
+        }
       }
       &.selected-y {
         border-right-color: $edge-selected;
+        &.polarity-neg {
+          border-right-color: $negative-bright;
+          &.next-sibling-polarity-pos {
+            border-right-color: $positive-bright;
+          }
+        }
+        &.polarity-pos {
+          border-right-color: $positive-bright;
+          &.next-sibling-polarity-neg {
+            border-right-color: $negative-bright;
+          }
+        }
       }
     }
     &.inactive {
