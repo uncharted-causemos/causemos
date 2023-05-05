@@ -97,8 +97,3 @@ export interface GridCell {
   isLastChild: boolean;
   isOppositePolarity: boolean;
 }
-
-export interface PolarityColors {
-  positive: string;
-  negative: string;
-}

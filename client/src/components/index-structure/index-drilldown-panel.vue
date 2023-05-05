@@ -196,7 +196,7 @@ import IndexInvertData from './index-invert-data.vue';
 import { computed, watch, ref } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { ConceptNode, SelectableIndexElementId, PolarityColors } from '@/types/Index';
+import { ConceptNode, SelectableIndexElementId } from '@/types/Index';
 import {
   duplicateNode,
   isOutputIndexNode,
@@ -209,6 +209,7 @@ import {
 import { OptionButtonMenu } from '@/utils/index-common-util';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 import DropdownButton from '@/components/dropdown-button.vue';
+import { NEGATIVE_COLOR, POSITIVE_COLOR } from '@/utils/colors-util';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -235,29 +236,9 @@ const renameNode = (newName: string) => {
   indexTree.findAndRenameNode(selectedNode.value.id, newName);
 };
 
-const polarityColors = computed<PolarityColors>(() => {
-  const root = document.querySelector(':root') ?? null;
-  if (root !== null) {
-    const computedStyle = getComputedStyle(root) ?? null;
-
-    if (computedStyle !== null) {
-      const p = computedStyle.getPropertyValue('positive');
-      const n = computedStyle.getPropertyValue('negative');
-      const colors: PolarityColors = {
-        positive: p.length > 0 ? p : '#0072b2',
-        negative: n.length > 0 ? n : '#d55e00',
-      };
-      return colors;
-    }
-  }
-  return {
-    positive: '#0072b2',
-    negative: '#d55e00',
-  };
-});
 const isPolarityOppositeOptions = [
-  { displayName: 'high', value: false, color: polarityColors.value.positive },
-  { displayName: 'low', value: true, color: polarityColors.value.negative },
+  { displayName: 'high', value: false, color: POSITIVE_COLOR },
+  { displayName: 'low', value: true, color: NEGATIVE_COLOR },
 ];
 
 // Options button
