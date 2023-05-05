@@ -32,9 +32,7 @@
         </div>
         <h4>{{ nodeName }}</h4>
         <div class="polarity-select-container">
-          <div class="polarity-statement start">
-            <p>High {{ nodeUpstreamName }} represents</p>
-          </div>
+          <p class="polarity-statement start">High {{ nodeUpstreamName }} represents</p>
           <dropdown-button
             :is-dropdown-left-aligned="true"
             :inner-button-label="''"
@@ -42,9 +40,7 @@
             :selected-item="isUpstreamNodePolarityNegative"
             @item-selected="selectPolarity"
           />&nbsp;
-          <div class="polarity-statement end">
-            <p>{{ nodeName }} values.</p>
-          </div>
+          <p class="polarity-statement end">{{ nodeName }} values.</p>
         </div>
       </div>
       <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
