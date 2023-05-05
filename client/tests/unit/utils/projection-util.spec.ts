@@ -707,6 +707,24 @@ describe('projection-util', () => {
         .runProjection()
         .getResults();
       expect(result).to.deep.equal({
+        'data-node-2': [
+          { timestamp: getTsM(1980, 0), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 1), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 2), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 6), value: 0.4, projectionType: 'historical' },
+        ],
+        'data-node-3': [
+          { timestamp: getTsM(1980, 0), value: 1, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 1), value: 0.8, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.4, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.2, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.1, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0, projectionType: 'historical' },
+        ],
         // 50% of opposite 'data-node-2'
         // [0.3, 0.2, 0.3, 0.2, 0.3, 0.2,  0.3]
         // +
@@ -740,24 +758,6 @@ describe('projection-util', () => {
           { timestamp: getTsM(1980, 4), value: 0.21, projectionType: 'historical' },
           { timestamp: getTsM(1980, 5), value: 0.195, projectionType: 'interpolated' },
           { timestamp: getTsM(1980, 6), value: 0.24, projectionType: 'historical' },
-        ],
-        'data-node-2': [
-          { timestamp: getTsM(1980, 0), value: 0.4, projectionType: 'historical' },
-          { timestamp: getTsM(1980, 1), value: 0.6, projectionType: 'historical' },
-          { timestamp: getTsM(1980, 2), value: 0.4, projectionType: 'historical' },
-          { timestamp: getTsM(1980, 3), value: 0.6, projectionType: 'historical' },
-          { timestamp: getTsM(1980, 4), value: 0.4, projectionType: 'historical' },
-          { timestamp: getTsM(1980, 5), value: 0.6, projectionType: 'historical' },
-          { timestamp: getTsM(1980, 6), value: 0.4, projectionType: 'historical' },
-        ],
-        'data-node-3': [
-          { timestamp: getTsM(1980, 0), value: 1, projectionType: 'historical' },
-          { timestamp: getTsM(1980, 1), value: 0.8, projectionType: 'interpolated' },
-          { timestamp: getTsM(1980, 2), value: 0.6, projectionType: 'historical' },
-          { timestamp: getTsM(1980, 3), value: 0.4, projectionType: 'interpolated' },
-          { timestamp: getTsM(1980, 4), value: 0.2, projectionType: 'historical' },
-          { timestamp: getTsM(1980, 5), value: 0.1, projectionType: 'interpolated' },
-          { timestamp: getTsM(1980, 6), value: 0, projectionType: 'historical' },
         ],
       });
     });
