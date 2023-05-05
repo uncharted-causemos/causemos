@@ -3,10 +3,9 @@
     <button type="button" class="btn dropdown-btn" @click="isDropdownOpen = !isDropdownOpen">
       <span>
         {{ innerButtonLabel ? `${innerButtonLabel}: ` : '' }}
-        <strong
-          :style="hasColorOverride ? { color: getColorOverride(selectedItemDisplayName) } : {}"
-          >{{ selectedItemDisplayName }}</strong
-        >
+        <strong :style="hasColorOverride ? { color: getColorOverride(selectedItem) } : {}">{{
+          selectedItemDisplayName
+        }}</strong>
       </span>
       <i class="fa fa-fw fa-angle-down" />
     </button>
@@ -21,7 +20,7 @@
       <template #content>
         <div
           v-for="item in dropdownItems"
-          :style="hasColorOverride ? { color: getColorOverride(item.displayName) } : {}"
+          :style="hasColorOverride ? { color: getColorOverride(item.value) } : {}"
           :key="item"
           class="dropdown-option"
           :class="{
@@ -109,10 +108,10 @@ export default defineComponent({
       return false;
     });
 
-    const getColorOverride = (selected: string) => {
+    const getColorOverride = (selected: boolean) => {
       let color = DEFAULT_TEXT_COLOR;
       props.items.forEach((item) => {
-        if (typeof item !== 'string' && 'color' in item && item.displayName === selected) {
+        if (typeof item !== 'string' && 'color' in item && item.value === selected) {
           color = item.color ?? DEFAULT_TEXT_COLOR;
         }
       });
