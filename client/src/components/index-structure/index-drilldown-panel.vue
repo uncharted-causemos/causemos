@@ -499,8 +499,4 @@ section {
     }
   }
 }
-
-.dropdown-button-container button span strong {
-  color: green;
-}
 </style>
