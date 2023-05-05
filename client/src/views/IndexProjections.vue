@@ -43,8 +43,8 @@
             <button class="btn btn-sm disabled" @click="() => {}">Edit</button>
           </header>
           <p class="un-font-small subtitle">
-            {{ timestampFormatter(projectionStartDate, null, null) }} -
-            {{ timestampFormatter(projectionEndDate, null, null) }}
+            {{ timestampFormatter(projectionStartTimestamp, null, null) }} -
+            {{ timestampFormatter(projectionEndTimestamp, null, null) }}
           </p>
         </section>
         <section>
@@ -63,6 +63,9 @@
       <IndexProjectionsGraphView
         v-if="selectedNodeId === null"
         class="fill-space"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
+        :projections="historicalData"
         @select-element="selectElement"
         @deselect-edge="deselectEdge"
       />
@@ -70,6 +73,9 @@
         v-else
         class="fill-space"
         :selected-node-id="selectedNodeId"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
+        :projections="historicalData"
         @select-element="selectElement"
         @deselect-node="deselectNode"
       />
@@ -149,8 +155,8 @@ const COUNTRY_MODES: DropdownItem[] = [
 ];
 const isSingleCountryModeActive = ref(true);
 
-const projectionStartDate = ref(getTimestampMillis(2011, 0));
-const projectionEndDate = ref(getTimestampMillis(2025, 0));
+const projectionStartTimestamp = ref(getTimestampMillis(1990, 0));
+const projectionEndTimestamp = ref(getTimestampMillis(2025, 0));
 
 const indexTree = useIndexTree();
 const NO_COUNTRY_SELECTED: DropdownItem = { displayName: 'No country selected', value: '' };
@@ -301,14 +307,9 @@ main {
   flex: 1;
   min-width: 0;
   position: relative;
-  // Make sure you can always scroll down to see nodes that are hidden behind the legend
-  padding-bottom: 100px;
 
   .legend {
-    position: absolute;
-    bottom: 0;
-    left: 20px;
-    right: 20px;
+    margin: 0 20px;
   }
 
   .fill-space {

@@ -4,6 +4,9 @@
       <div v-for="(childNode, i) of childNodes" :key="childNode.id" class="node-and-edge-container">
         <IndexProjectionsNode
           :node-data="childNode"
+          :projection-start-timestamp="projectionStartTimestamp"
+          :projection-end-timestamp="projectionEndTimestamp"
+          :timeseries="getProjectionsForNode(childNode.id)"
           @select="emit('select-element', childNode.id)"
         />
         <div class="edge outgoing visible" :class="{ 'last-child': i === childNodes.length - 1 }" />
@@ -11,7 +14,13 @@
     </div>
     <div class="node-and-edge-container">
       <div class="edge incoming" :class="{ visible: childNodes.length > 0 }" />
-      <IndexProjectionsExpandedNode v-if="selectedNode !== null" :node-data="selectedNode.found" />
+      <IndexProjectionsExpandedNode
+        v-if="selectedNode !== null"
+        :node-data="selectedNode.found"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
+        :timeseries="getProjectionsForNode(selectedNode.found.id)"
+      />
       <div class="edge outgoing last-child" :class="{ visible: parentNode !== null }" />
     </div>
     <div class="node-column">
@@ -19,6 +28,9 @@
         <div class="edge incoming visible" />
         <IndexProjectionsNode
           :node-data="parentNode"
+          :projection-start-timestamp="projectionStartTimestamp"
+          :projection-end-timestamp="projectionEndTimestamp"
+          :timeseries="getProjectionsForNode(parentNode.id)"
           @select="emit('select-element', parentNode.id)"
         />
       </div>
@@ -34,9 +46,13 @@ import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import { SelectableIndexElementId } from '@/types/Index';
 import IndexProjectionsNode from './index-projections-node.vue';
 import IndexProjectionsExpandedNode from './index-projections-expanded-node.vue';
+import { TimeseriesPoint } from '@/types/Timeseries';
 
 const props = defineProps<{
   selectedNodeId: string | null;
+  projectionStartTimestamp: number;
+  projectionEndTimestamp: number;
+  projections: Map<string, TimeseriesPoint[]>;
 }>();
 
 const emit = defineEmits<{
@@ -67,6 +83,10 @@ const childNodes = computed(() => {
 const parentNode = computed(() => {
   return selectedNode.value?.parent ?? null;
 });
+
+const getProjectionsForNode = (nodeId: string) => {
+  return props.projections.get(nodeId) ?? [];
+};
 </script>
 
 <style lang="scss" scoped>

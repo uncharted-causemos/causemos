@@ -10,7 +10,12 @@
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
         <span class="subdued un-font-small overflow-ellipsis">{{ dataSourceText }}</span>
       </div>
-      <div class="timeseries"><!-- TODO: --></div>
+      <IndexProjectionsNodeTimeseries
+        class="timeseries"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
+        :timeseries="timeseries"
+      />
     </div>
 
     <div v-else-if="isEmptyNode(props.nodeData)" class="content">
@@ -22,7 +27,12 @@
       <div class="content timeseries-label">
         <span class="subdued un-font-small overflow-ellipsis">{{ dataSourceText }}</span>
       </div>
-      <div class="timeseries"><!-- TODO: --></div>
+      <IndexProjectionsNodeTimeseries
+        class="timeseries"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
+        :timeseries="timeseries"
+      />
     </div>
   </div>
 </template>
@@ -37,9 +47,14 @@ import {
   isEmptyNode,
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
+import IndexProjectionsNodeTimeseries from './index-projections-node-timeseries.vue';
+import { TimeseriesPoint } from '@/types/Timeseries';
 
 const props = defineProps<{
   nodeData: ConceptNode;
+  projectionStartTimestamp: number;
+  projectionEndTimestamp: number;
+  timeseries: TimeseriesPoint[];
 }>();
 
 const emit = defineEmits<{
