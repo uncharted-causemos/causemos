@@ -33,7 +33,7 @@
         <h4>{{ nodeName }}</h4>
         <div class="polarity-select-container">
           <div class="polarity-statement start">
-            <h5>High {{ nodeUpstreamName }} represents</h5>
+            <p>High {{ nodeUpstreamName }} represents</p>
           </div>
           <dropdown-button
             :is-dropdown-left-aligned="true"
@@ -43,7 +43,7 @@
             @item-selected="selectPolarity"
           />&nbsp;
           <div class="polarity-statement end">
-            <h5>{{ nodeName }} values.</h5>
+            <p>{{ nodeName }} values.</p>
           </div>
         </div>
       </div>
