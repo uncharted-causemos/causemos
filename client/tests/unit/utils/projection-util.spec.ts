@@ -590,44 +590,8 @@ describe('projection-util', () => {
             },
           },
         },
-        'data-node-2': {
-          method: 'Holt',
-          forecast: {
-            data: [],
-            error: 1,
-            parameters: {
-              alpha: 0.1,
-              beta: 0.4,
-            },
-          },
-          backcast: {
-            data: [],
-            error: 2,
-            parameters: {
-              alpha: 0.2,
-              beta: 0.5,
-            },
-          },
-        },
-        'data-node-3': {
-          method: 'Holt',
-          forecast: {
-            data: [],
-            error: 1,
-            parameters: {
-              alpha: 0.1,
-              beta: 0.4,
-            },
-          },
-          backcast: {
-            data: [],
-            error: 2,
-            parameters: {
-              alpha: 0.2,
-              beta: 0.5,
-            },
-          },
-        },
+        'data-node-2': DEFAULT_TEST_FORECAST_RESULT,
+        'data-node-3': DEFAULT_TEST_FORECAST_RESULT,
       });
     });
     it('should calculate weighted sum of its children for each weighted sum node in the tree', () => {
@@ -791,44 +755,8 @@ describe('projection-util', () => {
             },
           },
         },
-        'data-node-2': {
-          method: 'Holt',
-          forecast: {
-            data: [],
-            error: 1,
-            parameters: {
-              alpha: 0.1,
-              beta: 0.4,
-            },
-          },
-          backcast: {
-            data: [],
-            error: 2,
-            parameters: {
-              alpha: 0.2,
-              beta: 0.5,
-            },
-          },
-        },
-        'data-node-3': {
-          method: 'Holt',
-          forecast: {
-            data: [],
-            error: 1,
-            parameters: {
-              alpha: 0.1,
-              beta: 0.4,
-            },
-          },
-          backcast: {
-            data: [],
-            error: 2,
-            parameters: {
-              alpha: 0.2,
-              beta: 0.5,
-            },
-          },
-        },
+        'data-node-2': DEFAULT_TEST_FORECAST_RESULT,
+        'data-node-3': DEFAULT_TEST_FORECAST_RESULT,
         'weighted-sum-node-1': {
           method: 'Weighted Sum',
         },
