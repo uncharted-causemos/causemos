@@ -180,7 +180,6 @@ export const findAndUpdateIsOppositePolarity = (
     );
     if (index >= 0) {
       result.parent.components[index].isOppositePolarity = value;
-      result.parent.components = rebalanceInputWeights(result.parent.components);
       return true;
     }
   }
