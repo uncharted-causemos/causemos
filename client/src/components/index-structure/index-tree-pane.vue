@@ -265,13 +265,12 @@ const gridCells = computed<GridCell[]>(() => {
 });
 
 const isInboundPolarityNegative = (nodeId: string) => {
-  const parentCell = gridCells.value.filter((cell) => cell.node.id === nodeId)[0];
-  const adjacentChildCell = gridCells.value.filter(
-    (cell) =>
-      cell.startRow === parentCell.startRow && parentCell.startColumn === parentCell.startColumn - 1
-  );
-  if (adjacentChildCell.length > 0) {
-    return adjacentChildCell[0].isOppositePolarity ?? false;
+  const index = gridCells.value.findIndex((cell) => cell.node.id === nodeId);
+  if (index >= 0) {
+    const node = gridCells.value[index].node;
+    if ('components' in node && node.components.length > 0) {
+      return node.components[0].isOppositePolarity;
+    }
   }
   return false;
 };
