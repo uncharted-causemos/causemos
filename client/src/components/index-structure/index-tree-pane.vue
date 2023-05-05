@@ -26,6 +26,10 @@
             isIncomingHighlighted(cell.node.id) && !isIncomingSelected(cell.node.id),
           [EDGE_CLASS.POLARITY_POS]: !isInboundPolarityNegative(cell.node.id),
           [EDGE_CLASS.POLARITY_NEG]: isInboundPolarityNegative(cell.node.id),
+          [EDGE_CLASS.SELECTED_SOURCE_POLARITY_POS]:
+            isIncomingSelected(cell.node.id) && !isSelectedSourcePolarityNegative(cell.node.id),
+          [EDGE_CLASS.SELECTED_SOURCE_POLARITY_NEG]:
+            isIncomingSelected(cell.node.id) && isSelectedSourcePolarityNegative(cell.node.id),
         }"
         @mouseenter="() => !isConnecting && handleHighlightEdge(cell.node)"
         @mouseleave="highlightClear"
@@ -61,6 +65,8 @@
             isOutgoingYHighlighted(cell.node.id) && !isOutgoingYSelected(cell.node.id),
           [EDGE_CLASS.POLARITY_POS]: !cell.isOppositePolarity,
           [EDGE_CLASS.POLARITY_NEG]: cell.isOppositePolarity,
+          [EDGE_CLASS.NEXT_SIBLING_POLARITY_POS]: !isNextSiblingPolarityNegative(cell.node.id),
+          [EDGE_CLASS.NEXT_SIBLING_POLARITY_NEG]: isNextSiblingPolarityNegative(cell.node.id),
         }"
         @mouseenter="() => !isConnecting && handleMouseEnter(cell.node.id)"
         @mouseleave="highlightClear"
@@ -113,6 +119,10 @@ const EDGE_CLASS = {
   INCOMING: 'incoming',
   POLARITY_POS: 'polarity-pos',
   POLARITY_NEG: 'polarity-neg',
+  NEXT_SIBLING_POLARITY_NEG: 'next-sibling-polarity-neg',
+  NEXT_SIBLING_POLARITY_POS: 'next-sibling-polarity-pos',
+  SELECTED_SOURCE_POLARITY_NEG: 'selected-source-neg',
+  SELECTED_SOURCE_POLARITY_POS: 'selected-source-pos',
 };
 
 const props = defineProps<{
@@ -270,6 +280,37 @@ const isInboundPolarityNegative = (nodeId: string) => {
     const node = gridCells.value[index].node;
     if ('components' in node && node.components.length > 0) {
       return node.components[0].isOppositePolarity;
+    }
+  }
+  return false;
+};
+
+const isSelectedSourcePolarityNegative = (nodeId: string) => {
+  const index = gridCells.value.findIndex((cell) => cell.node.id === nodeId);
+  if (index >= 0 && props.selectedElementId !== null) {
+    if (
+      typeof props.selectedElementId !== 'string' &&
+      props.selectedElementId.targetId === nodeId
+    ) {
+      const sourceId = props.selectedElementId.sourceId;
+      const index2 = gridCells.value.findIndex((cell) => cell.node.id === sourceId);
+      if (index2 >= 0) {
+        return gridCells.value[index2].isOppositePolarity;
+      }
+    }
+  }
+  return false;
+};
+
+const isNextSiblingPolarityNegative = (nodeId: string) => {
+  const cells = gridCells.value.filter((item) => item.node.id === nodeId);
+  if (cells.length > 0) {
+    const cell = cells[0];
+    const index = gridCells.value.findIndex(
+      (item) => item.startRow === cell.startRow + 1 && item.startColumn === cell.startColumn
+    );
+    if (index >= 0) {
+      return gridCells.value[index].isOppositePolarity;
     }
   }
   return false;
