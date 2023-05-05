@@ -364,7 +364,7 @@ const selectedUpstreamNodeName = computed(() => {
 
 const isUpstreamNodePolarityNegative = computed(() => {
   const edges = selectedEdgeComponents.value;
-  if (edges !== null && 'components' in edges.target) {
+  if (edges !== null && isConceptNodeWithoutDataset(edges.target)) {
     const childNode = edges.target.components.filter(
       (component) => component.componentNode.id === edges.source.id
     );
