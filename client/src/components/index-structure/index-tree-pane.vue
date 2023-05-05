@@ -30,6 +30,12 @@
             isIncomingSelected(cell.node.id) && !isSelectedSourcePolarityNegative(cell.node.id),
           [EDGE_CLASS.SELECTED_SOURCE_POLARITY_NEG]:
             isIncomingSelected(cell.node.id) && isSelectedSourcePolarityNegative(cell.node.id),
+          [EDGE_CLASS.HIGHLIGHTED_SOURCE_POLARITY_NEG]:
+            isIncomingHighlighted(cell.node.id) &&
+            isHighlightedSourcePolarityNegative(cell.node.id),
+          [EDGE_CLASS.HIGHLIGHTED_SOURCE_POLARITY_POS]:
+            isIncomingHighlighted(cell.node.id) &&
+            !isHighlightedSourcePolarityNegative(cell.node.id),
         }"
         @mouseenter="() => !isConnecting && handleHighlightEdge(cell.node)"
         @mouseleave="highlightClear"
@@ -123,6 +129,8 @@ const EDGE_CLASS = {
   NEXT_SIBLING_POLARITY_POS: 'next-sibling-polarity-pos',
   SELECTED_SOURCE_POLARITY_NEG: 'selected-source-neg',
   SELECTED_SOURCE_POLARITY_POS: 'selected-source-pos',
+  HIGHLIGHTED_SOURCE_POLARITY_NEG: 'highlighted-source-neg',
+  HIGHLIGHTED_SOURCE_POLARITY_POS: 'highlighted-source-pos',
 };
 
 const props = defineProps<{
@@ -286,13 +294,18 @@ const isInboundPolarityNegative = (nodeId: string) => {
 };
 
 const isSelectedSourcePolarityNegative = (nodeId: string) => {
+  return getSourcePolarity(props.selectedElementId, nodeId);
+};
+
+const isHighlightedSourcePolarityNegative = (nodeId: string) => {
+  return getSourcePolarity(props.highlightEdgeId, nodeId);
+};
+
+const getSourcePolarity = (edge: SelectableIndexElementId | null, nodeId: string) => {
   const index = gridCells.value.findIndex((cell) => cell.node.id === nodeId);
-  if (index >= 0 && props.selectedElementId !== null) {
-    if (
-      typeof props.selectedElementId !== 'string' &&
-      props.selectedElementId.targetId === nodeId
-    ) {
-      const sourceId = props.selectedElementId.sourceId;
+  if (index >= 0 && edge !== null) {
+    if (typeof edge !== 'string' && edge.targetId === nodeId) {
+      const sourceId = edge.sourceId;
       const index2 = gridCells.value.findIndex((cell) => cell.node.id === sourceId);
       if (index2 >= 0) {
         return gridCells.value[index2].isOppositePolarity;
