@@ -217,6 +217,14 @@ export const runProjection = (
   };
 };
 
+/**
+ * Create a projection runner that runs projection on the dataset nodes and computes weighted sum of children nodes for
+ * the provided concept tree
+ * @param conceptTree Concept tree
+ * @param historicalData An object representing a map that maps historical timeseries data to each node id
+ * @param targetPeriod Target projection time period window
+ * @param dataResOption Data resolution option
+ */
 export const createProjectionRunner = (
   conceptTree: ConceptNodeWithoutDataset,
   historicalData: { [nodeId: string]: TimeseriesPoint[] },
@@ -261,6 +269,9 @@ export const createProjectionRunner = (
   };
 
   const runner = {
+    /**
+     * Run projection on all dataset nodes
+     */
     projectAllDatasetNodes() {
       for (const [nodeId, series] of Object.entries(data).filter((v) => v[1] !== undefined)) {
         const { method, forecast, backcast, projectionData } = runProjection(
@@ -299,26 +310,48 @@ export const createProjectionRunner = (
       // TODO: Implement this method
       return runner;
     },
+
+    /**
+     * Traverse the tree and calculate weighted sum of all children data for each non dataset node
+     */
     calculateWeightedSum() {
       _calculateWeightedSum(tree);
       return runner;
     },
+
+    /**
+     * This runs projection on all datasets nodes and also calculate the weighted sum for none dataset nodes
+     */
     runProjection() {
       runner.projectAllDatasetNodes().calculateWeightedSum();
       return runner;
     },
+
+    /**
+     * Get projection results
+     */
     getResults() {
       return {
         ...runner.getProjectionResultForNoneDatasetNodes(),
         ...runner.getProjectionResultForDatasetNodes(),
       };
     },
+
+    /** Return an object representing run information metadata for each node */
     getRunInfo() {
       return runInfo;
     },
+
+    /**
+     * Return the projection result, weighted sum for each none dataset node
+     */
     getProjectionResultForNoneDatasetNodes() {
       return resultForNoneDatasetNode;
     },
+
+    /**
+     * Return the projection result for each dataset node
+     */
     getProjectionResultForDatasetNodes() {
       return resultForDatasetNode;
     },
