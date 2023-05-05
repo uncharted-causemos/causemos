@@ -368,7 +368,7 @@ const isUpstreamNodePolarityNegative = computed(() => {
     const childNode = edges.target.components.filter(
       (component) => component.componentNode.id === edges.source.id
     );
-    if (childNode.length > 0 && 'isOppositePolarity' in childNode[0]) {
+    if (childNode.length > 0) {
       return childNode[0].isOppositePolarity;
     }
   }
