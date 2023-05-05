@@ -11,7 +11,13 @@
     >
       <div class="edge incoming" :class="{ visible: hasChildren(cell.node) }" />
       <div class="node" :class="{ selected: cell.node.id === props.selectedNodeId }">
-        <i class="fa fa-fw fa-th" />
+        <i
+          v-if="isConceptNodeWithDatasetAttached(cell.node)"
+          class="fa fa-fw"
+          :class="DATASET_ICON"
+          :style="{ color: DATASET_COLOR }"
+        />
+        <div v-else class="without-dataset" />
       </div>
       <div
         v-if="cell.hasOutputLine"
@@ -27,7 +33,12 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren } from '@/utils/index-tree-util';
+import {
+  DATASET_COLOR,
+  DATASET_ICON,
+  hasChildren,
+  isConceptNodeWithDatasetAttached,
+} from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import { convertTreeToGridCells } from '@/utils/grid-cell-util';
 
@@ -75,6 +86,18 @@ $edge-styles: 2px solid $un-color-black-20;
   &.selected {
     background: white;
     border: 1px solid $accent-main;
+
+    .without-dataset {
+      background: $accent-main;
+      border: 1px solid $accent-main;
+    }
+  }
+  .without-dataset {
+    width: 5px;
+    height: 5px;
+    border-radius: 5px;
+    border: 1px solid $un-color-black-30;
+    background: white;
   }
 }
 

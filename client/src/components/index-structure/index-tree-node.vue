@@ -53,7 +53,7 @@
     <div v-if="isConceptNodeWithoutDataset(props.nodeData) && !showDatasetSearch" class="content">
       <p
         v-if="dataSourceText.length > 0"
-        class="un-font-small"
+        class="un-font-small data-source-text subdued"
         :class="{ warning: isEmptyNode(props.nodeData) }"
       >
         {{ dataSourceText }}
@@ -67,15 +67,22 @@
       </button>
       <button
         v-if="showAttachDatasetButton"
-        class="btn btn-default full-width-button"
+        class="btn btn-default full-width-button attach-dataset-button"
         @click="isSearchingForDataset = true"
       >
         <i class="fa fa-fw" :class="DATASET_ICON" />
         Attach dataset
       </button>
     </div>
-    <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)" class="content un-font-small">
-      {{ dataSourceText }}
+    <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)" class="content">
+      <div class="flex dataset-label" :style="{ color: DATASET_COLOR }">
+        <i class="fa fa-fw" :class="DATASET_ICON" />
+        <span class="un-font-small expand">Dataset</span>
+        <InvertedDatasetLabel v-if="props.nodeData.dataset.isInverted" />
+      </div>
+      <p class="un-font-small subdued">
+        {{ dataSourceText }}
+      </p>
     </div>
   </div>
 </template>
@@ -90,11 +97,13 @@ import {
   DATASET_ICON,
   isOutputIndexNode,
   getNodeDataSourceText,
+  DATASET_COLOR,
 } from '@/utils/index-tree-util';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
 import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
 import { OptionButtonMenu } from '@/utils/index-common-util';
+import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
 
 interface Props {
   nodeData: ConceptNode;
@@ -341,10 +350,6 @@ $option-button-width: 16px;
     border-left: 5px solid #b3b4b5;
   }
 
-  .inverted-label {
-    margin-left: 5px;
-  }
-
   .options-button-container {
     width: $option-button-width;
     height: $option-button-width;
@@ -407,6 +412,25 @@ $option-button-width: 16px;
   .advanced-search-button {
     margin: 5px 0 10px 10px;
   }
+}
+
+.dataset-label {
+  gap: 2px;
+  align-items: center;
+  margin-bottom: 2px;
+
+  .expand {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.data-source-text {
+  margin-bottom: 2px;
+}
+
+.attach-dataset-button {
+  margin-top: 10px;
 }
 
 .warning {
