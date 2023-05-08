@@ -1,19 +1,70 @@
 import _ from 'lodash';
-import forecast from './forecast';
+import forecast, { ForecastResult, ForecastMethod } from './forecast';
 import {
   getYearFromTimestamp,
   getNumberOfMonthsSinceEpoch,
   getTimestampMillisFromYear,
   getTimestampFromNumberOfMonths,
 } from '@/utils/date-util';
+import { isConceptNodeWithDatasetAttached } from '@/utils/index-tree-util';
 
 import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
+import { ConceptNode, ConceptNodeWithoutDataset } from '@/types/Index';
+
+export enum WeightedSumNodeProjectionType {
+  WeightedSum = 'Weighted Sum',
+}
 
 type ProjectionPoint = {
   x: number;
   y: number;
   projectionType: ProjectionPointType;
+};
+
+type ProjectionResults = {
+  [nodeId: string]: TimeseriesPointProjected[];
+};
+
+type ProjectionRunInfo = {
+  [nodeId: string]:
+    | ForecastResult<ForecastMethod>
+    | { method: WeightedSumNodeProjectionType.WeightedSum };
+};
+
+const multiply = (data: TimeseriesPointProjected[], factor: number) =>
+  data.map((d) => ({ ...d, value: factor * d.value }));
+
+const invert = (data: TimeseriesPointProjected[]) => {
+  return data.map((d) => ({ ...d, value: 1 - d.value }));
+};
+
+const invertData = (data: TimeseriesPointProjected[], isInvert = true) => {
+  return isInvert ? invert(data) : data;
+};
+
+const sum = (...data: TimeseriesPointProjected[][]) => {
+  const _sum = (dataA: TimeseriesPointProjected[], dataB: TimeseriesPointProjected[]) => {
+    const result: TimeseriesPointProjected[] = [];
+    const length = Math.max(dataA.length, dataB.length);
+    for (let index = 0; index < length; index++) {
+      const pointA = dataA[index];
+      const pointB = dataB[index];
+      const point: TimeseriesPointProjected = {
+        projectionType:
+          pointA?.projectionType === ProjectionPointType.Historical &&
+          pointB?.projectionType === ProjectionPointType.Historical
+            ? ProjectionPointType.Historical
+            : ProjectionPointType.Interpolated,
+        timestamp: pointA?.timestamp || pointB?.timestamp || 0,
+        value: (pointA?.value || 0) + (pointB?.value || 0),
+      };
+      result.push(point);
+    }
+    return result;
+  };
+  const [first, ...rest] = data;
+  return rest.length === 0 ? first : rest.reduce((prev, cur) => _sum(prev, cur), first);
 };
 
 /**
@@ -129,10 +180,6 @@ export const runProjection = (
   const startX = fromTimestamp(targetPeriod.start);
   const endX = fromTimestamp(targetPeriod.end);
 
-  if (startX >= inputData[inputData.length - 1][0] || endX <= inputData[0][0]) {
-    throw new Error('Invalid target period');
-  }
-
   const { forecastSteps, backcastSteps } = calculateNumberOfForecastStepsNeeded(
     inputData,
     startX,
@@ -176,4 +223,144 @@ export const runProjection = (
     projectionData: timeseriesProjected,
     ...fResult,
   };
+};
+
+/**
+ * Create a projection runner that runs projection on the dataset nodes and computes weighted sum of children nodes for
+ * the provided concept tree
+ * @param conceptTree Concept tree
+ * @param historicalData An object representing a map that maps historical timeseries data to each node id
+ * @param targetPeriod Target projection time period window
+ * @param dataResOption Data resolution option
+ */
+export const createProjectionRunner = (
+  conceptTree: ConceptNodeWithoutDataset,
+  historicalData: { [nodeId: string]: TimeseriesPoint[] },
+  targetPeriod: { start: number; end: number },
+  dataResOption: TemporalResolutionOption.Year | TemporalResolutionOption.Month
+) => {
+  const tree = conceptTree;
+  const data = historicalData;
+  const period = targetPeriod;
+  const resultForDatasetNode: ProjectionResults = {};
+  const resultForWeightedSumNodes: ProjectionResults = {};
+  const runInfo: ProjectionRunInfo = {};
+
+  const _calculateWeightedSum = (node: ConceptNode) => {
+    if (isConceptNodeWithDatasetAttached(node)) {
+      if (!resultForDatasetNode[node.id]) return null;
+      const projectedSeries = resultForDatasetNode[node.id];
+      return invertData(projectedSeries, node.dataset.isInverted);
+    }
+
+    // Retrieve the weighted projected timeseries data from children
+    const childProjectionSeriesData = node.components
+      .map((c) => {
+        const timeseries = _calculateWeightedSum(c.componentNode);
+        return timeseries !== null
+          ? multiply(invertData(timeseries, c.isOppositePolarity), c.weight / 100)
+          : null;
+      })
+      .filter((s): s is TimeseriesPointProjected[] => s !== null);
+
+    if (childProjectionSeriesData.length === 0) {
+      return null;
+    }
+
+    // Calculate the sum of children's weighted projected timeseries data
+    const weightedSumSeries = sum(...childProjectionSeriesData);
+    resultForWeightedSumNodes[node.id] = weightedSumSeries;
+    runInfo[node.id] = { method: WeightedSumNodeProjectionType.WeightedSum };
+    return weightedSumSeries;
+  };
+
+  const runner = {
+    /**
+     * Run projection on all dataset nodes
+     */
+    projectAllDatasetNodes() {
+      for (const [nodeId, series] of Object.entries(data).filter((v) => v[1] !== undefined)) {
+        const { method, forecast, backcast, projectionData } = runProjection(
+          series,
+          period,
+          dataResOption
+        );
+        runInfo[nodeId] = {
+          method,
+          forecast,
+          backcast,
+        };
+        resultForDatasetNode[nodeId] = projectionData;
+      }
+      return runner;
+    },
+
+    /**
+     * Run projection on a single dataset node with provided options
+     * @param nodeId node id
+     * @param options options - options e.g forecast method
+     */
+    projectDatasetNode(nodeId: string, options: any) {
+      console.log('Not Yet Implemented', nodeId, options);
+      // TODO: Implement this method
+      return runner;
+    },
+
+    /**
+     * Update historical data for a node with given node id
+     * @param nodeId Dataset node id
+     * @param data historical timeseries data
+     */
+    updateHistoricalData(nodeId: string, data: TimeseriesPoint[]) {
+      console.log('Not Yet Implemented', nodeId, data);
+      // TODO: Implement this method
+      return runner;
+    },
+
+    /**
+     * Traverse the tree and calculate weighted sum of all children data for each non dataset node
+     */
+    calculateWeightedSum() {
+      _calculateWeightedSum(tree);
+      return runner;
+    },
+
+    /**
+     * This runs projection on all datasets nodes and also calculate the weighted sum for none dataset nodes
+     */
+    runProjection() {
+      runner.projectAllDatasetNodes().calculateWeightedSum();
+      return runner;
+    },
+
+    /**
+     * Get projection results
+     */
+    getResults() {
+      return {
+        ...runner.getProjectionResultForWeightedSumNodes(),
+        ...runner.getProjectionResultForDatasetNodes(),
+      };
+    },
+
+    /** Return an object representing run information metadata for each node */
+    getRunInfo() {
+      return runInfo;
+    },
+
+    /**
+     * Return the projection result, weighted sum for each none dataset node
+     */
+    getProjectionResultForWeightedSumNodes() {
+      return resultForWeightedSumNodes;
+    },
+
+    /**
+     * Return the projection result for each dataset node
+     */
+    getProjectionResultForDatasetNodes() {
+      return resultForDatasetNode;
+    },
+  };
+  return runner;
 };
