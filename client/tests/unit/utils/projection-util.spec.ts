@@ -521,7 +521,7 @@ describe('projection-util', () => {
       );
 
       expect(runner.getProjectionResultForDatasetNodes()).to.deep.equal({});
-      expect(runner.getProjectionResultForNoneDatasetNodes()).to.deep.equal({});
+      expect(runner.getProjectionResultForWeightedSumNodes()).to.deep.equal({});
       expect(runner.getResults()).to.deep.equal({});
       expect(runner.getRunInfo()).to.deep.equal({});
     });
@@ -568,7 +568,7 @@ describe('projection-util', () => {
       };
 
       expect(runner.getProjectionResultForDatasetNodes()).to.deep.equal(expected);
-      expect(runner.getProjectionResultForNoneDatasetNodes()).to.deep.equal({});
+      expect(runner.getProjectionResultForWeightedSumNodes()).to.deep.equal({});
       expect(runner.getResults()).to.deep.equal(expected);
       expect(runner.getRunInfo()).to.deep.equal({
         'data-node-1': {
@@ -649,13 +649,13 @@ describe('projection-util', () => {
           { timestamp: getTsM(1980, 6), value: 0.36, projectionType: 'interpolated' },
         ],
       };
-      const result = runner.getProjectionResultForNoneDatasetNodes();
+      const result = runner.getProjectionResultForWeightedSumNodes();
       // round up numbers for easy comparison
       for (const [_, series] of Object.entries(result)) {
         series.forEach((v) => (v.value = +v.value.toFixed(2)));
       }
 
-      expect(runner.getProjectionResultForNoneDatasetNodes()).to.deep.equal(expected);
+      expect(runner.getProjectionResultForWeightedSumNodes()).to.deep.equal(expected);
       expect(runner.getResults()).to.deep.include(expected);
     });
     it('should run projection fine with missing historical data', () => {

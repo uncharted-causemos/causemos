@@ -12,6 +12,10 @@ import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
 import { ConceptNode, ConceptNodeWithoutDataset } from '@/types/Index';
 
+export enum WeightedSumNodeProjectionType {
+  WeightedSum = 'Weighted Sum',
+}
+
 type ProjectionPoint = {
   x: number;
   y: number;
@@ -22,7 +26,11 @@ type ProjectionResults = {
   [nodeId: string]: TimeseriesPointProjected[];
 };
 
-type WEIGHTED_SUM = 'Weighted Sum';
+type ProjectionRunInfo = {
+  [nodeId: string]:
+    | ForecastResult<ForecastMethod>
+    | { method: WeightedSumNodeProjectionType.WeightedSum };
+};
 
 const multiply = (data: TimeseriesPointProjected[], factor: number) =>
   data.map((d) => ({ ...d, value: factor * d.value }));
@@ -235,10 +243,8 @@ export const createProjectionRunner = (
   const data = historicalData;
   const period = targetPeriod;
   const resultForDatasetNode: ProjectionResults = {};
-  const resultForNoneDatasetNode: ProjectionResults = {};
-  const runInfo: {
-    [nodeId: string]: ForecastResult<ForecastMethod> | { method: WEIGHTED_SUM };
-  } = {};
+  const resultForWeightedSumNodes: ProjectionResults = {};
+  const runInfo: ProjectionRunInfo = {};
 
   const _calculateWeightedSum = (node: ConceptNode) => {
     if (isConceptNodeWithDatasetAttached(node)) {
@@ -263,8 +269,8 @@ export const createProjectionRunner = (
 
     // Calculate the sum of children's weighted projected timeseries data
     const weightedSumSeries = sum(...childProjectionSeriesData);
-    resultForNoneDatasetNode[node.id] = weightedSumSeries;
-    runInfo[node.id] = { method: 'Weighted Sum' };
+    resultForWeightedSumNodes[node.id] = weightedSumSeries;
+    runInfo[node.id] = { method: WeightedSumNodeProjectionType.WeightedSum };
     return weightedSumSeries;
   };
 
@@ -332,7 +338,7 @@ export const createProjectionRunner = (
      */
     getResults() {
       return {
-        ...runner.getProjectionResultForNoneDatasetNodes(),
+        ...runner.getProjectionResultForWeightedSumNodes(),
         ...runner.getProjectionResultForDatasetNodes(),
       };
     },
@@ -345,8 +351,8 @@ export const createProjectionRunner = (
     /**
      * Return the projection result, weighted sum for each none dataset node
      */
-    getProjectionResultForNoneDatasetNodes() {
-      return resultForNoneDatasetNode;
+    getProjectionResultForWeightedSumNodes() {
+      return resultForWeightedSumNodes;
     },
 
     /**
