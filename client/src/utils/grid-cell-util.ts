@@ -20,7 +20,8 @@ export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
     currentNode: ConceptNode,
     depth: number,
     isRootNode: boolean,
-    isLastChild: boolean
+    isLastChild: boolean,
+    isOppositePolarity: boolean
   ) => {
     const currentCell: GridCell = {
       node: currentNode,
@@ -32,6 +33,7 @@ export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
       rowCount: 1,
       hasOutputLine: !isRootNode,
       isLastChild,
+      isOppositePolarity,
     };
     // If this is a leaf node:
     if (!isConceptNodeWithoutDataset(currentNode) || isEmptyNode(currentNode)) {
@@ -49,7 +51,13 @@ export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
     currentNode.components.forEach((input, i) => {
       const isLastChild = i === lastChildArrayPosition;
       // Call the helper function with the same depth for each child, one greater than the parent.
-      const cells = _convertTreeToGridCells(input.componentNode, depth + 1, false, isLastChild);
+      const cells = _convertTreeToGridCells(
+        input.componentNode,
+        depth + 1,
+        false,
+        isLastChild,
+        input.isOppositePolarity
+      );
       directChildCells.push(cells[0]);
       cells.forEach((cell) => {
         descendentCells.push(cell);
@@ -59,7 +67,7 @@ export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
     currentCell.rowCount = _.sumBy(directChildCells, (child) => child.rowCount);
     return [currentCell, ...descendentCells];
   };
-  return _convertTreeToGridCells(tree, 0, true, false);
+  return _convertTreeToGridCells(tree, 0, true, false, false);
 };
 
 /**

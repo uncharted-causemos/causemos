@@ -168,6 +168,24 @@ export const findAndUpdateNode = (indexNodeTree: ConceptNode, updated: ConceptNo
   return false;
 };
 
+export const findAndUpdateIsOppositePolarity = (
+  indexNodeTree: ConceptNode,
+  nodeId: string,
+  value: boolean
+) => {
+  const result = findNode(indexNodeTree, nodeId);
+  if (result?.parent) {
+    const index = result.parent.components.findIndex(
+      (weightedComponent) => weightedComponent.componentNode.id === nodeId
+    );
+    if (index >= 0) {
+      result.parent.components[index].isOppositePolarity = value;
+      return true;
+    }
+  }
+  return false;
+};
+
 /**
  * Recursively checks whether any nodes in the tree are grounded with datasets.
  * Returns true if at least one dataset is found, and false otherwise.

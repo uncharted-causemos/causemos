@@ -31,6 +31,17 @@
           </div>
         </div>
         <h4>{{ nodeName }}</h4>
+        <div class="polarity-select-container">
+          <p class="polarity-statement start">High {{ nodeUpstreamName }} represents</p>
+          <dropdown-button
+            :is-dropdown-left-aligned="true"
+            :inner-button-label="''"
+            :items="isPolarityOppositeOptions"
+            :selected-item="isUpstreamNodePolarityNegative"
+            @item-selected="selectPolarity"
+          />&nbsp;
+          <p class="polarity-statement end">{{ nodeName }} values.</p>
+        </div>
       </div>
       <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
       <IndexDocumentSnippets
@@ -198,6 +209,8 @@ import {
 } from '@/utils/index-tree-util';
 import { OptionButtonMenu } from '@/utils/index-common-util';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { NEGATIVE_COLOR, POSITIVE_COLOR } from '@/utils/colors-util';
 import timestampFormatter from '@/formatters/timestamp-formatter';
 import IndexTemporalCoveragePreview from './index-temporal-coverage-preview.vue';
 
@@ -210,7 +223,7 @@ const emit = defineEmits<{
 }>();
 
 const indexTree = useIndexTree();
-const { findNode } = indexTree;
+const { findNode, updateIsOppositePolarity } = indexTree;
 const workbench = useIndexWorkBench();
 
 const setDatasetIsInverted = (nodeId: string, newValue: boolean) => {
@@ -225,6 +238,11 @@ const renameNode = (newName: string) => {
   workbench.findAndRenameNode(selectedNode.value.id, newName);
   indexTree.findAndRenameNode(selectedNode.value.id, newName);
 };
+
+const isPolarityOppositeOptions = [
+  { displayName: 'high', value: false, color: POSITIVE_COLOR },
+  { displayName: 'low', value: true, color: NEGATIVE_COLOR },
+];
 
 // Options button
 
@@ -249,6 +267,14 @@ const edgeOptionsButtonMenu = [
   },
 ];
 
+const selectPolarity = (value: boolean) => {
+  const edge = selectedEdgeComponents.value;
+  if (edge !== null) {
+    if (!updateIsOppositePolarity(edge.source.id, value)) {
+      workbench.updateIsOppositePolarity(edge.source.id, value);
+    }
+  }
+};
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   const node = selectedNode.value;
   if (node === null || isOutputIndexNode(node)) {
@@ -339,6 +365,19 @@ const selectedUpstreamNodeName = computed(() => {
   return null;
 });
 
+const isUpstreamNodePolarityNegative = computed(() => {
+  const edges = selectedEdgeComponents.value;
+  if (edges !== null && isConceptNodeWithoutDataset(edges.target)) {
+    const childNode = edges.target.components.filter(
+      (component) => component.componentNode.id === edges.source.id
+    );
+    if (childNode.length > 0) {
+      return childNode[0].isOppositePolarity;
+    }
+  }
+  return false;
+});
+
 const datasetMetadata = useModelMetadataSimple(selectedDatasetDataId);
 
 const isRenaming = ref(false);
@@ -376,8 +415,8 @@ const searchForNode = (id: string) => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/variables.scss';
-@import '@/styles/uncharted-design-tokens.scss';
+@import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
 
 .fa-long-arrow-right {
   color: $un-color-black-20;
@@ -447,5 +486,20 @@ section {
 
 .edge-target {
   border-top: 1px solid $separator;
+}
+
+.polarity-select-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  .polarity-statement {
+    padding-top: 3px;
+    &.start {
+      margin-right: 5px;
+    }
+    &.end {
+      margin-left: 5px;
+    }
+  }
 }
 </style>

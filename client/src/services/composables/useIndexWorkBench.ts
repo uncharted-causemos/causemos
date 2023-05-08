@@ -1,10 +1,10 @@
-import _ from 'lodash';
 import { ref, computed } from 'vue';
 import { ConceptNode, SelectableIndexElementId } from '@/types/Index';
 import {
   createIndexTreeActions,
   deleteEdgeFromIndexTree,
   findAndRemoveChild,
+  findAndUpdateIsOppositePolarity,
   findNode as indexTreeUtilFindNode,
   isEdge,
 } from '@/utils/index-tree-util';
@@ -79,6 +79,16 @@ export default function useIndexWorkBench() {
     }
   };
 
+  const updateIsOppositePolarity = (nodeId: string, value: boolean) => {
+    const success = workBenchItems.value.some((tree) =>
+      findAndUpdateIsOppositePolarity(tree, nodeId, value)
+    );
+    if (success) {
+      triggerUpdate();
+    }
+    return success;
+  };
+
   const deleteEdge = (nodeIds: SelectableIndexElementId) => {
     if (isEdge(nodeIds)) {
       const node = findNode(nodeIds.targetId);
@@ -123,5 +133,6 @@ export default function useIndexWorkBench() {
     deleteEdge,
     popItem,
     isDescendant,
+    updateIsOppositePolarity,
   };
 }
