@@ -106,7 +106,7 @@ export default function useIndexWorkBench() {
     findAndAddNewChild,
     findAndAddChild,
     attachDatasetToNode,
-    toggleDatasetIsInverted,
+    setDatasetIsInverted,
   } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
   const popItem = (nodeId: string): ConceptNode | null => {
     const itemToPop = workBenchItems.value.filter((item) => item.id === nodeId);
@@ -127,7 +127,7 @@ export default function useIndexWorkBench() {
     findAndDeleteItem,
     findAndAddNewChild,
     findAndAddChild,
-    toggleDatasetIsInverted,
+    setDatasetIsInverted,
     attachDatasetToNode,
     getAnalysisId,
     deleteEdge,

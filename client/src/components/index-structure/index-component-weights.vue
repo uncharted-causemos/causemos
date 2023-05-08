@@ -5,7 +5,7 @@
       <h4 class="de-emphasized">No components.</h4>
     </header>
     <p v-if="props.inputs.length === 0" class="de-emphasized">
-      Click "Add component" to start building.
+      Click "Add input concept" to start building.
     </p>
 
     <header v-if="props.inputs.length !== 0">

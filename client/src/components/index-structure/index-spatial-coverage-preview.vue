@@ -1,16 +1,17 @@
 <template>
-  <div class="map">
-    <RegionMap
-      :data="regionMapData"
-      :map-bounds="mapBounds"
-      :min-zoom="MAP_MIN_ZOOM"
-      :selected-admin-level="0"
-      :disable-pan-zoom="true"
-      :disable-popup="true"
-    />
-    <button disabled class="btn">Expand</button>
+  <div>
+    <p>{{ displayString }}</p>
+    <div class="map">
+      <RegionMap
+        :data="regionMapData"
+        :map-bounds="mapBounds"
+        :min-zoom="MAP_MIN_ZOOM"
+        :selected-admin-level="0"
+        :disable-pan-zoom="true"
+        :disable-popup="true"
+      />
+    </div>
   </div>
-  <p class="de-emphasized">{{ displayString }}</p>
 </template>
 
 <script setup lang="ts">
@@ -79,7 +80,7 @@ const displayString = computed(() => {
     return '...';
   }
   const count = props.countries.length;
-  return `Covers ${count} countr${count === 1 ? 'y' : 'ies'}.`;
+  return `${count} countr${count === 1 ? 'y' : 'ies'}.`;
 });
 </script>
 
@@ -87,17 +88,8 @@ const displayString = computed(() => {
 @import '~styles/uncharted-design-tokens';
 
 .map {
-  height: 200px;
+  height: 150px;
   position: relative;
   pointer-events: none;
-  button {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-  }
-}
-
-.de-emphasized {
-  color: $un-color-black-40;
 }
 </style>

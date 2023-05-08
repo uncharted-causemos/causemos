@@ -21,7 +21,12 @@
           </template>
         </OptionsButton>
       </div>
-      <div class="timeseries add-horizontal-margin"><!-- TODO: --></div>
+      <IndexProjectionsExpandedNodeTimeseries
+        class="timeseries add-horizontal-margin"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
+        :timeseries="timeseries"
+      />
 
       <div class="dataset-metadata add-horizontal-margin">
         <p class="margin-top">Dataset description</p>
@@ -45,7 +50,12 @@
       <div class="add-horizontal-margin timeseries-label">
         <span class="subdued un-font-small">{{ dataSourceText }}</span>
       </div>
-      <div class="timeseries add-horizontal-margin"><!-- TODO: --></div>
+      <IndexProjectionsExpandedNodeTimeseries
+        class="timeseries add-horizontal-margin"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
+        :timeseries="timeseries"
+      />
     </div>
   </div>
 </template>
@@ -61,6 +71,8 @@ import {
 } from '@/utils/index-tree-util';
 import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
+import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
+import { TimeseriesPoint } from '@/types/Timeseries';
 
 const optionsButtonMenu = [
   {
@@ -85,6 +97,9 @@ const optionsButtonMenu = [
 
 const props = defineProps<{
   nodeData: ConceptNode;
+  projectionStartTimestamp: number;
+  projectionEndTimestamp: number;
+  timeseries: TimeseriesPoint[];
 }>();
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
@@ -122,10 +137,9 @@ $horizontal-margin: 20px;
 }
 
 .timeseries {
-  border: 1px solid $un-color-black-10;
   $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin;
   width: $timeseriesWidth;
-  height: 1 / 4 * $timeseriesWidth;
+  height: 1 / 4 * $timeseriesWidth + 40px;
   margin-top: 5px;
 
   &.warning {

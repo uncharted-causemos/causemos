@@ -122,10 +122,6 @@
     <!-- Node with dataset is selected -->
     <template v-else-if="selectedNode && isConceptNodeWithDatasetAttached(selectedNode)">
       <header>
-        <span class="type-label" :style="{ color: DATASET_COLOR }">
-          <i class="fa fa-fw" :class="[DATASET_ICON]" />
-          Dataset
-        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -157,27 +153,35 @@
           </div>
         </div>
       </header>
+      <IndexDatasetMetadata :node="selectedNode" :dataset-metadata="datasetMetadata" />
       <section>
+        <h4>Coverage</h4>
+        <IndexTemporalCoveragePreview
+          :dataset-id="selectedNode.dataset.config.datasetId"
+          :selected-timestamp="selectedNode.dataset.config.selectedTimestamp"
+          :metadata="datasetMetadata"
+        />
         <IndexSpatialCoveragePreview
           :node="selectedNode"
           :countries="datasetMetadata?.geography.country ?? null"
         />
       </section>
-      <IndexDatasetMetadata :node="selectedNode" :dataset-metadata="datasetMetadata" />
       <section>
-        <IndexDatasetSelectedDate
-          :dataset-id="selectedNode.dataset.config.datasetId"
-          :selected-timestamp="selectedNode.dataset.config.selectedTimestamp"
-          :metadata="datasetMetadata"
-        />
-      </section>
-      <section>
+        <h4>Settings</h4>
         <IndexInvertData
-          :selected-node-name="panelTitle"
-          :output-index-name="tree.name"
-          :is-inverted="selectedNode.dataset.isInverted"
-          @toggle-inverted="() => toggleDatasetIsInverted(selectedNode.id)"
+          :selected-node="selectedNode"
+          @set-inverted="(newValue) => setDatasetIsInverted(selectedNode.id, newValue)"
         />
+        <div>
+          <p>Selected date</p>
+          <p class="subdued">
+            Using data from
+            <span :style="{ color: 'black' }">
+              {{ timestampFormatter(selectedNode.dataset.config.selectedTimestamp, null, null) }}
+            </span>
+            in index results.
+          </p>
+        </div>
       </section>
       <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
@@ -191,7 +195,6 @@ import IndexDocumentSnippets from './index-document-snippets.vue';
 import IndexResultsPreview from './index-results-preview.vue';
 import IndexSpatialCoveragePreview from './index-spatial-coverage-preview.vue';
 import IndexDatasetMetadata from './index-dataset-metadata.vue';
-import IndexDatasetSelectedDate from './index-dataset-selected-date.vue';
 import IndexInvertData from './index-invert-data.vue';
 import { computed, watch, ref } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
@@ -200,8 +203,6 @@ import { ConceptNode, SelectableIndexElementId } from '@/types/Index';
 import {
   duplicateNode,
   isOutputIndexNode,
-  DATASET_COLOR,
-  DATASET_ICON,
   isConceptNodeWithoutDataset,
   isConceptNodeWithDatasetAttached,
   isEdge,
@@ -210,6 +211,8 @@ import { OptionButtonMenu } from '@/utils/index-common-util';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { NEGATIVE_COLOR, POSITIVE_COLOR } from '@/utils/colors-util';
+import timestampFormatter from '@/formatters/timestamp-formatter';
+import IndexTemporalCoveragePreview from './index-temporal-coverage-preview.vue';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -220,12 +223,12 @@ const emit = defineEmits<{
 }>();
 
 const indexTree = useIndexTree();
-const { findNode, tree, updateIsOppositePolarity } = indexTree;
+const { findNode, updateIsOppositePolarity } = indexTree;
 const workbench = useIndexWorkBench();
 
-const toggleDatasetIsInverted = (nodeId: string) => {
-  workbench.toggleDatasetIsInverted(nodeId);
-  indexTree.toggleDatasetIsInverted(nodeId);
+const setDatasetIsInverted = (nodeId: string, newValue: boolean) => {
+  workbench.setDatasetIsInverted(nodeId, newValue);
+  indexTree.setDatasetIsInverted(nodeId, newValue);
 };
 
 const renameNode = (newName: string) => {
@@ -472,7 +475,7 @@ header {
 section {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 15px;
 }
 
 .edge-source-and-target {

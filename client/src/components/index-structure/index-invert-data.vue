@@ -1,48 +1,51 @@
 <template>
-  <h4 @click="emit('toggle-inverted')" class="clickable">
-    <i
-      class="fa fa-fw"
-      :class="{
-        'fa-check-square-o': props.isInverted,
-        'fa-square-o': !props.isInverted,
-      }"
-    />
-    Invert data
-  </h4>
-  <p>
-    <span class="de-emphasized">
-      Higher <strong>{{ props.selectedNodeName }}</strong> values indicate
-    </span>
-    <strong>
-      {{ props.isInverted ? 'lower ' : 'higher ' }}
-    </strong>
-    <span class="de-emphasized">
-      <strong>{{ props.outputIndexName }}</strong> values.
-    </span>
-  </p>
+  <div class="index-invert-data-container">
+    <p class="title">Invert data to match concept</p>
+    <InvertedDatasetLabel :is-inverted="props.selectedNode.dataset.isInverted" />
+    <p class="sentence">
+      <span class="subdued">
+        High {{ props.selectedNode.dataset.datasetName }} values represent
+      </span>
+      <DropdownButton
+        :selected-item="props.selectedNode.dataset.isInverted"
+        :items="dropdownItems"
+        @item-selected="(value) => emit('set-inverted', value)"
+      />
+      <span class="subdued"> {{ props.selectedNode.name }} values. </span>
+    </p>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { ConceptNodeWithDatasetAttached } from '@/types/Index';
+import DropdownButton, { DropdownItem } from '../dropdown-button.vue';
+import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
+
+const dropdownItems: DropdownItem[] = [
+  { displayName: 'high', value: false },
+  { displayName: 'low', value: true },
+];
+
 const props = defineProps<{
-  selectedNodeName: string;
-  outputIndexName: string;
-  isInverted: boolean;
+  selectedNode: ConceptNodeWithDatasetAttached;
 }>();
 
 const emit = defineEmits<{
-  (e: 'toggle-inverted'): void;
+  (e: 'set-inverted', value: boolean): void;
 }>();
 </script>
 
 <style lang="scss" scoped>
 @import '~styles/uncharted-design-tokens';
 
-.clickable {
-  cursor: pointer;
-  user-select: none;
+.sentence > * {
+  display: inline-block;
+  &:not(:last-child) {
+    margin-right: 5px;
+  }
 }
 
-.de-emphasized {
-  color: $un-color-black-40;
+.title {
+  margin-bottom: 5px;
 }
 </style>
