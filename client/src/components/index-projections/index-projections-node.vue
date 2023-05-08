@@ -15,6 +15,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        :is-weighted-sum-node="false"
       />
     </div>
 
@@ -32,6 +33,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        :is-weighted-sum-node="true"
       />
     </div>
   </div>
@@ -48,13 +50,13 @@ import {
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import IndexProjectionsNodeTimeseries from './index-projections-node-timeseries.vue';
-import { TimeseriesPoint } from '@/types/Timeseries';
+import { TimeseriesPointProjected } from '@/types/Timeseries';
 
 const props = defineProps<{
   nodeData: ConceptNode;
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
-  timeseries: TimeseriesPoint[];
+  timeseries: TimeseriesPointProjected[];
 }>();
 
 const emit = defineEmits<{

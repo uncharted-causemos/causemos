@@ -242,6 +242,21 @@ watch([indexTree.tree, selectedCountry], async () => {
   timeseriesForEachDataset.forEach((timeseries, i) => {
     const nodeId = nodesWithDatasets[i].id;
     newMap.set(nodeId, timeseries);
+    // TODO: REMOVE AFTER PROJECTIONS ARE INTEGRATED
+    // Randomly inject projection types into historical data
+    let biasToward = 'backcasted';
+    timeseries.forEach((point: any) => {
+      const randomValue = Math.random();
+      if (randomValue < 0.5) {
+        point.projectionType = biasToward;
+      } else if (randomValue < 0.75) {
+        point.projectionType = 'historical';
+      } else {
+        point.projectionType = 'backcasted';
+      }
+      // Bias toward point before it recent type
+      biasToward = point.projectionType;
+    });
   });
   historicalData.value = newMap;
 });

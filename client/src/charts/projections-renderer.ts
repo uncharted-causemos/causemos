@@ -2,17 +2,24 @@ import _ from 'lodash';
 import * as d3 from 'd3';
 import dateFormatter from '@/formatters/date-formatter';
 import { D3GElementSelection, D3Selection } from '@/types/D3';
-import { TimeseriesPoint } from '@/types/Timeseries';
-import { calculateYearlyTicks, renderLine, renderXaxis } from '@/utils/timeseries-util';
+import { TimeseriesPointProjected } from '@/types/Timeseries';
+import {
+  calculateYearlyTicks,
+  renderDashedLine,
+  renderLine,
+  renderPoint,
+  renderXaxis,
+} from '@/utils/timeseries-util';
 import { translate } from '@/utils/svg-util';
+import { ProjectionPointType } from '@/types/Enums';
+import { splitProjectionsIntoLineSegments } from '@/utils/projection-util';
 
-const HISTORICAL_DATA_COLOR = '#888';
 const HISTORICAL_RANGE_OPACITY = 0.05;
 const SCROLL_BAR_HEIGHT = 20;
 const SCROLL_BAR_RANGE_FILL = '#ccc';
 const SCROLL_BAR_RANGE_STROKE = 'none';
 const SCROLL_BAR_RANGE_OPACITY = 0.8;
-const SCROLL_BAR_BACKGROUND_COLOR = HISTORICAL_DATA_COLOR;
+const SCROLL_BAR_BACKGROUND_COLOR = '#888';
 const SCROLL_BAR_BACKGROUND_OPACITY = HISTORICAL_RANGE_OPACITY;
 const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
 
@@ -21,15 +28,61 @@ const PADDING_TOP = 10;
 const PADDING_LEFT = 10;
 const PADDING_RIGHT = 10;
 
+const DASHED_LINE = {
+  length: 4,
+  gap: 4,
+  width: 1,
+};
+const SOLID_LINE_WIDTH = 1;
+const WEIGHTED_SUM_LINE_OPACITY = 0.25;
+const POINT_RADIUS = 3;
+
 const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
 
 const renderTimeseries = (
-  timeseries: TimeseriesPoint[],
+  timeseries: TimeseriesPointProjected[],
   parentGroupElement: D3GElementSelection,
   xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>
+  yScale: d3.ScaleLinear<number, number>,
+  isWeightedSum: boolean,
+  color = 'black'
 ) => {
-  renderLine(parentGroupElement, timeseries, xScale, yScale, HISTORICAL_DATA_COLOR);
+  // Render a circle at any point where all inputs have historical data
+  const fullDataPoints = timeseries.filter(
+    (point) => point.projectionType === ProjectionPointType.Historical
+  );
+  renderPoint(parentGroupElement, fullDataPoints, xScale, yScale, color, POINT_RADIUS);
+  if (isWeightedSum) {
+    // Render a lighter line across the whole series
+    const lineSelection = renderLine(
+      parentGroupElement,
+      timeseries,
+      xScale,
+      yScale,
+      color,
+      SOLID_LINE_WIDTH
+    );
+    lineSelection.attr('opacity', WEIGHTED_SUM_LINE_OPACITY);
+    return;
+  }
+  // This node has a dataset attached, so split the timeseries into solid and dashed segments
+  const segments = splitProjectionsIntoLineSegments(timeseries);
+  segments.forEach(({ isProjectedData, segment }) => {
+    if (isProjectedData) {
+      renderDashedLine(
+        parentGroupElement,
+        segment,
+        xScale,
+        yScale,
+        DASHED_LINE.length,
+        DASHED_LINE.gap,
+        color,
+        DASHED_LINE.width
+      );
+    } else {
+      renderLine(parentGroupElement, segment, xScale, yScale, color, SOLID_LINE_WIDTH);
+    }
+  });
 };
 
 const renderBrushHandles = (g: D3GElementSelection, handlePositions: [number, number]) => {
@@ -107,11 +160,13 @@ const renderScrollBarLabels = (
 
 export default function render(
   selection: D3Selection,
-  timeseries: TimeseriesPoint[],
+  timeseries: TimeseriesPointProjected[],
   totalWidth: number,
   totalHeight: number,
   projectionStartTimestamp: number,
-  projectionEndTimestamp: number
+  projectionEndTimestamp: number,
+  isWeightedSum: boolean,
+  color = 'black'
 ) {
   // Clear any existing elements
   selection.selectAll('*').remove();
@@ -171,7 +226,14 @@ export default function render(
         .scaleLinear()
         .domain(dataValueRange)
         .range([focusHeight - X_AXIS_HEIGHT, PADDING_TOP]);
-      renderTimeseries(timeseries, focusGroupElement, xScaleFocus, yScaleFocus);
+      renderTimeseries(
+        timeseries,
+        focusGroupElement,
+        xScaleFocus,
+        yScaleFocus,
+        isWeightedSum,
+        color
+      );
     }
 
     // Don't render anything outside the main graph area (except the axes)
@@ -191,8 +253,17 @@ export default function render(
   // Render timeseries to scrollbar and fade it out.
   if (dataValueRange[0] !== undefined) {
     const yScaleScrollbar = d3.scaleLinear().domain(dataValueRange).range([SCROLL_BAR_HEIGHT, 0]);
-    renderTimeseries(timeseries, focusGroupElement, xScaleScrollbar, yScaleScrollbar);
-    scrollBarGroupElement.selectAll('.segment-line').attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
+    renderTimeseries(
+      timeseries,
+      scrollBarGroupElement,
+      xScaleScrollbar,
+      yScaleScrollbar,
+      isWeightedSum,
+      color
+    );
+    scrollBarGroupElement
+      .selectAll('.segment-line, .circle')
+      .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
   }
   // Render time range labels
   renderScrollBarLabels(

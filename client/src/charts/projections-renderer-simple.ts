@@ -1,26 +1,27 @@
-import { D3GElementSelection, D3Selection } from '@/types/D3';
-import { TimeseriesPoint } from '@/types/Timeseries';
-import { renderLine } from '@/utils/timeseries-util';
+import { D3Selection } from '@/types/D3';
+import { ProjectionPointType } from '@/types/Enums';
+import { TimeseriesPointProjected } from '@/types/Timeseries';
+import { splitProjectionsIntoLineSegments } from '@/utils/projection-util';
+import { renderDashedLine, renderLine, renderPoint } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 
-const HISTORICAL_DATA_COLOR = '#888';
-
-const renderTimeseries = (
-  timeseries: TimeseriesPoint[],
-  parentGroupElement: D3GElementSelection,
-  xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>
-) => {
-  renderLine(parentGroupElement, timeseries, xScale, yScale, HISTORICAL_DATA_COLOR);
+const DASHED_LINE = {
+  length: 2,
+  gap: 2,
+  width: 0.5,
 };
+const SOLID_LINE_WIDTH = 1;
+const WEIGHTED_SUM_LINE_OPACITY = 0.25;
 
 export default function render(
   selection: D3Selection,
-  timeseries: TimeseriesPoint[],
+  timeseries: TimeseriesPointProjected[],
   totalWidth: number,
   totalHeight: number,
   projectionStartTimestamp: number,
-  projectionEndTimestamp: number
+  projectionEndTimestamp: number,
+  isWeightedSum: boolean,
+  color = 'black'
 ) {
   // Clear any existing elements
   selection.selectAll('*').remove();
@@ -36,6 +37,42 @@ export default function render(
     .domain([projectionStartTimestamp, projectionEndTimestamp])
     .range([0, totalWidth]);
   const yScale = d3.scaleLinear().domain(dataValueRange).range([totalHeight, 0]);
+
   // Render the series
-  renderTimeseries(timeseries, groupElement, xScale, yScale);
+  if (isWeightedSum) {
+    // Render a lighter line across the whole series
+    const lineSelection = renderLine(
+      groupElement,
+      timeseries,
+      xScale,
+      yScale,
+      color,
+      SOLID_LINE_WIDTH
+    );
+    lineSelection.attr('opacity', WEIGHTED_SUM_LINE_OPACITY);
+    // Render a circle at any point where all inputs have historical data
+    const fullDataPoints = timeseries.filter(
+      (point) => point.projectionType === ProjectionPointType.Historical
+    );
+    renderPoint(groupElement, fullDataPoints, xScale, yScale, color, 2);
+    return;
+  }
+  // This node has a dataset attached, so split the timeseries into solid and dashed segments
+  const segments = splitProjectionsIntoLineSegments(timeseries);
+  segments.forEach(({ isProjectedData, segment }) => {
+    if (isProjectedData) {
+      renderDashedLine(
+        groupElement,
+        segment,
+        xScale,
+        yScale,
+        DASHED_LINE.length,
+        DASHED_LINE.gap,
+        color,
+        DASHED_LINE.width
+      );
+    } else {
+      renderLine(groupElement, segment, xScale, yScale, color, SOLID_LINE_WIDTH);
+    }
+  });
 }

@@ -375,19 +375,35 @@ export function renderLine(
   return lineSelection;
 }
 
+export function renderDashedLine(
+  parentGroupElement: D3GElementSelection,
+  points: TimeseriesPoint[],
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  dashLength: number,
+  dashGap: number,
+  color?: string,
+  width?: number
+) {
+  const lineSelection = renderLine(parentGroupElement, points, xScale, yScale, color, width);
+  lineSelection.attr('stroke-dasharray', `${dashLength},${dashGap}`);
+  return lineSelection;
+}
+
 export function renderPoint(
   parentGroupElement: D3GElementSelection,
   points: TimeseriesPoint[],
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>,
-  color?: string
+  color?: string,
+  radius = 2.5
 ) {
   const circles = parentGroupElement.selectAll('segment-line').data(points);
   circles
     .enter()
     .append('circle')
     .classed('circle', true)
-    .attr('r', 2.5)
+    .attr('r', radius)
     .attr('cx', (d) => xScale(d.timestamp))
     .attr('cy', (d) => yScale(d.value))
     .style('stroke', '#fff')

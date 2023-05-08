@@ -364,3 +364,52 @@ export const createProjectionRunner = (
   };
   return runner;
 };
+
+const isPointProjected = (point: TimeseriesPointProjected) =>
+  point.projectionType === ProjectionPointType.Backcasted ||
+  point.projectionType === ProjectionPointType.Forecasted;
+
+/**
+ * Splits a timeseries into segments where each segment can be rendered with the same encoding.
+ * @param timeseries a mix of projected, interpolated, and historical points.
+ * @returns An array of line segments, and whether each is projected or not.
+ */
+export const splitProjectionsIntoLineSegments = (timeseries: TimeseriesPointProjected[]) => {
+  const segments: { isProjectedData: boolean; segment: TimeseriesPointProjected[] }[] = [];
+  let currentSegment: TimeseriesPointProjected[] = [];
+  let isCurrentSegmentTypeProjected = true;
+  timeseries.forEach((point, i) => {
+    currentSegment.push(point);
+    const nextPoint = timeseries[i + 1];
+    const isNextPointProjected = nextPoint !== undefined && isPointProjected(nextPoint);
+
+    if (isCurrentSegmentTypeProjected) {
+      // If we're drawing a projected segment: continue until we find two historical points in a
+      //  row.
+      if (!isPointProjected(point) && !isNextPointProjected) {
+        segments.push({
+          isProjectedData: true,
+          segment: currentSegment,
+        });
+        currentSegment = [point];
+        isCurrentSegmentTypeProjected = false;
+      }
+    } else {
+      // If we're drawing a historical segment: continue until we find a historical point with a
+      //  projected point after.
+      if (!isPointProjected(point) && isNextPointProjected) {
+        segments.push({
+          isProjectedData: false,
+          segment: currentSegment,
+        });
+        currentSegment = [point];
+        isCurrentSegmentTypeProjected = true;
+      }
+    }
+  });
+  segments.push({
+    isProjectedData: isCurrentSegmentTypeProjected,
+    segment: currentSegment,
+  });
+  return segments;
+};

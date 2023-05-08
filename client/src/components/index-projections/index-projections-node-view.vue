@@ -46,13 +46,13 @@ import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import { SelectableIndexElementId } from '@/types/Index';
 import IndexProjectionsNode from './index-projections-node.vue';
 import IndexProjectionsExpandedNode from './index-projections-expanded-node.vue';
-import { TimeseriesPoint } from '@/types/Timeseries';
+import { TimeseriesPointProjected } from '@/types/Timeseries';
 
 const props = defineProps<{
   selectedNodeId: string | null;
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
-  projections: Map<string, TimeseriesPoint[]>;
+  projections: Map<string, TimeseriesPointProjected[]>;
 }>();
 
 const emit = defineEmits<{
