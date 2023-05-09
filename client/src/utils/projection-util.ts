@@ -16,17 +16,17 @@ export enum WeightedSumNodeProjectionType {
   WeightedSum = 'Weighted Sum',
 }
 
-export type ProjectionPoint = {
+type ProjectionPoint = {
   x: number;
   y: number;
   projectionType: ProjectionPointType;
 };
 
-export type ProjectionResults = {
+type ProjectionResults = {
   [nodeId: string]: TimeseriesPointProjected[];
 };
 
-export type ProjectionRunInfo = {
+type ProjectionRunInfo = {
   [nodeId: string]:
     | ForecastResult<ForecastMethod>
     | { method: WeightedSumNodeProjectionType.WeightedSum };
