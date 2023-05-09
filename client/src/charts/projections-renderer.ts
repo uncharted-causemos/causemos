@@ -22,11 +22,13 @@ const SCROLL_BAR_RANGE_OPACITY = 0.8;
 const SCROLL_BAR_BACKGROUND_COLOR = '#888';
 const SCROLL_BAR_BACKGROUND_OPACITY = HISTORICAL_RANGE_OPACITY;
 const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
+const SCROLL_BAR_HANDLE_WIDTH = 9;
+const SCROLL_BAR_LABEL_WIDTH = 40;
 
 const X_AXIS_HEIGHT = 20;
-const PADDING_TOP = 10;
-const PADDING_LEFT = 10;
-const PADDING_RIGHT = 10;
+const PADDING_TOP = 0;
+const PADDING_LEFT = 0;
+const PADDING_RIGHT = 0;
 
 const DASHED_LINE = {
   length: 4,
@@ -91,8 +93,6 @@ const renderBrushHandles = (g: D3GElementSelection, handlePositions: [number, nu
     .join((enter) => {
       const handleWidth = 9;
       const handleWidthGap = -2;
-      const handleHGap = 0;
-      const handleH = SCROLL_BAR_HEIGHT - 2 * handleHGap;
       const container = enter
         .append('g')
         .attr('class', 'custom-handle')
@@ -102,12 +102,12 @@ const renderBrushHandles = (g: D3GElementSelection, handlePositions: [number, nu
         .append('rect')
         .attr('fill', '#f8f8f8')
         .attr('stroke', '#888888')
-        .attr('y', handleHGap)
+        .attr('y', 0)
         .attr('x', (d, i) => (i === 0 ? -(handleWidth + handleWidthGap) : handleWidthGap))
         .attr('rx', 4)
         .attr('ry', 4)
         .attr('width', handleWidth)
-        .attr('height', handleH);
+        .attr('height', SCROLL_BAR_HEIGHT);
       // Vertical dots
       [0.3, 0.5, 0.7].forEach((value) => {
         container
@@ -115,7 +115,7 @@ const renderBrushHandles = (g: D3GElementSelection, handlePositions: [number, nu
           .attr('cx', (d, i) =>
             i === 0 ? -(0.5 * handleWidth + handleWidthGap) : 0.5 * handleWidth + handleWidthGap
           )
-          .attr('cy', handleHGap + handleH * value)
+          .attr('cy', SCROLL_BAR_HEIGHT * value)
           .attr('r', 1.25)
           .attr('fill', '#888888');
       });
@@ -130,14 +130,13 @@ const renderScrollBarLabels = (
   projectionStartTimestamp: number,
   projectionEndTimestamp: number
 ) => {
-  const scrollbarLabelYOffset = 10;
-  const scrollbarLabelXOffset = 5;
+  const scrollbarLabelYOffset = 14;
   scrollBarGroupElement.select('.scrollbar-range-start').remove();
   scrollBarGroupElement.select('.scrollbar-range-end').remove();
   scrollBarGroupElement
     .append('text')
     .classed('scrollbar-range-start', true)
-    .attr('x', PADDING_LEFT + scrollbarLabelXOffset)
+    .attr('x', PADDING_LEFT)
     .attr('y', scrollbarLabelYOffset)
     .style('text-anchor', 'start')
     .style('font-size', 'x-small')
@@ -147,7 +146,7 @@ const renderScrollBarLabels = (
   scrollBarGroupElement
     .append('text')
     .classed('scrollbar-range-end', true)
-    .attr('x', scrollBarWidth)
+    .attr('x', scrollBarWidth - PADDING_RIGHT)
     .attr('y', scrollbarLabelYOffset)
     .style('text-anchor', 'end')
     .style('font-size', 'x-small')
@@ -155,7 +154,7 @@ const renderScrollBarLabels = (
     .style('pointer-events', 'none')
     .text(DATE_FORMATTER(projectionEndTimestamp));
   // Don't let user accidentally click/select text in the scrollbar
-  scrollBarGroupElement.selectAll('text').style('pointer-events', 'none');
+  scrollBarGroupElement.selectAll('text').style('user-select', 'none');
 };
 
 export default function render(
@@ -178,7 +177,7 @@ export default function render(
   const scrollBarBackground = scrollBarGroupElement
     .append('rect')
     .attr('y', 0)
-    .attr('x', PADDING_LEFT)
+    .attr('x', SCROLL_BAR_LABEL_WIDTH)
     .attr('height', SCROLL_BAR_HEIGHT)
     .attr('stroke', 'none')
     .attr('fill', SCROLL_BAR_BACKGROUND_COLOR)
@@ -235,10 +234,13 @@ export default function render(
   const xScaleScrollbar = d3
     .scaleLinear()
     .domain([projectionStartTimestamp, projectionEndTimestamp])
-    .range([PADDING_LEFT, chartWidth]);
+    .range([
+      SCROLL_BAR_LABEL_WIDTH + SCROLL_BAR_HANDLE_WIDTH,
+      chartWidth - SCROLL_BAR_LABEL_WIDTH - SCROLL_BAR_HANDLE_WIDTH,
+    ]);
   // Move scrollBarGroupElement below the focus group element and resize it horizontally.
   scrollBarGroupElement.attr('transform', translate(0, focusHeight));
-  scrollBarBackground.attr('width', chartWidth);
+  scrollBarBackground.attr('width', chartWidth - 2 * SCROLL_BAR_LABEL_WIDTH);
   // Render timeseries to scrollbar and fade it out.
   const yScaleScrollbar = d3.scaleLinear().domain([0, 1]).range([SCROLL_BAR_HEIGHT, 0]);
   renderTimeseries(
@@ -303,5 +305,5 @@ export default function render(
     .append('rect')
     .attr('width', chartWidth)
     .attr('height', focusHeight)
-    .attr('transform', translate(PADDING_RIGHT, PADDING_TOP));
+    .attr('transform', translate(PADDING_LEFT, PADDING_TOP));
 }
