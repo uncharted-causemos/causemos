@@ -65,7 +65,7 @@
         class="fill-space"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :projections="historicalData"
+        :projections="projectionData"
         @select-element="selectElement"
         @deselect-edge="deselectEdge"
       />
@@ -75,7 +75,7 @@
         :selected-node-id="selectedNodeId"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :projections="historicalData"
+        :projections="projectionData"
         @select-element="selectElement"
         @deselect-node="deselectNode"
       />
@@ -89,7 +89,8 @@ import _ from 'lodash';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { computed, onMounted, ref, watch } from 'vue';
-import { ProjectType } from '@/types/Enums';
+import useOverlay from '@/services/composables/useOverlay';
+import { ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
@@ -99,15 +100,17 @@ import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
 import { getTimestampMillis } from '@/utils/date-util';
 import timestampFormatter from '@/formatters/timestamp-formatter';
-import { TimeseriesPoint } from '@/types/Timeseries';
+import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
-import { getTimeseries } from '@/services/outputdata-service';
+import { createProjectionRunner } from '@/utils/projection-util';
+import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
 
 const store = useStore();
 const route = useRoute();
 const router = useRouter();
+const overlay = useOverlay();
 
 const analysisId = computed(() => route.params.analysisId as string);
 const { analysisName, refresh } = useIndexAnalysis(analysisId);
@@ -157,6 +160,8 @@ const isSingleCountryModeActive = ref(true);
 
 const projectionStartTimestamp = ref(getTimestampMillis(1990, 0));
 const projectionEndTimestamp = ref(getTimestampMillis(2025, 0));
+
+const temporalResolutionOption = ref(TemporalResolutionOption.Month);
 
 const indexTree = useIndexTree();
 const NO_COUNTRY_SELECTED: DropdownItem = { displayName: 'No country selected', value: '' };
@@ -220,7 +225,7 @@ watch([indexTree.tree, selectedCountry], async () => {
   // For each node with a dataset, fetch the selected country's timeseries
   const promises = nodesWithDatasets.map(async ({ dataset }) => {
     const { config } = dataset;
-    const { data } = await getTimeseries({
+    const data = await getTimeseriesNormalized({
       modelId: config.datasetId,
       runId: config.runId,
       outputVariable: config.outputVariable,
@@ -246,12 +251,39 @@ watch([indexTree.tree, selectedCountry], async () => {
   historicalData.value = newMap;
 });
 
-const projectionData = ref(null);
+const projectionData = ref(new Map<string, TimeseriesPointProjected[]>());
 // Whenever historical data changes, re-run projections
-watch([historicalData], () => {
-  console.log(historicalData.value);
-  projectionData.value = null; // TODO: run projections
-});
+watch(
+  [
+    historicalData,
+    indexTree.tree,
+    projectionStartTimestamp,
+    projectionEndTimestamp,
+    temporalResolutionOption,
+  ],
+  () => {
+    overlay.enable();
+    const inputData: { [nodeId: string]: TimeseriesPoint[] } = {};
+    // Filter out empty or single point timeseries data since projection runner expect data length >= 2
+    for (const [nodeId, data] of historicalData.value) {
+      if (data?.length && data.length > 1) {
+        inputData[nodeId] = data;
+      }
+    }
+    console.log(inputData);
+    const result = createProjectionRunner(
+      indexTree.tree.value,
+      inputData,
+      { start: projectionStartTimestamp.value, end: projectionEndTimestamp.value },
+      temporalResolutionOption.value
+    )
+      .runProjection()
+      .getResults();
+    console.log(result);
+    projectionData.value = new Map(Object.entries(result));
+    overlay.disable();
+  }
+);
 </script>
 
 <style lang="scss" scoped>

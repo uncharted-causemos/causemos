@@ -209,10 +209,9 @@ export const initialize = (data: [number, number][], options: Subset<ForecastOpt
         lastPointXValue + (i + 1) * distance,
         forecast.forecast(i + 1),
       ]);
-      const backcastData = [...Array(opt.backcastSteps).keys()].map((i) => [
-        firstPointXValue - (i + 1) * distance,
-        backcast.forecast(i + 1),
-      ]);
+      const backcastData = [...Array(opt.backcastSteps).keys()]
+        .map((i) => [firstPointXValue - (i + 1) * distance, backcast.forecast(i + 1)])
+        .reverse();
       return {
         method: ForecastMethod.Holt,
         forecast: {
@@ -248,7 +247,7 @@ export const initialize = (data: [number, number][], options: Subset<ForecastOpt
         maxPeriod
       );
       const forecastData = forecast.forecast(opt.forecastSteps);
-      const backcastData = backcast.forecast(opt.backcastSteps);
+      const backcastData = backcast.forecast(opt.backcastSteps).reverse();
       return {
         method: ForecastMethod.HoltWinters,
         forecast: {

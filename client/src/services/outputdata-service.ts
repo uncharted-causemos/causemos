@@ -184,10 +184,24 @@ export const getTimeseries = async (spec: OutputSpecWithRegionId): Promise<any> 
         region_id: spec.regionId,
       },
     });
+    // FIXME: return result.data instead of result
     return result;
   } catch (e) {
     return [];
   }
+};
+
+// TODO: once we integrate with jataware's normalized data path, replace this function to fetch normalized data from backend
+export const getTimeseriesNormalized = async (
+  spec: OutputSpecWithRegionId
+): Promise<TimeseriesPoint[]> => {
+  const result = ((await getTimeseries(spec)).data || []) as TimeseriesPoint[];
+  const values = result.map((d) => d.value);
+  const min = _.min(values) ?? 0;
+  const max = _.max(values) ?? 0;
+  return result.map((d) => {
+    return { ...d, value: normalize(d.value, min, max) };
+  });
 };
 
 export const getBulkTimeseries = async (spec: OutputSpec, regionIds: string[]): Promise<any> => {
@@ -812,6 +826,7 @@ export const getAggregateTimeseries = async (
 
 export default {
   getTimeseries,
+  getTimeseriesNormalized,
   getBulkTimeseries,
   getRawOutputData,
   getRawTimeseriesData,
