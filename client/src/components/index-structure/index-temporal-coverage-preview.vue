@@ -26,14 +26,14 @@ import useModelMetadataCoverage from '@/services/composables/useModelMetadataCov
 import { getYearFromTimestamp } from '@/utils/date-util';
 
 const props = defineProps<{
-  datasetId: string;
+  outputVariable: string;
   metadata: Indicator | null;
 }>();
 
-const { metadata } = toRefs(props);
+const { metadata, outputVariable } = toRefs(props);
 
 const { range, sparklineData, temporalCoverage, temporalCoverageTimestamps } =
-  useModelMetadataCoverage(metadata);
+  useModelMetadataCoverage(metadata, outputVariable);
 
 const coverageSummaryString = computed(() => {
   const { from, to } = temporalCoverageTimestamps.value;
