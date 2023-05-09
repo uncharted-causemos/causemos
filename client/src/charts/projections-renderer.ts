@@ -201,8 +201,6 @@ export default function render(
     focusedTimeRange = [focusRangeStartBeforeFocusEnd, focusEndBeforeProjectionEnd];
   };
 
-  // Determine data value ranges
-  const dataValueRange = d3.extent(timeseries.map((point) => point.value));
   // Calculate scales to map the date and value ranges to pixels for the main "focus" area
   const focusHeight = totalHeight - PADDING_TOP - X_AXIS_HEIGHT - SCROLL_BAR_HEIGHT;
   const chartWidth = totalWidth - PADDING_LEFT - PADDING_RIGHT;
@@ -221,20 +219,11 @@ export default function render(
     renderXaxis(focusGroupElement, xScaleFocus, xAxisTicks, yOffset, DATE_FORMATTER);
 
     // Render timeseries itself
-    if (dataValueRange[0] !== undefined) {
-      const yScaleFocus = d3
-        .scaleLinear()
-        .domain(dataValueRange)
-        .range([focusHeight - X_AXIS_HEIGHT, PADDING_TOP]);
-      renderTimeseries(
-        timeseries,
-        focusGroupElement,
-        xScaleFocus,
-        yScaleFocus,
-        isWeightedSum,
-        color
-      );
-    }
+    const yScaleFocus = d3
+      .scaleLinear()
+      .domain([0, 1])
+      .range([focusHeight - X_AXIS_HEIGHT, PADDING_TOP]);
+    renderTimeseries(timeseries, focusGroupElement, xScaleFocus, yScaleFocus, isWeightedSum, color);
 
     // Don't render anything outside the main graph area (except the axes)
     focusGroupElement
@@ -251,20 +240,18 @@ export default function render(
   scrollBarGroupElement.attr('transform', translate(0, focusHeight));
   scrollBarBackground.attr('width', chartWidth);
   // Render timeseries to scrollbar and fade it out.
-  if (dataValueRange[0] !== undefined) {
-    const yScaleScrollbar = d3.scaleLinear().domain(dataValueRange).range([SCROLL_BAR_HEIGHT, 0]);
-    renderTimeseries(
-      timeseries,
-      scrollBarGroupElement,
-      xScaleScrollbar,
-      yScaleScrollbar,
-      isWeightedSum,
-      color
-    );
-    scrollBarGroupElement
-      .selectAll('.segment-line, .circle')
-      .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
-  }
+  const yScaleScrollbar = d3.scaleLinear().domain([0, 1]).range([SCROLL_BAR_HEIGHT, 0]);
+  renderTimeseries(
+    timeseries,
+    scrollBarGroupElement,
+    xScaleScrollbar,
+    yScaleScrollbar,
+    isWeightedSum,
+    color
+  );
+  scrollBarGroupElement
+    .selectAll('.segment-line, .circle')
+    .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
   // Render time range labels
   renderScrollBarLabels(
     scrollBarGroupElement,

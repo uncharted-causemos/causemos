@@ -28,15 +28,11 @@ export default function render(
   // Add chart `g` element to the page
   const groupElement = selection.append('g').classed('groupElement', true);
   // Calculate scales
-  const dataValueRange = d3.extent(timeseries.map((point) => point.value));
-  if (dataValueRange[0] === undefined) {
-    return;
-  }
   const xScale = d3
     .scaleLinear()
     .domain([projectionStartTimestamp, projectionEndTimestamp])
     .range([0, totalWidth]);
-  const yScale = d3.scaleLinear().domain(dataValueRange).range([totalHeight, 0]);
+  const yScale = d3.scaleLinear().domain([0, 1]).range([totalHeight, 0]);
 
   // Render the series
   if (isWeightedSum) {
