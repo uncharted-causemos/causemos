@@ -10,7 +10,7 @@ import { isConceptNodeWithDatasetAttached } from '@/utils/index-tree-util';
 
 import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
-import { ConceptNode, ConceptNodeWithoutDataset } from '@/types/Index';
+import { ConceptNode } from '@/types/Index';
 
 export enum WeightedSumNodeProjectionType {
   WeightedSum = 'Weighted Sum',
@@ -169,7 +169,7 @@ export const interpolateLinear = <T extends { x: number; y: number }>(data: T[])
 export const runProjection = (
   timeseries: TimeseriesPoint[],
   targetPeriod: { start: number; end: number },
-  dataResOption: TemporalResolutionOption.Year | TemporalResolutionOption.Month
+  dataResOption: TemporalResolutionOption.Month | TemporalResolutionOption.Year
 ) => {
   const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(dataResOption);
 
@@ -234,11 +234,18 @@ export const runProjection = (
  * @param dataResOption Data resolution option
  */
 export const createProjectionRunner = (
-  conceptTree: ConceptNodeWithoutDataset,
+  conceptTree: ConceptNode,
   historicalData: { [nodeId: string]: TimeseriesPoint[] },
   targetPeriod: { start: number; end: number },
-  dataResOption: TemporalResolutionOption.Year | TemporalResolutionOption.Month
+  dataResOption: TemporalResolutionOption
 ) => {
+  // With unsupported temporal resolution option, fall back to month resolution option
+  const dataTempResOption = !(
+    dataResOption === TemporalResolutionOption.Month ||
+    dataResOption === TemporalResolutionOption.Year
+  )
+    ? TemporalResolutionOption.Month
+    : dataResOption;
   const tree = conceptTree;
   const data = historicalData;
   const period = targetPeriod;
@@ -283,7 +290,7 @@ export const createProjectionRunner = (
         const { method, forecast, backcast, projectionData } = runProjection(
           series,
           period,
-          dataResOption
+          dataTempResOption
         );
         runInfo[nodeId] = {
           method,
