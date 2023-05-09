@@ -270,7 +270,6 @@ watch(
         inputData[nodeId] = data;
       }
     }
-    console.log(inputData);
     const result = createProjectionRunner(
       indexTree.tree.value,
       inputData,
@@ -279,7 +278,6 @@ watch(
     )
       .runProjection()
       .getResults();
-    console.log(result);
     projectionData.value = new Map(Object.entries(result));
     overlay.disable();
   }
