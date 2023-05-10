@@ -33,8 +33,12 @@
           :is-dropdown-left-aligned="true"
           :items="selectableCountries"
           :selected-item="selectedCountry"
+          :is-warning-state-active="selectedCountry === NO_COUNTRY_SELECTED.value"
           @item-selected="setSelectedCountry"
         />
+        <p v-if="selectedCountry === NO_COUNTRY_SELECTED.value" class="warning">
+          Select a country to display projections.
+        </p>
       </section>
       <footer>
         <section>
@@ -351,5 +355,9 @@ main {
 .editing-state-indicator {
   padding: 10px $index-graph-padding-horizontal;
   height: $navbar-outer-height;
+}
+
+.warning {
+  color: $un-color-feedback-warning;
 }
 </style>
