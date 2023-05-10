@@ -31,9 +31,9 @@
 
       <div class="dataset-metadata add-horizontal-margin">
         <p class="margin-top">Dataset description</p>
-        <p class="subdued un-font-small">{{ 'TODO: ' }}</p>
+        <p class="subdued un-font-small">{{ outputDescription }}</p>
         <p class="margin-top">Source: {{ props.nodeData.dataset.source }}</p>
-        <p class="subdued un-font-small">{{ 'TODO: ' }}</p>
+        <p class="subdued un-font-small">{{ metadata?.description }}</p>
         <button class="btn btn-default margin-top" disabled>Explore dataset</button>
       </div>
     </div>
@@ -75,6 +75,7 @@ import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
 import { TimeseriesPointProjected } from '@/types/Timeseries';
+import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 
 const optionsButtonMenu = [
   {
@@ -105,6 +106,21 @@ const props = defineProps<{
 }>();
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
+
+const dataId = computed(() => {
+  if (!isConceptNodeWithDatasetAttached(props.nodeData)) {
+    return null;
+  }
+  return props.nodeData.dataset.config.datasetId;
+});
+const outputVariable = computed(() => {
+  if (!isConceptNodeWithDatasetAttached(props.nodeData)) {
+    return null;
+  }
+  return props.nodeData.dataset.config.outputVariable;
+});
+
+const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVariable);
 </script>
 
 <style lang="scss" scoped>
