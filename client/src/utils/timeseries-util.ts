@@ -15,6 +15,7 @@ import { colorFromIndex } from './colors-util';
 
 const DEFAULT_LINE_COLOR = '#000';
 const DEFAULT_LINE_WIDTH = 2;
+const DEFAULT_POINT_RADIUS = 2.5;
 
 export function applyReference(
   timeseriesData: Timeseries[],
@@ -396,7 +397,7 @@ export function renderPoint(
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>,
   color?: string,
-  radius = 2.5
+  radius = DEFAULT_POINT_RADIUS
 ) {
   const circles = parentGroupElement.selectAll('segment-line').data(points);
   circles
