@@ -182,9 +182,16 @@ const activeResult = computed(() => {
 });
 
 const activeResultDataId = computed(() => activeResult.value?.dataId ?? null);
-const activeResultMetadata = useModelMetadataSimple(activeResultDataId);
+const activeResultOutputVariable = computed(() => activeResult.value?.outputName ?? null);
+const { metadata: activeResultMetadata } = useModelMetadataSimple(
+  activeResultDataId,
+  activeResultOutputVariable
+);
 
-const { sparklineData, temporalCoverage } = useModelMetadataCoverage(activeResultMetadata);
+const { sparklineData, temporalCoverage } = useModelMetadataCoverage(
+  activeResultMetadata,
+  activeResultOutputVariable
+);
 
 const spatialCoverageDisplayString = computed(() => {
   if (activeResultMetadata.value === null) {

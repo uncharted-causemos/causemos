@@ -153,11 +153,15 @@
           </div>
         </div>
       </header>
-      <IndexDatasetMetadata :node="selectedNode" :dataset-metadata="datasetMetadata" />
+      <IndexDatasetMetadata
+        :node="selectedNode"
+        :dataset-metadata="datasetMetadata"
+        :output-description="outputDescription"
+      />
       <section>
         <h4>Coverage</h4>
         <IndexTemporalCoveragePreview
-          :dataset-id="selectedNode.dataset.config.datasetId"
+          :output-variable="selectedNode.dataset.config.outputVariable"
           :selected-timestamp="selectedNode.dataset.config.selectedTimestamp"
           :metadata="datasetMetadata"
         />
@@ -344,6 +348,13 @@ const selectedDatasetDataId = computed(() => {
   return selectedNode.value.dataset.config.datasetId;
 });
 
+const selectedDatasetOutputVariable = computed(() => {
+  if (selectedNode.value === null || !isConceptNodeWithDatasetAttached(selectedNode.value)) {
+    return null;
+  }
+  return selectedNode.value.dataset.config.outputVariable;
+});
+
 const selectedEdgeComponents = computed<{ source: ConceptNode; target: ConceptNode } | null>(() => {
   if (props.selectedElementId && isEdge(props.selectedElementId)) {
     const sourceNode = searchForNode(props.selectedElementId.sourceId);
@@ -378,7 +389,10 @@ const isUpstreamNodePolarityNegative = computed(() => {
   return false;
 });
 
-const datasetMetadata = useModelMetadataSimple(selectedDatasetDataId);
+const { metadata: datasetMetadata, outputDescription } = useModelMetadataSimple(
+  selectedDatasetDataId,
+  selectedDatasetOutputVariable
+);
 
 const isRenaming = ref(false);
 // Exit rename flow if another node is selected before it completes

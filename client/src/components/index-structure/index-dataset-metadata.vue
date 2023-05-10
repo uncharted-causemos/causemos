@@ -7,7 +7,7 @@
     <div>
       <h5>{{ props.node.dataset.datasetName }}</h5>
       <p class="subdued" :class="{ collapsed: isDescriptionCollapsed }">
-        {{ description }}
+        {{ outputDescription }}
       </p>
     </div>
     <div v-if="!isDescriptionCollapsed">
@@ -29,19 +29,13 @@
 import { Indicator } from '@/types/Datacube';
 import { ConceptNodeWithDatasetAttached } from '@/types/Index';
 import { DATASET_COLOR, DATASET_ICON } from '@/utils/index-tree-util';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 
 const props = defineProps<{
   node: ConceptNodeWithDatasetAttached;
   datasetMetadata: Indicator | null;
+  outputDescription: string | null;
 }>();
-
-const description = computed(() => {
-  if (props.datasetMetadata === null) {
-    return '';
-  }
-  return props.datasetMetadata.outputs[0].description;
-});
 
 const isDescriptionCollapsed = ref(true);
 </script>

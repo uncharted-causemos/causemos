@@ -176,6 +176,11 @@ const FIELDS = Object.freeze({
     type: FIELD_TYPES.REGEXP,
     level: FIELD_LEVELS.DATACUBE,
   },
+  outputName: {
+    fields: ['outputs.name'],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.DATACUBE,
+  },
 
   // Concepts
   conceptName: {
