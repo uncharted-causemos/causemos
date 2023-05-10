@@ -1,24 +1,17 @@
 <template>
-  <div class="index-drilldown-panel-container" :class="{ hidden: type === null }">
-    <template v-if="type === IndexEdgeType.Edge">
+  <!-- If an edge or node is selected, selectedNode will not be null -->
+  <div class="index-drilldown-panel-container" :class="{ hidden: selectedNode === null }">
+    <!--
+    If an edge is selected, `selectedEdgeComponents` will be an object and `selectedNode` will be a
+    node with one or more inputs
+    -->
+    <template
+      v-if="
+        selectedEdgeComponents !== null && selectedNode && isConceptNodeWithoutDataset(selectedNode)
+      "
+    >
       <div>
-        <div>
-          <div
-            class="header content"
-            :style="{ color: getIndexNodeTypeColor(selectedEdgeComponents?.source.type) }"
-          >
-            <i
-              class="fa fa-fw un-font-small"
-              :class="[getIndexNodeTypeIcon(selectedEdgeComponents?.source.type)]"
-            />
-            <span class="un-font-small">
-              {{ selectedEdgeComponents?.source.type }}
-            </span>
-          </div>
-          <div>
-            <h4>{{ nodeUpstreamName }}</h4>
-          </div>
-        </div>
+        <h4>{{ nodeUpstreamName }}</h4>
         <div class="title-row space-between centered">
           <i class="fa fa-long-arrow-right" />
           <div class="button-group">
@@ -37,37 +30,28 @@
             </OptionsButton>
           </div>
         </div>
-
-        <div>
-          <div
-            class="header content"
-            :style="{ color: getIndexNodeTypeColor(selectedEdgeComponents?.target.type) }"
-          >
-            <i
-              class="fa fa-fw un-font-small"
-              :class="[getIndexNodeTypeIcon(selectedEdgeComponents?.target.type)]"
-            />
-            <span class="un-font-small">
-              {{ selectedEdgeComponents?.target.type }}
-            </span>
-          </div>
-          <div>
-            <h4>{{ nodeName }}</h4>
-          </div>
+        <h4>{{ nodeName }}</h4>
+        <div class="polarity-select-container">
+          <p class="polarity-statement start">High {{ nodeUpstreamName }} represents</p>
+          <dropdown-button
+            :is-dropdown-left-aligned="true"
+            :inner-button-label="''"
+            :items="isPolarityOppositeOptions"
+            :selected-item="isUpstreamNodePolarityNegative"
+            @item-selected="selectPolarity"
+          />&nbsp;
+          <p class="polarity-statement end">{{ nodeName }} values.</p>
         </div>
       </div>
-      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="selectedUpstreamNodeName"
       />
     </template>
-    <template v-if="type === IndexNodeType.OutputIndex">
+    <!-- Output node is selected -->
+    <template v-else-if="selectedNode?.isOutputNode && isConceptNodeWithoutDataset(selectedNode)">
       <header>
-        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
-          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
-          Output Index
-        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -89,17 +73,13 @@
           <button class="btn btn-sm" @click="startRenaming">Rename</button>
         </div>
       </header>
-      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
       <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
       <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
-
-    <template v-if="type === IndexNodeType.Index">
+    <!-- Node without dataset is selected -->
+    <template v-else-if="selectedNode && isConceptNodeWithoutDataset(selectedNode)">
       <header>
-        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
-          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
-          Index
-        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -136,16 +116,12 @@
           </div>
         </div>
       </header>
-      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode?.inputs ?? []" />
+      <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
       <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
-
-    <template v-if="type === IndexNodeType.Dataset">
+    <!-- Node with dataset is selected -->
+    <template v-else-if="selectedNode && isConceptNodeWithDatasetAttached(selectedNode)">
       <header>
-        <span class="type-label" :style="{ color: getIndexNodeTypeColor(type) }">
-          <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(type)]" />
-          Dataset
-        </span>
         <div v-if="isRenaming" class="rename-controls">
           <input
             v-focus
@@ -153,7 +129,7 @@
             type="text"
             v-model="renameInputText"
             v-on:keyup.enter="handleRenameDone"
-            :placeholder="selectedNode.datasetName"
+            :placeholder="selectedNode.dataset.datasetName"
           />
           <button class="btn btn-default" @click="handleRenameDone">Done</button>
         </div>
@@ -177,27 +153,39 @@
           </div>
         </div>
       </header>
+      <IndexDatasetMetadata
+        :node="selectedNode"
+        :dataset-metadata="datasetMetadata"
+        :output-description="outputDescription"
+      />
       <section>
+        <h4>Coverage</h4>
+        <IndexTemporalCoveragePreview
+          :output-variable="selectedNode.dataset.config.outputVariable"
+          :selected-timestamp="selectedNode.dataset.config.selectedTimestamp"
+          :metadata="datasetMetadata"
+        />
         <IndexSpatialCoveragePreview
           :node="selectedNode"
           :countries="datasetMetadata?.geography.country ?? null"
         />
       </section>
-      <IndexDatasetMetadata :node="selectedNode" :dataset-metadata="datasetMetadata" />
       <section>
-        <IndexDatasetSelectedDate
-          :dataset-id="selectedNode.datasetId"
-          :selected-timestamp="selectedNode.selectedTimestamp"
-          :metadata="datasetMetadata"
-        />
-      </section>
-      <section>
+        <h4>Settings</h4>
         <IndexInvertData
-          :selected-node-name="panelTitle"
-          :output-index-name="tree.name"
-          :is-inverted="selectedNode.isInverted"
-          @toggle-inverted="() => toggleDatasetIsInverted(selectedNode.id)"
+          :selected-node="selectedNode"
+          @set-inverted="(newValue) => setDatasetIsInverted(selectedNode.id, newValue)"
         />
+        <div>
+          <p>Selected date</p>
+          <p class="subdued">
+            Using data from
+            <span :style="{ color: 'black' }">
+              {{ timestampFormatter(selectedNode.dataset.config.selectedTimestamp, null, null) }}
+            </span>
+            in index results.
+          </p>
+        </div>
       </section>
       <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
     </template>
@@ -205,29 +193,30 @@
 </template>
 
 <script setup lang="ts">
-import { IndexNodeType, IndexElementType, IndexEdgeType } from '@/types/Enums';
 import OptionsButton from '../widgets/options-button.vue';
 import IndexComponentWeights from './index-component-weights.vue';
 import IndexDocumentSnippets from './index-document-snippets.vue';
 import IndexResultsPreview from './index-results-preview.vue';
 import IndexSpatialCoveragePreview from './index-spatial-coverage-preview.vue';
 import IndexDatasetMetadata from './index-dataset-metadata.vue';
-import IndexDatasetSelectedDate from './index-dataset-selected-date.vue';
 import IndexInvertData from './index-invert-data.vue';
 import { computed, watch, ref } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { IndexNode, IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
+import { ConceptNode, SelectableIndexElementId } from '@/types/Index';
 import {
   duplicateNode,
-  isDatasetNode,
   isOutputIndexNode,
-  getIndexNodeTypeColor,
-  getIndexNodeTypeIcon,
+  isConceptNodeWithoutDataset,
+  isConceptNodeWithDatasetAttached,
   isEdge,
 } from '@/utils/index-tree-util';
 import { OptionButtonMenu } from '@/utils/index-common-util';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { NEGATIVE_COLOR, POSITIVE_COLOR } from '@/utils/colors-util';
+import timestampFormatter from '@/formatters/timestamp-formatter';
+import IndexTemporalCoveragePreview from './index-temporal-coverage-preview.vue';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -238,12 +227,12 @@ const emit = defineEmits<{
 }>();
 
 const indexTree = useIndexTree();
-const { findNode, tree } = indexTree;
+const { findNode, updateIsOppositePolarity } = indexTree;
 const workbench = useIndexWorkBench();
 
-const toggleDatasetIsInverted = (nodeId: string) => {
-  workbench.toggleDatasetIsInverted(nodeId);
-  indexTree.toggleDatasetIsInverted(nodeId);
+const setDatasetIsInverted = (nodeId: string, newValue: boolean) => {
+  workbench.setDatasetIsInverted(nodeId, newValue);
+  indexTree.setDatasetIsInverted(nodeId, newValue);
 };
 
 const renameNode = (newName: string) => {
@@ -253,6 +242,11 @@ const renameNode = (newName: string) => {
   workbench.findAndRenameNode(selectedNode.value.id, newName);
   indexTree.findAndRenameNode(selectedNode.value.id, newName);
 };
+
+const isPolarityOppositeOptions = [
+  { displayName: 'high', value: false, color: POSITIVE_COLOR },
+  { displayName: 'low', value: true, color: NEGATIVE_COLOR },
+];
 
 // Options button
 
@@ -277,6 +271,14 @@ const edgeOptionsButtonMenu = [
   },
 ];
 
+const selectPolarity = (value: boolean) => {
+  const edge = selectedEdgeComponents.value;
+  if (edge !== null) {
+    if (!updateIsOppositePolarity(edge.source.id, value)) {
+      workbench.updateIsOppositePolarity(edge.source.id, value);
+    }
+  }
+};
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   const node = selectedNode.value;
   if (node === null || isOutputIndexNode(node)) {
@@ -284,7 +286,7 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   }
   switch (option) {
     case OptionButtonMenu.Duplicate:
-      workbench.addItem(duplicateNode(node) as IndexWorkBenchItem);
+      workbench.addItem(duplicateNode(node));
       break;
     case OptionButtonMenu.Delete:
       workbench.findAndDeleteItem(node.id);
@@ -299,7 +301,7 @@ const handleEdgeOptionsButtonClick = (option: OptionButtonMenu) => {
   }
 };
 
-const nodeName = computed<String | null>(() => {
+const nodeName = computed<string | null>(() => {
   let idToSearch = null;
   if (props.selectedElementId && typeof props.selectedElementId === 'string') {
     idToSearch = props.selectedElementId;
@@ -316,7 +318,7 @@ const nodeName = computed<String | null>(() => {
   return null;
 });
 
-const nodeUpstreamName = computed<String | null>(() => {
+const nodeUpstreamName = computed<string | null>(() => {
   if (props.selectedElementId && isEdge(props.selectedElementId)) {
     const node = searchForNode(props.selectedElementId.sourceId);
     if (node) {
@@ -326,7 +328,7 @@ const nodeUpstreamName = computed<String | null>(() => {
   return null;
 });
 
-const selectedNode = computed<IndexNode | null>(() => {
+const selectedNode = computed<ConceptNode | null>(() => {
   let idToSearch = null;
   if (props.selectedElementId && !isEdge(props.selectedElementId)) {
     idToSearch = props.selectedElementId;
@@ -340,27 +342,25 @@ const selectedNode = computed<IndexNode | null>(() => {
 });
 
 const selectedDatasetDataId = computed(() => {
-  if (selectedNode.value === null || !isDatasetNode(selectedNode.value)) {
+  if (selectedNode.value === null || !isConceptNodeWithDatasetAttached(selectedNode.value)) {
     return null;
   }
-  return selectedNode.value.datasetId;
+  return selectedNode.value.dataset.config.datasetId;
 });
 
-const selectedEdgeComponents = computed<{ source: IndexNode; target: IndexNode } | null>(() => {
+const selectedDatasetOutputVariable = computed(() => {
+  if (selectedNode.value === null || !isConceptNodeWithDatasetAttached(selectedNode.value)) {
+    return null;
+  }
+  return selectedNode.value.dataset.config.outputVariable;
+});
+
+const selectedEdgeComponents = computed<{ source: ConceptNode; target: ConceptNode } | null>(() => {
   if (props.selectedElementId && isEdge(props.selectedElementId)) {
     const sourceNode = searchForNode(props.selectedElementId.sourceId);
     if (sourceNode?.found && sourceNode?.parent) {
       return { source: sourceNode.found, target: sourceNode.parent };
     }
-  }
-  return null;
-});
-
-const type = computed<IndexElementType | null>(() => {
-  if (selectedEdgeComponents.value !== null) {
-    return IndexEdgeType.Edge;
-  } else if (selectedNode.value !== null) {
-    return selectedNode.value.type;
   }
   return null;
 });
@@ -376,7 +376,23 @@ const selectedUpstreamNodeName = computed(() => {
   return null;
 });
 
-const datasetMetadata = useModelMetadataSimple(selectedDatasetDataId);
+const isUpstreamNodePolarityNegative = computed(() => {
+  const edges = selectedEdgeComponents.value;
+  if (edges !== null && isConceptNodeWithoutDataset(edges.target)) {
+    const childNode = edges.target.components.filter(
+      (component) => component.componentNode.id === edges.source.id
+    );
+    if (childNode.length > 0) {
+      return childNode[0].isOppositePolarity;
+    }
+  }
+  return false;
+});
+
+const { metadata: datasetMetadata, outputDescription } = useModelMetadataSimple(
+  selectedDatasetDataId,
+  selectedDatasetOutputVariable
+);
 
 const isRenaming = ref(false);
 // Exit rename flow if another node is selected before it completes
@@ -392,14 +408,14 @@ const handleRenameDone = () => {
   if (
     selectedNode.value === null ||
     // Can't exit the flow with an empty rename bar unless this is a dataset node
-    (renameInputText.value === '' && !isDatasetNode(selectedNode.value))
+    (renameInputText.value === '' && !isConceptNodeWithDatasetAttached(selectedNode.value))
   ) {
     return;
   }
   const shouldRevertToDatasetName =
-    renameInputText.value === '' && isDatasetNode(selectedNode.value);
+    renameInputText.value === '' && isConceptNodeWithDatasetAttached(selectedNode.value);
   const newNodeName = shouldRevertToDatasetName
-    ? selectedNode.value.datasetName
+    ? selectedNode.value.dataset.datasetName
     : renameInputText.value;
   renameNode(newNodeName);
   isRenaming.value = false;
@@ -413,8 +429,8 @@ const searchForNode = (id: string) => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/variables.scss';
-@import '@/styles/uncharted-design-tokens.scss';
+@import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
 
 .fa-long-arrow-right {
   color: $un-color-black-20;
@@ -473,7 +489,7 @@ header {
 section {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 15px;
 }
 
 .edge-source-and-target {
@@ -484,5 +500,20 @@ section {
 
 .edge-target {
   border-top: 1px solid $separator;
+}
+
+.polarity-select-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  .polarity-statement {
+    padding-top: 3px;
+    &.start {
+      margin-right: 5px;
+    }
+    &.end {
+      margin-left: 5px;
+    }
+  }
 }
 </style>

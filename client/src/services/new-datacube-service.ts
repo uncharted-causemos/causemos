@@ -60,10 +60,37 @@ export const getDatacubes = async (filters: Filters, options = {}): Promise<Data
  * Get indicator or model by `dataId`, as opposed to `id`.
  * `dataId` is an identifier provided at registration time by Jataware.
  * `id` is an ElasticSearch document ID generated during registration.
+ * NOTE: If there are multiple documents with the same dataId (e.g. one Dojo Dataset with multiple
+ *  features(a.k.a. output variables)), this function will arbitrarily return one of them.
  */
 export const getDatacubeByDataId = async (dataId: string): Promise<Datacube | null> => {
   const result = await getDatacubes(
     { clauses: [{ field: 'dataId', operand: 'or', isNot: false, values: [dataId] }] },
+    { from: 0, size: 1 }
+  );
+  return result[0] ?? null;
+};
+
+/**
+ * Get a specific datacube within a dataset (e.g. a specific feature/output variable).
+ * For indicators: Each feature has its own "datacube" ES document.
+ * For models: There is one document for each model, with 1 to many entries in `outputs`.
+ * This function will return the correct document for each type, but if you know you're searching
+ *  for a model you can use getDatacubeByDataId since outputVariable won't change the result.
+ * @param dataId ID shared by all datacubes that come from the same Dojo Dataset
+ * @param outputVariable Unique name to tell those datacubes apart (a.k.a feature)
+ */
+export const getDatacubeByDataIdAndOutputVariable = async (
+  dataId: string,
+  outputVariable: string
+): Promise<Datacube | null> => {
+  const result = await getDatacubes(
+    {
+      clauses: [
+        { field: 'dataId', operand: 'or', isNot: false, values: [dataId] },
+        { field: 'outputName', operand: 'or', isNot: false, values: [outputVariable] },
+      ],
+    },
     { from: 0, size: 1 }
   );
   return result[0] ?? null;
@@ -374,10 +401,20 @@ export const getDefaultDataConfig = async (dataId: string, outputVariable: strin
   return config;
 };
 
+export const getSpatialCoverageOverlap = async (dataIds: string[]) => {
+  const { data } = await API.get('maas/datacubes/coverage', {
+    params: {
+      data_ids: dataIds,
+    },
+  });
+  return data as string[];
+};
+
 export default {
   updateDatacube,
   getDatacubes,
   getDatacubeByDataId,
+  getDatacubeByDataIdAndOutputVariable,
   getDatacubeById,
   getDatacubesCount,
   getDatacubeFacets,

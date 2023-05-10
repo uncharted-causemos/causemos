@@ -7,7 +7,7 @@
         class="form-control"
         type="text"
         v-model="searchText"
-        placeholder="Search for a dataset"
+        placeholder="Type a concept"
       />
       <button class="btn btn-default" @click="emit('cancel')">Cancel</button>
     </div>
@@ -16,15 +16,15 @@
         <li
           :class="{ active: activeResultIndex === -1 }"
           @mousemove="setActiveResultIndexOnHover(-1)"
-          @click="emit('keep-as-placeholder', searchText)"
+          @click="emit('set-node-name', searchText)"
         >
-          <span v-if="initialSearchText === ''">
+          <span v-if="!isModifyingExistingNode">
             Add "<strong>{{ searchText }}</strong
-            >" as a placeholder
+            >" without data
           </span>
-          <span v-else-if="initialSearchText === searchText.trim()"> Leave as placeholder </span>
+          <span v-else-if="initialSearchText === searchText.trim()">Leave without data</span>
           <span v-else>
-            Rename placeholder to "<strong>{{ searchText }}</strong
+            Rename to "<strong>{{ searchText }}</strong
             >"
           </span>
         </li>
@@ -37,7 +37,8 @@
             No datasets matching "{{ searchText }}" were found.
           </p>
           <ul v-else>
-            <h5 class="results-header">Choose a dataset</h5>
+            <h5 v-if="isModifyingExistingNode" class="results-header">Attach a dataset</h5>
+            <h5 v-else class="results-header">Add "{{ searchText }}" and attach a dataset</h5>
             <li
               v-for="(result, index) of results"
               :key="result.dataId + result.outputName"
@@ -46,7 +47,7 @@
                 'de-emphasized': result.displayName === '',
               }"
               @mousemove="setActiveResultIndexOnHover(index)"
-              @click="emit('select-dataset', result)"
+              @click="selectDataset(result)"
             >
               {{ result.displayName === '' ? '(missing name)' : result.displayName }}
             </li>
@@ -85,36 +86,24 @@ import { DatasetSearchResult } from '@/types/Index';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
-// import {
-//   searchFeatures,
-//   DojoFeatureSearchResult,
-// } from '@/services/semantic-feature-search-service';
+import {
+  searchFeatures,
+  DojoFeatureSearchResult,
+} from '@/services/semantic-feature-search-service';
 import { capitalizeEachWord } from '@/utils/string-util';
-import newDatacubeService from '@/services/new-datacube-service';
 
-// const convertFeatureSearchResultToDatasetSearchResult = (
-//   feature: DojoFeatureSearchResult
-// ): DatasetSearchResult => {
-//   const displayName =
-//     feature.display_name === '' ? capitalizeEachWord(feature.name) : feature.display_name;
-//   return {
-//     displayName,
-//     dataId: feature.owner_dataset.id,
-//     description: feature.description,
-//     familyName: feature.owner_dataset.name,
-//     // We need this to distinguish between results with the same dataId and to fetch the actual data for calculating index results.
-//     outputName: feature.name,
-//   };
-// };
-
-const convertESDocToDatasetSearchResult = ({ doc }: any): DatasetSearchResult => {
-  const displayName = doc.display_name === '' ? capitalizeEachWord(doc.feature) : doc.display_name;
+const convertFeatureSearchResultToDatasetSearchResult = (
+  feature: DojoFeatureSearchResult
+): DatasetSearchResult => {
+  const displayName =
+    feature.display_name === '' ? capitalizeEachWord(feature.name) : feature.display_name;
   return {
     displayName,
-    dataId: doc.data_id,
-    description: doc.description,
-    familyName: doc.family_name,
-    outputName: doc.feature,
+    dataId: feature.owner_dataset.id,
+    description: feature.description,
+    familyName: feature.owner_dataset.name,
+    // We need this to distinguish between results with the same dataId and to fetch the actual data for calculating index results.
+    outputName: feature.name,
   };
 };
 
@@ -123,9 +112,13 @@ interface Props {
 }
 const props = defineProps<Props>();
 
+// If `initialSearchText` is set, the node already exists and we're attaching data to it.
+//  If not, we're creating a new node.
+const isModifyingExistingNode = computed(() => props.initialSearchText !== '');
+
 const emit = defineEmits<{
-  (e: 'select-dataset', dataset: DatasetSearchResult): void;
-  (e: 'keep-as-placeholder', value: string): void;
+  (e: 'select-dataset', dataset: DatasetSearchResult, nodeNameAfterAttachingDataset: string): void;
+  (e: 'set-node-name', value: string): void;
   (e: 'cancel'): void;
 }>();
 
@@ -156,15 +149,13 @@ watch([searchText], async () => {
   }
   isFetchingResults.value = true;
   try {
-    // const dojoFeatureSearchResults = await searchFeatures(queryString);
-    const esDocResults = await newDatacubeService.getDatacubeSuggestions(queryString);
+    const dojoFeatureSearchResults = await searchFeatures(queryString);
     if (queryString !== searchText.value) {
       // Search text has changed since we started fetching results, so let the more recent call
       //  modify state.
       return;
     }
-    // results.value = dojoFeatureSearchResults.map(convertFeatureSearchResultToDatasetSearchResult);
-    results.value = esDocResults.map(convertESDocToDatasetSearchResult);
+    results.value = dojoFeatureSearchResults.map(convertFeatureSearchResultToDatasetSearchResult);
     isFetchingResults.value = false;
   } catch (e) {
     console.error('Unable to fetch search results for query', searchText.value);
@@ -191,9 +182,16 @@ const activeResult = computed(() => {
 });
 
 const activeResultDataId = computed(() => activeResult.value?.dataId ?? null);
-const activeResultMetadata = useModelMetadataSimple(activeResultDataId);
+const activeResultOutputVariable = computed(() => activeResult.value?.outputName ?? null);
+const { metadata: activeResultMetadata } = useModelMetadataSimple(
+  activeResultDataId,
+  activeResultOutputVariable
+);
 
-const { sparklineData, temporalCoverage } = useModelMetadataCoverage(activeResultMetadata);
+const { sparklineData, temporalCoverage } = useModelMetadataCoverage(
+  activeResultMetadata,
+  activeResultOutputVariable
+);
 
 const spatialCoverageDisplayString = computed(() => {
   if (activeResultMetadata.value === null) {
@@ -218,9 +216,8 @@ const handleKeyDown = (e: KeyboardEvent) => {
       return emit('cancel');
     case 'Enter':
       e.preventDefault();
-      if (activeResultIndex.value === -1)
-        return emit('keep-as-placeholder', searchText.value.trim());
-      if (activeResult.value !== null) return emit('select-dataset', activeResult.value);
+      if (activeResultIndex.value === -1) return emit('set-node-name', searchText.value.trim());
+      if (activeResult.value !== null) return selectDataset(activeResult.value);
       return;
     case 'ArrowUp':
       e.preventDefault();
@@ -237,6 +234,15 @@ const shiftIndex = (direction: -1 | 1) => {
   } else if (direction === 1) {
     activeResultIndex.value = Math.min(results.value.length - 1, activeResultIndex.value + 1);
   }
+};
+
+const selectDataset = (dataset: DatasetSearchResult) => {
+  // If we're attaching a dataset to a node that already exists, don't change the node's name
+  // If we're attaching a dataset to a new node, set its name to the search text.
+  const nodeNameAfterAttachingDataset = isModifyingExistingNode.value
+    ? props.initialSearchText
+    : searchText.value;
+  emit('select-dataset', dataset, nodeNameAfterAttachingDataset);
 };
 </script>
 

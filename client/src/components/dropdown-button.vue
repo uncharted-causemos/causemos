@@ -1,9 +1,18 @@
 <template>
   <div class="dropdown-button-container" ref="containerElement">
-    <button type="button" class="btn dropdown-btn" @click="isDropdownOpen = !isDropdownOpen">
+    <button
+      type="button"
+      class="btn dropdown-btn"
+      :class="{
+        warning: isWarningStateActive,
+      }"
+      @click="isDropdownOpen = !isDropdownOpen"
+    >
       <span>
         {{ innerButtonLabel ? `${innerButtonLabel}: ` : '' }}
-        <strong>{{ selectedItemDisplayName }}</strong>
+        <strong :style="hasColorOverride ? { color: getColorOverride(selectedItem) } : {}">{{
+          selectedItemDisplayName
+        }}</strong>
       </span>
       <i class="fa fa-fw fa-angle-down" />
     </button>
@@ -18,7 +27,8 @@
       <template #content>
         <div
           v-for="item in dropdownItems"
-          :key="item"
+          :style="hasColorOverride ? { color: getColorOverride(item.value) } : {}"
+          :key="item.value"
           class="dropdown-option"
           :class="{
             'dropdown-option-selected': isSelectedItem(item.value),
@@ -42,7 +52,10 @@ export interface DropdownItem {
   displayName: string;
   value: any;
   selected?: boolean;
+  color?: string;
 }
+
+const DEFAULT_TEXT_COLOR = 'black';
 
 export default defineComponent({
   name: 'DropdownButton',
@@ -78,6 +91,10 @@ export default defineComponent({
       type: Array as PropType<string[]>,
       default: [],
     },
+    isWarningStateActive: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['item-selected', 'items-selected'],
   setup(props, { emit }) {
@@ -92,6 +109,24 @@ export default defineComponent({
         return;
       }
       isDropdownOpen.value = false;
+    };
+
+    const hasColorOverride = computed<boolean>(() => {
+      if (props.items.length > 0 && typeof props.items[0] !== 'string') {
+        const item: DropdownItem = props.items[0];
+        return 'color' in item;
+      }
+      return false;
+    });
+
+    const getColorOverride = (selected: boolean) => {
+      let color = DEFAULT_TEXT_COLOR;
+      props.items.forEach((item) => {
+        if (typeof item !== 'string' && 'color' in item && item.value === selected) {
+          color = item.color ?? DEFAULT_TEXT_COLOR;
+        }
+      });
+      return color;
     };
 
     watchEffect(() => {
@@ -154,6 +189,8 @@ export default defineComponent({
       selectedItemDisplayName,
       containerElement,
       isSelectedItem,
+      getColorOverride,
+      hasColorOverride,
     };
   },
 });
@@ -161,6 +198,7 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
 
 .dropdown-button-container {
   position: relative;
@@ -192,5 +230,10 @@ export default defineComponent({
   align-items: center;
   font-weight: normal;
   padding: 5px;
+
+  &.warning {
+    color: $un-color-feedback-warning;
+    border-color: $un-color-feedback-warning;
+  }
 }
 </style>

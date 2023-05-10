@@ -1,18 +1,18 @@
-import { computed, ref } from 'vue';
-import { IndexWorkBenchItem, SelectableIndexElementId } from '@/types/Index';
+import { ref, computed } from 'vue';
+import { ConceptNode, SelectableIndexElementId } from '@/types/Index';
 import {
   createIndexTreeActions,
   deleteEdgeFromIndexTree,
   findAndRemoveChild,
+  findAndUpdateIsOppositePolarity,
   findNode as indexTreeUtilFindNode,
   isEdge,
 } from '@/utils/index-tree-util';
-import { IndexNodeType } from '@/types/Enums';
 
 // States
 
 // Temporary index nodes that are being created and not yet attached to the main index tree yet
-const workBenchItems = ref<IndexWorkBenchItem[]>([]);
+const workBenchItems = ref<ConceptNode[]>([]);
 const targetAnalysisId = ref('');
 
 const triggerUpdate = () => {
@@ -22,11 +22,11 @@ const triggerUpdate = () => {
 export default function useIndexWorkBench() {
   // Getters
 
-  const items = computed<IndexWorkBenchItem[]>(() => workBenchItems.value);
+  const items = computed<ConceptNode[]>(() => workBenchItems.value);
 
   // Actions
 
-  const initialize = (analysisId: string, initialItems: IndexWorkBenchItem[]) => {
+  const initialize = (analysisId: string, initialItems: ConceptNode[]) => {
     targetAnalysisId.value = analysisId;
     workBenchItems.value = [...initialItems];
   };
@@ -35,11 +35,11 @@ export default function useIndexWorkBench() {
     return targetAnalysisId.value;
   };
 
-  const addItem = (item: IndexWorkBenchItem) => {
+  const addItem = (item: ConceptNode) => {
     workBenchItems.value = [item, ...workBenchItems.value];
   };
 
-  const appendItem = (item: IndexWorkBenchItem) => {
+  const appendItem = (item: ConceptNode) => {
     workBenchItems.value = [...workBenchItems.value, item];
   };
 
@@ -51,6 +51,17 @@ export default function useIndexWorkBench() {
       }
     }
     return undefined;
+  };
+
+  const isDescendant = (descendantId: string, ancestorId: string): boolean => {
+    const results = findNode(ancestorId) ?? null;
+    if (results !== null) {
+      const findResults = indexTreeUtilFindNode(results.found, descendantId) ?? null;
+      if (findResults !== null) {
+        return true;
+      }
+    }
+    return false;
   };
 
   const findAndDeleteItem = (nodeId: string) => {
@@ -68,12 +79,22 @@ export default function useIndexWorkBench() {
     }
   };
 
+  const updateIsOppositePolarity = (nodeId: string, value: boolean) => {
+    const success = workBenchItems.value.some((tree) =>
+      findAndUpdateIsOppositePolarity(tree, nodeId, value)
+    );
+    if (success) {
+      triggerUpdate();
+    }
+    return success;
+  };
+
   const deleteEdge = (nodeIds: SelectableIndexElementId) => {
     if (isEdge(nodeIds)) {
       const node = findNode(nodeIds.targetId);
       if (node && node?.found !== null) {
         const child = deleteEdgeFromIndexTree(node.found, nodeIds.sourceId);
-        if (child !== null && child.type !== IndexNodeType.OutputIndex) {
+        if (child !== null) {
           addItem(child);
         }
       }
@@ -82,10 +103,19 @@ export default function useIndexWorkBench() {
 
   const {
     findAndRenameNode,
+    findAndAddNewChild,
     findAndAddChild,
-    attachDatasetToPlaceholder,
-    toggleDatasetIsInverted,
+    attachDatasetToNode,
+    setDatasetIsInverted,
   } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
+  const popItem = (nodeId: string): ConceptNode | null => {
+    const itemToPop = workBenchItems.value.filter((item) => item.id === nodeId);
+    if (itemToPop.length === 1) {
+      findAndDeleteItem(nodeId);
+      return itemToPop[0];
+    }
+    return null;
+  };
 
   return {
     items,
@@ -95,10 +125,14 @@ export default function useIndexWorkBench() {
     findNode,
     findAndRenameNode,
     findAndDeleteItem,
+    findAndAddNewChild,
     findAndAddChild,
-    toggleDatasetIsInverted,
-    attachDatasetToPlaceholder,
+    setDatasetIsInverted,
+    attachDatasetToNode,
     getAnalysisId,
     deleteEdge,
+    popItem,
+    isDescendant,
+    updateIsOppositePolarity,
   };
 }

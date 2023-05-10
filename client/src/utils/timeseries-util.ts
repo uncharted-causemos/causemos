@@ -251,7 +251,7 @@ export function calculateYearlyTicks(
   firstTimestamp: number,
   lastTimestamp: number,
   width: number,
-  minTickSpacing = 40
+  minTickSpacing = 45
 ) {
   const firstYear = moment.utc(firstTimestamp);
   const lastYear = moment.utc(lastTimestamp);

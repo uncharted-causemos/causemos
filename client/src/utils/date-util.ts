@@ -1,3 +1,5 @@
+export const EPOCH_YEAR = 1970;
+
 export const getYearFromTimestamp = (timestamp: number) => {
   return new Date(timestamp).getUTCFullYear();
 };
@@ -36,4 +38,32 @@ const subtractMonths = (month: number, year: number, monthsToSubtract: number) =
 /** Returns a unix timestamp in milliseconds */
 export const getTimestampMillis = (year: number, month: number) => {
   return new Date(Date.UTC(year, month)).getTime();
+};
+
+/**
+ *  Returns a unix timestamp in milliseconds from a given year
+ * @param year year
+ */
+export const getTimestampMillisFromYear = (year: number) => {
+  return new Date(Date.UTC(year, 0)).getTime();
+};
+
+/**
+ * For given timestamp, returns the number of months passed since 00:00:00 UTC on 1 January 1970
+ * @param timestamp An unix timestamp in milliseconds
+ */
+export const getNumberOfMonthsSinceEpoch = (timestamp: number) => {
+  const year = getYearFromTimestamp(timestamp);
+  const month = getMonthFromTimestamp(timestamp);
+  return (year - EPOCH_YEAR) * 12 + month;
+};
+
+/**
+ * Returns the unix timestamp in milliseconds
+ * @param nMonths Number of months since unix epoch time
+ */
+export const getTimestampFromNumberOfMonths = (nMonths: number) => {
+  const year = Math.floor(nMonths / 12) + EPOCH_YEAR;
+  const month = (12 + (nMonths % 12)) % 12;
+  return getTimestampMillis(year, month);
 };

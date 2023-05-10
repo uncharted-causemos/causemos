@@ -1,16 +1,17 @@
 <template>
-  <div class="map">
-    <RegionMap
-      :data="regionMapData"
-      :map-bounds="mapBounds"
-      :min-zoom="MAP_MIN_ZOOM"
-      :selected-admin-level="0"
-      :disable-pan-zoom="true"
-      :disable-popup="true"
-    />
-    <button disabled class="btn">Expand</button>
+  <div>
+    <p>{{ displayString }}</p>
+    <div class="map">
+      <RegionMap
+        :data="regionMapData"
+        :map-bounds="mapBounds"
+        :min-zoom="MAP_MIN_ZOOM"
+        :selected-admin-level="0"
+        :disable-pan-zoom="true"
+        :disable-popup="true"
+      />
+    </div>
   </div>
-  <p class="de-emphasized">{{ displayString }}</p>
 </template>
 
 <script setup lang="ts">
@@ -21,8 +22,8 @@ import { BOUNDS_GLOBAL, computeMapBoundsForCountries } from '@/utils/map-util-ne
 import { getColors, COLOR } from '@/utils/colors-util';
 
 import { MapBounds, RegionMapData } from '@/types/Common';
-import { IndexNode } from '@/types/Index';
-import { isDatasetNode, convertDatasetToOutputSpec } from '@/utils/index-tree-util';
+import { ConceptNodeWithDatasetAttached } from '@/types/Index';
+import { convertDataConfigToOutputSpec } from '@/utils/index-tree-util';
 import { getRegionAggregationNormalized } from '@/services/outputdata-service';
 
 const MAP_MIN_ZOOM = -0.5;
@@ -32,7 +33,7 @@ const NUM_COLORS = 5;
 const DOMAIN = [0, 1];
 
 const props = defineProps<{
-  node: IndexNode;
+  node: ConceptNodeWithDatasetAttached;
   countries: string[] | null;
 }>();
 
@@ -56,13 +57,13 @@ watch(
 
 const regionMapData = ref<RegionMapData[]>([]);
 const loadMapData = async () => {
-  if (!props.node || !isDatasetNode(props.node)) {
+  if (!props.node) {
     regionMapData.value = [];
     return;
   }
   const result = await getRegionAggregationNormalized(
-    convertDatasetToOutputSpec(props.node),
-    props.node.isInverted
+    convertDataConfigToOutputSpec(props.node.dataset.config),
+    props.node.dataset.isInverted
   );
   const mapData: RegionMapData[] = (result.country || []).map((country) => ({
     label: country.id,
@@ -79,7 +80,7 @@ const displayString = computed(() => {
     return '...';
   }
   const count = props.countries.length;
-  return `Covers ${count} countr${count === 1 ? 'y' : 'ies'}.`;
+  return `${count} countr${count === 1 ? 'y' : 'ies'}.`;
 });
 </script>
 
@@ -87,17 +88,8 @@ const displayString = computed(() => {
 @import '~styles/uncharted-design-tokens';
 
 .map {
-  height: 200px;
+  height: 150px;
   position: relative;
   pointer-events: none;
-  button {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-  }
-}
-
-.de-emphasized {
-  color: $un-color-black-40;
 }
 </style>

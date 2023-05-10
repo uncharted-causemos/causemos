@@ -125,6 +125,18 @@ export default defineComponent({
         },
       },
     }));
+    const indexProjectionsItem = computed(() => ({
+      text: 'Projections',
+      icon: 'fa-question',
+      route: {
+        name: 'indexProjections',
+        params: {
+          project: project.value,
+          analysisId: analysisId.value,
+          projectType: ProjectType.Analysis,
+        },
+      },
+    }));
 
     const siteMap = computed<{ [key: string]: NavBarItem[] }>(() => ({
       home: [],
@@ -150,6 +162,11 @@ export default defineComponent({
       quantitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       indexStructure: [analysisProjectItem.value, indexStructureItem.value],
       indexResults: [analysisProjectItem.value, indexStructureItem.value, indexResultsItem.value],
+      indexProjections: [
+        analysisProjectItem.value,
+        indexStructureItem.value,
+        indexProjectionsItem.value,
+      ],
       nodeDrilldown: [
         analysisProjectItem.value,
         qualitativeAnalysisItem.value,

@@ -1,5 +1,5 @@
 import { Indicator, Model } from '@/types/Datacube';
-import { ref, Ref, watch } from 'vue';
+import { computed, ref, Ref, watch } from 'vue';
 import newDatacubeService from '../new-datacube-service';
 
 /**
@@ -10,19 +10,23 @@ import newDatacubeService from '../new-datacube-service';
  * We should investigate to see if we can simplify or merge useModelMetadata into this composable.
  */
 export default function useModelMetadataSimple(
-  dataId: Ref<string | null>
-): Ref<Model | Indicator | null> {
+  dataId: Ref<string | null>,
+  outputVariable: Ref<string | null>
+) {
   const metadata = ref<Indicator | Model | null>(null);
   watch(
-    [dataId],
+    [dataId, outputVariable],
     async () => {
-      if (dataId.value === null) {
+      if (dataId.value === null || outputVariable.value === null) {
         metadata.value = null;
         return;
       }
       // Save data ID before fetching in case it changes during the request.
       const savedDataId = dataId.value;
-      const result = await newDatacubeService.getDatacubeByDataId(dataId.value);
+      const result = await newDatacubeService.getDatacubeByDataIdAndOutputVariable(
+        dataId.value,
+        outputVariable.value
+      );
       if (savedDataId !== dataId.value) {
         // Data ID changed during the request, so throw out results to avoid race conditions.
         return;
@@ -33,5 +37,16 @@ export default function useModelMetadataSimple(
     },
     { immediate: true }
   );
-  return metadata;
+
+  const outputDescription = computed(() => {
+    if (metadata.value === null) {
+      return '';
+    }
+    return (
+      metadata.value.outputs.find((output) => output.name === outputVariable.value)?.description ??
+      '(This dataset feature has no description.)'
+    );
+  });
+
+  return { metadata, outputDescription };
 }

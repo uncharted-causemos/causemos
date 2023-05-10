@@ -1,0 +1,198 @@
+@import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
+
+$index-tree-node-width: 240px;
+$space-between-columns: 40px;
+$space-between-rows: 10px;
+
+$incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
+$outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-length);
+$edge-top-offset-from-node: 13px;
+$edge-styles: 2px solid $un-color-black-20;
+$edge-selected: $accent-main;
+
+$index-graph-padding-horizontal: 30px;
+$index-graph-padding-vertical: 40px;
+
+.index-graph {
+  // The farthest left column will never have incoming edges, so it will have an empty space of
+  //  size `$incoming-edge-minimum-length` to the left of it. Remove that width from the padding.
+  padding: $index-graph-padding-vertical $index-graph-padding-horizontal;
+  padding-left: calc(#{$index-graph-padding-horizontal} - #{$incoming-edge-minimum-length});
+  overflow: auto;
+  display: grid;
+  row-gap: $space-between-rows;
+
+  // When the graph is too small to take up the full available screen width, don't expand columns
+  //  to fill the empty space.
+  justify-content: flex-start;
+  align-content: flex-start;
+  .grid-cell {
+    position: relative;
+    display: flex;
+    pointer-events: none;
+  }
+  .index-tree-node {
+    pointer-events: auto;
+  }
+}
+
+.edge {
+  position: relative;
+  top: $edge-top-offset-from-node;
+  pointer-events: auto;
+
+  &.incoming {
+    max-height: 5px;
+    min-width: $incoming-edge-minimum-length;
+    // If one node in the column is wider than this one (e.g. placeholder in search mode), expand
+    //  the incoming edge to stay connected to children, and push the node to stay right-aligned.
+    flex: 1;
+    &.visible {
+      border-top: $edge-styles;
+      &.polarity-pos {
+        border-color: $positive;
+      }
+      &.polarity-neg {
+        border-color: $negative;
+      }
+      &.highlighted {
+        border-color: $accent-light;
+        &.polarity-pos {
+          border-color: $positive-bright;
+          &.highlighted-source-neg {
+            border-color: $negative-bright;
+          }
+        }
+        &.polarity-neg {
+          border-color: $negative-bright;
+          &.highlighted-source-pos {
+            border-color: $positive-bright;
+          }
+        }
+      }
+      &.selected-edge {
+        border-color: $edge-selected;
+        &.polarity-pos {
+          border-color: $positive-bright;
+          &.selected-source-neg {
+            border-color: $negative-bright;
+          }
+        }
+        &.polarity-neg {
+          border-color: $negative-bright;
+          &.selected-source-pos {
+            border-color: $positive-bright;
+          }
+        }
+      }
+    }
+    &.inactive {
+      pointer-events: none;
+    }
+  }
+
+  &.outgoing {
+    width: $outgoing-edge-length;
+    &.visible {
+      border-top: $edge-styles;
+      // Extend edge down to the sibling below this one
+      height: calc(100% + #{$space-between-rows});
+      border-right: $edge-styles;
+      &.polarity-pos {
+        border-color: $positive;
+        &.next-sibling-polarity-neg {
+          border-right-color: $negative;
+        }
+      }
+      &.polarity-neg {
+        border-color: $negative;
+        &.next-sibling-polarity-pos {
+          border-right-color: $positive;
+        }
+      }
+      &.highlighted {
+        border-top-color: $accent-light;
+        &.polarity-neg {
+          border-top-color: $negative-bright;
+        }
+        &.polarity-pos {
+          border-top-color: $positive-bright;
+        }
+      }
+      &.highlighted-y {
+        border-right-color: $accent-light;
+        &.polarity-neg {
+          border-right-color: $negative-bright;
+          &.next-sibling-polarity-pos {
+            border-right-color: $positive-bright;
+          }
+        }
+        &.polarity-pos {
+          border-right-color: $positive-bright;
+          &.next-sibling-polarity-neg {
+            border-right-color: $negative-bright;
+          }
+        }
+      }
+      &.selected-edge {
+        border-top-color: $edge-selected;
+        &.polarity-neg {
+          border-top-color: $negative-bright;
+        }
+        &.polarity-pos {
+          border-top-color: $positive-bright;
+        }
+      }
+      &.selected-y {
+        border-right-color: $edge-selected;
+        &.polarity-neg {
+          border-right-color: $negative-bright;
+          &.next-sibling-polarity-pos {
+            border-right-color: $positive-bright;
+          }
+        }
+        &.polarity-pos {
+          border-right-color: $positive-bright;
+          &.next-sibling-polarity-neg {
+            border-right-color: $negative-bright;
+          }
+        }
+      }
+    }
+    &.inactive {
+      pointer-events: none;
+    }
+
+    &.last-child {
+      border-right: none;
+    }
+  }
+}
+
+@mixin index-tree-node() {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+
+  background: white;
+  width: $index-tree-node-width;
+  height: fit-content;
+  border: 1px solid $un-color-black-30;
+  border-radius: 3px;
+}
+
+@mixin index-tree-node-hover() {
+  border-color: $accent-main;
+  cursor: pointer;
+}
+
+// The space between the edges of the node and the content within it.
+//  This would be applied to .index-tree-node-container directly, but some elements (namely the
+//  search results) need to expand to take the full width of the node.
+$node-content-horizontal-padding: 10px;
+// Standard padding that's applied to each element within the node by default
+$node-content-vertical-padding: 5px;
+@mixin index-tree-node-content() {
+  padding: $node-content-vertical-padding $node-content-horizontal-padding;
+}

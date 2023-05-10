@@ -1,5 +1,12 @@
 <template>
-  <div ref="tree-container" class="index-tree-pane-container" @click.self="clearAll">
+  <div
+    ref="tree-container"
+    class="index-tree-pane-container index-graph"
+    :class="{
+      'connecting-nodes': isConnecting,
+    }"
+    @click.self="clearEdgeConnect"
+  >
     <div
       v-for="cell in gridCells"
       :key="cell.node.id"
@@ -17,33 +24,44 @@
           [EDGE_CLASS.SELECTED]: isIncomingSelected(cell.node.id),
           [EDGE_CLASS.HIGHLIGHTED]:
             isIncomingHighlighted(cell.node.id) && !isIncomingSelected(cell.node.id),
+          [EDGE_CLASS.POLARITY_POS]: !isInboundPolarityNegative(cell.node.id),
+          [EDGE_CLASS.POLARITY_NEG]: isInboundPolarityNegative(cell.node.id),
+          [EDGE_CLASS.SELECTED_SOURCE_POLARITY_POS]:
+            isIncomingSelected(cell.node.id) && !isSelectedSourcePolarityNegative(cell.node.id),
+          [EDGE_CLASS.SELECTED_SOURCE_POLARITY_NEG]:
+            isIncomingSelected(cell.node.id) && isSelectedSourcePolarityNegative(cell.node.id),
+          [EDGE_CLASS.HIGHLIGHTED_SOURCE_POLARITY_NEG]:
+            isIncomingHighlighted(cell.node.id) &&
+            isHighlightedSourcePolarityNegative(cell.node.id),
+          [EDGE_CLASS.HIGHLIGHTED_SOURCE_POLARITY_POS]:
+            isIncomingHighlighted(cell.node.id) &&
+            !isHighlightedSourcePolarityNegative(cell.node.id),
         }"
-        @mouseenter="
-          emit('highlight-edge', { sourceId: cell.node.inputs[0].id, targetId: cell.node.id })
-        "
+        @mouseenter="() => !isConnecting && handleHighlightEdge(cell.node)"
         @mouseleave="highlightClear"
-        @click="
-          () => emit('select-element', { sourceId: cell.node.inputs[0].id, targetId: cell.node.id })
-        "
+        @click="() => !isConnecting && handleClickSelectEdge(cell.node)"
       ></div>
       <IndexTreeNode
         :node-data="cell.node"
         :is-selected="isSelected(cell.node.id)"
+        :is-connecting="isConnecting"
+        :is-descendent-of-connecting-node="isDescendentOfConnectingNode(cell.node.id)"
         class="index-tree-node"
         @rename="renameNode"
         @delete="deleteNode"
         @duplicate="duplicateNode"
         @select="(id) => emit('select-element', id)"
         @create-child="createChild"
-        @attach-dataset="attachDatasetToPlaceholder"
+        @attach-dataset="attachDatasetToNode"
+        @create-edge="createEdge"
         @mouseenter="highlightClear"
       />
       <div
+        v-if="!cell.node.isOutputNode && cell.hasOutputLine"
         class="edge outgoing"
         :class="{
           visible: cell.hasOutputLine,
           inactive: !cell.hasOutputLine,
-          dashed: cell.node.type === IndexNodeType.Placeholder,
           'last-child': cell.isLastChild,
           [EDGE_CLASS.SELECTED]: isOutgoingSelected(cell.node.id),
           [EDGE_CLASS.SELECTED_Y]: isOutgoingYSelected(cell.node.id),
@@ -51,34 +69,52 @@
             isOutgoingHighlighted(cell.node.id) && !isOutgoingSelected(cell.node.id),
           [EDGE_CLASS.HIGHLIGHTED_Y]:
             isOutgoingYHighlighted(cell.node.id) && !isOutgoingYSelected(cell.node.id),
+          [EDGE_CLASS.POLARITY_POS]: !cell.isOppositePolarity,
+          [EDGE_CLASS.POLARITY_NEG]: cell.isOppositePolarity,
+          [EDGE_CLASS.NEXT_SIBLING_POLARITY_POS]: !isNextSiblingPolarityNegative(cell.node.id),
+          [EDGE_CLASS.NEXT_SIBLING_POLARITY_NEG]: isNextSiblingPolarityNegative(cell.node.id),
         }"
-        @mouseenter="
-          () => emit('highlight-edge', { sourceId: cell.node.id, targetId: parentId(cell.node.id) })
-        "
+        @mouseenter="() => !isConnecting && handleMouseEnter(cell.node.id)"
         @mouseleave="highlightClear"
-        @click="
-          () => emit('select-element', { sourceId: cell.node.id, targetId: parentId(cell.node.id) })
-        "
+        @click="() => !isConnecting && handleMouseClick(cell.node.id)"
       />
+      <div
+        v-if="!cell.node.isOutputNode && !cell.hasOutputLine"
+        class="connector"
+        :class="{
+          connecting: cell.node.id === connectingId,
+        }"
+      >
+        <div class="edge outgoing visible last-child"></div>
+        <button type="button" class="btn btn-sm" @click="() => handleConnect(cell.node.id)">
+          Connect
+        </button>
+        <div class="edge outgoing visible last-child"></div>
+        <div class="input-arrow"></div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import _ from 'lodash';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
-import { IndexNodeType } from '@/types/Enums';
-import { DatasetSearchResult, GridCell, IndexNode, SelectableIndexElementId } from '@/types/Index';
+import {
+  ConceptNode,
+  DatasetSearchResult,
+  GridCell,
+  SelectableIndexElementId,
+} from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren, isEdge } from '@/utils/index-tree-util';
 import {
-  offsetGridCells,
-  getGridRowCount,
-  getGridColumnCount,
-  convertTreeToGridCells,
-} from '@/utils/grid-cell-util';
+  hasChildren,
+  isOutputIndexNode,
+  isEdge,
+  isConceptNodeWithoutDataset,
+} from '@/utils/index-tree-util';
+import { getGridCellsFromIndexTreeAndWorkbench } from '@/utils/grid-cell-util';
 
 const EDGE_CLASS = {
   SELECTED: 'selected-edge',
@@ -87,12 +123,28 @@ const EDGE_CLASS = {
   HIGHLIGHTED_Y: 'highlighted-y',
   OUTGOING: 'outgoing',
   INCOMING: 'incoming',
+  POLARITY_POS: 'polarity-pos',
+  POLARITY_NEG: 'polarity-neg',
+  NEXT_SIBLING_POLARITY_NEG: 'next-sibling-polarity-neg',
+  NEXT_SIBLING_POLARITY_POS: 'next-sibling-polarity-pos',
+  SELECTED_SOURCE_POLARITY_NEG: 'selected-source-neg',
+  SELECTED_SOURCE_POLARITY_POS: 'selected-source-pos',
+  HIGHLIGHTED_SOURCE_POLARITY_NEG: 'highlighted-source-neg',
+  HIGHLIGHTED_SOURCE_POLARITY_POS: 'highlighted-source-pos',
 };
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
   highlightEdgeId: SelectableIndexElementId | null;
 }>();
+
+/**
+ * Track the state of creating a new edge (connecting)
+ * isConnecting is used to control logic and visual aspects
+ * connectingId tracks the currently selected "first node" in the edge set.
+ */
+const isConnecting = ref<boolean>(false);
+const connectingId = ref<string | null>(null);
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
@@ -104,12 +156,65 @@ const emit = defineEmits<{
 const indexTree = useIndexTree();
 const { findNode } = indexTree;
 const workbench = useIndexWorkBench();
-
+const isDescendentOfConnectingNode = (targetId: string) => {
+  if (connectingId.value !== null) {
+    return workbench.isDescendant(targetId, connectingId.value);
+  }
+  return false;
+};
 const isOutgoingHighlighted = (id: string) => {
   if (props.highlightEdgeId && isEdge(props.highlightEdgeId)) {
     return props.highlightEdgeId.sourceId === id;
   }
   return false;
+};
+
+const createEdge = (id: string) => {
+  if (connectingId.value !== null) {
+    const sourceNode = workbench.popItem(connectingId.value);
+
+    if (sourceNode !== null) {
+      workbench.findAndAddChild(id, sourceNode);
+      indexTree.findAndAddChild(id, sourceNode);
+    }
+  }
+
+  clearEdgeConnect();
+};
+const handleClickSelectEdge = (node: ConceptNode) => {
+  if (isConceptNodeWithoutDataset(node) && node.components.length > 0) {
+    emit('select-element', { sourceId: node.components[0].componentNode.id, targetId: node.id });
+  }
+};
+const handleHighlightEdge = (node: ConceptNode) => {
+  if (isConceptNodeWithoutDataset(node) && node.components.length > 0) {
+    emit('highlight-edge', { sourceId: node.components[0].componentNode.id, targetId: node.id });
+  }
+};
+const handleConnect = (id: string) => {
+  if (isConnecting.value && id === connectingId.value) {
+    clearEdgeConnect();
+  } else if (isConnecting.value && id !== connectingId.value) {
+    connectingId.value = id;
+  } else {
+    isConnecting.value = true;
+    connectingId.value = id;
+  }
+  clearAll();
+};
+
+const handleMouseEnter = (sourceId: string) => {
+  const targetId: string | null = parentId(sourceId);
+  if (targetId !== null) {
+    emit('highlight-edge', { sourceId, targetId });
+  }
+};
+
+const handleMouseClick = (sourceId: string) => {
+  const targetId = parentId(sourceId);
+  if (targetId !== null) {
+    emit('select-element', { sourceId, targetId });
+  }
 };
 
 const isHigherThanSibling = (id: string, edgeId: SelectableIndexElementId) => {
@@ -120,14 +225,10 @@ const isHigherThanSibling = (id: string, edgeId: SelectableIndexElementId) => {
     }
     const targetNode = searchForNode(edgeId.sourceId);
 
-    if (
-      targetNode &&
-      targetNode.parent &&
-      (targetNode.parent.type === 'Index' || targetNode.parent.type === 'OutputIndex')
-    ) {
-      const allInputs = targetNode.parent.inputs;
-      const idIndex = allInputs.findIndex((item) => item.id === sourceId);
-      const selection = allInputs.slice(0, idIndex).map((item) => item.id);
+    if (targetNode && targetNode.parent) {
+      const allInputs = targetNode.parent.components;
+      const idIndex = allInputs.findIndex((item) => item.componentNode.id === sourceId);
+      const selection = allInputs.slice(0, idIndex).map((item) => item.componentNode.id);
 
       return selection.includes(id);
     }
@@ -174,62 +275,94 @@ const isSelected = (id: string) => {
   }
   return false;
 };
+
 // A list of grid cells with enough information to render with CSS-grid.
 //  Represents a combination of all workbench trees and the main index tree.
 const gridCells = computed<GridCell[]>(() => {
-  // Convert each workbench tree to grid cells.
-  const overlappingWorkbenchTreeCellLists = workbench.items.value.map(convertTreeToGridCells);
-  // Move each grid down so that they're not overlapping
-  let currentRow = 0;
-  const workbenchTreeCellLists: GridCell[][] = [];
-  overlappingWorkbenchTreeCellLists.forEach((cellList) => {
-    // Translate down by "currentRow"
-    const translatedList = offsetGridCells(cellList, currentRow, 0);
-    // Append to workbenchTreeCellLists
-    workbenchTreeCellLists.push(translatedList);
-    // Increase currentRow by the current tree's rowCount
-    currentRow += getGridRowCount(translatedList);
-  });
-  // Convert main tree to grid cells.
-  const overlappingMainTreeCellList = convertTreeToGridCells(indexTree.tree.value);
-  // Move main tree grid below the workbench tree grids.
-  const mainTreeCellList = offsetGridCells(overlappingMainTreeCellList, currentRow, 0);
-  // Extra requirement: Shift all workbench trees to the left of the main tree.
-  const mainTreeColumnCount = getGridColumnCount(mainTreeCellList);
-  const shiftedWorkbenchTreeCellLists = workbenchTreeCellLists.map((cellList) =>
-    offsetGridCells(cellList, 0, -mainTreeColumnCount)
-  );
-  // Flatten list of grids into one list of grid cells.
-  return _.flatten([...shiftedWorkbenchTreeCellLists, mainTreeCellList]);
+  return getGridCellsFromIndexTreeAndWorkbench(indexTree.tree.value, workbench.items.value);
 });
+
+const isInboundPolarityNegative = (nodeId: string) => {
+  const index = gridCells.value.findIndex((cell) => cell.node.id === nodeId);
+  if (index >= 0) {
+    const node = gridCells.value[index].node;
+    if ('components' in node && node.components.length > 0) {
+      return node.components[0].isOppositePolarity;
+    }
+  }
+  return false;
+};
+
+const isSelectedSourcePolarityNegative = (nodeId: string) => {
+  return getSourcePolarity(props.selectedElementId, nodeId);
+};
+
+const isHighlightedSourcePolarityNegative = (nodeId: string) => {
+  return getSourcePolarity(props.highlightEdgeId, nodeId);
+};
+
+const getSourcePolarity = (edge: SelectableIndexElementId | null, nodeId: string) => {
+  const index = gridCells.value.findIndex((cell) => cell.node.id === nodeId);
+  if (index >= 0 && edge !== null) {
+    if (typeof edge !== 'string' && edge.targetId === nodeId) {
+      const sourceId = edge.sourceId;
+      const index2 = gridCells.value.findIndex((cell) => cell.node.id === sourceId);
+      if (index2 >= 0) {
+        return gridCells.value[index2].isOppositePolarity;
+      }
+    }
+  }
+  return false;
+};
+
+const isNextSiblingPolarityNegative = (nodeId: string) => {
+  const cells = gridCells.value.filter((item) => item.node.id === nodeId);
+  if (cells.length > 0) {
+    const cell = cells[0];
+    const index = gridCells.value.findIndex(
+      (item) => item.startRow === cell.startRow + 1 && item.startColumn === cell.startColumn
+    );
+    if (index >= 0) {
+      return gridCells.value[index].isOppositePolarity;
+    }
+  }
+  return false;
+};
 
 const renameNode = (nodeId: string, newName: string) => {
   workbench.findAndRenameNode(nodeId, newName);
   indexTree.findAndRenameNode(nodeId, newName);
 };
 
-const deleteNode = (deleteNode: IndexNode) => {
+const deleteNode = (deleteNode: ConceptNode) => {
   // Find from both places and delete the node.
   workbench.findAndDeleteItem(deleteNode.id);
   indexTree.findAndDelete(deleteNode.id);
 };
 
-const duplicateNode = (duplicated: IndexNode) => {
-  if (duplicated.type === IndexNodeType.OutputIndex) return;
+const duplicateNode = (duplicated: ConceptNode) => {
+  if (isOutputIndexNode(duplicated)) return;
   workbench.addItem(duplicated);
 };
 
-const createChild = (
-  parentNodeId: string,
-  childType: IndexNodeType.Index | IndexNodeType.Dataset
-) => {
-  workbench.findAndAddChild(parentNodeId, childType);
-  indexTree.findAndAddChild(parentNodeId, childType);
+const createChild = (parentNodeId: string) => {
+  workbench.findAndAddNewChild(parentNodeId);
+  indexTree.findAndAddNewChild(parentNodeId);
 };
 
-const attachDatasetToPlaceholder = (nodeId: string, dataset: DatasetSearchResult) => {
-  workbench.attachDatasetToPlaceholder(nodeId, dataset);
-  indexTree.attachDatasetToPlaceholder(nodeId, dataset);
+const attachDatasetToNode = (
+  nodeId: string,
+  dataset: DatasetSearchResult,
+  nodeNameAfterAttachingDataset: string
+) => {
+  workbench.attachDatasetToNode(nodeId, dataset, nodeNameAfterAttachingDataset);
+  indexTree.attachDatasetToNode(nodeId, dataset, nodeNameAfterAttachingDataset);
+};
+
+const clearEdgeConnect = () => {
+  isConnecting.value = false;
+  connectingId.value = null;
+  clearAll();
 };
 
 const clearAll = () => {
@@ -257,103 +390,55 @@ const searchForNode = (id: string) => {
 <style scoped lang="scss">
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/variables';
-
-$space-between-columns: 40px;
-$space-between-rows: 10px;
-
-$incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
-$outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-length);
-$edge-top-offset-from-node: 13px;
-$edge-styles: 2px solid $un-color-black-20;
-$edge-selected: $accent-main;
+@import '@/styles/index-graph';
 
 .index-tree-pane-container {
-  // The farthest left column will never have incoming edges, so it will have an empty space of
-  //  size `$incoming-edge-minimum-length` to the left of it. Remove that width from the padding.
-  padding: 40px 30px 40px calc(30px - #{$incoming-edge-minimum-length});
-  overflow: auto;
-  display: grid;
-  row-gap: $space-between-rows;
+  &.connecting-nodes {
+    cursor: crosshair;
+  }
 
-  // When the graph is too small to take up the full available screen width, don't expand columns
-  //  to fill the empty space.
-  justify-content: flex-start;
-  align-content: flex-start;
-  .grid-cell {
-    position: relative;
+  .connector {
     display: flex;
-    pointer-events: none;
-  }
-  .index-tree-node {
+    flex-direction: row;
     pointer-events: auto;
-  }
-  .edge {
-    position: relative;
-    top: $edge-top-offset-from-node;
-    pointer-events: auto;
-
-    &.incoming {
-      max-height: 5px;
-      min-width: $incoming-edge-minimum-length;
-      // If one node in the column is wider than this one (e.g. placeholder in search mode), expand
-      //  the incoming edge to stay connected to children, and push the node to stay right-aligned.
-      flex: 1;
-      &.visible {
-        border-top: $edge-styles;
-        &.highlighted {
-          border-color: $accent-light;
-        }
-        &.selected-edge {
-          border-color: $edge-selected;
-        }
+    button {
+      height: 2.2em;
+      background-color: white;
+    }
+    &:hover {
+      cursor: grabbing;
+      button {
+        border-color: $accent-light;
       }
-      &.inactive {
-        pointer-events: none;
+      div.edge {
+        border-color: $accent-light;
+      }
+      div.input-arrow {
+        border-left: 5px solid $accent-light;
       }
     }
-
-    &.outgoing {
-      width: $outgoing-edge-length;
-      &.visible {
-        border-top: $edge-styles;
-        // Extend edge down to the sibling below this one
-        height: calc(100% + #{$space-between-rows});
-        border-right: $edge-styles;
-        &.highlighted {
-          border-top-color: $accent-light;
-        }
-        &.highlighted-y {
-          border-right-color: $accent-light;
-        }
-        &.selected-edge {
-          border-top-color: $edge-selected;
-        }
-        &.selected-y {
-          border-right-color: $edge-selected;
-        }
+    &.connecting {
+      cursor: grabbing;
+      button {
+        border-color: $accent-light;
       }
-      &.inactive {
-        pointer-events: none;
+      div.edge {
+        border-color: $accent-light;
       }
-      &.dashed {
-        border-top-style: dashed;
-        &.highlighted {
-          border-top-color: $accent-light;
-        }
-        &.highlighted-y {
-          border-right-color: $accent-light;
-        }
-        &.selected-edge {
-          border-top-color: $edge-selected;
-        }
-        &.selected-y {
-          border-right-color: $edge-selected;
-        }
-      }
-      &.last-child {
-        border-right: none;
+      div.input-arrow {
+        border-left: 5px solid $accent-light;
       }
     }
+  }
+
+  .input-arrow {
+    // position: absolute;
+    margin-top: 9px;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 5px solid #b3b4b5;
   }
 }
 </style>

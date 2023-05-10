@@ -80,6 +80,15 @@ export const getRawOutputData = async (param: {
   return data;
 };
 
+/**
+ * WARNING: Raw data is the unprocessed data coming directly from DOJO, and it is often very large.
+ * RAW DATA IS UNRELIABLE because we save a copy of the raw data only if the total # of dataset
+ * rows is less than 10000.
+ * https://gitlab.uncharted.software/WM/slow-tortoise/-/blob/master/flows/data_pipeline.py#L1292
+ * https://gitlab.uncharted.software/WM/slow-tortoise/-/blob/master/flows/common.py#L313
+ * (May 2023)
+ * Use getTimeseries() below wherever possible to avoid 404 errors when trying to fetch raw data.
+ */
 export const getRawTimeseriesData = async (param: {
   dataId: string;
   runId: string;
@@ -175,10 +184,24 @@ export const getTimeseries = async (spec: OutputSpecWithRegionId): Promise<any> 
         region_id: spec.regionId,
       },
     });
+    // FIXME: return result.data instead of result
     return result;
   } catch (e) {
     return [];
   }
+};
+
+// TODO: once we integrate with jataware's normalized data path, replace this function to fetch normalized data from backend
+export const getTimeseriesNormalized = async (
+  spec: OutputSpecWithRegionId
+): Promise<TimeseriesPoint[]> => {
+  const result = ((await getTimeseries(spec)).data || []) as TimeseriesPoint[];
+  const values = result.map((d) => d.value);
+  const min = _.min(values) ?? 0;
+  const max = _.max(values) ?? 0;
+  return result.map((d) => {
+    return { ...d, value: normalize(d.value, min, max) };
+  });
 };
 
 export const getBulkTimeseries = async (spec: OutputSpec, regionIds: string[]): Promise<any> => {
@@ -803,6 +826,7 @@ export const getAggregateTimeseries = async (
 
 export default {
   getTimeseries,
+  getTimeseriesNormalized,
   getBulkTimeseries,
   getRawOutputData,
   getRawTimeseriesData,

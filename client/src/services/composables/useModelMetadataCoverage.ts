@@ -7,17 +7,28 @@ import { computed, Ref, ref, watch } from 'vue';
 import { getSparkline } from '../outputdata-service';
 import { getOutput } from '@/utils/datacube-util';
 
-export default function useModelMetadataCoverage(metadata: Ref<Model | Indicator | null>) {
+/**
+ * @param metadata As returned by useModelMetadataSimple()
+ * @param outputVariable The name of the dataset feature to get the sparkline for.
+ * @returns The temporal coverage of the dataset, and the value range and sparkline of the output variable, if provided. Otherwise it will use the default feature of the dataset.
+ */
+export default function useModelMetadataCoverage(
+  metadata: Ref<Model | Indicator | null>,
+  outputVariable: Ref<string | null>
+) {
   const sparkline = ref<number[]>([]);
 
-  watch([metadata], async () => {
+  watch([metadata, outputVariable], async () => {
     if (!metadata?.value) return;
-    const defaultOutput = getOutput(metadata.value, metadata.value.default_feature);
+    const output = getOutput(
+      metadata.value,
+      outputVariable.value ?? metadata.value.default_feature
+    );
     sparkline.value = await getSparkline(
       {
         modelId: metadata.value.data_id,
         runId: 'indicator',
-        outputVariable: metadata.value.default_feature,
+        outputVariable: outputVariable.value ?? metadata.value.default_feature,
         spatialAggregation:
           metadata.value.default_view?.spatialAggregation || AggregationOption.Mean,
         temporalAggregation:
@@ -25,7 +36,7 @@ export default function useModelMetadataCoverage(metadata: Ref<Model | Indicator
         temporalResolution:
           metadata.value.default_view?.temporalResolution || TemporalResolutionOption.Month,
       },
-      defaultOutput?.data_resolution?.temporal_resolution,
+      output?.data_resolution?.temporal_resolution,
       metadata.value?.period?.lte ?? 0
     );
   });
@@ -54,10 +65,15 @@ export default function useModelMetadataCoverage(metadata: Ref<Model | Indicator
     minimum: _.min(sparkline.value),
     maximum: _.max(sparkline.value),
   }));
+  const temporalCoverageTimestamps = computed(() => ({
+    from: metadata.value?.period?.gte ?? null,
+    to: metadata.value?.period?.lte ?? null,
+  }));
 
   return {
     sparklineData,
     temporalCoverage,
+    temporalCoverageTimestamps,
     range,
   };
 }

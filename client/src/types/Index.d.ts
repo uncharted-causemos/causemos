@@ -1,25 +1,7 @@
 import { COLOR } from '@/utils/colors-util';
-import { DataConfig } from './Datacube';
-import { DiscreteOuputScale, IndexNodeType } from './Enums';
-
-export interface BaseNode {
-  id: string;
-  name: string;
-}
-export interface WeightedNode {
-  weight: number;
-  isWeightUserSpecified: boolean;
-}
-export interface Placeholder extends BaseNode {
-  type: IndexNodeType.Placeholder;
-}
-
-export interface Dataset extends BaseNode, WeightedNode, DataConfig {
-  type: IndexNodeType.Dataset;
-  datasetName: string;
-  isInverted: boolean;
-  source: string;
-}
+import { DataConfig } from '@/types/Datacube';
+import { DiscreteOuputScale } from '@/types/Enums';
+import type { WeightedComponent } from '@/types/WeightedComponent';
 
 export interface DatasetSearchResult {
   displayName: string;
@@ -29,19 +11,29 @@ export interface DatasetSearchResult {
   familyName: string;
 }
 
-export interface Index extends BaseNode, WeightedNode {
-  type: IndexNodeType.Index;
-  inputs: (Dataset | Index | Placeholder)[];
+interface AttachedDataset {
+  datasetName: string;
+  isInverted: boolean;
+  source: string;
+  config: DataConfig;
+  projectionAlgorithm: ProjectionAlgorithm;
 }
 
-export interface OutputIndex extends BaseNode {
-  type: IndexNodeType.OutputIndex;
-  inputs: (Dataset | Index | Placeholder)[];
+interface BaseConceptNode {
+  id: string;
+  name: string;
+  isOutputNode: boolean;
 }
 
-export type IndexNode = OutputIndex | Index | Dataset | Placeholder;
-export type IndexWorkBenchItem = Index | Dataset | Placeholder;
-export type ParentNode = OutputIndex | Index;
+interface ConceptNodeWithoutDataset extends BaseConceptNode {
+  components: WeightedComponent[];
+}
+
+interface ConceptNodeWithDatasetAttached extends BaseConceptNode {
+  dataset: AttachedDataset;
+}
+
+type ConceptNode = ConceptNodeWithDatasetAttached | ConceptNodeWithoutDataset;
 
 export type IndexEdgeId = { sourceId: string; targetId: string };
 // If a node is selected, this is the node's ID
@@ -58,7 +50,7 @@ export interface IndexResultsContributingDataset {
    */
   overallWeight: number;
   /** The dataset node in question. */
-  dataset: Dataset;
+  dataset: ConceptNodeWithDatasetAttached;
   /**
    * The normalized value of the country within the dataset.
    *  A value of null means the country was not found in the dataset.
@@ -91,7 +83,7 @@ export interface IndexResultsSettings {
  * Contains enough information to render index nodes in a CSS grid
  */
 export interface GridCell {
-  node: IndexNode;
+  node: ConceptNode;
   /** 1-indexed integer, since the first row of CSS-grid can be accessed with `grid-row-start: 1` */
   startRow: number;
   /** An integer, greater than 0, that indicates how many rows this cell spans vertically. */
@@ -103,4 +95,5 @@ export interface GridCell {
   startColumn: number;
   hasOutputLine: boolean;
   isLastChild: boolean;
+  isOppositePolarity: boolean;
 }

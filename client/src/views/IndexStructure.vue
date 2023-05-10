@@ -4,7 +4,7 @@
     <analysis-options-button v-if="analysisName" :analysis-id="analysisId" />
   </teleport>
   <div class="index-structure-view-container content-full flex-col">
-    <IndexActionBar @addDropdownChange="handleAddDropdownChange" />
+    <IndexActionBar @add-concept="addConcept" />
     <div class="flex flex-grow h-0">
       <IndexTreePane
         v-if="isStateLoaded"
@@ -31,12 +31,11 @@ import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import IndexActionBar from '@/components/index-structure/index-action-bar.vue';
-import { DropdownOptions } from '@/utils/index-common-util';
 import IndexDrilldownPanel from '@/components/index-structure/index-drilldown-panel.vue';
 import IndexTreePane from '@/components/index-structure/index-tree-pane.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import { createNewIndex, createNewPlaceholderDataset, isEdge } from '@/utils/index-tree-util';
+import { createNewConceptNode, isEdge } from '@/utils/index-tree-util';
 import { SelectableIndexElementId } from '@/types/Index';
 import useIndexTree from '@/services/composables/useIndexTree';
 
@@ -84,9 +83,9 @@ onBeforeMount(() => {
 });
 // Set analysis name on the navbar
 onMounted(async () => {
-  store.dispatch('app/setAnalysisName', '');
+  await store.dispatch('app/setAnalysisName', '');
   await refresh();
-  store.dispatch('app/setAnalysisName', analysisName.value);
+  await store.dispatch('app/setAnalysisName', analysisName.value);
   isStateLoaded.value = true;
 });
 
@@ -94,17 +93,8 @@ onBeforeUnmount(() => {
   window.removeEventListener('keyup', handleKey);
 });
 
-const handleAddDropdownChange = (option: DropdownOptions) => {
-  switch (option) {
-    case DropdownOptions.Dataset:
-      indexWorkBench.addItem(createNewPlaceholderDataset());
-      break;
-    case DropdownOptions.Index:
-      indexWorkBench.addItem(createNewIndex());
-      break;
-    default:
-      break;
-  }
+const addConcept = () => {
+  indexWorkBench.addItem(createNewConceptNode());
 };
 
 const deleteEdge = (selectedElementIdToDelete: SelectableIndexElementId) => {

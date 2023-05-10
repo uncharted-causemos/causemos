@@ -10,18 +10,19 @@
       class="grid-cell"
     >
       <div class="edge incoming" :class="{ visible: hasChildren(cell.node) }" />
-      <div
-        class="node"
-        :class="{ selected: cell.node.type === IndexNodeType.OutputIndex }"
-        :style="{ color: getIndexNodeTypeColor(cell.node.type) }"
-      >
-        <i class="fa fa-fw" :class="[getIndexNodeTypeIcon(cell.node.type)]" />
+      <div class="node" :class="{ selected: cell.node.id === props.selectedNodeId }">
+        <i
+          v-if="isConceptNodeWithDatasetAttached(cell.node)"
+          class="fa fa-fw"
+          :class="DATASET_ICON"
+          :style="{ color: DATASET_COLOR }"
+        />
+        <div v-else class="without-dataset" />
       </div>
       <div
         v-if="cell.hasOutputLine"
         class="edge outgoing"
         :class="{
-          dashed: cell.node.type === IndexNodeType.Placeholder,
           'last-child': cell.isLastChild,
         }"
       ></div>
@@ -32,12 +33,17 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { hasChildren, getIndexNodeTypeColor, getIndexNodeTypeIcon } from '@/utils/index-tree-util';
+import {
+  DATASET_COLOR,
+  DATASET_ICON,
+  hasChildren,
+  isConceptNodeWithDatasetAttached,
+} from '@/utils/index-tree-util';
 import { computed } from 'vue';
-import { IndexNodeType } from '@/types/Enums';
 import { convertTreeToGridCells } from '@/utils/grid-cell-util';
 
 const { tree } = useIndexTree();
+const props = defineProps<{ selectedNodeId: string | null }>();
 
 const gridCells = computed(() => convertTreeToGridCells(tree.value));
 </script>
@@ -80,6 +86,18 @@ $edge-styles: 2px solid $un-color-black-20;
   &.selected {
     background: white;
     border: 1px solid $accent-main;
+
+    .without-dataset {
+      background: $accent-main;
+      border: 1px solid $accent-main;
+    }
+  }
+  .without-dataset {
+    width: 5px;
+    height: 5px;
+    border-radius: 5px;
+    border: 1px solid $un-color-black-30;
+    background: white;
   }
 }
 
@@ -109,9 +127,6 @@ $edge-styles: 2px solid $un-color-black-20;
     height: calc(100% + #{$space-between-rows});
     border-right: $edge-styles;
 
-    &.dashed {
-      border-top-style: dashed;
-    }
     &.last-child {
       border-right: none;
       // No need to extend below this cell since we're not drawing a right border.

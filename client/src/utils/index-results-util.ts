@@ -1,10 +1,10 @@
 import * as d3 from 'd3';
 import { DiscreteOuputScale } from '@/types/Enums';
 import {
-  Dataset,
   IndexResultsData,
   IndexResultsContributingDataset,
   IndexResultsSettings,
+  ConceptNodeWithDatasetAttached,
 } from '@/types/Index';
 import _ from 'lodash';
 import { RegionalAggregation } from '@/types/Outputdata';
@@ -65,7 +65,7 @@ export const calculateCoverage = (
  */
 export const calculateContributingDatasets = (
   country: string,
-  datasets: Dataset[],
+  datasets: ConceptNodeWithDatasetAttached[],
   overallWeightForEachDataset: number[],
   regionDataForEachDataset: RegionalAggregation[]
 ): IndexResultsContributingDataset[] => {
@@ -98,7 +98,7 @@ export const calculateContributingDatasets = (
  * @param regionDataForEachDataset The regional data for each node.
  */
 export const calculateIndexResults = (
-  datasets: Dataset[],
+  datasets: ConceptNodeWithDatasetAttached[],
   overallWeightForEachDataset: number[],
   regionDataForEachDataset: RegionalAggregation[]
 ): IndexResultsData[] => {

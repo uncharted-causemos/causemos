@@ -11,9 +11,9 @@
       <section>
         <header class="flex index-structure-header">
           <h4>Index structure</h4>
-          <button class="btn btn-sm" @click="modifyStructure">Modify</button>
+          <button class="btn btn-sm" @click="modifyStructure">Edit</button>
         </header>
-        <IndexResultsStructurePreview class="index-structure-preview" />
+        <IndexResultsStructurePreview class="index-structure-preview" :selected-node-id="tree.id" />
         <IndexResultsComponentList />
       </section>
       <section>
@@ -47,7 +47,7 @@ import useIndexTree from '@/services/composables/useIndexTree';
 import {
   calculateOverallWeight,
   findAllDatasets,
-  convertDatasetToOutputSpec,
+  convertDataConfigToOutputSpec,
 } from '@/utils/index-tree-util';
 import { calculateIndexResults } from '@/utils/index-results-util';
 import { IndexResultsData } from '@/types/Index';
@@ -145,7 +145,10 @@ watch([tree], async () => {
   const datasets = findAllDatasets(tree.value);
   // Prepare an "output spec" for each dataset to fetch its regional data
   const promises = datasets.map((dataset) =>
-    getRegionAggregationNormalized(convertDatasetToOutputSpec(dataset), dataset.isInverted)
+    getRegionAggregationNormalized(
+      convertDataConfigToOutputSpec(dataset.dataset.config),
+      dataset.dataset.isInverted
+    )
   );
   // Wait for all fetches to complete.
   const regionDataForEachDataset = await Promise.all(promises);

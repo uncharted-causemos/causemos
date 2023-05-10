@@ -1,6 +1,18 @@
 import { DatacubeType } from '@/types/Enums';
 import { DatacubeMaintainer } from './Datacube';
 
+// Similar to Partial but works with nested object
+// Copied from https://grrr.tech/posts/2021/typescript-partial/
+export type Subset<K> = {
+  [attr in keyof K]?: K[attr] extends object
+    ? Subset<K[attr]>
+    : K[attr] extends object | null
+    ? Subset<K[attr]> | null
+    : K[attr] extends object | null | undefined
+    ? Subset<K[attr]> | null | undefined
+    : K[attr];
+};
+
 // Facet
 export interface FacetBucket {
   key: string;

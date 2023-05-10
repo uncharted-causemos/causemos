@@ -1,35 +1,12 @@
 <template>
   <div class="index-tree-node-container" :class="classObject" @click="selectNode">
     <div class="disable-overlay" />
-    <div v-if="isParentNode(props.nodeData)" class="input-arrow" />
-    <div class="header content" :style="{ color: getIndexNodeTypeColor(props.nodeData.type) }">
-      <i class="fa fa-fw un-font-small" :class="[getIndexNodeTypeIcon(props.nodeData.type)]" />
-      <span class="un-font-small">
-        {{ headerText }}
-        <InvertedDatasetLabel
-          v-if="isDatasetNode(props.nodeData) && props.nodeData.isInverted"
-          class="inverted-label"
-        />
-      </span>
-      <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
-        <template #content>
-          <div
-            v-for="item in optionsButtonMenu"
-            class="dropdown-option"
-            :key="item.type"
-            @click="handleOptionsButtonClick(item.type)"
-          >
-            <i class="fa fa-fw" :class="item.icon" />
-            {{ item.text }}
-          </div>
-        </template>
-      </OptionsButton>
-    </div>
+    <div v-if="isConceptNodeWithoutDataset(props.nodeData)" class="input-arrow" />
     <template v-if="showDatasetSearch">
       <IndexTreeNodeSearchBar
         :initial-search-text="props.nodeData.name"
         @select-dataset="attachDataset"
-        @keep-as-placeholder="keepAsPlaceholder"
+        @set-node-name="setNodeName"
         @cancel="cancelDatasetSearch"
       />
       <IndexTreeNodeAdvancedSearchButton
@@ -55,88 +32,122 @@
         Done
       </button>
     </div>
-    <div v-else class="name content">
-      {{ props.nodeData.name }}
+    <div v-else class="header content">
+      <div class="name">
+        {{ props.nodeData.name }}
+      </div>
+      <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
+        <template #content>
+          <div
+            v-for="item in optionsButtonMenu"
+            class="dropdown-option"
+            :key="item.type"
+            @click="handleOptionsButtonClick(item.type)"
+          >
+            <i class="fa fa-fw" :class="item.icon" />
+            {{ item.text }}
+          </div>
+        </template>
+      </OptionsButton>
     </div>
-    <div v-if="footerText" class="footer content un-font-small">
-      {{ footerText }}
+    <div v-if="isConceptNodeWithoutDataset(props.nodeData) && !showDatasetSearch" class="content">
+      <p
+        v-if="dataSourceText.length > 0"
+        class="un-font-small data-source-text subdued"
+        :class="{ warning: isEmptyNode(props.nodeData) }"
+      >
+        {{ dataSourceText }}
+      </p>
+      <button
+        v-if="!showEditName"
+        class="btn btn-default full-width-button"
+        @click="emit('create-child', props.nodeData.id)"
+      >
+        Add input concept
+      </button>
+      <button
+        v-if="showAttachDatasetButton"
+        class="btn btn-default full-width-button attach-dataset-button"
+        @click="isSearchingForDataset = true"
+      >
+        <i class="fa fa-fw" :class="DATASET_ICON" />
+        Attach dataset
+      </button>
     </div>
-    <!-- footer buttons -->
-    <button
-      v-if="classObject.placeholder && !showDatasetSearch && !showEditName"
-      class="btn btn-default content replace-dataset-button"
-      @click="isSearchingForDataset = true"
-    >
-      Replace with dataset
-    </button>
-    <div
-      v-if="isParentNode(props.nodeData) && !showEditName"
-      class="add-component-btn-container footer content"
-    >
-      <DropdownButton
-        :is-dropdown-left-aligned="true"
-        :items="addInputDropdownOptions"
-        :selected-item="'Add component'"
-        @item-selected="(option) => emit('create-child', props.nodeData.id, option)"
-      />
+    <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)" class="content">
+      <div class="flex dataset-label" :style="{ color: DATASET_COLOR }">
+        <i class="fa fa-fw" :class="DATASET_ICON" />
+        <span class="un-font-small expand">Dataset</span>
+        <InvertedDatasetLabel v-if="props.nodeData.dataset.isInverted" />
+      </div>
+      <p class="un-font-small subdued">
+        {{ dataSourceText }}
+      </p>
     </div>
   </div>
 </template>
-<script lang="ts">
-import { computed, ref } from 'vue';
-import { Dataset, DatasetSearchResult, IndexNode } from '@/types/Index';
-import { IndexNodeType } from '@/types/Enums';
-import { OptionButtonMenu } from '@/utils/index-common-util';
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue';
+import { ConceptNode, DatasetSearchResult } from '@/types/Index';
 import {
   duplicateNode,
-  getIndexNodeTypeColor,
-  getIndexNodeTypeIcon,
-  isDatasetNode,
-  isParentNode,
-  isPlaceholderNode,
+  isEmptyNode,
+  isConceptNodeWithoutDataset,
+  isConceptNodeWithDatasetAttached,
+  DATASET_ICON,
+  isOutputIndexNode,
+  getNodeDataSourceText,
+  DATASET_COLOR,
 } from '@/utils/index-tree-util';
-
-import DropdownButton from '@/components/dropdown-button.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
-import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
 import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
+import { OptionButtonMenu } from '@/utils/index-common-util';
+import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
 
-const addInputDropdownOptions = [IndexNodeType.Index, IndexNodeType.Dataset];
-</script>
-<script setup lang="ts">
 interface Props {
-  nodeData: IndexNode;
+  nodeData: ConceptNode;
   isSelected: boolean;
+  isConnecting: boolean;
+  isDescendentOfConnectingNode: boolean;
 }
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'rename', nodeId: string, newName: string): void;
-  (e: 'delete', deleted: IndexNode): void;
-  (e: 'duplicate', duplicated: IndexNode): void;
+  (e: 'delete', deleted: ConceptNode): void;
+  (e: 'duplicate', duplicated: ConceptNode): void;
   (e: 'select', nodeId: string): void;
+  (e: 'create-child', parentNodeId: string): void;
   (
-    e: 'create-child',
-    parentNodeId: string,
-    childType: IndexNodeType.Index | IndexNodeType.Dataset
+    e: 'attach-dataset',
+    nodeId: string,
+    dataset: DatasetSearchResult,
+    nodeNameAfterAttachingDataset: string
   ): void;
-  (e: 'attach-dataset', nodeId: string, dataset: DatasetSearchResult): void;
+  (e: 'create-edge', nodeId: string): void;
 }>();
 
 const classObject = computed(() => {
   return {
-    placeholder: props.nodeData.type === IndexNodeType.Placeholder,
     selected: props.isSelected,
     'flexible-width': showDatasetSearch.value,
     disabled: disableInteraction.value,
+    'no-highlight':
+      props.isConnecting &&
+      (!isConceptNodeWithoutDataset(props.nodeData) || props.isDescendentOfConnectingNode),
   };
 });
 
 const selectNode = () => {
-  // Can't select Placeholder nodes
-  if (props.nodeData.type !== IndexNodeType.Placeholder) {
+  if (!props.isConnecting) {
     emit('select', props.nodeData.id);
+  } else if (
+    props.isConnecting &&
+    !props.isDescendentOfConnectingNode &&
+    isConceptNodeWithoutDataset(props.nodeData)
+  ) {
+    emit('create-edge', props.nodeData.id);
   }
 };
 
@@ -150,7 +161,7 @@ const showEditName = computed(() => {
   return props.nodeData.name === '' || isRenaming.value;
 });
 const renameInputTextPlaceholder = computed(() => {
-  return isDatasetNode(props.nodeData) ? props.nodeData.datasetName : '';
+  return isConceptNodeWithDatasetAttached(props.nodeData) ? props.nodeData.dataset.datasetName : '';
 });
 
 const cancelRename = () => {
@@ -165,35 +176,19 @@ const handleRenameDone = () => {
   if (
     // Can't exit the flow with an empty rename bar unless this is a dataset node
     renameInputText.value === '' &&
-    !isDatasetNode(props.nodeData)
+    !isConceptNodeWithDatasetAttached(props.nodeData)
   ) {
     return;
   }
-  const shouldRevertToDatasetName = renameInputText.value === '' && isDatasetNode(props.nodeData);
+  const shouldRevertToDatasetName =
+    renameInputText.value === '' && isConceptNodeWithDatasetAttached(props.nodeData);
   const newNodeName = shouldRevertToDatasetName
-    ? props.nodeData.datasetName
+    ? props.nodeData.dataset.datasetName
     : renameInputText.value;
   emit('rename', props.nodeData.id, newNodeName);
   isRenaming.value = false;
   renameInputText.value = '';
 };
-
-// Header
-
-const headerText = computed(() => {
-  switch (props.nodeData.type) {
-    case IndexNodeType.OutputIndex:
-      return 'Output Index';
-    case IndexNodeType.Index:
-      return 'Index';
-    case IndexNodeType.Dataset:
-      return 'Dataset';
-    case IndexNodeType.Placeholder:
-      return 'Placeholder Dataset';
-    default:
-      return '';
-  }
-});
 
 // Options button
 
@@ -216,7 +211,7 @@ const MENU_OPTION_DELETE = {
 };
 
 const optionsButtonMenu = computed(() => {
-  if (props.nodeData.type === IndexNodeType.OutputIndex) {
+  if (props.nodeData.isOutputNode) {
     return [MENU_OPTION_RENAME];
   }
   if (showEditName.value) {
@@ -242,14 +237,24 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
   }
 };
 
+const showAttachDatasetButton = computed(
+  () =>
+    isEmptyNode(props.nodeData) &&
+    !isOutputIndexNode(props.nodeData) &&
+    !showDatasetSearch.value &&
+    !showEditName.value
+);
+
 // Dataset search
 
 const disableInteraction = ref(false);
+// Whenever the data for this node changes (e.g. when attaching a dataset), re-enable interactions.
+watch([props.nodeData], () => (disableInteraction.value = false));
 const isSearchingForDataset = ref(false);
 
 const showDatasetSearch = computed(
   () =>
-    isPlaceholderNode(props.nodeData) &&
+    isEmptyNode(props.nodeData) &&
     // props.nodeData.name === '' means that the "create dataset node" flow has never been completed.
     (isSearchingForDataset.value === true || props.nodeData.name === '')
 );
@@ -262,70 +267,43 @@ const cancelDatasetSearch = () => {
     isSearchingForDataset.value = false;
   }
 };
-const keepAsPlaceholder = (value: string) => {
+const setNodeName = (value: string) => {
   emit('rename', props.nodeData.id, value);
   isSearchingForDataset.value = false;
 };
-const attachDataset = (dataset: DatasetSearchResult) => {
-  emit('attach-dataset', props.nodeData.id, dataset);
+const attachDataset = (dataset: DatasetSearchResult, nodeNameAfterAttachingDataset: string) => {
+  emit('attach-dataset', props.nodeData.id, dataset, nodeNameAfterAttachingDataset);
   isSearchingForDataset.value = false;
-  // Once attach-dataset event is fired, we are finished with interacting with the placeholder node and expecting the node to be converted to a dataset node.
-  // Further interaction with data search or selection should not be done until the node is changed and re-rendered as a dataset node.
+  // Once attach-dataset event is fired, further interaction with data search or selection should
+  //  not be done until the node data is changed and the watcher above has fired to re-enable
+  //  interactions.
   disableInteraction.value = true;
 };
 
-// Footer
-
-const childNodes = computed(() => (isParentNode(props.nodeData) ? props.nodeData.inputs : []));
-const footerText = computed(() => {
-  const dataNodes = childNodes.value.filter((node) => node.type !== IndexNodeType.Placeholder);
-  const numInputs = dataNodes.length;
-  switch (numInputs) {
-    case 0:
-      if (isDatasetNode(props.nodeData)) return getDatasetFooterText(props.nodeData);
-      return isParentNode(props.nodeData) && props.nodeData.name ? 'No inputs.' : '';
-    case 1:
-      return '1 input.';
-    default:
-      return `Combination of ${numInputs} inputs.`;
-  }
-});
-
-const getDatasetFooterText = (data: Dataset) => {
-  return data.name === data.datasetName ? '' : data.datasetName;
-};
+const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 </script>
 
 <style scoped lang="scss">
 @import '@/styles/variables';
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/common';
-
-// The space between the edges of the node and the content within it.
-//  This would be applied to .index-tree-node-container directly, but some elements (namely the
-//  search results) need to expand to take the full width of the node.
-$horizontal-padding: 10px;
-// Standard padding that's applied to each element within the node by default
-$vertical-padding: 5px;
+@import '@/styles/index-graph';
 
 $option-button-width: 16px;
 
 .index-tree-node-container {
-  display: flex;
-  flex-direction: column;
-  position: relative;
+  @include index-tree-node;
 
-  background: white;
-  width: 240px;
   &.flexible-width {
     width: auto;
   }
-  height: fit-content;
-  border: 1px solid $un-color-black-30;
-  border-radius: 3px;
 
-  &:not(.placeholder):hover {
-    border-color: $accent-main;
+  &.no-highlight:hover {
+    cursor: not-allowed;
+  }
+
+  &:not(.no-highlight):hover {
+    @include index-tree-node-hover;
   }
 
   // When node is selected, we want to show a 2px accent color border outside.
@@ -372,10 +350,6 @@ $option-button-width: 16px;
     border-left: 5px solid #b3b4b5;
   }
 
-  .inverted-label {
-    margin-left: 5px;
-  }
-
   .options-button-container {
     width: $option-button-width;
     height: $option-button-width;
@@ -389,34 +363,26 @@ $option-button-width: 16px;
     }
   }
 
-  .add-component-btn-container :deep(button) {
-    @extend .btn-default;
-    strong {
-      padding-right: 5px;
-      font-weight: 600;
-      font-size: $font-size-small;
-    }
-  }
-
   &:hover .options-button-container,
   .options-button-container.active {
     display: block;
   }
 
   .content {
-    padding: $vertical-padding $horizontal-padding;
+    @include index-tree-node-content;
   }
-  .replace-dataset-button {
-    margin: $vertical-padding $horizontal-padding;
+  .full-width-button {
+    width: 100%;
   }
 
   .header {
     display: flex;
+    align-items: center;
 
     > i {
       display: grid;
       align-items: center;
-      margin-right: $horizontal-padding;
+      margin-right: $node-content-horizontal-padding;
     }
 
     > span {
@@ -440,18 +406,34 @@ $option-button-width: 16px;
   }
 
   .name {
-    padding-top: 0px;
+    flex: 1;
   }
 
-  .footer {
-    color: $un-color-black-40;
-    padding-top: 0px;
-  }
-  &.placeholder {
-    border-style: dashed;
-  }
   .advanced-search-button {
     margin: 5px 0 10px 10px;
   }
+}
+
+.dataset-label {
+  gap: 2px;
+  align-items: center;
+  margin-bottom: 2px;
+
+  .expand {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.data-source-text {
+  margin-bottom: 2px;
+}
+
+.attach-dataset-button {
+  margin-top: 10px;
+}
+
+.warning {
+  color: $un-color-feedback-warning;
 }
 </style>

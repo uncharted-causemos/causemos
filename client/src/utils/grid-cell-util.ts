@@ -1,6 +1,6 @@
-import { GridCell, IndexNode } from '@/types/Index';
+import { ConceptNode, GridCell } from '@/types/Index';
 import _ from 'lodash';
-import { isParentNode } from './index-tree-util';
+import { isConceptNodeWithoutDataset, isEmptyNode } from './index-tree-util';
 
 /**
  * This file contains helper functions to support the GridCell data structure, which is used when
@@ -13,14 +13,15 @@ import { isParentNode } from './index-tree-util';
  * @param tree The root node of the tree.
  * @returns A list of cells with enough information to render directly with CSS-grid.
  */
-export const convertTreeToGridCells = (tree: IndexNode): GridCell[] => {
+export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
   // The first row of a CSS grid can be accessed with `grid-row-start: 1`
   let currentRow = 1;
   const _convertTreeToGridCells = (
-    currentNode: IndexNode,
+    currentNode: ConceptNode,
     depth: number,
     isRootNode: boolean,
-    isLastChild: boolean
+    isLastChild: boolean,
+    isOppositePolarity: boolean
   ) => {
     const currentCell: GridCell = {
       node: currentNode,
@@ -32,9 +33,10 @@ export const convertTreeToGridCells = (tree: IndexNode): GridCell[] => {
       rowCount: 1,
       hasOutputLine: !isRootNode,
       isLastChild,
+      isOppositePolarity,
     };
     // If this is a leaf node:
-    if (!isParentNode(currentNode) || currentNode.inputs.length === 0) {
+    if (!isConceptNodeWithoutDataset(currentNode) || isEmptyNode(currentNode)) {
       // The only time we start a new row is when we reach a leaf node.
       currentRow++;
       // There are no children to traverse, so we return.
@@ -45,11 +47,17 @@ export const convertTreeToGridCells = (tree: IndexNode): GridCell[] => {
     const descendentCells: GridCell[] = [];
     const directChildCells: GridCell[] = [];
     // We need to label the last child for when we render the edges between nodes.
-    const lastChildArrayPosition = currentNode.inputs.length - 1;
-    currentNode.inputs.forEach((input, i) => {
+    const lastChildArrayPosition = currentNode.components.length - 1;
+    currentNode.components.forEach((input, i) => {
       const isLastChild = i === lastChildArrayPosition;
       // Call the helper function with the same depth for each child, one greater than the parent.
-      const cells = _convertTreeToGridCells(input, depth + 1, false, isLastChild);
+      const cells = _convertTreeToGridCells(
+        input.componentNode,
+        depth + 1,
+        false,
+        isLastChild,
+        input.isOppositePolarity
+      );
       directChildCells.push(cells[0]);
       cells.forEach((cell) => {
         descendentCells.push(cell);
@@ -59,7 +67,7 @@ export const convertTreeToGridCells = (tree: IndexNode): GridCell[] => {
     currentCell.rowCount = _.sumBy(directChildCells, (child) => child.rowCount);
     return [currentCell, ...descendentCells];
   };
-  return _convertTreeToGridCells(tree, 0, true, false);
+  return _convertTreeToGridCells(tree, 0, true, false, false);
 };
 
 /**
@@ -102,4 +110,36 @@ export const offsetGridCells = (
     startRow: cell.startRow + verticalOffset,
     startColumn: cell.startColumn + horizontalOffset,
   }));
+};
+
+// Calculate a list of grid cells with enough information to render with CSS-grid.
+//  Represents a combination of all workbench trees and the main index tree.
+export const getGridCellsFromIndexTreeAndWorkbench = (
+  indexTree: ConceptNode,
+  workbenchItems: ConceptNode[]
+) => {
+  // Convert each workbench tree to grid cells.
+  const overlappingWorkbenchTreeCellLists = workbenchItems.map(convertTreeToGridCells);
+  // Move each grid down so that they're not overlapping
+  let currentRow = 0;
+  const workbenchTreeCellLists: GridCell[][] = [];
+  overlappingWorkbenchTreeCellLists.forEach((cellList) => {
+    // Translate down by "currentRow"
+    const translatedList = offsetGridCells(cellList, currentRow, 0);
+    // Append to workbenchTreeCellLists
+    workbenchTreeCellLists.push(translatedList);
+    // Increase currentRow by the current tree's rowCount
+    currentRow += getGridRowCount(translatedList);
+  });
+  // Convert main tree to grid cells.
+  const overlappingMainTreeCellList = convertTreeToGridCells(indexTree);
+  // Move main tree grid below the workbench tree grids.
+  const mainTreeCellList = offsetGridCells(overlappingMainTreeCellList, currentRow, 0);
+  // Extra requirement: Shift all workbench trees to the left of the main tree.
+  const mainTreeColumnCount = getGridColumnCount(mainTreeCellList);
+  const shiftedWorkbenchTreeCellLists = workbenchTreeCellLists.map((cellList) =>
+    offsetGridCells(cellList, 0, -mainTreeColumnCount)
+  );
+  // Flatten list of grids into one list of grid cells.
+  return _.flatten([...shiftedWorkbenchTreeCellLists, mainTreeCellList]);
 };
