@@ -35,7 +35,6 @@
           :selected-item="selectedCountry"
           :is-warning-state-active="selectedCountry === NO_COUNTRY_SELECTED.value"
           @item-selected="setSelectedCountry"
-          class="dropdown-button"
         />
       </section>
       <footer>
