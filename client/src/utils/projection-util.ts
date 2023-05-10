@@ -371,3 +371,42 @@ export const createProjectionRunner = (
   };
   return runner;
 };
+
+/**
+ * Splits a timeseries into segments where each segment can be rendered with the same encoding.
+ * @param timeseries a mix of projected, interpolated, and historical points.
+ * @returns An array of line segments, and whether each is projected or not.
+ */
+export const splitProjectionsIntoLineSegments = (timeseries: TimeseriesPointProjected[]) => {
+  const indexOfFirstHistoricalPoint = timeseries.findIndex(
+    (point) => point.projectionType === ProjectionPointType.Historical
+  );
+  let indexOfLastHistoricalPoint = 0;
+  timeseries.forEach((point, i) => {
+    if (point.projectionType === ProjectionPointType.Historical) {
+      indexOfLastHistoricalPoint = i;
+    }
+  });
+  // If no historical point is found, return one projected segment that includes the whole
+  //  timeseries.
+  if (indexOfFirstHistoricalPoint === -1) {
+    return [{ isProjectedData: false, segment: timeseries }];
+  }
+  // Add one so that the backcast line is drawn right up to and including the first historical
+  //  data point.
+  const backcastSegment = {
+    isProjectedData: true,
+    segment: timeseries.slice(0, indexOfFirstHistoricalPoint + 1),
+  };
+  const historicalSegment = {
+    isProjectedData: false,
+    segment: timeseries.slice(indexOfFirstHistoricalPoint, indexOfLastHistoricalPoint + 1),
+  };
+  const forecastSegment = {
+    isProjectedData: true,
+    segment: timeseries.slice(indexOfLastHistoricalPoint),
+  };
+  return [backcastSegment, historicalSegment, forecastSegment].filter(
+    ({ segment }) => segment.length !== 0
+  );
+};

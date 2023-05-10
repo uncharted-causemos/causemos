@@ -46,12 +46,12 @@ import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { getGridCellsFromIndexTreeAndWorkbench } from '@/utils/grid-cell-util';
 import IndexProjectionsNode from './index-projections-node.vue';
-import { TimeseriesPoint } from '@/types/Timeseries';
+import { TimeseriesPointProjected } from '@/types/Timeseries';
 
 const props = defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
-  projections: Map<string, TimeseriesPoint[]>;
+  projections: Map<string, TimeseriesPointProjected[]>;
 }>();
 
 const emit = defineEmits<{
