@@ -1,6 +1,13 @@
 <template>
   <div class="dropdown-button-container" ref="containerElement">
-    <button type="button" class="btn dropdown-btn" @click="isDropdownOpen = !isDropdownOpen">
+    <button
+      type="button"
+      class="btn dropdown-btn"
+      :class="{
+        warning: isWarningStateActive,
+      }"
+      @click="isDropdownOpen = !isDropdownOpen"
+    >
       <span>
         {{ innerButtonLabel ? `${innerButtonLabel}: ` : '' }}
         <strong :style="hasColorOverride ? { color: getColorOverride(selectedItem) } : {}">{{
@@ -21,7 +28,7 @@
         <div
           v-for="item in dropdownItems"
           :style="hasColorOverride ? { color: getColorOverride(item.value) } : {}"
-          :key="item"
+          :key="item.value"
           class="dropdown-option"
           :class="{
             'dropdown-option-selected': isSelectedItem(item.value),
@@ -83,6 +90,10 @@ export default defineComponent({
     selectedItems: {
       type: Array as PropType<string[]>,
       default: [],
+    },
+    isWarningStateActive: {
+      type: Boolean,
+      default: false,
     },
   },
   emits: ['item-selected', 'items-selected'],
@@ -187,6 +198,7 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
 
 .dropdown-button-container {
   position: relative;
@@ -218,5 +230,10 @@ export default defineComponent({
   align-items: center;
   font-weight: normal;
   padding: 5px;
+
+  &.warning {
+    color: $un-color-feedback-warning;
+    border-color: $un-color-feedback-warning;
+  }
 }
 </style>
