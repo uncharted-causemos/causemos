@@ -381,9 +381,12 @@ export const splitProjectionsIntoLineSegments = (timeseries: TimeseriesPointProj
   const indexOfFirstHistoricalPoint = timeseries.findIndex(
     (point) => point.projectionType === ProjectionPointType.Historical
   );
-  const indexOfLastHistoricalPoint = timeseries.findLastIndex(
-    (point) => point.projectionType === ProjectionPointType.Historical
-  );
+  let indexOfLastHistoricalPoint = 0;
+  timeseries.forEach((point, i) => {
+    if (point.projectionType === ProjectionPointType.Historical) {
+      indexOfLastHistoricalPoint = i;
+    }
+  });
   // If no historical point is found, return one projected segment that includes the whole
   //  timeseries.
   if (indexOfFirstHistoricalPoint === -1) {
