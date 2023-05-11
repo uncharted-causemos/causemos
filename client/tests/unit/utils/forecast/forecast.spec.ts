@@ -133,6 +133,45 @@ describe('forecast', () => {
         'Not enough data to estimate forecasts - need at least 7 data points ( > 2*MIN_PERIOD)'
       );
     });
+    it('should handle data with zero values gracefully', () => {
+      const data: [number, number][] = [
+        [10, 1],
+        [11, 0.4],
+        [12, 0.2],
+        [13, 0],
+        [14, 0],
+        [15, 0.1],
+        [16, 0.4],
+        [17, 0.2],
+        [18, 0.3],
+        [19, 0],
+        [20, 0],
+        [21, 0],
+        [22, 0],
+        [23, 0],
+        [24, 0],
+      ];
+      const f = forecast.initialize(data, {
+        backcastSteps: 3,
+        forecastSteps: 3,
+        holtWinters: { iterations: 3 },
+      });
+      const result = f.runHoltWinters();
+      expect(result.forecast).to.deep.include({
+        data: [
+          [25, -0.012654860859217448],
+          [26, -0.039001249195756184],
+          [27, -0.02919953617106895],
+        ],
+      });
+      expect(result.backcast).to.deep.include({
+        data: [
+          [7, 0.45500007812475607],
+          [8, 0.3999999333339793],
+          [9, 0.1466671916642761],
+        ],
+      });
+    });
   });
   describe('.runAuto', () => {
     it('should pick and run Holt', () => {
