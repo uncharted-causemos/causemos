@@ -317,7 +317,7 @@ export function renderXaxis(
     .tickFormat(customTimestampFormatter)
     .tickValues(xTickValues);
 
-  selection
+  return selection
     .append('g')
     .classed('xAxis', true)
     .style('pointer-events', 'none')
@@ -344,7 +344,7 @@ export function renderYaxis(
     .tickFormat(valueFormatter)
     .tickValues(yTickValues);
 
-  selection
+  return selection
     .append('g')
     .classed('yAxis', true)
     .style('pointer-events', 'none')
