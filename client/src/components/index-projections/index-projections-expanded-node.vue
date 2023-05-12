@@ -129,7 +129,7 @@ const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVar
 @import '@/styles/common';
 
 $expanded-node-width: $index-tree-node-width * 2 + $space-between-columns;
-$horizontal-margin: 20px;
+$horizontal-margin: 30px;
 
 .index-projections-expanded-node-container {
   @include index-tree-node;
@@ -155,10 +155,15 @@ $horizontal-margin: 20px;
 }
 
 .timeseries {
-  $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin;
+  // $chartPadding should be kept in sync with the `projections-renderer.vue/PADDING_LEFT` constant.
+  // It is used to make sure the start of the chart lines up with the other `.add-horizontal-margin`
+  //  elements in this component, even though the left axis and svg have to extend past the margin.
+  $chartPadding: 20px;
+  $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
   width: $timeseriesWidth;
   height: 1 / 4 * $timeseriesWidth + 40px;
   margin-top: 5px;
+  margin-left: $horizontal-margin - $chartPadding;
 
   &.warning {
     border-color: $un-color-feedback-warning;
