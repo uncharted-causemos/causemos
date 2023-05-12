@@ -44,9 +44,46 @@
         <section>
           <header class="flex">
             <p>Time range</p>
-            <button class="btn btn-sm disabled" @click="() => {}">Edit</button>
+            <button
+              class="btn btn-sm"
+              :class="{ 'btn-call-to-action': isEditingTimeRange }"
+              @click="isEditingTimeRange = !isEditingTimeRange"
+            >
+              {{ isEditingTimeRange ? 'Done' : 'Edit' }}
+            </button>
           </header>
-          <p class="un-font-small subtitle">
+          <div v-if="isEditingTimeRange">
+            <DropdownButton
+              :items="MONTHS"
+              :selected-item="projectionStartMonth"
+              :is-dropdown-above="true"
+              :is-dropdown-left-aligned="true"
+              @item-selected="(month) => (projectionStartMonth = month)"
+            />
+            <DropdownButton
+              :items="selectableYears"
+              :selected-item="projectionStartYear"
+              :is-dropdown-above="true"
+              :is-dropdown-left-aligned="true"
+              @item-selected="(year) => (projectionStartYear = year)"
+            />
+            <DropdownButton
+              :items="MONTHS"
+              :selected-item="projectionEndMonth"
+              :is-dropdown-above="true"
+              :is-dropdown-left-aligned="true"
+              @item-selected="(month) => (projectionEndMonth = month)"
+            />
+
+            <DropdownButton
+              :items="selectableYears"
+              :selected-item="projectionEndYear"
+              :is-dropdown-above="true"
+              :is-dropdown-left-aligned="true"
+              @item-selected="(year) => (projectionEndYear = year)"
+            />
+          </div>
+          <p v-else class="un-font-small subtitle">
             {{ timestampFormatter(projectionStartTimestamp, null, null) }} -
             {{ timestampFormatter(projectionEndTimestamp, null, null) }}
           </p>
@@ -102,7 +139,7 @@ import IndexProjectionsNodeView from '@/components/index-projections/index-proje
 import { SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
-import { getTimestampMillis } from '@/utils/date-util';
+import { getTimestampMillis, getYearFromTimestamp } from '@/utils/date-util';
 import timestampFormatter from '@/formatters/timestamp-formatter';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
 import useIndexTree from '@/services/composables/useIndexTree';
@@ -162,6 +199,53 @@ const COUNTRY_MODES: DropdownItem[] = [
 ];
 const isSingleCountryModeActive = ref(true);
 
+const isEditingTimeRange = ref(false);
+const MONTHS: DropdownItem[] = [
+  { value: 0, displayName: 'January' },
+  { value: 1, displayName: 'February' },
+  { value: 2, displayName: 'March' },
+  { value: 3, displayName: 'April' },
+  { value: 4, displayName: 'May' },
+  { value: 5, displayName: 'June' },
+  { value: 6, displayName: 'July' },
+  { value: 7, displayName: 'August' },
+  { value: 8, displayName: 'September' },
+  { value: 9, displayName: 'October' },
+  { value: 10, displayName: 'November' },
+  { value: 11, displayName: 'December' },
+];
+const DEFAULT_EARLIEST_YEAR = 1990;
+const earliestSelectableYear = computed(() => {
+  const earliestTimestamps = Array.from(historicalData.value.values())
+    .map((timeseries) => timeseries[0]?.timestamp ?? null)
+    .filter((timestamp) => timestamp !== null);
+  if (earliestTimestamps.length === 0) return DEFAULT_EARLIEST_YEAR;
+  const earliestTimestamp = Math.min(...earliestTimestamps);
+  const earliestYear = getYearFromTimestamp(earliestTimestamp);
+  return Math.min(earliestYear - 10, DEFAULT_EARLIEST_YEAR);
+});
+const DEFAULT_LAST_YEAR = 2025;
+const lastSelectableYear = computed(() => {
+  const lastTimestamps = Array.from(historicalData.value.values())
+    .map((timeseries) => timeseries[timeseries.length - 1]?.timestamp ?? null)
+    .filter((timestamp) => timestamp !== null);
+  if (lastTimestamps.length === 0) return DEFAULT_LAST_YEAR;
+  const lastTimestamp = Math.max(...lastTimestamps);
+  const lastYear = getYearFromTimestamp(lastTimestamp);
+  return Math.max(lastYear + 10, DEFAULT_LAST_YEAR);
+});
+const selectableYears = computed(() => {
+  const result: DropdownItem[] = [];
+  console.log(earliestSelectableYear.value, lastSelectableYear.value);
+  for (let year = earliestSelectableYear.value; year <= lastSelectableYear.value; year++) {
+    result.push({ displayName: year.toString(), value: year });
+  }
+  return result;
+});
+const projectionStartMonth = ref(0);
+const projectionStartYear = ref(DEFAULT_EARLIEST_YEAR);
+const projectionEndMonth = ref(0);
+const projectionEndYear = ref(DEFAULT_LAST_YEAR);
 const projectionStartTimestamp = ref(getTimestampMillis(1990, 0));
 const projectionEndTimestamp = ref(getTimestampMillis(2025, 0));
 
