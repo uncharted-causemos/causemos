@@ -157,20 +157,16 @@ describe('forecast', () => {
         holtWinters: { iterations: 3 },
       });
       const result = f.runHoltWinters();
-      expect(result.forecast).to.deep.include({
-        data: [
-          [25, -0.012654860859217448],
-          [26, -0.039001249195756184],
-          [27, -0.02919953617106895],
-        ],
-      });
-      expect(result.backcast).to.deep.include({
-        data: [
-          [7, 0.45500007812475607],
-          [8, 0.3999999333339793],
-          [9, 0.1466671916642761],
-        ],
-      });
+      expect(result.forecast.data).to.deep.equal([
+        [25, -0.012654860859217448],
+        [26, -0.039001249195756184],
+        [27, -0.02919953617106895],
+      ]);
+      expect(result.backcast.data).to.deep.equal([
+        [7, 0.45500007812475607],
+        [8, 0.3999999333339793],
+        [9, 0.1466671916642761],
+      ]);
     });
   });
   describe('.runAuto', () => {

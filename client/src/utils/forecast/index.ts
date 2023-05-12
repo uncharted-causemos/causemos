@@ -243,6 +243,10 @@ export const initialize = (data: [number, number][], options: Subset<ForecastOpt
           'Not enough data to estimate forecasts - need at least 7 data points ( > 2*MIN_PERIOD)'
         );
       }
+      // Note: Holt Winters algorithm doesn't work well when there are zero values in the input data
+      // and often produces prediction result with NaN. We can work around this issue by shifting the data
+      // by adding a small number to all values to make data to not include any zero value before running
+      // the prediction if there are zero values in the data.
       const hasZero = observedData.find((v) => v[1] === 0) !== undefined;
       const forecast = holtWinters().period(MIN_PERIOD).data(shift(observedData, hasZero));
       const backcast = holtWinters().period(MIN_PERIOD).data(shift(dataReversed, hasZero));
