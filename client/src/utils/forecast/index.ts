@@ -58,6 +58,16 @@ export interface ForecastResult<Method> {
  */
 const MIN_PERIOD = 3;
 
+const SHIFT_VAL = 1e-6;
+
+const shift = (data: [number, number][], needShift = true): [number, number][] => {
+  return needShift ? data.map(([x, y]) => [x, y + SHIFT_VAL]) : data;
+};
+
+const unShift = (data: [number, number][], isDataShifted = true): [number, number][] => {
+  return isDataShifted ? data.map(([x, y]) => [x, y - SHIFT_VAL]) : data;
+};
+
 const runHoltWithOptimizedParams = (holt: HoltFunctionObject, iterations: number) => {
   const increment = 1 / iterations;
 
@@ -233,8 +243,13 @@ export const initialize = (data: [number, number][], options: Subset<ForecastOpt
           'Not enough data to estimate forecasts - need at least 7 data points ( > 2*MIN_PERIOD)'
         );
       }
-      const forecast = holtWinters().period(MIN_PERIOD).data(observedData);
-      const backcast = holtWinters().period(MIN_PERIOD).data(dataReversed);
+      // Note: Holt Winters algorithm doesn't work well when there are zero values in the input data
+      // and often produces prediction result with NaN. We can work around this issue by shifting the data
+      // by adding a small number to all values to make data to not include any zero value before running
+      // the prediction if there are zero values in the data.
+      const hasZero = observedData.find((v) => v[1] === 0) !== undefined;
+      const forecast = holtWinters().period(MIN_PERIOD).data(shift(observedData, hasZero));
+      const backcast = holtWinters().period(MIN_PERIOD).data(shift(dataReversed, hasZero));
       const maxPeriod = Math.floor(observedData.length / 2);
       const forecastParams = runHWWithOptimizedParams(
         forecast,
@@ -246,8 +261,8 @@ export const initialize = (data: [number, number][], options: Subset<ForecastOpt
         opt.holtWinters.iterations,
         maxPeriod
       );
-      const forecastData = forecast.forecast(opt.forecastSteps);
-      const backcastData = backcast.forecast(opt.backcastSteps).reverse();
+      const forecastData = unShift(forecast.forecast(opt.forecastSteps), hasZero);
+      const backcastData = unShift(backcast.forecast(opt.backcastSteps).reverse(), hasZero);
       return {
         method: ForecastMethod.HoltWinters,
         forecast: {
