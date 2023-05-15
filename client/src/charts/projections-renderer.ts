@@ -2,34 +2,97 @@ import _ from 'lodash';
 import * as d3 from 'd3';
 import dateFormatter from '@/formatters/date-formatter';
 import { D3GElementSelection, D3Selection } from '@/types/D3';
-import { TimeseriesPoint } from '@/types/Timeseries';
-import { calculateYearlyTicks, renderLine, renderXaxis } from '@/utils/timeseries-util';
+import { TimeseriesPointProjected } from '@/types/Timeseries';
+import {
+  calculateYearlyTicks,
+  renderDashedLine,
+  renderLine,
+  renderPoint,
+  renderXaxis,
+  renderYaxis,
+} from '@/utils/timeseries-util';
 import { translate } from '@/utils/svg-util';
+import { ProjectionPointType } from '@/types/Enums';
+import { splitProjectionsIntoLineSegments } from '@/utils/projection-util';
 
-const HISTORICAL_DATA_COLOR = '#888';
+const FOCUS_BORDER_COLOR = '#888';
+const FOCUS_BORDER_STROKE_WIDTH = 1;
 const HISTORICAL_RANGE_OPACITY = 0.05;
 const SCROLL_BAR_HEIGHT = 20;
 const SCROLL_BAR_RANGE_FILL = '#ccc';
 const SCROLL_BAR_RANGE_STROKE = 'none';
 const SCROLL_BAR_RANGE_OPACITY = 0.8;
-const SCROLL_BAR_BACKGROUND_COLOR = HISTORICAL_DATA_COLOR;
+const SCROLL_BAR_BACKGROUND_COLOR = '#888';
 const SCROLL_BAR_BACKGROUND_OPACITY = HISTORICAL_RANGE_OPACITY;
 const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
+const SCROLL_BAR_HANDLE_WIDTH = 9;
+const SCROLL_BAR_LABEL_WIDTH = 40;
 
+const PADDING_TOP = 5;
+// PADDING_LEFT should be kept in sync with `index-projections-expanded-node.vue/$chartPadding`.
+//  See comment in that component for more details.
+const PADDING_LEFT = 20;
+const PADDING_RIGHT = 0;
 const X_AXIS_HEIGHT = 20;
-const PADDING_TOP = 10;
-const PADDING_LEFT = 10;
-const PADDING_RIGHT = 10;
+const Y_AXIS_WIDTH = PADDING_LEFT;
+const AXIS_TICK_LENGTH = 2;
+const SCROLL_BAR_TOP_MARGIN = 5;
+
+const DASHED_LINE = {
+  length: 4,
+  gap: 4,
+  width: 1,
+};
+const SOLID_LINE_WIDTH = 1;
+const WEIGHTED_SUM_LINE_OPACITY = 0.25;
+const POINT_RADIUS = 3;
 
 const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
 
 const renderTimeseries = (
-  timeseries: TimeseriesPoint[],
+  timeseries: TimeseriesPointProjected[],
   parentGroupElement: D3GElementSelection,
   xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>
+  yScale: d3.ScaleLinear<number, number>,
+  isWeightedSum: boolean,
+  color = 'black'
 ) => {
-  renderLine(parentGroupElement, timeseries, xScale, yScale, HISTORICAL_DATA_COLOR);
+  // Render a circle at any point where all inputs have historical data
+  const fullDataPoints = timeseries.filter(
+    (point) => point.projectionType === ProjectionPointType.Historical
+  );
+  renderPoint(parentGroupElement, fullDataPoints, xScale, yScale, color, POINT_RADIUS);
+  if (isWeightedSum) {
+    // Render a lighter line across the whole series
+    const lineSelection = renderLine(
+      parentGroupElement,
+      timeseries,
+      xScale,
+      yScale,
+      color,
+      SOLID_LINE_WIDTH
+    );
+    lineSelection.attr('opacity', WEIGHTED_SUM_LINE_OPACITY);
+    return;
+  }
+  // This node has a dataset attached, so split the timeseries into solid and dashed segments
+  const segments = splitProjectionsIntoLineSegments(timeseries);
+  segments.forEach(({ isProjectedData, segment }) => {
+    if (isProjectedData) {
+      renderDashedLine(
+        parentGroupElement,
+        segment,
+        xScale,
+        yScale,
+        DASHED_LINE.length,
+        DASHED_LINE.gap,
+        color,
+        DASHED_LINE.width
+      );
+    } else {
+      renderLine(parentGroupElement, segment, xScale, yScale, color, SOLID_LINE_WIDTH);
+    }
+  });
 };
 
 const renderBrushHandles = (g: D3GElementSelection, handlePositions: [number, number]) => {
@@ -38,8 +101,6 @@ const renderBrushHandles = (g: D3GElementSelection, handlePositions: [number, nu
     .join((enter) => {
       const handleWidth = 9;
       const handleWidthGap = -2;
-      const handleHGap = 0;
-      const handleH = SCROLL_BAR_HEIGHT - 2 * handleHGap;
       const container = enter
         .append('g')
         .attr('class', 'custom-handle')
@@ -49,12 +110,12 @@ const renderBrushHandles = (g: D3GElementSelection, handlePositions: [number, nu
         .append('rect')
         .attr('fill', '#f8f8f8')
         .attr('stroke', '#888888')
-        .attr('y', handleHGap)
+        .attr('y', 0)
         .attr('x', (d, i) => (i === 0 ? -(handleWidth + handleWidthGap) : handleWidthGap))
         .attr('rx', 4)
         .attr('ry', 4)
         .attr('width', handleWidth)
-        .attr('height', handleH);
+        .attr('height', SCROLL_BAR_HEIGHT);
       // Vertical dots
       [0.3, 0.5, 0.7].forEach((value) => {
         container
@@ -62,7 +123,7 @@ const renderBrushHandles = (g: D3GElementSelection, handlePositions: [number, nu
           .attr('cx', (d, i) =>
             i === 0 ? -(0.5 * handleWidth + handleWidthGap) : 0.5 * handleWidth + handleWidthGap
           )
-          .attr('cy', handleHGap + handleH * value)
+          .attr('cy', SCROLL_BAR_HEIGHT * value)
           .attr('r', 1.25)
           .attr('fill', '#888888');
       });
@@ -77,14 +138,13 @@ const renderScrollBarLabels = (
   projectionStartTimestamp: number,
   projectionEndTimestamp: number
 ) => {
-  const scrollbarLabelYOffset = 10;
-  const scrollbarLabelXOffset = 5;
+  const scrollbarLabelYOffset = 14;
   scrollBarGroupElement.select('.scrollbar-range-start').remove();
   scrollBarGroupElement.select('.scrollbar-range-end').remove();
   scrollBarGroupElement
     .append('text')
     .classed('scrollbar-range-start', true)
-    .attr('x', PADDING_LEFT + scrollbarLabelXOffset)
+    .attr('x', PADDING_LEFT)
     .attr('y', scrollbarLabelYOffset)
     .style('text-anchor', 'start')
     .style('font-size', 'x-small')
@@ -94,7 +154,7 @@ const renderScrollBarLabels = (
   scrollBarGroupElement
     .append('text')
     .classed('scrollbar-range-end', true)
-    .attr('x', scrollBarWidth)
+    .attr('x', scrollBarWidth - PADDING_RIGHT)
     .attr('y', scrollbarLabelYOffset)
     .style('text-anchor', 'end')
     .style('font-size', 'x-small')
@@ -102,16 +162,18 @@ const renderScrollBarLabels = (
     .style('pointer-events', 'none')
     .text(DATE_FORMATTER(projectionEndTimestamp));
   // Don't let user accidentally click/select text in the scrollbar
-  scrollBarGroupElement.selectAll('text').style('pointer-events', 'none');
+  scrollBarGroupElement.selectAll('text').style('user-select', 'none');
 };
 
 export default function render(
   selection: D3Selection,
-  timeseries: TimeseriesPoint[],
+  timeseries: TimeseriesPointProjected[],
   totalWidth: number,
   totalHeight: number,
   projectionStartTimestamp: number,
-  projectionEndTimestamp: number
+  projectionEndTimestamp: number,
+  isWeightedSum: boolean,
+  color = 'black'
 ) {
   // Clear any existing elements
   selection.selectAll('*').remove();
@@ -123,7 +185,7 @@ export default function render(
   const scrollBarBackground = scrollBarGroupElement
     .append('rect')
     .attr('y', 0)
-    .attr('x', PADDING_LEFT)
+    .attr('x', PADDING_LEFT + SCROLL_BAR_LABEL_WIDTH + SCROLL_BAR_HANDLE_WIDTH)
     .attr('height', SCROLL_BAR_HEIGHT)
     .attr('stroke', 'none')
     .attr('fill', SCROLL_BAR_BACKGROUND_COLOR)
@@ -146,33 +208,63 @@ export default function render(
     focusedTimeRange = [focusRangeStartBeforeFocusEnd, focusEndBeforeProjectionEnd];
   };
 
-  // Determine data value ranges
-  const dataValueRange = d3.extent(timeseries.map((point) => point.value));
   // Calculate scales to map the date and value ranges to pixels for the main "focus" area
-  const focusHeight = totalHeight - PADDING_TOP - X_AXIS_HEIGHT - SCROLL_BAR_HEIGHT;
+  const focusHeight = totalHeight - PADDING_TOP - SCROLL_BAR_HEIGHT - SCROLL_BAR_TOP_MARGIN;
   const chartWidth = totalWidth - PADDING_LEFT - PADDING_RIGHT;
+  const focusChartHeight = focusHeight - X_AXIS_HEIGHT;
 
   const renderFocusChart = () => {
     focusGroupElement.selectAll('*').remove();
 
+    // Render border
+    focusGroupElement
+      .append('rect')
+      .attr('height', focusChartHeight)
+      .attr('width', chartWidth)
+      .attr('x', PADDING_LEFT)
+      .attr('y', PADDING_TOP)
+      .attr('fill', 'transparent')
+      .attr('stroke', FOCUS_BORDER_COLOR)
+      .attr('stroke-width', FOCUS_BORDER_STROKE_WIDTH);
+
     // Render focus chart X axis
-    const xScaleFocus = d3.scaleLinear().domain(focusedTimeRange).range([PADDING_LEFT, chartWidth]);
+    const xScaleFocus = d3
+      .scaleLinear()
+      .domain(focusedTimeRange)
+      .range([PADDING_LEFT, PADDING_LEFT + chartWidth]);
     const xAxisTicks = calculateYearlyTicks(
       xScaleFocus.domain()[0],
       xScaleFocus.domain()[1],
       totalWidth
     );
-    const yOffset = focusHeight - X_AXIS_HEIGHT;
-    renderXaxis(focusGroupElement, xScaleFocus, xAxisTicks, yOffset, DATE_FORMATTER);
+    const xAxisElement = renderXaxis(
+      focusGroupElement,
+      xScaleFocus,
+      xAxisTicks,
+      PADDING_TOP + focusChartHeight,
+      DATE_FORMATTER,
+      AXIS_TICK_LENGTH
+    );
+    xAxisElement.select('.domain').remove();
+    xAxisElement.selectAll('.tick > line').attr('stroke', FOCUS_BORDER_COLOR);
+
+    const yScaleFocus = d3
+      .scaleLinear()
+      .domain([0, 1])
+      .range([PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]);
+    const yAxisElement = renderYaxis(
+      focusGroupElement,
+      yScaleFocus,
+      [0, 1],
+      (number) => number,
+      Y_AXIS_WIDTH,
+      Y_AXIS_WIDTH - AXIS_TICK_LENGTH
+    );
+    yAxisElement.select('.domain').remove();
+    yAxisElement.selectAll('.tick > line').attr('stroke', FOCUS_BORDER_COLOR);
 
     // Render timeseries itself
-    if (dataValueRange[0] !== undefined) {
-      const yScaleFocus = d3
-        .scaleLinear()
-        .domain(dataValueRange)
-        .range([focusHeight - X_AXIS_HEIGHT, PADDING_TOP]);
-      renderTimeseries(timeseries, focusGroupElement, xScaleFocus, yScaleFocus);
-    }
+    renderTimeseries(timeseries, focusGroupElement, xScaleFocus, yScaleFocus, isWeightedSum, color);
 
     // Don't render anything outside the main graph area (except the axes)
     focusGroupElement
@@ -184,20 +276,33 @@ export default function render(
   const xScaleScrollbar = d3
     .scaleLinear()
     .domain([projectionStartTimestamp, projectionEndTimestamp])
-    .range([PADDING_LEFT, chartWidth]);
+    .range([
+      PADDING_LEFT + SCROLL_BAR_LABEL_WIDTH + SCROLL_BAR_HANDLE_WIDTH,
+      totalWidth - PADDING_RIGHT - SCROLL_BAR_LABEL_WIDTH - SCROLL_BAR_HANDLE_WIDTH,
+    ]);
   // Move scrollBarGroupElement below the focus group element and resize it horizontally.
-  scrollBarGroupElement.attr('transform', translate(0, focusHeight));
-  scrollBarBackground.attr('width', chartWidth);
+  scrollBarGroupElement.attr('transform', translate(0, focusHeight + SCROLL_BAR_TOP_MARGIN));
+  scrollBarBackground.attr(
+    'width',
+    chartWidth - 2 * (SCROLL_BAR_LABEL_WIDTH + SCROLL_BAR_HANDLE_WIDTH)
+  );
   // Render timeseries to scrollbar and fade it out.
-  if (dataValueRange[0] !== undefined) {
-    const yScaleScrollbar = d3.scaleLinear().domain(dataValueRange).range([SCROLL_BAR_HEIGHT, 0]);
-    renderTimeseries(timeseries, focusGroupElement, xScaleScrollbar, yScaleScrollbar);
-    scrollBarGroupElement.selectAll('.segment-line').attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
-  }
+  const yScaleScrollbar = d3.scaleLinear().domain([0, 1]).range([SCROLL_BAR_HEIGHT, 0]);
+  renderTimeseries(
+    timeseries,
+    scrollBarGroupElement,
+    xScaleScrollbar,
+    yScaleScrollbar,
+    isWeightedSum,
+    color
+  );
+  scrollBarGroupElement
+    .selectAll('.segment-line, .circle')
+    .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
   // Render time range labels
   renderScrollBarLabels(
     scrollBarGroupElement,
-    chartWidth,
+    totalWidth,
     projectionStartTimestamp,
     projectionEndTimestamp
   );
@@ -244,6 +349,6 @@ export default function render(
     .attr('id', 'clipping-mask')
     .append('rect')
     .attr('width', chartWidth)
-    .attr('height', focusHeight)
-    .attr('transform', translate(PADDING_RIGHT, PADDING_TOP));
+    .attr('height', focusChartHeight)
+    .attr('transform', translate(PADDING_LEFT, PADDING_TOP));
 }
