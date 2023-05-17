@@ -108,10 +108,12 @@ const setPositionInReview = (position: { sectionId: string; insightId: string })
   store.dispatch('insightPanel/setPositionInReview', position);
 };
 const openInsightsExplorer = () => {
+  emit('close');
   showInsightPanel();
   setCurrentPane('list-insights');
 };
 const saveInsight = () => {
+  emit('close');
   // Snapshot URL is only used in datacube-card.vue/takeSnapshot.
   setSnapshotUrl(undefined);
   // Open the fullscreen modal used for reviewing new insights.
