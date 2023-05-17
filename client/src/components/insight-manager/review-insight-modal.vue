@@ -191,7 +191,7 @@ import { computed, defineComponent, nextTick, ref, watch } from 'vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
-import InsightUtil from '@/utils/insight-util';
+import InsightUtil, { INSIGHT_CAPTURE_CLASS } from '@/utils/insight-util';
 import {
   Insight,
   InsightMetadata,
@@ -680,7 +680,7 @@ export default defineComponent({
         }
         // otherwise, capture snapshot the usual way
       }
-      const el = document.getElementsByClassName('insight-capture')[0] as HTMLElement;
+      const el = document.getElementsByClassName(INSIGHT_CAPTURE_CLASS)[0] as HTMLElement;
       const image = _.isNil(el) ? null : (await html2canvas(el, { scale: 1 })).toDataURL();
       return image;
     },

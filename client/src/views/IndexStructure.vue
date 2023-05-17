@@ -1,14 +1,13 @@
 <template>
-  <!-- Note with teleport, Vite's HMR doesn't work. As a work around, try commenting out the teleport usage temporally-->
   <teleport to="#navbar-trailing-teleport-destination">
     <analysis-options-button v-if="analysisName" :analysis-id="analysisId" />
   </teleport>
   <div class="index-structure-view-container content-full flex-col">
     <IndexActionBar @add-concept="addConcept" />
-    <div class="flex flex-grow h-0">
+    <div class="flex flex-grow h-0" :class="[INSIGHT_CAPTURE_CLASS]">
       <IndexTreePane
         v-if="isStateLoaded"
-        class="flex-grow w-0"
+        class="flex-grow w-0 index-tree-pane"
         @deselect-all="deselectAllElements"
         @select-element="selectElement"
         @highlight-edge="highlightEdge"
@@ -26,9 +25,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeMount, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import IndexActionBar from '@/components/index-structure/index-action-bar.vue';
 import IndexDrilldownPanel from '@/components/index-structure/index-drilldown-panel.vue';
@@ -38,9 +37,13 @@ import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { createNewConceptNode, isEdge } from '@/utils/index-tree-util';
 import { SelectableIndexElementId } from '@/types/Index';
 import useIndexTree from '@/services/composables/useIndexTree';
+import { INSIGHT_CAPTURE_CLASS, isIndexStructureDataState } from '@/utils/insight-util';
+import { IndexStructureDataState, Insight } from '@/types/Insight';
+import { getInsightById } from '@/services/insight-service';
 
 const store = useStore();
 const route = useRoute();
+const router = useRouter();
 
 const analysisId = computed(() => route.params.analysisId as string);
 const { analysisName, refresh } = useIndexAnalysis(analysisId);
@@ -104,6 +107,55 @@ const deleteEdge = (selectedElementIdToDelete: SelectableIndexElementId) => {
     deselectAllElements();
   }
 };
+
+const setContextId = (contextId: string) => {
+  store.dispatch('insightPanel/setContextId', [contextId]);
+};
+onMounted(() => {
+  setContextId(analysisId.value);
+});
+
+// Whenever state changes, sync it to insight panel store so that the latest state is captured when
+//  taking an insight.
+watch([selectedElementId], () => {
+  const newDataState: IndexStructureDataState = {
+    selectedElementId: selectedElementId.value,
+  };
+  store.dispatch('insightPanel/setDataState', newDataState);
+  // No view state for this page. Set it to an empty object so that any view state from previous
+  //  pages is cleared and not associated with insights taken from this page.
+  store.dispatch('insightPanel/setViewState', {});
+});
+
+const updateStateFromInsight = async (insightId: string) => {
+  const loadedInsight: Insight = await getInsightById(insightId);
+  if (!loadedInsight) {
+    return;
+  }
+  const dataState = loadedInsight.data_state;
+  if (dataState && isIndexStructureDataState(dataState)) {
+    selectedElementId.value = dataState.selectedElementId;
+  }
+};
+
+watch(
+  [route],
+  () => {
+    const insight_id = route.query.insight_id as any;
+    if (insight_id !== undefined) {
+      updateStateFromInsight(insight_id);
+      // Remove the insight_id from the url so that
+      //  (1) future insight capture is valid
+      //  (2) we can re-apply the same insight if necessary
+      router
+        .push({
+          query: { insight_id: undefined },
+        })
+        .catch(() => {});
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style lang="scss" scoped>
@@ -113,5 +165,10 @@ const deleteEdge = (selectedElementIdToDelete: SelectableIndexElementId) => {
   .index-drilldown-panel {
     width: 400px;
   }
+}
+
+.index-tree-pane {
+  // Duplicate background colour here so that insights include the background colour.
+  background: $background-light-2;
 }
 </style>
