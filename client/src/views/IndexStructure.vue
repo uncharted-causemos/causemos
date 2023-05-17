@@ -40,6 +40,8 @@ import useIndexTree from '@/services/composables/useIndexTree';
 import { INSIGHT_CAPTURE_CLASS, isIndexStructureDataState } from '@/utils/insight-util';
 import { IndexStructureDataState, Insight } from '@/types/Insight';
 import { getInsightById } from '@/services/insight-service';
+import useToaster from '@/services/composables/useToaster';
+import { TYPE } from 'vue-toastification';
 
 const store = useStore();
 const route = useRoute();
@@ -127,15 +129,33 @@ watch([selectedElementId], () => {
   store.dispatch('insightPanel/setViewState', {});
 });
 
+const doesSelectedElementExist = (id: SelectableIndexElementId) =>
+  indexTree.containsElement(id) || indexWorkBench.containsElement(id);
+
+const toaster = useToaster();
 const updateStateFromInsight = async (insightId: string) => {
   const loadedInsight: Insight = await getInsightById(insightId);
   if (!loadedInsight) {
+    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
     return;
   }
   const dataState = loadedInsight.data_state;
-  if (dataState && isIndexStructureDataState(dataState)) {
-    selectedElementId.value = dataState.selectedElementId;
+  if (!dataState || !isIndexStructureDataState(dataState)) {
+    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
+    return;
   }
+  if (
+    dataState.selectedElementId !== null &&
+    !doesSelectedElementExist(dataState.selectedElementId)
+  ) {
+    toaster(
+      'The element that is selected in this insight no longer exists in the analysis.',
+      TYPE.ERROR,
+      true
+    );
+    return;
+  }
+  selectedElementId.value = dataState.selectedElementId;
 };
 
 watch(
