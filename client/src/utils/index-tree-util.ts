@@ -416,12 +416,22 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     onSuccess();
   };
 
+  const containsElement = (id: SelectableIndexElementId) => {
+    if (isEdge(id)) {
+      const source = findNode(id.sourceId);
+      const target = findNode(id.targetId);
+      return source !== undefined && target !== undefined && source.parent?.id === id.targetId;
+    }
+    return findNode(id) !== undefined;
+  };
+
   return {
     findAndRenameNode,
     findAndAddNewChild,
     findAndAddChild,
     attachDatasetToNode,
     setDatasetIsInverted,
+    containsElement,
   };
 }
 

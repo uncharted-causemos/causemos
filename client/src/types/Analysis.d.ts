@@ -1,6 +1,6 @@
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import { BinningOptions, RegionRankingCompositionType } from './Enums';
-import { ConceptNode } from './Index';
+import { ConceptNode, IndexResultsSettings } from './Index';
 
 export interface CachedDatacubeMetadata {
   featureName: string;
