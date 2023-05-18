@@ -722,6 +722,7 @@ export default defineComponent({
         // Either way, exit the review modal.
         this.setUpdatedInsight(null);
         this.showMetadataPanel = false;
+        this.closeInsightReview();
       }
     },
     goToPreviousSlide() {
