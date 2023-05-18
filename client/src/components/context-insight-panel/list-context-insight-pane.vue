@@ -91,7 +91,7 @@ import InsightUtil from '@/utils/insight-util';
 
 import router from '@/router';
 import useInsightsData from '@/services/composables/useInsightsData';
-import { countPublicInsights, fetchFullInsights } from '@/services/insight-service';
+import { countPublicInsights, fetchFullInsights, removeInsight } from '@/services/insight-service';
 import { ProjectType } from '@/types/Enums';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
@@ -269,7 +269,7 @@ export default {
       }
 
       const id = insight.id;
-      await InsightUtil.removeInsight(id);
+      await removeInsight(id);
       // refresh the latest list from the server
       this.reFetchInsights();
     },
