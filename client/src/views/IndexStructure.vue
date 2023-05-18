@@ -118,15 +118,19 @@ onMounted(() => {
 
 // Whenever state changes, sync it to insight panel store so that the latest state is captured when
 //  taking an insight.
-watch([selectedElementId], () => {
-  const newDataState: IndexStructureDataState = {
-    selectedElementId: selectedElementId.value,
-  };
-  setDataState(newDataState);
-  // No view state for this page. Set it to an empty object so that any view state from previous
-  //  pages is cleared and not associated with insights taken from this page.
-  setViewState({});
-});
+watch(
+  [selectedElementId],
+  () => {
+    const newDataState: IndexStructureDataState = {
+      selectedElementId: selectedElementId.value,
+    };
+    setDataState(newDataState);
+    // No view state for this page. Set it to an empty object so that any view state from previous
+    //  pages is cleared and not associated with insights taken from this page.
+    setViewState({});
+  },
+  { immediate: true }
+);
 
 const doesSelectedElementExist = (id: SelectableIndexElementId) =>
   indexTree.containsElement(id) || indexWorkBench.containsElement(id);
