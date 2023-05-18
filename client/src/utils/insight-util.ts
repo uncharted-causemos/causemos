@@ -11,6 +11,7 @@ import {
   DataSpaceDataState,
   ReviewPosition,
   SectionWithInsights,
+  IndexStructureDataState,
 } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import {
@@ -32,6 +33,9 @@ import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
 import { DataTransform } from '@/types/Enums';
 import { DataAnalysisState, IndexAnalysisState } from '@/types/Analysis';
+
+// Used to label elements that should be captured in a screenshot when an insight is taken
+export const INSIGHT_CAPTURE_CLASS = 'insight-capture';
 
 function getSourceUrlForExport(
   insightURL: string,
@@ -101,6 +105,12 @@ export function isModelsSpaceDataState(
 
 export function isDataAnalysisState(dataState: DataState): dataState is DataAnalysisState {
   return (dataState as DataAnalysisState).analysisItems !== undefined;
+}
+
+export function isIndexStructureDataState(
+  dataState: DataState
+): dataState is IndexStructureDataState {
+  return (dataState as IndexStructureDataState).selectedElementId !== undefined;
 }
 
 export function isIndexAnalysisState(
