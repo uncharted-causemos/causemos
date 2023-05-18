@@ -12,6 +12,7 @@ import {
   ReviewPosition,
   SectionWithInsights,
   IndexStructureDataState,
+  IndexResultsDataState,
 } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import {
@@ -111,6 +112,10 @@ export function isIndexStructureDataState(
   dataState: DataState
 ): dataState is IndexStructureDataState {
   return (dataState as IndexStructureDataState).selectedElementId !== undefined;
+}
+
+export function isIndexResultsDataState(dataState: DataState): dataState is IndexResultsDataState {
+  return (dataState as IndexResultsDataState).isShowingKeyDatasets !== undefined;
 }
 
 export function isIndexAnalysisState(
