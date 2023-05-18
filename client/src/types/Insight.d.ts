@@ -75,12 +75,17 @@ export interface IndexStructureDataState {
   selectedElementId: SelectableIndexElementId | null;
 }
 
+export interface IndexResultsDataState {
+  isShowingKeyDatasets: boolean;
+}
+
 export type DataState =
   | DataSpaceDataState
   | DataAnalysisState
   | QualitativeDataState
   | ModelsSpaceDataState
-  | IndexStructureDataState;
+  | IndexStructureDataState
+  | IndexStructureResultsState;
 
 // @base/abstract type
 export interface Snapshot {

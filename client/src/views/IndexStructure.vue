@@ -138,11 +138,7 @@ const doesSelectedElementExist = (id: SelectableIndexElementId) =>
 const toaster = useToaster();
 const updateStateFromInsight = async (insightId: string) => {
   const loadedInsight: Insight = await getInsightById(insightId);
-  if (!loadedInsight) {
-    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
-    return;
-  }
-  const dataState = loadedInsight.data_state;
+  const dataState = loadedInsight?.data_state;
   if (!dataState || !isIndexStructureDataState(dataState)) {
     toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
     return;
