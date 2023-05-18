@@ -42,6 +42,7 @@ import { IndexStructureDataState, Insight } from '@/types/Insight';
 import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import { TYPE } from 'vue-toastification';
+import useInsightStore from '@/services/composables/useInsightStore';
 
 const store = useStore();
 const route = useRoute();
@@ -110,9 +111,7 @@ const deleteEdge = (selectedElementIdToDelete: SelectableIndexElementId) => {
   }
 };
 
-const setContextId = (contextId: string) => {
-  store.dispatch('insightPanel/setContextId', [contextId]);
-};
+const { setContextId, setDataState, setViewState } = useInsightStore();
 onMounted(() => {
   setContextId(analysisId.value);
 });
@@ -123,10 +122,10 @@ watch([selectedElementId], () => {
   const newDataState: IndexStructureDataState = {
     selectedElementId: selectedElementId.value,
   };
-  store.dispatch('insightPanel/setDataState', newDataState);
+  setDataState(newDataState);
   // No view state for this page. Set it to an empty object so that any view state from previous
   //  pages is cleared and not associated with insights taken from this page.
-  store.dispatch('insightPanel/setViewState', {});
+  setViewState({});
 });
 
 const doesSelectedElementExist = (id: SelectableIndexElementId) =>

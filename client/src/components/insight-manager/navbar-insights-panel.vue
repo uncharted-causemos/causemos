@@ -6,7 +6,6 @@
         Save new insight
       </button>
     </div>
-
     <div v-if="insights.length !== 0" class="insight-list">
       <div
         v-for="insight in insights"
@@ -55,7 +54,6 @@
         </div>
       </div>
     </div>
-
     <MessageDisplay v-else :message="INSIGHTS.NO_DATA" />
   </div>
 </template>
@@ -63,7 +61,7 @@
 <script setup lang="ts">
 import useInsightsData from '@/services/composables/useInsightsData';
 import { ProjectType } from '@/types/Enums';
-import { AnalyticalQuestion, Insight } from '@/types/Insight';
+import { Insight } from '@/types/Insight';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import insightUtil from '@/utils/insight-util';
 import { INSIGHTS } from '@/utils/messages-util';
@@ -74,6 +72,7 @@ import { countPublicInsights, removeInsight } from '@/services/insight-service';
 import MessageDisplay from '../widgets/message-display.vue';
 import ImgLazy from '../widgets/img-lazy.vue';
 import OptionsButton from '../widgets/options-button.vue';
+import useInsightStore from '@/services/composables/useInsightStore';
 
 const emit = defineEmits(['close']);
 
@@ -87,26 +86,15 @@ const isDisabled = (insight: Insight) =>
 const preventFetches = computed(() => store.getters['insightPanel/isPanelOpen']);
 const { insights, reFetchInsights } = useInsightsData(preventFetches, undefined, true);
 
-const setSnapshotUrl = (url: any) => {
-  store.dispatch('insightPanel/setSnapshotUrl', url);
-};
-const showInsightPanel = () => {
-  store.dispatch('insightPanel/showInsightPanel');
-};
-const setUpdatedInsight = (updatedInsight: Insight | null) => {
-  store.dispatch('insightPanel/setUpdatedInsight', updatedInsight);
-};
-const setCurrentPane = (newInsightPane: string) => {
-  store.dispatch('insightPanel/setCurrentPane', newInsightPane);
-};
-const setInsightsBySection = (
-  insightsBySection: { section: AnalyticalQuestion; insights: Insight[] }[]
-) => {
-  store.dispatch('insightPanel/setInsightsBySection', insightsBySection);
-};
-const setPositionInReview = (position: { sectionId: string; insightId: string }) => {
-  store.dispatch('insightPanel/setPositionInReview', position);
-};
+const {
+  showInsightPanel,
+  setCurrentPane,
+  setSnapshotUrl,
+  setUpdatedInsight,
+  setInsightsBySection,
+  setPositionInReview,
+  setRefreshDatacubes,
+} = useInsightStore();
 const openInsightsExplorer = () => {
   emit('close');
   showInsightPanel();
@@ -190,9 +178,6 @@ const editInsight = (insight: Insight) => {
   setCurrentPane('review-edit-insight');
 };
 
-const setRefreshDatacubes = (newValue: boolean) => {
-  store.dispatch('insightPanel/setRefreshDatacubes', newValue);
-};
 const deleteInsight = async (insight: Insight) => {
   // are we removing a public insight (from the context panel within a domain project)?
   if (
