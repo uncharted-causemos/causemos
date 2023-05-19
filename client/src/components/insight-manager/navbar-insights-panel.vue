@@ -7,6 +7,7 @@
       </button>
     </div>
     <div v-if="insights.length !== 0" class="insight-list">
+      <h4>Insights from this analysis</h4>
       <div
         v-for="insight in insights"
         :key="insight.id"
@@ -243,7 +244,7 @@ const deleteInsight = async (insight: Insight) => {
 
 .insight {
   cursor: pointer;
-  padding: 20px 0;
+  padding: 10px 0;
   .insight-header {
     display: flex;
     justify-content: space-between;
