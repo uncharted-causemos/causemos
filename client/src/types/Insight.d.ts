@@ -81,7 +81,12 @@ export interface IndexResultsDataState {
 
 export interface IndexProjectionsDataState {
   isSingleCountryModeActive: boolean;
-  // TODO: projection Start and End, Month and Year
+  selectedCountry: string;
+  projectionStartYear: number;
+  projectionStartMonth: number;
+  projectionEndYear: number;
+  projectionEndMonth: number;
+  selectedNodeId: string | null;
 }
 
 export type DataState =
