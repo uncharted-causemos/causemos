@@ -79,6 +79,11 @@ export interface IndexResultsDataState {
   isShowingKeyDatasets: boolean;
 }
 
+export interface IndexProjectionsDataState {
+  isSingleCountryModeActive: boolean;
+  // TODO: projection Start and End, Month and Year
+}
+
 export type DataState =
   | DataSpaceDataState
   | DataAnalysisState

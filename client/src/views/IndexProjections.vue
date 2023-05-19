@@ -110,6 +110,12 @@ import { findAllDatasets } from '@/utils/index-tree-util';
 import { createProjectionRunner } from '@/utils/projection-util';
 import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
+import useInsightStore from '@/services/composables/useInsightStore';
+import useToaster from '@/services/composables/useToaster';
+import { getInsightById } from '@/services/insight-service';
+import { Insight, IndexProjectionsDataState } from '@/types/Insight';
+import { isIndexProjectionsDataState } from '@/utils/insight-util';
+import { TYPE } from 'vue-toastification';
 
 const store = useStore();
 const route = useRoute();
@@ -285,6 +291,56 @@ watch(
     projectionData.value = new Map(Object.entries(result));
     overlay.disable();
   }
+);
+
+const { setContextId, setDataState, setViewState } = useInsightStore();
+onMounted(() => {
+  setContextId(analysisId.value + '--projections');
+});
+
+// Whenever state changes, sync it to insight panel store so that the latest state is captured when
+//  taking an insight.
+watch(
+  [isSingleCountryModeActive],
+  () => {
+    const newDataState: IndexProjectionsDataState = {
+      isSingleCountryModeActive: isSingleCountryModeActive.value,
+    };
+    setDataState(newDataState);
+    // No view state for this page. Set it to an empty object so that any view state from previous
+    //  pages is cleared and not associated with insights taken from this page.
+    setViewState({});
+  },
+  { immediate: true }
+);
+const toaster = useToaster();
+const updateStateFromInsight = async (insightId: string) => {
+  const loadedInsight: Insight = await getInsightById(insightId);
+  const dataState = loadedInsight?.data_state;
+  if (!dataState || !isIndexProjectionsDataState(dataState)) {
+    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
+    return;
+  }
+  isSingleCountryModeActive.value = dataState.isSingleCountryModeActive;
+};
+
+watch(
+  [route],
+  () => {
+    const insight_id = route.query.insight_id as any;
+    if (insight_id !== undefined) {
+      updateStateFromInsight(insight_id);
+      // Remove the insight_id from the url so that
+      //  (1) future insight capture is valid
+      //  (2) we can re-apply the same insight if necessary
+      router
+        .push({
+          query: { insight_id: undefined },
+        })
+        .catch(() => {});
+    }
+  },
+  { immediate: true }
 );
 </script>
 
