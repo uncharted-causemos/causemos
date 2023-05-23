@@ -546,8 +546,7 @@ export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAg
 //  - normalize it with respect to the min and max of the dataset across timestamps
 //  - Keep original value as well, instead of overriding it with the normalized version
 export const getRegionAggregationNormalized = async (
-  spec: OutputSpec,
-  isInverted: boolean
+  spec: OutputSpec
 ): Promise<RegionalAggregation> => {
   const result = await getRegionAggregation(spec);
   if (result.country === undefined || result.country.length === 0) {
@@ -559,12 +558,9 @@ export const getRegionAggregationNormalized = async (
   const max = _.max(values) ?? 0;
   result.country = countries.map((country) => {
     const normalizedValue = normalize(country.value, min, max);
-    // If this dataset is inverted, higher original values should map closer to 0 and lower
-    //  original values should map closer to 1.
-    const countryValue = isInverted ? 1 - normalizedValue : normalizedValue;
     return {
       ...country,
-      value: countryValue,
+      value: normalizedValue,
     };
   });
   return result;

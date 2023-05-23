@@ -8,6 +8,13 @@
       <div v-for="item of listItems" :key="item.dataset.id" class="list-item">
         <i class="fa fa-fw" :style="{ color: DATASET_COLOR }" :class="[DATASET_ICON]" />
         <span class="name">{{ item.dataset.name }}</span>
+        <i
+          v-if="item.oppositeEdgeCount > 0"
+          v-tooltip.top="item.dataset.name + ' represents low ' + tree.name + ' values.'"
+          class="fa fa-fw fa-arrow-right"
+          :style="{ color: NEGATIVE_COLOR }"
+        />
+        <span v-if="item.oppositeEdgeCount > 1">{{ item.oppositeEdgeCount }}</span>
         <InvertedDatasetLabel v-if="item.dataset.dataset.isInverted" />
         <IndexResultsDatasetWeight class="dataset-weight" :weight="item.overallWeight" />
       </div>
@@ -27,6 +34,8 @@ import {
 import { computed } from 'vue';
 import IndexResultsDatasetWeight from './index-results-dataset-weight.vue';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
+import { countOppositeEdgesBetweenNodes } from '@/utils/index-results-util';
+import { NEGATIVE_COLOR } from '@/utils/colors-util';
 
 const props = defineProps<{ selectedNodeName: string }>();
 
@@ -36,6 +45,7 @@ const listItems = computed(() => {
   const datasets = findAllDatasets(tree.value);
   const unsortedResults = datasets.map((dataset) => ({
     dataset,
+    oppositeEdgeCount: countOppositeEdgesBetweenNodes(dataset, tree.value),
     overallWeight: calculateOverallWeight(tree.value, dataset),
   }));
   // Sort descending, by weight
