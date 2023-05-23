@@ -47,8 +47,9 @@ import {
   calculateOverallWeight,
   findAllDatasets,
   convertDataConfigToOutputSpec,
+  countOppositeEdgesBetweenNodes,
 } from '@/utils/index-tree-util';
-import { calculateIndexResults, countOppositeEdgesBetweenNodes } from '@/utils/index-results-util';
+import { calculateIndexResults } from '@/utils/index-results-util';
 import { IndexResultsData } from '@/types/Index';
 import { getRegionAggregationNormalized } from '@/services/outputdata-service';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';

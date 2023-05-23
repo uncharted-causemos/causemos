@@ -30,11 +30,11 @@ import {
   findAllDatasets,
   DATASET_COLOR,
   DATASET_ICON,
+  countOppositeEdgesBetweenNodes,
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import IndexResultsDatasetWeight from './index-results-dataset-weight.vue';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
-import { countOppositeEdgesBetweenNodes } from '@/utils/index-results-util';
 import { NEGATIVE_COLOR } from '@/utils/colors-util';
 
 const props = defineProps<{ selectedNodeName: string }>();
