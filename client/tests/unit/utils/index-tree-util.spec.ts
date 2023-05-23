@@ -560,12 +560,12 @@ describe('index-tree-util', () => {
       const grandparent = createNewConceptNode();
       const parent = createNewConceptNode();
       const node = createNewConceptNode();
+      addChild(parent, node, null);
+      parent.components[0].isOppositePolarity = true;
+      addChild(grandparent, parent, null);
+      grandparent.components[0].isOppositePolarity = true;
       addChild(tree, grandparent, null);
       tree.components[0].isOppositePolarity = true;
-      addChild(grandparent, parent, tree);
-      grandparent.components[0].isOppositePolarity = true;
-      addChild(parent, node, grandparent);
-      parent.components[0].isOppositePolarity = true;
       const result = countOppositeEdgesBetweenNodes(node, tree);
       expect(result).to.equal(3);
     });
