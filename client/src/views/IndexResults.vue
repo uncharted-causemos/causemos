@@ -2,7 +2,7 @@
   <teleport to="#navbar-trailing-teleport-destination">
     <analysis-options-button v-if="analysisName" :analysis-id="analysisId" />
   </teleport>
-  <div class="index-results-container flex">
+  <div class="index-results-container flex" :class="[INSIGHT_CAPTURE_CLASS]">
     <div class="flex-col structure-column">
       <header>
         <h3>Index results</h3>
@@ -37,11 +37,10 @@
 
 <script setup lang="ts">
 import _ from 'lodash';
-import router from '@/router';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import useIndexTree from '@/services/composables/useIndexTree';
 import {
@@ -58,9 +57,16 @@ import IndexResultsMap from '@/components/index-results/index-results-map.vue';
 import IndexResultsComponentList from '@/components/index-results/index-results-component-list.vue';
 import IndexResultsDatasetWeights from '@/components/index-results/index-results-dataset-weights.vue';
 import { ProjectType } from '@/types/Enums';
+import useInsightStore from '@/services/composables/useInsightStore';
+import { IndexResultsDataState, Insight } from '@/types/Insight';
+import { getInsightById } from '@/services/insight-service';
+import useToaster from '@/services/composables/useToaster';
+import { TYPE } from 'vue-toastification';
+import { INSIGHT_CAPTURE_CLASS, isIndexResultsDataState } from '@/utils/insight-util';
 
 const store = useStore();
 const route = useRoute();
+const router = useRouter();
 
 const analysisId = computed(() => route.params.analysisId as string);
 const { analysisName, indexResultsSettings, refresh } = useIndexAnalysis(analysisId);
@@ -170,6 +176,56 @@ watch([tree], async () => {
 });
 
 const isShowingKeyDatasets = ref(false);
+
+const { setContextId, setDataState, setViewState } = useInsightStore();
+onMounted(() => {
+  setContextId(analysisId.value + '--results');
+});
+
+// Whenever state changes, sync it to insight panel store so that the latest state is captured when
+//  taking an insight.
+watch(
+  [isShowingKeyDatasets],
+  () => {
+    const newDataState: IndexResultsDataState = {
+      isShowingKeyDatasets: isShowingKeyDatasets.value,
+    };
+    setDataState(newDataState);
+    // No view state for this page. Set it to an empty object so that any view state from previous
+    //  pages is cleared and not associated with insights taken from this page.
+    setViewState({});
+  },
+  { immediate: true }
+);
+const toaster = useToaster();
+const updateStateFromInsight = async (insightId: string) => {
+  const loadedInsight: Insight = await getInsightById(insightId);
+  const dataState = loadedInsight?.data_state;
+  if (!dataState || !isIndexResultsDataState(dataState)) {
+    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
+    return;
+  }
+  isShowingKeyDatasets.value = dataState.isShowingKeyDatasets;
+};
+
+watch(
+  [route],
+  () => {
+    const insight_id = route.query.insight_id as any;
+    if (insight_id !== undefined) {
+      updateStateFromInsight(insight_id);
+      // Remove the insight_id from the url so that
+      //  (1) future insight capture is valid
+      //  (2) we can re-apply the same insight if necessary
+      router
+        .push({
+          query: { insight_id: undefined },
+        })
+        .catch(() => {});
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style lang="scss" scoped>
