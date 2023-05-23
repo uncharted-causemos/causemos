@@ -1,6 +1,6 @@
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import { BinningOptions, RegionRankingCompositionType } from './Enums';
-import { ConceptNode } from './Index';
+import { ConceptNode, IndexProjectionSettings, IndexResultsSettings } from './Index';
 
 export interface CachedDatacubeMetadata {
   featureName: string;
@@ -63,4 +63,6 @@ export interface IndexAnalysisState {
   workBench: ConceptNode[];
   /** Index results page settings */
   resultsSettings: IndexResultsSettings;
+  /** Index projection page settings */
+  projectionSettings: IndexProjectionSettings;
 }

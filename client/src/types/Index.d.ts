@@ -97,3 +97,33 @@ export interface GridCell {
   isLastChild: boolean;
   isOppositePolarity: boolean;
 }
+
+// =============  Index Projection ===============-
+
+/**
+ * An object representing a clamp
+ */
+export interface IndexProjectionConstraint {
+  timestamp: number;
+  value: number;
+}
+
+/**
+ * An object representing an index projection scenario
+ */
+export interface IndexProjectionScenario {
+  id: string;
+  name: string;
+  description: string;
+  isVisible: boolean;
+  color: string;
+  isDefault?: boolean;
+  constraints: { [nodeId: string]: IndexProjectionConstraint[] };
+}
+
+/**
+ * Index projection settings object
+ */
+export interface IndexProjectionSettings {
+  scenarios: IndexProjectionScenario[];
+}

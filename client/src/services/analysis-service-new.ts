@@ -14,6 +14,7 @@ import {
 } from '@/types/Enums';
 import { createNewOutputIndex } from '@/utils/index-tree-util';
 import { createNewIndexResultsSettings } from '@/utils/index-results-util';
+import { createNewIndexProjectionSettings } from '@/utils/index-projection-util';
 
 /**
  * Create a new DataAnalysisState object with each of its fields initialized to
@@ -41,6 +42,7 @@ export const createIndexAnalysisObject = (): IndexAnalysisState => {
     index: createNewOutputIndex(),
     workBench: [],
     resultsSettings: createNewIndexResultsSettings(),
+    projectionSettings: createNewIndexProjectionSettings(),
   };
 };
 

@@ -39,6 +39,8 @@
         <p v-if="selectedCountry === NO_COUNTRY_SELECTED.value" class="warning">
           Select a country to display projections.
         </p>
+        <br />
+        <IndexProjectionsSettingsScenarios :scenarios="scenarios" />
       </section>
       <footer>
         <section>
@@ -110,6 +112,7 @@ import { findAllDatasets } from '@/utils/index-tree-util';
 import { createProjectionRunner } from '@/utils/projection-util';
 import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
+import IndexProjectionsSettingsScenarios from '@/components/index-projections/index-projections-settings-scenarios.vue';
 
 const store = useStore();
 const route = useRoute();
@@ -117,7 +120,7 @@ const router = useRouter();
 const overlay = useOverlay();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const { analysisName, refresh } = useIndexAnalysis(analysisId);
+const { analysisName, refresh, indexProjectionSettings } = useIndexAnalysis(analysisId);
 // If selectedNodeId === null, no node is selected and we're looking at the graph view
 const selectedNodeId = ref<string | null>(null);
 const selectElement = (id: SelectableIndexElementId) => {
@@ -286,6 +289,34 @@ watch(
     overlay.disable();
   }
 );
+
+// ==========================
+const scenarios = computed(() => indexProjectionSettings.value.scenarios);
+
+// const handleScenarioOptionButtonClick = (scenarioId: string, optionButtonType: ScenarioOptionButtonMenu) => {
+//   console.log(scenarioId, optionButtonType);
+// }
+
+// const createNewScenario = (name = 'Untitled scenario', description: string) => {
+//   const newScenario = {
+//     id: uuidv4(),
+//     name,
+//     description,
+//     constraints: {},
+//   }
+//   scenarios.value.push(newScenario)
+// }
+
+// const renameScenario = (scenarioId: string, name: string) => {
+//   const found = scenarios.value.find(v => v.id === scenarioId);
+//   if (found) {
+//     found.name = name;
+//   }
+// }
+
+// const deleteScenario = (scenarioId: string) => {
+//   scenarios.value = scenarios.value.filter(v => v.id !== scenarioId);
+// }
 </script>
 
 <style lang="scss" scoped>
