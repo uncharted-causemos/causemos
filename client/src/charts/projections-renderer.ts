@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import dateFormatter from '@/formatters/date-formatter';
-import { D3GElementSelection, D3Selection } from '@/types/D3';
+import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { TimeseriesPointProjected } from '@/types/Timeseries';
 import {
   calculateYearlyTicks,
@@ -11,9 +11,10 @@ import {
   renderXaxis,
   renderYaxis,
 } from '@/utils/timeseries-util';
-import { translate } from '@/utils/svg-util';
+import { showSvgTooltip, hideSvgTooltip, translate } from '@/utils/svg-util';
 import { ProjectionPointType } from '@/types/Enums';
 import { splitProjectionsIntoLineSegments } from '@/utils/projection-util';
+import { snapTimestampToNearestMonth } from '@/utils/date-util';
 
 const FOCUS_BORDER_COLOR = '#888';
 const FOCUS_BORDER_STROKE_WIDTH = 1;
@@ -48,6 +49,22 @@ const WEIGHTED_SUM_LINE_OPACITY = 0.25;
 const POINT_RADIUS = 3;
 
 const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
+const VALUE_FORMATTER = (value: number) => value.toPrecision(2);
+
+const getTimestampAndValueFromMouseEvent = (
+  event: MouseEvent,
+  xScale: D3ScaleLinear,
+  yScale: D3ScaleLinear
+) => {
+  const [pointerX, pointerY] = d3.pointer(event);
+  const timestampAtMouse = xScale.invert(pointerX);
+  const snappedTimestamp = snapTimestampToNearestMonth(timestampAtMouse);
+  const value = yScale.invert(pointerY);
+  return {
+    timestamp: snappedTimestamp,
+    value,
+  };
+};
 
 const renderTimeseries = (
   timeseries: TimeseriesPointProjected[],
@@ -173,12 +190,15 @@ export default function render(
   projectionStartTimestamp: number,
   projectionEndTimestamp: number,
   isWeightedSum: boolean,
-  color = 'black'
+  color = 'black',
+  onClick: (timestamp: number, value: number) => void
 ) {
   // Clear any existing elements
   selection.selectAll('*').remove();
   // Add chart `g` element to the page
   const focusGroupElement = selection.append('g').classed('focusGroupElement', true);
+  // Create element over focus chart to detect mouse events
+  const focusMouseEventGroup = selection.append('g').classed('focusMouseEventGroup', true);
   // Add scroll bar `g` element to the page
   const scrollBarGroupElement = selection.append('g').classed('scrollBarGroupElement', true);
   // Add background to scrollbar
@@ -213,7 +233,15 @@ export default function render(
   const chartWidth = totalWidth - PADDING_LEFT - PADDING_RIGHT;
   const focusChartHeight = focusHeight - X_AXIS_HEIGHT;
 
-  const renderFocusChart = () => {
+  const focusMouseEventArea = focusMouseEventGroup
+    .append('rect')
+    .attr('height', focusChartHeight)
+    .attr('width', chartWidth)
+    .attr('x', PADDING_LEFT)
+    .attr('y', PADDING_TOP)
+    .attr('fill', 'transparent');
+
+  const renderFocusChart = (xScale: D3ScaleLinear, yScale: D3ScaleLinear) => {
     focusGroupElement.selectAll('*').remove();
 
     // Render border
@@ -228,18 +256,10 @@ export default function render(
       .attr('stroke-width', FOCUS_BORDER_STROKE_WIDTH);
 
     // Render focus chart X axis
-    const xScaleFocus = d3
-      .scaleLinear()
-      .domain(focusedTimeRange)
-      .range([PADDING_LEFT, PADDING_LEFT + chartWidth]);
-    const xAxisTicks = calculateYearlyTicks(
-      xScaleFocus.domain()[0],
-      xScaleFocus.domain()[1],
-      totalWidth
-    );
+    const xAxisTicks = calculateYearlyTicks(xScale.domain()[0], xScale.domain()[1], totalWidth);
     const xAxisElement = renderXaxis(
       focusGroupElement,
-      xScaleFocus,
+      xScale,
       xAxisTicks,
       PADDING_TOP + focusChartHeight,
       DATE_FORMATTER,
@@ -248,13 +268,9 @@ export default function render(
     xAxisElement.select('.domain').remove();
     xAxisElement.selectAll('.tick > line').attr('stroke', FOCUS_BORDER_COLOR);
 
-    const yScaleFocus = d3
-      .scaleLinear()
-      .domain([0, 1])
-      .range([PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]);
     const yAxisElement = renderYaxis(
       focusGroupElement,
-      yScaleFocus,
+      yScale,
       [0, 1],
       (number) => number,
       Y_AXIS_WIDTH,
@@ -264,12 +280,33 @@ export default function render(
     yAxisElement.selectAll('.tick > line').attr('stroke', FOCUS_BORDER_COLOR);
 
     // Render timeseries itself
-    renderTimeseries(timeseries, focusGroupElement, xScaleFocus, yScaleFocus, isWeightedSum, color);
+    renderTimeseries(timeseries, focusGroupElement, xScale, yScale, isWeightedSum, color);
 
     // Don't render anything outside the main graph area (except the axes)
     focusGroupElement
       .selectChildren('*:not(.xAxis):not(.yAxis)')
       .attr('clip-path', 'url(#clipping-mask)');
+  };
+
+  // Update mouse handlers when the user changes the xScale by moving the scrollbar.
+  const updateFocusMouseEventArea = (xScale: D3ScaleLinear, yScale: D3ScaleLinear) => {
+    focusMouseEventArea.on('mousemove', (event: MouseEvent) => {
+      const { timestamp, value } = getTimestampAndValueFromMouseEvent(event, xScale, yScale);
+      showSvgTooltip(
+        focusMouseEventGroup,
+        `${VALUE_FORMATTER(value)}\n${DATE_FORMATTER(timestamp)}`,
+        [xScale(timestamp), yScale(value)],
+        0,
+        true
+      );
+    });
+    focusMouseEventArea.on('mouseleave', function () {
+      hideSvgTooltip(focusMouseEventGroup);
+    });
+    focusMouseEventArea.on('click', function (event) {
+      const { timestamp, value } = getTimestampAndValueFromMouseEvent(event, xScale, yScale);
+      onClick(timestamp, value);
+    });
   };
 
   // Scroll bar (lets the user zoom and pan)
@@ -328,7 +365,16 @@ export default function render(
     // Update brush handle positions
     brushElement.call(renderBrushHandles, focusedTimeRange.map(xScaleScrollbar));
     // Re-render the chart using the new focused range
-    renderFocusChart();
+    const xScaleFocus = d3
+      .scaleLinear()
+      .domain(focusedTimeRange)
+      .range([PADDING_LEFT, PADDING_LEFT + chartWidth]);
+    const yScaleFocus = d3
+      .scaleLinear()
+      .domain([0, 1])
+      .range([PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]);
+    renderFocusChart(xScaleFocus, yScaleFocus);
+    updateFocusMouseEventArea(xScaleFocus, yScaleFocus);
   };
   const d3BrushBehaviour = d3
     .brushX()
