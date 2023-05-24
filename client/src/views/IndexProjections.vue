@@ -1,5 +1,5 @@
 <template>
-  <div class="index-projections-container">
+  <div class="index-projections-container" :class="[INSIGHT_CAPTURE_CLASS]">
     <div class="flex-col config-column">
       <header>
         <button v-if="selectedNodeId !== null" class="btn btn-sm" @click="deselectNode">
@@ -161,6 +161,12 @@ import { findAllDatasets } from '@/utils/index-tree-util';
 import { createProjectionRunner } from '@/utils/projection-util';
 import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
+import useInsightStore from '@/services/composables/useInsightStore';
+import useToaster from '@/services/composables/useToaster';
+import { getInsightById } from '@/services/insight-service';
+import { Insight, IndexProjectionsDataState } from '@/types/Insight';
+import { INSIGHT_CAPTURE_CLASS, isIndexProjectionsDataState } from '@/utils/insight-util';
+import { TYPE } from 'vue-toastification';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -368,6 +374,85 @@ watch(
     overlay.disable();
   }
 );
+
+const { setContextId, setDataState, setViewState } = useInsightStore();
+onMounted(() => {
+  setContextId(analysisId.value + '--projections');
+});
+
+// Whenever state changes, sync it to insight panel store so that the latest state is captured when
+//  taking an insight.
+watch(
+  [
+    isSingleCountryModeActive,
+    selectedCountry,
+    projectionStartYear,
+    projectionStartMonth,
+    projectionEndYear,
+    projectionEndMonth,
+    selectedNodeId,
+  ],
+  () => {
+    const newDataState: IndexProjectionsDataState = {
+      isSingleCountryModeActive: isSingleCountryModeActive.value,
+      selectedCountry: selectedCountry.value,
+      projectionStartYear: projectionStartYear.value,
+      projectionStartMonth: projectionStartMonth.value,
+      projectionEndYear: projectionEndYear.value,
+      projectionEndMonth: projectionEndMonth.value,
+      selectedNodeId: selectedNodeId.value,
+    };
+    setDataState(newDataState);
+    // No view state for this page. Set it to an empty object so that any view state from previous
+    //  pages is cleared and not associated with insights taken from this page.
+    setViewState({});
+  },
+  { immediate: true }
+);
+const toaster = useToaster();
+const updateStateFromInsight = async (insightId: string) => {
+  const loadedInsight: Insight = await getInsightById(insightId);
+  const dataState = loadedInsight?.data_state;
+  if (!dataState || !isIndexProjectionsDataState(dataState)) {
+    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
+    return;
+  }
+  isSingleCountryModeActive.value = dataState.isSingleCountryModeActive;
+  selectedCountry.value = dataState.selectedCountry;
+  projectionStartYear.value = dataState.projectionStartYear;
+  projectionStartMonth.value = dataState.projectionStartMonth;
+  projectionEndYear.value = dataState.projectionEndYear;
+  projectionEndMonth.value = dataState.projectionEndMonth;
+  saveProjectionDates();
+  if (dataState.selectedNodeId !== null && !indexTree.containsElement(dataState.selectedNodeId)) {
+    toaster(
+      'The node that is selected in this insight no longer exists in the analysis.',
+      TYPE.ERROR,
+      true
+    );
+    return;
+  }
+  selectedNodeId.value = dataState.selectedNodeId;
+};
+
+watch(
+  [route],
+  () => {
+    const insight_id = route.query.insight_id as any;
+    if (insight_id !== undefined) {
+      updateStateFromInsight(insight_id);
+      // Remove the insight_id from the url so that
+      //  (1) future insight capture is valid
+      //  (2) we can re-apply the same insight if necessary
+      router
+        .push({
+          query: { insight_id: undefined },
+        })
+        .catch(() => {});
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style lang="scss" scoped>
@@ -378,6 +463,7 @@ watch(
 .index-projections-container {
   display: flex;
   height: $content-full-height;
+  background: $background-light-2;
 }
 
 .config-column {
