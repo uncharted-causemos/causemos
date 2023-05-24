@@ -67,11 +67,19 @@
       </button>
       <button
         v-if="showAttachDatasetButton"
-        class="btn btn-default full-width-button attach-dataset-button"
+        class="btn btn-default full-width-button button-top-margin"
         @click="isSearchingForDataset = true"
       >
         <i class="fa fa-fw" :class="DATASET_ICON" />
         Attach dataset
+      </button>
+      <button
+        v-if="showSeeResultsButton"
+        class="btn btn-sm btn-call-to-action full-width-button button-top-margin"
+        :disabled="!canViewResults"
+        @click="seeResults"
+      >
+        See results
       </button>
     </div>
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)" class="content">
@@ -98,12 +106,17 @@ import {
   isOutputIndexNode,
   getNodeDataSourceText,
   DATASET_COLOR,
+  indexNodeTreeContainsDataset,
 } from '@/utils/index-tree-util';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
 import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
 import { OptionButtonMenu } from '@/utils/index-common-util';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
+import useIndexTree from '@/services/composables/useIndexTree';
+import { useRoute, useRouter } from 'vue-router';
+import { useStore } from 'vuex';
+import { ProjectType } from '@/types/Enums';
 
 interface Props {
   nodeData: ConceptNode;
@@ -244,6 +257,27 @@ const showAttachDatasetButton = computed(
     !showDatasetSearch.value &&
     !showEditName.value
 );
+
+const showSeeResultsButton = computed(
+  () => isOutputIndexNode(props.nodeData) && !showDatasetSearch.value && !showEditName.value
+);
+const indexTree = useIndexTree();
+const canViewResults = computed(() => indexNodeTreeContainsDataset(indexTree.tree.value));
+const router = useRouter();
+const route = useRoute();
+const store = useStore();
+const project = computed(() => store.getters['app/project']);
+const analysisId = computed(() => route.params.analysisId as string);
+const seeResults = () => {
+  router.push({
+    name: 'indexResults',
+    params: {
+      project: project.value,
+      analysisId: analysisId.value,
+      projectType: ProjectType.Analysis,
+    },
+  });
+};
 
 // Dataset search
 
@@ -429,7 +463,7 @@ $option-button-width: 16px;
   margin-bottom: 2px;
 }
 
-.attach-dataset-button {
+.button-top-margin {
   margin-top: 10px;
 }
 
