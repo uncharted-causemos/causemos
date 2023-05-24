@@ -9,7 +9,6 @@ $incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
 $outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-length);
 $edge-top-offset-from-node: 13px;
 $edge-styles: 2px solid $un-color-black-20;
-$edge-selected: $accent-main;
 
 $index-graph-padding-horizontal: 30px;
 $index-graph-padding-vertical: 40px;
