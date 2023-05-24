@@ -18,25 +18,7 @@
     >
       <div
         class="edge incoming"
-        :class="{
-          visible: hasChildren(cell.node),
-          inactive: !hasChildren(cell.node),
-          [EDGE_CLASS.SELECTED]: isIncomingSelected(cell.node.id),
-          [EDGE_CLASS.HIGHLIGHTED]:
-            isIncomingHighlighted(cell.node.id) && !isIncomingSelected(cell.node.id),
-          [EDGE_CLASS.POLARITY_POS]: !isInboundPolarityNegative(cell.node.id),
-          [EDGE_CLASS.POLARITY_NEG]: isInboundPolarityNegative(cell.node.id),
-          [EDGE_CLASS.SELECTED_SOURCE_POLARITY_POS]:
-            isIncomingSelected(cell.node.id) && !isSelectedSourcePolarityNegative(cell.node.id),
-          [EDGE_CLASS.SELECTED_SOURCE_POLARITY_NEG]:
-            isIncomingSelected(cell.node.id) && isSelectedSourcePolarityNegative(cell.node.id),
-          [EDGE_CLASS.HIGHLIGHTED_SOURCE_POLARITY_NEG]:
-            isIncomingHighlighted(cell.node.id) &&
-            isHighlightedSourcePolarityNegative(cell.node.id),
-          [EDGE_CLASS.HIGHLIGHTED_SOURCE_POLARITY_POS]:
-            isIncomingHighlighted(cell.node.id) &&
-            !isHighlightedSourcePolarityNegative(cell.node.id),
-        }"
+        :class="getIncomingEdgeClassObject(cell, selectedElementId, highlightEdgeId)"
         @mouseenter="() => !isConnecting && handleHighlightEdge(cell.node)"
         @mouseleave="highlightClear"
         @click="() => !isConnecting && handleClickSelectEdge(cell.node)"
@@ -59,21 +41,7 @@
       <div
         v-if="!cell.node.isOutputNode && cell.hasOutputLine"
         class="edge outgoing"
-        :class="{
-          visible: cell.hasOutputLine,
-          inactive: !cell.hasOutputLine,
-          'last-child': cell.isLastChild,
-          [EDGE_CLASS.SELECTED]: isOutgoingSelected(cell.node.id),
-          [EDGE_CLASS.SELECTED_Y]: isOutgoingYSelected(cell.node.id),
-          [EDGE_CLASS.HIGHLIGHTED]:
-            isOutgoingHighlighted(cell.node.id) && !isOutgoingSelected(cell.node.id),
-          [EDGE_CLASS.HIGHLIGHTED_Y]:
-            isOutgoingYHighlighted(cell.node.id) && !isOutgoingYSelected(cell.node.id),
-          [EDGE_CLASS.POLARITY_POS]: !cell.isOppositePolarity,
-          [EDGE_CLASS.POLARITY_NEG]: cell.isOppositePolarity,
-          [EDGE_CLASS.NEXT_SIBLING_POLARITY_POS]: !isNextSiblingPolarityNegative(cell.node.id),
-          [EDGE_CLASS.NEXT_SIBLING_POLARITY_NEG]: isNextSiblingPolarityNegative(cell.node.id),
-        }"
+        :class="getOutgoingEdgeClassObject(cell, selectedElementId, highlightEdgeId, searchForNode)"
         @mouseenter="() => !isConnecting && handleMouseEnter(cell.node.id)"
         @mouseleave="highlightClear"
         @click="() => !isConnecting && handleMouseClick(cell.node.id)"
@@ -108,30 +76,12 @@ import {
 } from '@/types/Index';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
+import { isOutputIndexNode, isEdge, isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import {
-  hasChildren,
-  isOutputIndexNode,
-  isEdge,
-  isConceptNodeWithoutDataset,
-} from '@/utils/index-tree-util';
-import { getGridCellsFromIndexTreeAndWorkbench } from '@/utils/grid-cell-util';
-
-const EDGE_CLASS = {
-  SELECTED: 'selected-edge',
-  SELECTED_Y: 'selected-y',
-  HIGHLIGHTED: 'highlighted',
-  HIGHLIGHTED_Y: 'highlighted-y',
-  OUTGOING: 'outgoing',
-  INCOMING: 'incoming',
-  POLARITY_POS: 'polarity-pos',
-  POLARITY_NEG: 'polarity-neg',
-  NEXT_SIBLING_POLARITY_NEG: 'next-sibling-polarity-neg',
-  NEXT_SIBLING_POLARITY_POS: 'next-sibling-polarity-pos',
-  SELECTED_SOURCE_POLARITY_NEG: 'selected-source-neg',
-  SELECTED_SOURCE_POLARITY_POS: 'selected-source-pos',
-  HIGHLIGHTED_SOURCE_POLARITY_NEG: 'highlighted-source-neg',
-  HIGHLIGHTED_SOURCE_POLARITY_POS: 'highlighted-source-pos',
-};
+  getGridCellsFromIndexTreeAndWorkbench,
+  getIncomingEdgeClassObject,
+  getOutgoingEdgeClassObject,
+} from '@/utils/grid-cell-util';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -159,12 +109,6 @@ const workbench = useIndexWorkBench();
 const isDescendentOfConnectingNode = (targetId: string) => {
   if (connectingId.value !== null) {
     return workbench.isDescendant(targetId, connectingId.value);
-  }
-  return false;
-};
-const isOutgoingHighlighted = (id: string) => {
-  if (props.highlightEdgeId && isEdge(props.highlightEdgeId)) {
-    return props.highlightEdgeId.sourceId === id;
   }
   return false;
 };
@@ -217,54 +161,6 @@ const handleMouseClick = (sourceId: string) => {
   }
 };
 
-const isHigherThanSibling = (id: string, edgeId: SelectableIndexElementId) => {
-  if (isEdge(edgeId)) {
-    const sourceId = edgeId.sourceId;
-    if (sourceId === id) {
-      return false;
-    }
-    const targetNode = searchForNode(edgeId.sourceId);
-
-    if (targetNode && targetNode.parent) {
-      const allInputs = targetNode.parent.components;
-      const idIndex = allInputs.findIndex((item) => item.componentNode.id === sourceId);
-      const selection = allInputs.slice(0, idIndex).map((item) => item.componentNode.id);
-
-      return selection.includes(id);
-    }
-  }
-  return false;
-};
-const isOutgoingYHighlighted = (id: string) => {
-  if (props.highlightEdgeId) {
-    return isHigherThanSibling(id, props.highlightEdgeId);
-  }
-  return false;
-};
-const isOutgoingSelected = (id: string) => {
-  if (props.selectedElementId && isEdge(props.selectedElementId)) {
-    return props.selectedElementId.sourceId === id;
-  }
-  return false;
-};
-const isOutgoingYSelected = (id: string) => {
-  if (props.selectedElementId) {
-    return isHigherThanSibling(id, props.selectedElementId);
-  }
-  return false;
-};
-const isIncomingHighlighted = (id: string) => {
-  if (props.highlightEdgeId && isEdge(props.highlightEdgeId)) {
-    return props.highlightEdgeId.targetId === id;
-  }
-  return false;
-};
-const isIncomingSelected = (id: string) => {
-  if (props.selectedElementId && isEdge(props.selectedElementId)) {
-    return props.selectedElementId.targetId === id;
-  }
-  return false;
-};
 const isSelected = (id: string) => {
   if (props.selectedElementId === id) {
     return true;
@@ -281,53 +177,6 @@ const isSelected = (id: string) => {
 const gridCells = computed<GridCell[]>(() => {
   return getGridCellsFromIndexTreeAndWorkbench(indexTree.tree.value, workbench.items.value);
 });
-
-const isInboundPolarityNegative = (nodeId: string) => {
-  const index = gridCells.value.findIndex((cell) => cell.node.id === nodeId);
-  if (index >= 0) {
-    const node = gridCells.value[index].node;
-    if ('components' in node && node.components.length > 0) {
-      return node.components[0].isOppositePolarity;
-    }
-  }
-  return false;
-};
-
-const isSelectedSourcePolarityNegative = (nodeId: string) => {
-  return getSourcePolarity(props.selectedElementId, nodeId);
-};
-
-const isHighlightedSourcePolarityNegative = (nodeId: string) => {
-  return getSourcePolarity(props.highlightEdgeId, nodeId);
-};
-
-const getSourcePolarity = (edge: SelectableIndexElementId | null, nodeId: string) => {
-  const index = gridCells.value.findIndex((cell) => cell.node.id === nodeId);
-  if (index >= 0 && edge !== null) {
-    if (typeof edge !== 'string' && edge.targetId === nodeId) {
-      const sourceId = edge.sourceId;
-      const index2 = gridCells.value.findIndex((cell) => cell.node.id === sourceId);
-      if (index2 >= 0) {
-        return gridCells.value[index2].isOppositePolarity;
-      }
-    }
-  }
-  return false;
-};
-
-const isNextSiblingPolarityNegative = (nodeId: string) => {
-  const cells = gridCells.value.filter((item) => item.node.id === nodeId);
-  if (cells.length > 0) {
-    const cell = cells[0];
-    const index = gridCells.value.findIndex(
-      (item) => item.startRow === cell.startRow + 1 && item.startColumn === cell.startColumn
-    );
-    if (index >= 0) {
-      return gridCells.value[index].isOppositePolarity;
-    }
-  }
-  return false;
-};
 
 const renameNode = (nodeId: string, newName: string) => {
   workbench.findAndRenameNode(nodeId, newName);

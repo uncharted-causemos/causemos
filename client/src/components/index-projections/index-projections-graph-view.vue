@@ -13,7 +13,6 @@
         class="edge incoming"
         :class="{
           visible: hasChildren(cell.node),
-          inactive: !hasChildren(cell.node),
         }"
       ></div>
       <IndexProjectionsNode
@@ -28,7 +27,6 @@
         class="edge outgoing"
         :class="{
           visible: cell.hasOutputLine,
-          inactive: !cell.hasOutputLine,
           'last-child': cell.isLastChild,
         }"
       />

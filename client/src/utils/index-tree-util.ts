@@ -34,7 +34,7 @@ export const isConceptNodeWithoutDataset = (
   return (indexNode as ConceptNodeWithoutDataset).components !== undefined;
 };
 
-export const hasChildren = (indexNode: ConceptNode) => {
+export const hasChildren = (indexNode: ConceptNode): indexNode is ConceptNodeWithoutDataset => {
   return isConceptNodeWithoutDataset(indexNode) && indexNode.components.length > 0;
 };
 
