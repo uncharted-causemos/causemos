@@ -55,17 +55,13 @@ $index-graph-padding-vertical: 40px;
     &.visible {
       border-top: $edge-styles;
       border-color: $positive;
-      &.highlighted {
-        border-color: $positive-bright;
-      }
+      &.highlighted,
       &.selected-edge {
         border-color: $positive-bright;
       }
       &.polarity-neg {
         border-color: $negative;
-        &.highlighted {
-          border-color: $negative-bright;
-        }
+        &.highlighted,
         &.selected-edge {
           border-color: $negative-bright;
         }
@@ -80,17 +76,13 @@ $index-graph-padding-vertical: 40px;
       // Extend edge down to the sibling below this one
       height: calc(100% + #{$space-between-rows});
       border-top-color: $positive;
-      &.highlighted {
-        border-top-color: $positive-bright;
-      }
+      &.highlighted,
       &.selected-edge {
         border-top-color: $positive-bright;
       }
       &.polarity-neg {
         border-top-color: $negative;
-        &.highlighted {
-          border-top-color: $negative-bright;
-        }
+        &.highlighted,
         &.selected-edge {
           border-top-color: $negative-bright;
         }
@@ -98,17 +90,13 @@ $index-graph-padding-vertical: 40px;
 
       border-right: $edge-styles;
       border-right-color: $positive;
-      &.highlighted-y {
-        border-right-color: $positive-bright;
-      }
+      &.highlighted-y,
       &.selected-y {
         border-right-color: $positive-bright;
       }
       &.next-sibling-polarity-neg {
         border-right-color: $negative;
-        &.highlighted-y {
-          border-right-color: $negative-bright;
-        }
+        &.highlighted-y,
         &.selected-y {
           border-right-color: $negative-bright;
         }
