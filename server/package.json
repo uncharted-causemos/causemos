@@ -9,7 +9,7 @@
     "postinstall": "check-node-version --package",
     "start": "node ./src//bin/www",
     "debug": "node --inspect ./src//bin/www --log-level debug",
-    "dev": "PORT=3001 nodemon --inspect ./src//bin/www --log-level debug",
+    "dev": "nodemon --inspect ./src//bin/www --log-level debug",
     "lint": "eslint ./src --fix",
     "lint:ci": "eslint ./src",
     "test": "mocha 'test/unit/**/*.js'"

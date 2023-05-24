@@ -8,14 +8,23 @@
     <ul class="scenario-list">
       <li class="scenario-item" v-for="scenario in scenarios" :key="scenario.id">
         <div class="flex action-group">
-          <button class="btn btn-sm">
+          <button
+            class="btn btn-sm btn-scenario-visible"
+            :class="{ active: scenario.isVisible }"
+            @mousedown="(e) => handleScenarioVisibleClick(e, scenario.id)"
+          >
             <i class="fa fa-eye" />
           </button>
           <button class="btn btn-sm color-box">
             <div :style="{ 'background-color': scenario.color }"></div>
           </button>
           <div class="flex-grow">{{ scenario.name }}</div>
-          <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
+          <OptionsButton
+            v-if="!scenario.isDefault"
+            :dropdown-below="true"
+            :wider-dropdown-options="true"
+            @click.stop=""
+          >
             <template #content>
               <div
                 v-for="item in scenarioOptionsButtonMenu"
@@ -78,6 +87,7 @@ const emit = defineEmits<{
   (e: 'duplicate', scenarioId: string): void;
   (e: 'edit', scenarioId: string): void;
   (e: 'delete', scenarioId: string): void;
+  (e: 'toggle-visible', scenarioId: string): void;
 }>();
 
 const handleScenarioOptionButtonClick = (
@@ -92,6 +102,11 @@ const handleScenarioOptionButtonClick = (
     case ScenarioOptionButtonMenu.Delete:
       return emit('delete', scenarioId);
   }
+};
+const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
+  // Prevent default behaviour that button is focused on click
+  e.preventDefault();
+  emit('toggle-visible', scenarioId);
 };
 </script>
 
@@ -113,6 +128,9 @@ const handleScenarioOptionButtonClick = (
   }
   .scenario-item .btn {
     padding: 2px;
+  }
+  .scenario-item .btn-scenario-visible.active {
+    color: grey;
   }
   .scenario-item .color-box div {
     width: 100%;

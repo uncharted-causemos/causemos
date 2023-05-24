@@ -40,7 +40,14 @@
           Select a country to display projections.
         </p>
         <br />
-        <IndexProjectionsSettingsScenarios :scenarios="scenarios" />
+        <IndexProjectionsSettingsScenarios
+          :scenarios="scenarios"
+          @create="handleCreateScenario"
+          @duplicate="handleDuplicateScenario"
+          @edit="handleEditScenario"
+          @delete="handleDeleteScenario"
+          @toggleVisible="toggleScenarioVisibility"
+        />
       </section>
       <footer>
         <section>
@@ -61,10 +68,28 @@
       </footer>
     </div>
     <main class="flex-col">
-      <div class="editing-state-indicator">
-        <p class="subdued un-font-small">Click a concept to enlarge it.</p>
+      <div class="editing-container">
+        <div v-if="scenarioBeingEdited !== null" class="editing-ui-group">
+          <label
+            >Editing
+            <input type="text" v-model="scenarioBeingEdited.name" />
+          </label>
+          <label class="flex-grow"
+            >Description
+            <input class="flex-grow" type="text" v-model="scenarioBeingEdited.description" />
+          </label>
+          <div>
+            <button class="btn btn-sm" @click="handleCancelEditScenario">Cancel</button>
+            <button class="btn btn-sm btn-call-to-action" @click="handleDoneEditScenario">
+              Done
+            </button>
+          </div>
+        </div>
+        <p v-if="scenarioBeingEdited !== nul" class="subdued un-font-small">
+          Click a concept to add or edit constraints.
+        </p>
+        <p v-else class="subdued un-font-small">Click a concept to enlarge it.</p>
         <!-- TODO: Editing <strong>{{ 'Untitled Scenario' }}</strong>'s constraints -->
-        <!-- <p class="subdued un-font-small">Click a concept to add or edit constraints.</p> -->
       </div>
       <IndexProjectionsGraphView
         v-if="selectedNodeId === null"
@@ -101,7 +126,7 @@ import IndexResultsStructurePreview from '@/components/index-results/index-resul
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
-import { SelectableIndexElementId } from '@/types/Index';
+import { IndexProjectionScenario, SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
 import { getTimestampMillis } from '@/utils/date-util';
@@ -110,6 +135,7 @@ import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
 import { createProjectionRunner } from '@/utils/projection-util';
+import { createNewScenario } from '@/utils/index-projection-util';
 import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
 import IndexProjectionsSettingsScenarios from '@/components/index-projections/index-projections-settings-scenarios.vue';
@@ -120,7 +146,8 @@ const router = useRouter();
 const overlay = useOverlay();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const { analysisName, refresh, indexProjectionSettings } = useIndexAnalysis(analysisId);
+const { analysisName, refresh, indexProjectionSettings, updateIndexProjectionSettings } =
+  useIndexAnalysis(analysisId);
 // If selectedNodeId === null, no node is selected and we're looking at the graph view
 const selectedNodeId = ref<string | null>(null);
 const selectElement = (id: SelectableIndexElementId) => {
@@ -290,33 +317,56 @@ watch(
   }
 );
 
-// ==========================
+// ========================== Scenario Management ==========================
+
+const MAX_NUM_SCENARIOS = 7;
 const scenarios = computed(() => indexProjectionSettings.value.scenarios);
-
-// const handleScenarioOptionButtonClick = (scenarioId: string, optionButtonType: ScenarioOptionButtonMenu) => {
-//   console.log(scenarioId, optionButtonType);
-// }
-
-// const createNewScenario = (name = 'Untitled scenario', description: string) => {
-//   const newScenario = {
-//     id: uuidv4(),
-//     name,
-//     description,
-//     constraints: {},
-//   }
-//   scenarios.value.push(newScenario)
-// }
-
-// const renameScenario = (scenarioId: string, name: string) => {
-//   const found = scenarios.value.find(v => v.id === scenarioId);
-//   if (found) {
-//     found.name = name;
-//   }
-// }
-
-// const deleteScenario = (scenarioId: string) => {
-//   scenarios.value = scenarios.value.filter(v => v.id !== scenarioId);
-// }
+const scenarioBeingEdited = ref<IndexProjectionScenario | null>(null);
+const updateScenarios = (scenarios: IndexProjectionScenario[]) => {
+  updateIndexProjectionSettings({
+    ...indexProjectionSettings.value,
+    scenarios,
+  });
+};
+const handleCreateScenario = () => {
+  if (scenarios.value.length >= MAX_NUM_SCENARIOS) return;
+  // handle color
+  updateScenarios([...scenarios.value, createNewScenario(undefined, '', 'red')]);
+};
+const handleEditScenario = (scenarioId: string) => {
+  const target = scenarios.value.find((v) => v.id === scenarioId);
+  if (!target) return;
+  scenarioBeingEdited.value = _.cloneDeep(target);
+};
+const handleDuplicateScenario = (scenarioId: string) => {
+  const target = scenarios.value.find((v) => v.id === scenarioId);
+  if (!target) return;
+  if (scenarios.value.length >= MAX_NUM_SCENARIOS) return;
+  // handle color
+  updateScenarios([
+    ...scenarios.value,
+    createNewScenario(target.name, target.description, target.color),
+  ]);
+};
+const handleDeleteScenario = (scenarioId: string) => {
+  updateScenarios(scenarios.value.filter((item) => item.id !== scenarioId));
+};
+const handleCancelEditScenario = () => {
+  scenarioBeingEdited.value = null;
+};
+const handleDoneEditScenario = () => {
+  const updatedScenarios = scenarios.value.map((scenario) =>
+    scenario.id === scenarioBeingEdited.value?.id ? scenarioBeingEdited.value : scenario
+  );
+  updateScenarios(updatedScenarios);
+  scenarioBeingEdited.value = null;
+};
+const toggleScenarioVisibility = (scenarioId: string) => {
+  const updatedScenarios = scenarios.value.map((scenario) =>
+    scenario.id === scenarioId ? { ...scenario, isVisible: !scenario.isVisible } : scenario
+  );
+  updateScenarios(updatedScenarios);
+};
 </script>
 
 <style lang="scss" scoped>
@@ -383,9 +433,22 @@ main {
   }
 }
 
-.editing-state-indicator {
+.editing-container {
   padding: 10px $index-graph-padding-horizontal;
   height: $navbar-outer-height;
+  .editing-ui-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 50px;
+    label {
+      display: flex;
+      gap: 5px;
+      align-items: baseline;
+    }
+    label:first-child input {
+      width: 180px;
+    }
+  }
 }
 
 .warning {

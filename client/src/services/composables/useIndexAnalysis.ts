@@ -123,7 +123,8 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
       ..._analysisState.value,
       projectionSettings: settings,
     };
-    _saveState(analysisId, _analysisState.value);
+    // TODO: enable when ready to sync with server
+    // _saveState(analysisId, _analysisState.value);
   };
 
   return {
