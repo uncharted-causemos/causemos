@@ -160,7 +160,7 @@ export const getIncomingEdgeClassObject = (
     selectedElementId && isEdge(selectedElementId) && selectedElementId.targetId === cell.node.id,
   highlighted:
     highlightedEdgeId && isEdge(highlightedEdgeId) && highlightedEdgeId.targetId === cell.node.id,
-  'polarity-neg': hasChildren(cell.node) && cell.node.components[0].isOppositePolarity,
+  'polarity-negative': hasChildren(cell.node) && cell.node.components[0].isOppositePolarity,
 });
 
 const isHigherThanSibling = (
@@ -216,6 +216,6 @@ export const getOutgoingEdgeClassObject = (
     highlightedEdgeId && isEdge(highlightedEdgeId) && highlightedEdgeId.sourceId === cell.node.id,
   'highlighted-y':
     highlightedEdgeId && isHigherThanSibling(cell.node.id, highlightedEdgeId, searchForNode),
-  'polarity-neg': cell.isOppositePolarity,
-  'next-sibling-polarity-neg': isNextSiblingPolarityNegative(cell.node.id, searchForNode),
+  'polarity-negative': cell.isOppositePolarity,
+  'next-sibling-polarity-negative': isNextSiblingPolarityNegative(cell.node.id, searchForNode),
 });

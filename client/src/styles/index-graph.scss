@@ -59,7 +59,7 @@ $index-graph-padding-vertical: 40px;
       &.selected-edge {
         border-color: $positive-bright;
       }
-      &.polarity-neg {
+      &.polarity-negative {
         border-color: $negative;
         &.highlighted,
         &.selected-edge {
@@ -80,7 +80,7 @@ $index-graph-padding-vertical: 40px;
       &.selected-edge {
         border-top-color: $positive-bright;
       }
-      &.polarity-neg {
+      &.polarity-negative {
         border-top-color: $negative;
         &.highlighted,
         &.selected-edge {
@@ -94,7 +94,7 @@ $index-graph-padding-vertical: 40px;
       &.selected-y {
         border-right-color: $positive-bright;
       }
-      &.next-sibling-polarity-neg {
+      &.next-sibling-polarity-negative {
         border-right-color: $negative;
         &.highlighted-y,
         &.selected-y {
