@@ -22,7 +22,7 @@
       <div
         v-if="cell.hasOutputLine"
         class="edge outgoing"
-        :class="getOutgoingEdgeClassObject(cell, selectedNodeId, null, () => undefined)"
+        :class="getOutgoingEdgeClassObject(cell, selectedNodeId, null, findNode)"
       ></div>
     </div>
   </div>
@@ -43,7 +43,7 @@ import {
   getOutgoingEdgeClassObject,
 } from '@/utils/grid-cell-util';
 
-const { tree } = useIndexTree();
+const { tree, findNode } = useIndexTree();
 const props = defineProps<{ selectedNodeId: string | null }>();
 
 const gridCells = computed(() => convertTreeToGridCells(tree.value));
