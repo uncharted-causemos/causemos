@@ -290,4 +290,8 @@ const searchForNode = (id: string) => {
     border-left: 5px solid #b3b4b5;
   }
 }
+
+.edge {
+  @include index-tree-edge();
+}
 </style>

@@ -36,14 +36,19 @@ $index-graph-padding-vertical: 40px;
   }
 }
 
-.edge {
+@mixin index-tree-edge(
+  $edge-top-offset-from-node: $edge-top-offset-from-node,
+  $space-between-columns: $space-between-columns
+) {
+  $incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
+  $outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-length);
+
   position: relative;
   top: $edge-top-offset-from-node;
   pointer-events: none;
 
   &.visible {
     pointer-events: auto;
-    cursor: pointer;
   }
 
   &.incoming {
@@ -105,6 +110,8 @@ $index-graph-padding-vertical: 40px;
 
     &.last-child {
       border-right: none;
+      // No need to extend below this cell since we're not drawing a right border.
+      height: 0;
     }
   }
 }

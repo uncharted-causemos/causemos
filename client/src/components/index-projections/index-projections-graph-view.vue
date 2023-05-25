@@ -83,4 +83,8 @@ const getProjectionsForNode = (nodeId: string) => {
 .grid-cell {
   position: relative;
 }
+
+.edge {
+  @include index-tree-edge();
+}
 </style>
