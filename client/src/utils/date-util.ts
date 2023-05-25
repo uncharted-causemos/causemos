@@ -67,3 +67,24 @@ export const getTimestampFromNumberOfMonths = (nMonths: number) => {
   const month = (12 + (nMonths % 12)) % 12;
   return getTimestampMillis(year, month);
 };
+
+/**
+ * Rounds a timestamp to the nearest month.
+ * @param timestamp The timestamp to be snapped
+ * @returns An object containing the month and year of the nearest month
+ */
+export const snapTimestampToNearestMonth = (timestamp: number) => {
+  // "Floor" timestamp to the month (and year) that it falls in
+  const month = getMonthFromTimestamp(timestamp);
+  const year = getYearFromTimestamp(timestamp);
+  const thisMonthTimestamp = getTimestampMillis(year, month);
+  // Get the timestamp at the start of next month
+  const nextMonthTimestamp = addMonths(month, year, 1);
+  // Return the month and year of whichever is closer
+  const distanceToNextMonth = Math.abs(nextMonthTimestamp - timestamp);
+  const distanceToThisMonth = Math.abs(thisMonthTimestamp - timestamp);
+  if (distanceToNextMonth < distanceToThisMonth) {
+    return nextMonthTimestamp;
+  }
+  return thisMonthTimestamp;
+};

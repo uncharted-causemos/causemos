@@ -21,6 +21,10 @@ const props = defineProps<{
 const { projectionStartTimestamp, projectionEndTimestamp, timeseries, isWeightedSumNode } =
   toRefs(props);
 const chartRef = ref<HTMLElement | null>(null);
+const onChartClick = (timestamp: number, value: number) => {
+  // TODO: depending on state, modify constraints or historical data, or do nothing.
+  console.log(timestamp, value);
+};
 
 watch(
   [projectionStartTimestamp, projectionEndTimestamp, chartRef, timeseries, isWeightedSumNode],
@@ -40,7 +44,9 @@ watch(
       height,
       projectionStartTimestamp.value,
       projectionEndTimestamp.value,
-      isWeightedSumNode.value
+      isWeightedSumNode.value,
+      undefined,
+      onChartClick
     );
   }
 );
