@@ -117,7 +117,7 @@ export interface IndexProjectionScenario {
   description: string;
   isVisible: boolean;
   color: string;
-  isDefault?: boolean;
+  isDefault: boolean;
   constraints: { [nodeId: string]: IndexProjectionConstraint[] };
 }
 

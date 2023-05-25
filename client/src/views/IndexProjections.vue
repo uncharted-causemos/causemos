@@ -142,7 +142,7 @@
             </button>
           </div>
         </div>
-        <p v-if="scenarioBeingEdited !== nul" class="subdued un-font-small">
+        <p v-if="scenarioBeingEdited !== null" class="subdued un-font-small">
           Click a concept to add or edit constraints.
         </p>
         <p v-else class="subdued un-font-small">Click a concept to enlarge it.</p>

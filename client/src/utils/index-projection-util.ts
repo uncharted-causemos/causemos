@@ -4,7 +4,7 @@ import { IndexProjectionScenario, IndexProjectionSettings } from '@/types/Index'
 
 const defaultScenario: IndexProjectionScenario = {
   id: uuidv4(),
-  name: 'No constraint',
+  name: 'No constraints',
   description: 'No concepts are constrained in this scenario',
   color: '#000',
   isVisible: true,
@@ -26,12 +26,13 @@ export const createNewScenario = (
   description: string,
   color: string
 ) => {
-  const newScenario = {
+  const newScenario: IndexProjectionScenario = {
     id: uuidv4(),
     name,
     description,
     color: color,
     isVisible: false,
+    isDefault: true,
     constraints: {},
   };
   return newScenario;
