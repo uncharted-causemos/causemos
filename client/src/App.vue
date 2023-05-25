@@ -6,8 +6,8 @@
       :messageSecondary="overlayMessageSecondary"
       :cancel-fn="overlayCancelFn"
     />
-    <nav-bar />
-    <insight-manager />
+    <nav-bar class="nav-bar" />
+    <insight-manager class="insight-manager" />
     <router-view />
   </div>
 </template>
@@ -199,4 +199,17 @@ $fa-font-path: 'font-awesome/fonts';
 @import './styles/wm';
 
 @import 'pdfjs-dist/legacy/web/pdf_viewer.css';
+
+#app {
+  isolation: isolate;
+
+  .nav-bar {
+    position: relative;
+    z-index: 1;
+  }
+
+  .insight-manager {
+    z-index: 2;
+  }
+}
 </style>

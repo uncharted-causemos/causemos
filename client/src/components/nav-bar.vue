@@ -22,25 +22,43 @@
       <div id="navbar-trailing-teleport-destination" class="trailing"></div>
     </div>
 
-    <!-- Help button -->
-    <!-- Old resources
-      Up until Mar 2022: https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing
-    -->
-    <a
-      href="https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing"
-      target="_blank"
-      class="nav-item clickable"
-    >
-      <i class="fa fa-question" />
-    </a>
+    <div class="navbar-right-group">
+      <div v-if="showNavbarInsightsPanelButton" class="nav-item insights-controls">
+        <div
+          class="nav-item clickable navbar-insights-panel-button"
+          @click="showNavbarInsightsPanel = !showNavbarInsightsPanel"
+        >
+          <i class="fa fa-fw fa-star" />
+          <span class="nav-item-label">Insights</span>
+        </div>
+
+        <NavbarInsightsPanel
+          v-if="showNavbarInsightsPanel"
+          class="navbar-insights-panel"
+          @close="showNavbarInsightsPanel = false"
+        />
+      </div>
+      <!-- Help button -->
+      <!-- Old resources
+        Up until Mar 2022: https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing
+      -->
+      <a
+        href="https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing"
+        target="_blank"
+        class="nav-item clickable"
+      >
+        <i class="fa fa-question" />
+      </a>
+    </div>
   </nav>
 </template>
 
 <script lang="ts">
 import { ProjectType } from '@/types/Enums';
-import { computed, defineComponent } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
+import NavbarInsightsPanel from '@/components/insight-manager/navbar-insights-panel.vue';
 
 interface NavBarItem {
   route: { name: string; params: any } | null;
@@ -50,6 +68,9 @@ interface NavBarItem {
 
 export default defineComponent({
   name: 'NavBar',
+  components: {
+    NavbarInsightsPanel,
+  },
   setup() {
     const store = useStore();
     const project = computed(() => store.getters['app/project']);
@@ -127,7 +148,7 @@ export default defineComponent({
     }));
     const indexProjectionsItem = computed(() => ({
       text: 'Projections',
-      icon: 'fa-question',
+      icon: 'fa-line-chart',
       route: {
         name: 'indexProjections',
         params: {
@@ -181,10 +202,17 @@ export default defineComponent({
     const currentView = computed(() => store.getters['app/currentView']);
     const navItems = computed(() => siteMap.value[currentView.value] ?? null);
     const isNavbarVisible = computed(() => navItems.value !== null);
+    const VIEWS_WITH_NAVBAR_INSIGHTS_PANEL = ['indexStructure', 'indexResults', 'indexProjections'];
+    const showNavbarInsightsPanelButton = computed(() =>
+      VIEWS_WITH_NAVBAR_INSIGHTS_PANEL.includes(currentView.value)
+    );
+    const showNavbarInsightsPanel = ref(false);
 
     return {
       navItems,
       isNavbarVisible,
+      showNavbarInsightsPanelButton,
+      showNavbarInsightsPanel,
     };
   },
 });
@@ -201,7 +229,8 @@ export default defineComponent({
   padding: 0 15px;
 }
 
-.navbar-left-group {
+.navbar-left-group,
+.navbar-right-group {
   display: flex;
 
   & > .nav-item:not(:first-child) {
@@ -228,6 +257,10 @@ export default defineComponent({
     color: rgba(255, 255, 255, 0.71);
     font-size: $font-size-large;
   }
+}
+
+.clickable {
+  cursor: pointer;
 }
 
 .nav-item.clickable:hover {
@@ -260,5 +293,22 @@ $logo-size: 28px;
   position: relative;
   // Nudge the logo up a little bit so it's more visually centered
   bottom: calc(#{$logo-size} / 10);
+}
+
+.insights-controls {
+  display: flex;
+  position: relative;
+}
+
+.navbar-insights-panel-button {
+  height: 100%;
+}
+
+.navbar-insights-panel {
+  position: absolute;
+  width: 270px;
+  height: 700px;
+  top: calc(100% - 5px);
+  right: 0;
 }
 </style>

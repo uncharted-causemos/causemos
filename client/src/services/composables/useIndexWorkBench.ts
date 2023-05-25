@@ -107,6 +107,7 @@ export default function useIndexWorkBench() {
     findAndAddChild,
     attachDatasetToNode,
     setDatasetIsInverted,
+    containsElement,
   } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
   const popItem = (nodeId: string): ConceptNode | null => {
     const itemToPop = workBenchItems.value.filter((item) => item.id === nodeId);
@@ -134,5 +135,6 @@ export default function useIndexWorkBench() {
     popItem,
     isDescendant,
     updateIsOppositePolarity,
+    containsElement,
   };
 }

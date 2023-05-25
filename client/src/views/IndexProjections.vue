@@ -1,5 +1,5 @@
 <template>
-  <div class="index-projections-container">
+  <div class="index-projections-container" :class="[INSIGHT_CAPTURE_CLASS]">
     <div
       class="flex-col config-column"
       :class="{ 'settings-disabled': scenarioBeingEdited !== null }"
@@ -58,9 +58,61 @@
         <section>
           <header class="flex">
             <p>Time range</p>
-            <button class="btn btn-sm disabled" @click="() => {}">Edit</button>
+            <button
+              v-if="!isEditingTimeRange"
+              class="btn btn-sm"
+              @click="isEditingTimeRange = true"
+            >
+              Edit
+            </button>
+            <button
+              v-else
+              class="btn btn-sm btn-call-to-action"
+              @click="onDoneEditingTimeRange"
+              :disabled="!areProjectionDatesValid"
+            >
+              Done
+            </button>
           </header>
-          <p class="un-font-small subtitle">
+          <div v-if="isEditingTimeRange">
+            <div class="projection-date">
+              <DropdownButton
+                :items="MONTHS"
+                :selected-item="projectionStartMonth"
+                :is-dropdown-above="true"
+                :is-dropdown-left-aligned="true"
+                @item-selected="(month) => (projectionStartMonth = month)"
+              />
+              <DropdownButton
+                :items="selectableYears"
+                :selected-item="projectionStartYear"
+                :is-dropdown-above="true"
+                :is-dropdown-left-aligned="true"
+                @item-selected="(year) => (projectionStartYear = year)"
+              />
+            </div>
+            <p>to</p>
+            <div class="projection-date">
+              <DropdownButton
+                :items="MONTHS"
+                :selected-item="projectionEndMonth"
+                :is-dropdown-above="true"
+                :is-dropdown-left-aligned="true"
+                @item-selected="(month) => (projectionEndMonth = month)"
+              />
+              <DropdownButton
+                :items="selectableYears"
+                :selected-item="projectionEndYear"
+                :is-dropdown-above="true"
+                :is-dropdown-left-aligned="true"
+                @item-selected="(year) => (projectionEndYear = year)"
+              />
+            </div>
+            <p v-if="!areProjectionDatesValid" class="warning">
+              The projection end date must be after the projection start date.
+            </p>
+          </div>
+          <p v-else class="un-font-small subtitle">
             {{ timestampFormatter(projectionStartTimestamp, null, null) }} -
             {{ timestampFormatter(projectionEndTimestamp, null, null) }}
           </p>
@@ -103,7 +155,6 @@
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="projectionData"
         @select-element="selectElement"
-        @deselect-edge="deselectEdge"
       />
       <IndexProjectionsNodeView
         v-else
@@ -129,12 +180,12 @@ import useOverlay from '@/services/composables/useOverlay';
 import { ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
+import useProjectionDates from '@/services/composables/useProjectionDates';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
 import { IndexProjectionScenario, SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
-import { getTimestampMillis } from '@/utils/date-util';
 import timestampFormatter from '@/formatters/timestamp-formatter';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
 import useIndexTree from '@/services/composables/useIndexTree';
@@ -145,6 +196,27 @@ import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
 import IndexProjectionsSettingsScenarios from '@/components/index-projections/index-projections-settings-scenarios.vue';
 import { COLORS } from '@/utils/colors-util';
+import useInsightStore from '@/services/composables/useInsightStore';
+import useToaster from '@/services/composables/useToaster';
+import { getInsightById } from '@/services/insight-service';
+import { Insight, IndexProjectionsDataState } from '@/types/Insight';
+import { INSIGHT_CAPTURE_CLASS, isIndexProjectionsDataState } from '@/utils/insight-util';
+import { TYPE } from 'vue-toastification';
+
+const MONTHS: DropdownItem[] = [
+  { value: 0, displayName: 'January' },
+  { value: 1, displayName: 'February' },
+  { value: 2, displayName: 'March' },
+  { value: 3, displayName: 'April' },
+  { value: 4, displayName: 'May' },
+  { value: 5, displayName: 'June' },
+  { value: 6, displayName: 'July' },
+  { value: 7, displayName: 'August' },
+  { value: 8, displayName: 'September' },
+  { value: 9, displayName: 'October' },
+  { value: 10, displayName: 'November' },
+  { value: 11, displayName: 'December' },
+];
 
 const store = useStore();
 const route = useRoute();
@@ -160,18 +232,10 @@ const selectElement = (id: SelectableIndexElementId) => {
   if (typeof id === 'string') {
     selectedNodeId.value = id;
   }
-  // if (isEdge(id)) {
-  //   // TODO:
-  // }
 };
 const deselectNode = () => {
   selectedNodeId.value = null;
 };
-
-const deselectEdge = () => {
-  // TODO
-};
-
 const project = computed(() => store.getters['app/project']);
 
 // Set analysis name on the navbar
@@ -197,9 +261,6 @@ const COUNTRY_MODES: DropdownItem[] = [
   { displayName: 'Multiple countries', value: false },
 ];
 const isSingleCountryModeActive = ref(true);
-
-const projectionStartTimestamp = ref(getTimestampMillis(1990, 0));
-const projectionEndTimestamp = ref(getTimestampMillis(2025, 0));
 
 const temporalResolutionOption = ref(TemporalResolutionOption.Month);
 
@@ -291,6 +352,33 @@ watch([indexTree.tree, selectedCountry], async () => {
   historicalData.value = newMap;
 });
 
+// Projection dates
+const isEditingTimeRange = ref(false);
+const historicalTimeseries = computed(() => Array.from(historicalData.value.values()));
+const {
+  projectionStartYear,
+  projectionStartMonth,
+  projectionStartTimestamp,
+  projectionEndYear,
+  projectionEndMonth,
+  projectionEndTimestamp,
+  lastSelectableYear,
+  earliestSelectableYear,
+  areProjectionDatesValid,
+  saveProjectionDates,
+} = useProjectionDates(historicalTimeseries);
+const selectableYears = computed(() => {
+  const result: DropdownItem[] = [];
+  for (let year = earliestSelectableYear.value; year <= lastSelectableYear.value; year++) {
+    result.push({ displayName: year.toString(), value: year });
+  }
+  return result;
+});
+const onDoneEditingTimeRange = () => {
+  isEditingTimeRange.value = false;
+  saveProjectionDates();
+};
+
 const projectionData = ref(new Map<string, TimeseriesPointProjected[]>());
 // Whenever historical data changes, re-run projections
 watch(
@@ -322,6 +410,84 @@ watch(
     overlay.disable();
   }
 );
+const { setContextId, setDataState, setViewState } = useInsightStore();
+onMounted(() => {
+  setContextId(analysisId.value + '--projections');
+});
+
+// Whenever state changes, sync it to insight panel store so that the latest state is captured when
+//  taking an insight.
+watch(
+  [
+    isSingleCountryModeActive,
+    selectedCountry,
+    projectionStartYear,
+    projectionStartMonth,
+    projectionEndYear,
+    projectionEndMonth,
+    selectedNodeId,
+  ],
+  () => {
+    const newDataState: IndexProjectionsDataState = {
+      isSingleCountryModeActive: isSingleCountryModeActive.value,
+      selectedCountry: selectedCountry.value,
+      projectionStartYear: projectionStartYear.value,
+      projectionStartMonth: projectionStartMonth.value,
+      projectionEndYear: projectionEndYear.value,
+      projectionEndMonth: projectionEndMonth.value,
+      selectedNodeId: selectedNodeId.value,
+    };
+    setDataState(newDataState);
+    // No view state for this page. Set it to an empty object so that any view state from previous
+    //  pages is cleared and not associated with insights taken from this page.
+    setViewState({});
+  },
+  { immediate: true }
+);
+const toaster = useToaster();
+const updateStateFromInsight = async (insightId: string) => {
+  const loadedInsight: Insight = await getInsightById(insightId);
+  const dataState = loadedInsight?.data_state;
+  if (!dataState || !isIndexProjectionsDataState(dataState)) {
+    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
+    return;
+  }
+  isSingleCountryModeActive.value = dataState.isSingleCountryModeActive;
+  selectedCountry.value = dataState.selectedCountry;
+  projectionStartYear.value = dataState.projectionStartYear;
+  projectionStartMonth.value = dataState.projectionStartMonth;
+  projectionEndYear.value = dataState.projectionEndYear;
+  projectionEndMonth.value = dataState.projectionEndMonth;
+  saveProjectionDates();
+  if (dataState.selectedNodeId !== null && !indexTree.containsElement(dataState.selectedNodeId)) {
+    toaster(
+      'The node that is selected in this insight no longer exists in the analysis.',
+      TYPE.ERROR,
+      true
+    );
+    return;
+  }
+  selectedNodeId.value = dataState.selectedNodeId;
+};
+
+watch(
+  [route],
+  () => {
+    const insight_id = route.query.insight_id as any;
+    if (insight_id !== undefined) {
+      updateStateFromInsight(insight_id);
+      // Remove the insight_id from the url so that
+      //  (1) future insight capture is valid
+      //  (2) we can re-apply the same insight if necessary
+      router
+        .push({
+          query: { insight_id: undefined },
+        })
+        .catch(() => {});
+    }
+  },
+  { immediate: true }
+);
 
 // ========================== Scenario Management ==========================
 
@@ -339,28 +505,34 @@ const getAvailableScenarioColor = () => {
   const used = scenarios.value.map((v) => v.color);
   return COLORS.filter((v) => !used.includes(v)).shift();
 };
+
 const handleCreateScenario = () => {
   const color = getAvailableScenarioColor();
   if (!color) return;
   updateScenarios([...scenarios.value, createNewScenario(undefined, '', color)]);
 };
+
 const handleEditScenario = (scenarioId: string) => {
   const target = scenarios.value.find((v) => v.id === scenarioId);
   if (!target) return;
   scenarioBeingEdited.value = _.cloneDeep(target);
 };
+
 const handleDuplicateScenario = (scenarioId: string) => {
   const target = scenarios.value.find((v) => v.id === scenarioId);
   const color = getAvailableScenarioColor();
   if (!target || !color) return;
   updateScenarios([...scenarios.value, createNewScenario(target.name, target.description, color)]);
 };
+
 const handleDeleteScenario = (scenarioId: string) => {
   updateScenarios(scenarios.value.filter((item) => item.id !== scenarioId));
 };
+
 const handleCancelEditScenario = () => {
   scenarioBeingEdited.value = null;
 };
+
 const handleDoneEditScenario = () => {
   const updatedScenarios = scenarios.value.map((scenario) =>
     scenario.id === scenarioBeingEdited.value?.id ? scenarioBeingEdited.value : scenario
@@ -368,12 +540,15 @@ const handleDoneEditScenario = () => {
   updateScenarios(updatedScenarios);
   scenarioBeingEdited.value = null;
 };
+
 const toggleScenarioVisibility = (scenarioId: string) => {
   const updatedScenarios = scenarios.value.map((scenario) =>
     scenario.id === scenarioId ? { ...scenario, isVisible: !scenario.isVisible } : scenario
   );
   updateScenarios(updatedScenarios);
 };
+
+// ======================== Scenario Management End ========================
 </script>
 
 <style lang="scss" scoped>
@@ -384,6 +559,7 @@ const toggleScenarioVisibility = (scenarioId: string) => {
 .index-projections-container {
   display: flex;
   height: $content-full-height;
+  background: $background-light-2;
 }
 
 .config-column {
@@ -423,6 +599,11 @@ section {
     display: flex;
     justify-content: space-between;
   }
+}
+
+.projection-date {
+  display: flex;
+  gap: 5px;
 }
 
 main {

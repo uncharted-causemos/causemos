@@ -3,6 +3,7 @@ import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { DatacubeViewMode, DataTransform } from '@/types/Enums';
 import { Filters } from './Filters';
 import { FeatureConfig } from './Outputdata';
+import { SelectableIndexElementId } from './Index';
 
 // view-specific values (no data dependency)
 export interface ViewState {
@@ -70,11 +71,31 @@ export interface ModelsSpaceDataState extends QualitativeDataState {
   selectedScenarioId: string;
 }
 
+export interface IndexStructureDataState {
+  selectedElementId: SelectableIndexElementId | null;
+}
+
+export interface IndexResultsDataState {
+  isShowingKeyDatasets: boolean;
+}
+
+export interface IndexProjectionsDataState {
+  isSingleCountryModeActive: boolean;
+  selectedCountry: string;
+  projectionStartYear: number;
+  projectionStartMonth: number;
+  projectionEndYear: number;
+  projectionEndMonth: number;
+  selectedNodeId: string | null;
+}
+
 export type DataState =
   | DataSpaceDataState
   | DataAnalysisState
   | QualitativeDataState
-  | ModelsSpaceDataState;
+  | ModelsSpaceDataState
+  | IndexStructureDataState
+  | IndexStructureResultsState;
 
 // @base/abstract type
 export interface Snapshot {
