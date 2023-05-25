@@ -78,7 +78,7 @@ export function ramp(color: (t: number) => string, n = COLOR_PALETTE_SIZE) {
   return canvas;
 }
 
-const COLORS = ['#8767C8', '#1b9e77', '#d95f02', '#e7298a', '#66a61e'];
+export const COLORS = ['#8767C8', '#1b9e77', '#d95f02', '#e7298a', '#66a61e'];
 
 export function colorFromIndex(index: number) {
   return COLORS[index % COLORS.length];
@@ -114,6 +114,7 @@ export function isDivergingScheme(schemeName: COLOR) {
 }
 
 export default {
+  COLORS,
   ColorScaleType,
   COLOR_SCHEME,
   SELECTED_COLOR,

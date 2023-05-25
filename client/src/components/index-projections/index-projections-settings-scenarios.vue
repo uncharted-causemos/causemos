@@ -29,6 +29,11 @@
               <div
                 v-for="item in scenarioOptionsButtonMenu"
                 class="dropdown-option"
+                :class="{
+                  disabled:
+                    item.type === ScenarioOptionButtonMenu.Duplicate &&
+                    maxScenarios === scenarios.length,
+                }"
                 :key="item.type"
                 @click="handleScenarioOptionButtonClick(scenario.id, item.type)"
               >
@@ -43,7 +48,11 @@
         </p>
       </li>
     </ul>
-    <button class="btn btn-sm" @click="emit('create')">
+    <button
+      class="btn btn-sm"
+      :class="{ disabled: maxScenarios === scenarios.length }"
+      @click="emit('create')"
+    >
       <i class="fa fa-fw fa-plus" />Create new scenario
     </button>
   </div>
@@ -80,6 +89,7 @@ const scenarioOptionsButtonMenu = [MENU_OPTION_EDIT, MENU_OPTION_DUPLICATE, MENU
 
 defineProps<{
   scenarios: IndexProjectionScenario[];
+  maxScenarios: number;
 }>();
 
 const emit = defineEmits<{
@@ -117,6 +127,10 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
   .scenario-list {
     list-style: none;
     padding-left: 0;
+    margin-top: 10px;
+  }
+  .scenario-item {
+    margin-bottom: 10px;
   }
   .scenario-item .action-group {
     gap: 2px;

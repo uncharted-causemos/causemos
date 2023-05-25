@@ -1,6 +1,10 @@
 <template>
   <div class="index-projections-container">
-    <div class="flex-col config-column">
+    <div
+      class="flex-col config-column"
+      :class="{ 'settings-disabled': scenarioBeingEdited !== null }"
+    >
+      <div class="disable-overlay" />
       <header>
         <button v-if="selectedNodeId !== null" class="btn btn-sm" @click="deselectNode">
           <i class="fa fa-fw fa-caret-left" />View all concepts
@@ -42,6 +46,7 @@
         <br />
         <IndexProjectionsSettingsScenarios
           :scenarios="scenarios"
+          :max-scenarios="MAX_NUM_SCENARIOS"
           @create="handleCreateScenario"
           @duplicate="handleDuplicateScenario"
           @edit="handleEditScenario"
@@ -139,6 +144,7 @@ import { createNewScenario } from '@/utils/index-projection-util';
 import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
 import IndexProjectionsSettingsScenarios from '@/components/index-projections/index-projections-settings-scenarios.vue';
+import { COLORS } from '@/utils/colors-util';
 
 const store = useStore();
 const route = useRoute();
@@ -319,7 +325,7 @@ watch(
 
 // ========================== Scenario Management ==========================
 
-const MAX_NUM_SCENARIOS = 7;
+const MAX_NUM_SCENARIOS = COLORS.length + 1; // + 1 for the default scenario
 const scenarios = computed(() => indexProjectionSettings.value.scenarios);
 const scenarioBeingEdited = ref<IndexProjectionScenario | null>(null);
 const updateScenarios = (scenarios: IndexProjectionScenario[]) => {
@@ -328,10 +334,15 @@ const updateScenarios = (scenarios: IndexProjectionScenario[]) => {
     scenarios,
   });
 };
-const handleCreateScenario = () => {
+const getAvailableScenarioColor = () => {
   if (scenarios.value.length >= MAX_NUM_SCENARIOS) return;
-  // handle color
-  updateScenarios([...scenarios.value, createNewScenario(undefined, '', 'red')]);
+  const used = scenarios.value.map((v) => v.color);
+  return COLORS.filter((v) => !used.includes(v)).shift();
+};
+const handleCreateScenario = () => {
+  const color = getAvailableScenarioColor();
+  if (!color) return;
+  updateScenarios([...scenarios.value, createNewScenario(undefined, '', color)]);
 };
 const handleEditScenario = (scenarioId: string) => {
   const target = scenarios.value.find((v) => v.id === scenarioId);
@@ -340,13 +351,9 @@ const handleEditScenario = (scenarioId: string) => {
 };
 const handleDuplicateScenario = (scenarioId: string) => {
   const target = scenarios.value.find((v) => v.id === scenarioId);
-  if (!target) return;
-  if (scenarios.value.length >= MAX_NUM_SCENARIOS) return;
-  // handle color
-  updateScenarios([
-    ...scenarios.value,
-    createNewScenario(target.name, target.description, target.color),
-  ]);
+  const color = getAvailableScenarioColor();
+  if (!target || !color) return;
+  updateScenarios([...scenarios.value, createNewScenario(target.name, target.description, color)]);
 };
 const handleDeleteScenario = (scenarioId: string) => {
   updateScenarios(scenarios.value.filter((item) => item.id !== scenarioId));
@@ -453,5 +460,24 @@ main {
 
 .warning {
   color: $un-color-feedback-warning;
+}
+
+.settings-disabled {
+  pointer-events: none;
+  .disable-overlay {
+    display: block;
+  }
+}
+
+.disable-overlay {
+  display: none;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 999;
+  opacity: 0.4;
+  background: white;
+  top: 0px;
+  left: 0px;
 }
 </style>
