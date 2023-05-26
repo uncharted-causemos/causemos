@@ -6,7 +6,7 @@ import { createIndexAnalysisObject } from '../analysis-service-new';
 
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { IndexResultsSettings } from '@/types/Index';
+import { IndexProjectionSettings, IndexResultsSettings } from '@/types/Index';
 
 // Whenever a change is made, wait SYNC_DELAY_MS before saving to the backend to
 //  group requests together.
@@ -106,7 +106,7 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
 
   const indexResultsSettings = computed(() => _analysisState.value.resultsSettings);
 
-  const saveIndexResultsSettings = (config: IndexResultsSettings) => {
+  const updateIndexResultsSettings = (config: IndexResultsSettings) => {
     _analysisState.value = {
       ..._analysisState.value,
       resultsSettings: config,
@@ -114,10 +114,25 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     _saveState(analysisId, _analysisState.value);
   };
 
+  // index projection settings
+
+  const indexProjectionSettings = computed(() => _analysisState.value.projectionSettings);
+
+  const updateIndexProjectionSettings = (settings: IndexProjectionSettings) => {
+    _analysisState.value = {
+      ..._analysisState.value,
+      projectionSettings: settings,
+    };
+    // TODO: enable when ready to sync with server
+    // _saveState(analysisId, _analysisState.value);
+  };
+
   return {
     analysisName,
     indexResultsSettings,
-    saveIndexResultsSettings,
+    indexProjectionSettings,
+    updateIndexResultsSettings,
+    updateIndexProjectionSettings,
     refresh: fetchAnalysis,
     waitForStateInSync,
   };
