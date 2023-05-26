@@ -183,7 +183,10 @@ watch([tree], async () => {
     // If this dataset is inverted, higher original values should map closer to 0 and lower
     //  original values should map closer to 1.
     if (shouldDatasetsBeInverted[i]) {
-      regionData.country?.map((country) => ({ id: country.id, value: 1 - country.value }));
+      regionData.country = regionData.country?.map((country) => ({
+        id: country.id,
+        value: 1 - country.value,
+      }));
     }
   });
 
