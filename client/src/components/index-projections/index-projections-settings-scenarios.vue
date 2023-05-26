@@ -134,6 +134,7 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
   }
   .scenario-item .action-group {
     gap: 2px;
+    align-items: center;
   }
   .scenario-item .btn,
   .scenario-item .options-button-container {

@@ -1,6 +1,9 @@
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { IndexProjectionScenario, IndexProjectionSettings } from '@/types/Index';
+import { COLORS } from './colors-util';
+
+export const NO_COUNTRY_SELECTED_VALUE = '';
 
 const defaultScenario: IndexProjectionScenario = {
   id: uuidv4(),
@@ -18,6 +21,11 @@ const defaultScenario: IndexProjectionScenario = {
 export const createNewIndexProjectionSettings = (): IndexProjectionSettings => {
   return {
     scenarios: [defaultScenario],
+    selectedCountry: NO_COUNTRY_SELECTED_VALUE,
+    selectedCountries: [
+      { name: NO_COUNTRY_SELECTED_VALUE, color: '#000' },
+      { name: NO_COUNTRY_SELECTED_VALUE, color: COLORS[0] },
+    ],
   };
 };
 
