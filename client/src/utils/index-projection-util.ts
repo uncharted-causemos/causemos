@@ -32,7 +32,7 @@ export const createNewScenario = (
     description,
     color: color,
     isVisible: false,
-    isDefault: true,
+    isDefault: false,
     constraints: {},
   };
   return newScenario;
