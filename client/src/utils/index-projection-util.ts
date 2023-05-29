@@ -15,7 +15,7 @@ const defaultScenario: IndexProjectionScenario = {
   id: uuidv4(),
   name: 'No constraints',
   description: 'No concepts are constrained in this scenario.',
-  color: '#000',
+  color: TIMESERIES_COLORS[0],
   isVisible: true,
   isDefault: true,
   constraints: {},
@@ -30,7 +30,7 @@ export const createNewIndexProjectionSettings = (): IndexProjectionSettings => {
     selectedCountry: NO_COUNTRY_SELECTED_VALUE,
     selectedCountries: [
       { name: NO_COUNTRY_SELECTED_VALUE, color: TIMESERIES_COLORS[0] },
-      { name: NO_COUNTRY_SELECTED_VALUE, color: COLORS[0] },
+      { name: NO_COUNTRY_SELECTED_VALUE, color: TIMESERIES_COLORS[1] },
     ],
   };
 };
