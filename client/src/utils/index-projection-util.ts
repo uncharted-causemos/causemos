@@ -29,7 +29,7 @@ export const createNewIndexProjectionSettings = (): IndexProjectionSettings => {
     scenarios: [defaultScenario],
     selectedCountry: NO_COUNTRY_SELECTED_VALUE,
     selectedCountries: [
-      { name: NO_COUNTRY_SELECTED_VALUE, color: '#000' },
+      { name: NO_COUNTRY_SELECTED_VALUE, color: TIMESERIES_COLORS[0] },
       { name: NO_COUNTRY_SELECTED_VALUE, color: COLORS[0] },
     ],
   };
