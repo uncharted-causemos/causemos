@@ -5,6 +5,12 @@ import { COLORS } from './colors-util';
 
 export const NO_COUNTRY_SELECTED_VALUE = '';
 
+const TIMESERIES_COLORS = ['#000', ...COLORS];
+export const MAX_NUM_TIMESERIES = TIMESERIES_COLORS.length + 1;
+
+export const getAvailableTimeseriesColor = (usedColors: string[]) =>
+  TIMESERIES_COLORS.filter((color) => !usedColors.includes(color)).shift();
+
 const defaultScenario: IndexProjectionScenario = {
   id: uuidv4(),
   name: 'No constraints',

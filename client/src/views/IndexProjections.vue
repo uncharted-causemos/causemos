@@ -204,11 +204,15 @@ import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
 import { createProjectionRunner } from '@/utils/projection-util';
-import { NO_COUNTRY_SELECTED_VALUE, createNewScenario } from '@/utils/index-projection-util';
+import {
+  MAX_NUM_TIMESERIES,
+  NO_COUNTRY_SELECTED_VALUE,
+  createNewScenario,
+  getAvailableTimeseriesColor,
+} from '@/utils/index-projection-util';
 import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
 import IndexProjectionsSettingsScenarios from '@/components/index-projections/index-projections-settings-scenarios.vue';
-import { COLORS } from '@/utils/colors-util';
 import useInsightStore from '@/services/composables/useInsightStore';
 import useToaster from '@/services/composables/useToaster';
 import { getInsightById } from '@/services/insight-service';
@@ -512,7 +516,6 @@ watch(
 
 // ========================== Scenario Management ==========================
 
-const MAX_NUM_TIMESERIES = COLORS.length + 1; // + 1 for the default scenario
 const scenarios = computed(() => indexProjectionSettings.value.scenarios);
 const scenarioBeingEdited = ref<IndexProjectionScenario | null>(null);
 const updateScenarios = (scenarios: IndexProjectionScenario[]) => {
@@ -522,9 +525,8 @@ const updateScenarios = (scenarios: IndexProjectionScenario[]) => {
   });
 };
 const getAvailableScenarioColor = () => {
-  if (scenarios.value.length >= MAX_NUM_TIMESERIES) return;
-  const used = scenarios.value.map((v) => v.color);
-  return COLORS.filter((v) => !used.includes(v)).shift();
+  const usedColors = scenarios.value.map((scenario) => scenario.color);
+  return getAvailableTimeseriesColor(usedColors);
 };
 
 const handleCreateScenario = () => {

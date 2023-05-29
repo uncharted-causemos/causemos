@@ -1,10 +1,10 @@
 import { Ref, computed, watch } from 'vue';
 import { IndexProjectionCountry, IndexProjectionSettings } from '@/types/Index';
-import { COLORS } from '@/utils/colors-util';
-import { NO_COUNTRY_SELECTED_VALUE } from '@/utils/index-projection-util';
+import {
+  NO_COUNTRY_SELECTED_VALUE,
+  getAvailableTimeseriesColor,
+} from '@/utils/index-projection-util';
 import _ from 'lodash';
-
-const MAX_NUM_TIMESERIES = COLORS.length + 1; // + 1 for the added black color
 
 export default function useSelectedCountries(
   selectableCountries: Ref<string[]>,
@@ -23,9 +23,8 @@ export default function useSelectedCountries(
   };
 
   const getAvailableCountryColor = () => {
-    if (selectedCountries.value.length >= MAX_NUM_TIMESERIES) return;
-    const used = selectedCountries.value.map((v) => v.color);
-    return ['#000', ...COLORS].filter((v) => !used.includes(v)).shift();
+    const usedColors = selectedCountries.value.map((v) => v.color);
+    return getAvailableTimeseriesColor(usedColors);
   };
 
   const addSelectedCountry = () => {
