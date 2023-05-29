@@ -572,7 +572,7 @@ const toggleScenarioVisibility = (scenarioId: string) => {
 // ======================== Scenario Management End ========================
 
 const { selectedCountries, addSelectedCountry, removeSelectedCountry, changeSelectedCountry } =
-  useSelectedCountries(analysisId, selectableCountries);
+  useSelectedCountries(selectableCountries, indexProjectionSettings, updateIndexProjectionSettings);
 </script>
 
 <style lang="scss" scoped>

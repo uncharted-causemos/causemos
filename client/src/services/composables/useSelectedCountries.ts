@@ -1,6 +1,5 @@
 import { Ref, computed, watch } from 'vue';
-import useIndexAnalysis from './useIndexAnalysis';
-import { IndexProjectionCountry } from '@/types/Index';
+import { IndexProjectionCountry, IndexProjectionSettings } from '@/types/Index';
 import { COLORS } from '@/utils/colors-util';
 import { NO_COUNTRY_SELECTED_VALUE } from '@/utils/index-projection-util';
 import _ from 'lodash';
@@ -8,10 +7,10 @@ import _ from 'lodash';
 const MAX_NUM_TIMESERIES = COLORS.length + 1; // + 1 for the added black color
 
 export default function useSelectedCountries(
-  analysisId: Ref<string>,
-  selectableCountries: Ref<string[]>
+  selectableCountries: Ref<string[]>,
+  indexProjectionSettings: Ref<IndexProjectionSettings>,
+  updateIndexProjectionSettings: (settings: IndexProjectionSettings) => void
 ) {
-  const { indexProjectionSettings, updateIndexProjectionSettings } = useIndexAnalysis(analysisId);
   // The countries whose historical data and projections are be displayed when multiple country mode
   //  is active.
   const selectedCountries = computed(() => indexProjectionSettings.value.selectedCountries);
