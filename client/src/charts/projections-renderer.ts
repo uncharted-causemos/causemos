@@ -2,7 +2,7 @@ import _ from 'lodash';
 import * as d3 from 'd3';
 import dateFormatter from '@/formatters/date-formatter';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
-import { TimeseriesPointProjected } from '@/types/Timeseries';
+import { ProjectionTimeseries, TimeseriesPointProjected } from '@/types/Timeseries';
 import {
   calculateYearlyTicks,
   renderDashedLine,
@@ -184,13 +184,12 @@ const renderScrollBarLabels = (
 
 export default function render(
   selection: D3Selection,
-  timeseries: TimeseriesPointProjected[],
+  timeseriesList: ProjectionTimeseries[],
   totalWidth: number,
   totalHeight: number,
   projectionStartTimestamp: number,
   projectionEndTimestamp: number,
   isWeightedSum: boolean,
-  color = 'black',
   onClick: (timestamp: number, value: number) => void
 ) {
   // Clear any existing elements
@@ -280,7 +279,16 @@ export default function render(
     yAxisElement.selectAll('.tick > line').attr('stroke', FOCUS_BORDER_COLOR);
 
     // Render timeseries itself
-    renderTimeseries(timeseries, focusGroupElement, xScale, yScale, isWeightedSum, color);
+    timeseriesList.forEach((timeseries) => {
+      renderTimeseries(
+        timeseries.points,
+        focusGroupElement,
+        xScale,
+        yScale,
+        isWeightedSum,
+        timeseries.color
+      );
+    });
 
     // Don't render anything outside the main graph area (except the axes)
     focusGroupElement
@@ -325,14 +333,16 @@ export default function render(
   );
   // Render timeseries to scrollbar and fade it out.
   const yScaleScrollbar = d3.scaleLinear().domain([0, 1]).range([SCROLL_BAR_HEIGHT, 0]);
-  renderTimeseries(
-    timeseries,
-    scrollBarGroupElement,
-    xScaleScrollbar,
-    yScaleScrollbar,
-    isWeightedSum,
-    color
-  );
+  timeseriesList.forEach((timeseries) => {
+    renderTimeseries(
+      timeseries.points,
+      focusGroupElement,
+      xScaleScrollbar,
+      yScaleScrollbar,
+      isWeightedSum,
+      timeseries.color
+    );
+  });
   scrollBarGroupElement
     .selectAll('.segment-line, .circle')
     .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
