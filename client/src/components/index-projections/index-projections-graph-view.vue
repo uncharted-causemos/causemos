@@ -9,13 +9,7 @@
       }"
       class="grid-cell"
     >
-      <div
-        class="edge incoming"
-        :class="{
-          visible: hasChildren(cell.node),
-          inactive: !hasChildren(cell.node),
-        }"
-      ></div>
+      <div class="edge incoming" :class="getIncomingEdgeClassObject(cell, null, null)" />
       <IndexProjectionsNode
         :node-data="cell.node"
         class="index-tree-node"
@@ -26,11 +20,7 @@
       />
       <div
         class="edge outgoing"
-        :class="{
-          visible: cell.hasOutputLine,
-          inactive: !cell.hasOutputLine,
-          'last-child': cell.isLastChild,
-        }"
+        :class="getOutgoingEdgeClassObject(cell, null, null, searchForNode)"
       />
     </div>
   </div>
@@ -39,12 +29,15 @@
 <script setup lang="ts">
 import _ from 'lodash';
 
-import { hasChildren } from '@/utils/index-tree-util';
 import { GridCell, SelectableIndexElementId } from '@/types/Index';
 import { computed } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { getGridCellsFromIndexTreeAndWorkbench } from '@/utils/grid-cell-util';
+import {
+  getGridCellsFromIndexTreeAndWorkbench,
+  getIncomingEdgeClassObject,
+  getOutgoingEdgeClassObject,
+} from '@/utils/grid-cell-util';
 import IndexProjectionsNode from './index-projections-node.vue';
 import { TimeseriesPointProjected } from '@/types/Timeseries';
 
@@ -75,6 +68,11 @@ const gridCells = computed<GridCell[]>(() => {
 const getProjectionsForNode = (nodeId: string) => {
   return props.projections.get(nodeId) ?? [];
 };
+
+const searchForNode = (id: string) => {
+  const foundInTree = indexTree.findNode(id);
+  return foundInTree ?? workbench.findNode(id);
+};
 </script>
 
 <style lang="scss" scoped>
@@ -84,5 +82,9 @@ const getProjectionsForNode = (nodeId: string) => {
 
 .grid-cell {
   position: relative;
+}
+
+.edge {
+  @include index-tree-edge();
 }
 </style>
