@@ -336,7 +336,7 @@ export default function render(
   timeseriesList.forEach((timeseries) => {
     renderTimeseries(
       timeseries.points,
-      focusGroupElement,
+      scrollBarGroupElement,
       xScaleScrollbar,
       yScaleScrollbar,
       isWeightedSum,
