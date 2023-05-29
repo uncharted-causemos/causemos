@@ -62,8 +62,7 @@ const loadMapData = async () => {
     return;
   }
   const result = await getRegionAggregationNormalized(
-    convertDataConfigToOutputSpec(props.node.dataset.config),
-    props.node.dataset.isInverted
+    convertDataConfigToOutputSpec(props.node.dataset.config)
   );
   const mapData: RegionMapData[] = (result.country || []).map((country) => ({
     label: country.id,

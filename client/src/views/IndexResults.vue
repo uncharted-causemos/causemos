@@ -47,6 +47,7 @@ import {
   calculateOverallWeight,
   findAllDatasets,
   convertDataConfigToOutputSpec,
+  countOppositeEdgesBetweenNodes,
 } from '@/utils/index-tree-util';
 import { calculateIndexResults } from '@/utils/index-results-util';
 import { IndexResultsData } from '@/types/Index';
@@ -151,10 +152,7 @@ watch([tree], async () => {
   const datasets = findAllDatasets(tree.value);
   // Prepare an "output spec" for each dataset to fetch its regional data
   const promises = datasets.map((dataset) =>
-    getRegionAggregationNormalized(
-      convertDataConfigToOutputSpec(dataset.dataset.config),
-      dataset.dataset.isInverted
-    )
+    getRegionAggregationNormalized(convertDataConfigToOutputSpec(dataset.dataset.config))
   );
   // Wait for all fetches to complete.
   const regionDataForEachDataset = await Promise.all(promises);
@@ -162,10 +160,36 @@ watch([tree], async () => {
     // Tree has changed since the fetches began, so ignore these results.
     return;
   }
-  // Calculate each dataset's overall weight
+  // Calculate each dataset's overall weight.
   const overallWeightForEachDataset = datasets.map((dataset) =>
     calculateOverallWeight(frozenTreeState, dataset)
   );
+  // Calculate whether each dataset should be inverted.
+  // Datasets can be inverted for two reasons:
+  //  1. It represents the opposite of its concept (e.g. a "gdp" dataset on a "poverty" concept)
+  //  2. There are "opposite" polarity edges between its concept and the output.
+  const shouldDatasetsBeInverted = datasets.map((dataset) => {
+    const oppositeEdgeCount = countOppositeEdgesBetweenNodes(dataset, frozenTreeState);
+    const isOppositeEdgeCountOdd = oppositeEdgeCount % 2 === 1;
+    const isDatasetInverted = dataset.dataset.isInverted;
+    // Exclusive-or
+    return (
+      (isOppositeEdgeCountOdd && !isDatasetInverted) ||
+      (isDatasetInverted && !isOppositeEdgeCountOdd)
+    );
+  });
+  // Invert those datasets.
+  regionDataForEachDataset.forEach((regionData, i) => {
+    // If this dataset is inverted, higher original values should map closer to 0 and lower
+    //  original values should map closer to 1.
+    if (shouldDatasetsBeInverted[i]) {
+      regionData.country = regionData.country?.map((country) => ({
+        id: country.id,
+        value: 1 - country.value,
+      }));
+    }
+  });
+
   // All the data has been fetched and normalized, perform the actual result calculations.
   const unsortedResults = calculateIndexResults(
     datasets,
