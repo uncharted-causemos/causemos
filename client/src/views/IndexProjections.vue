@@ -36,7 +36,7 @@
           <p>Country</p>
           <DropdownButton
             :is-dropdown-left-aligned="true"
-            :items="selectableCountries"
+            :items="selectableCountryDropdownItems"
             :selected-item="selectedCountry"
             :is-warning-state-active="selectedCountry === NO_COUNTRY_SELECTED.value"
             @item-selected="setSelectedCountry"
@@ -61,7 +61,7 @@
           v-if="!isSingleCountryModeActive"
           class="subsection"
           :countries="selectedCountries"
-          :selectable-countries="selectableCountries"
+          :selectable-countries="selectableCountryDropdownItems"
           :max-countries="MAX_NUM_TIMESERIES"
           @add="addSelectedCountry"
           @remove="removeSelectedCountry"
@@ -196,11 +196,7 @@ import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useProjectionDates from '@/services/composables/useProjectionDates';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
-import {
-  IndexProjectionCountry,
-  IndexProjectionScenario,
-  SelectableIndexElementId,
-} from '@/types/Index';
+import { IndexProjectionScenario, SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
 import timestampFormatter from '@/formatters/timestamp-formatter';
@@ -220,6 +216,7 @@ import { Insight, IndexProjectionsDataState } from '@/types/Insight';
 import { INSIGHT_CAPTURE_CLASS, isIndexProjectionsDataState } from '@/utils/insight-util';
 import { TYPE } from 'vue-toastification';
 import IndexProjectionsSettingsCountries from '@/components/index-projections/index-projections-settings-countries.vue';
+import useSelectedCountries from '@/services/composables/useSelectedCountries';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -288,7 +285,7 @@ const NO_COUNTRY_SELECTED: DropdownItem = {
   value: NO_COUNTRY_SELECTED_VALUE,
 };
 // Countries covered by one or more datasets
-const selectableCountries = ref<DropdownItem[]>([NO_COUNTRY_SELECTED]);
+const selectableCountries = ref<string[]>([NO_COUNTRY_SELECTED_VALUE]);
 // Get list of selectable countries whenever indexTree.tree changes.
 // The list is a union of the countries that are covered by each dataset in the tree.
 watch([indexTree.tree], async () => {
@@ -306,13 +303,17 @@ watch([indexTree.tree], async () => {
     return;
   }
   const sortedCountries = countriesInOneOrMoreDataset.sort();
-  const dropdownItems = sortedCountries.map<DropdownItem>((country) => ({
-    displayName: country,
-    value: country,
-  }));
-  dropdownItems.push(NO_COUNTRY_SELECTED);
-  selectableCountries.value = dropdownItems;
+  sortedCountries.push(NO_COUNTRY_SELECTED_VALUE);
+  selectableCountries.value = sortedCountries;
 });
+
+const selectableCountryDropdownItems = computed(() =>
+  selectableCountries.value.map((country) =>
+    country === NO_COUNTRY_SELECTED_VALUE
+      ? NO_COUNTRY_SELECTED
+      : { displayName: country, value: country }
+  )
+);
 
 // The country whose historical data and projections will be displayed.
 const selectedCountry = ref(NO_COUNTRY_SELECTED.value);
@@ -323,8 +324,7 @@ const setSelectedCountry = (newValue: string) => {
 //  in the list, reset it to NO_COUNTRY_SELECTED.value.
 watch([selectableCountries], () => {
   if (
-    selectableCountries.value.find((country) => country.value === selectedCountry.value) ===
-    undefined
+    selectableCountries.value.find((country) => country === selectedCountry.value) === undefined
   ) {
     setSelectedCountry(NO_COUNTRY_SELECTED.value);
   }
@@ -571,57 +571,8 @@ const toggleScenarioVisibility = (scenarioId: string) => {
 
 // ======================== Scenario Management End ========================
 
-// ======================= Muliple Country Management ======================
-
-// The countries whose historical data and projections are be displayed when multiple country mode
-//  is active.
-const selectedCountries = computed(() => indexProjectionSettings.value.selectedCountries);
-
-const updateSelectedCountries = (countries: IndexProjectionCountry[]) => {
-  updateIndexProjectionSettings({
-    ...indexProjectionSettings.value,
-    selectedCountries: countries,
-  });
-};
-
-const getAvailableCountryColor = () => {
-  if (selectedCountries.value.length >= MAX_NUM_TIMESERIES) return;
-  const used = selectedCountries.value.map((v) => v.color);
-  return ['#000', ...COLORS].filter((v) => !used.includes(v)).shift();
-};
-
-const addSelectedCountry = () => {
-  const color = getAvailableCountryColor();
-  if (!color) return;
-  updateSelectedCountries([...selectedCountries.value, { name: NO_COUNTRY_SELECTED.value, color }]);
-};
-
-const removeSelectedCountry = (arrayPosition: number) => {
-  updateSelectedCountries(selectedCountries.value.filter((country, i) => i !== arrayPosition));
-};
-
-const changeSelectedCountry = (arrayPosition: number, newCountry: string) => {
-  const newSelectedCountries = _.cloneDeep(selectedCountries.value);
-  newSelectedCountries[arrayPosition].name = newCountry;
-  updateSelectedCountries(newSelectedCountries);
-};
-
-// Whenever the list of selectable countries changes, if a currently selected country is not found
-//  in the list, reset it to NO_COUNTRY_SELECTED.value.
-watch([selectableCountries], () => {
-  const newSelectedCountries = _.cloneDeep(selectedCountries.value);
-  newSelectedCountries.forEach((selectedCountry) => {
-    const found = selectableCountries.value.find(
-      (selectableCountry) => selectedCountry.name === selectableCountry.value
-    );
-    if (found === undefined) {
-      selectedCountry.name = NO_COUNTRY_SELECTED.value;
-    }
-  });
-  updateSelectedCountries(newSelectedCountries);
-});
-
-// ===================== Multiple Country Management End ===================
+const { selectedCountries, addSelectedCountry, removeSelectedCountry, changeSelectedCountry } =
+  useSelectedCountries(analysisId, selectableCountries);
 </script>
 
 <style lang="scss" scoped>
