@@ -1,12 +1,21 @@
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { IndexProjectionScenario, IndexProjectionSettings } from '@/types/Index';
+import { COLORS } from './colors-util';
+
+export const NO_COUNTRY_SELECTED_VALUE = '';
+
+const TIMESERIES_COLORS = ['#000', ...COLORS];
+export const MAX_NUM_TIMESERIES = TIMESERIES_COLORS.length;
+
+export const getAvailableTimeseriesColor = (usedColors: string[]) =>
+  TIMESERIES_COLORS.filter((color) => !usedColors.includes(color)).shift();
 
 const defaultScenario: IndexProjectionScenario = {
   id: uuidv4(),
   name: 'No constraints',
   description: 'No concepts are constrained in this scenario.',
-  color: '#000',
+  color: TIMESERIES_COLORS[0],
   isVisible: true,
   isDefault: true,
   constraints: {},
@@ -18,6 +27,11 @@ const defaultScenario: IndexProjectionScenario = {
 export const createNewIndexProjectionSettings = (): IndexProjectionSettings => {
   return {
     scenarios: [defaultScenario],
+    selectedCountry: NO_COUNTRY_SELECTED_VALUE,
+    selectedCountries: [
+      { name: NO_COUNTRY_SELECTED_VALUE, color: TIMESERIES_COLORS[0] },
+      { name: NO_COUNTRY_SELECTED_VALUE, color: TIMESERIES_COLORS[1] },
+    ],
   };
 };
 
