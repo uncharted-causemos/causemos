@@ -4,17 +4,20 @@
   </teleport>
   <div class="index-structure-view-container content-full flex-col">
     <IndexActionBar @add-concept="addConcept" />
-    <div class="flex flex-grow h-0" :class="[INSIGHT_CAPTURE_CLASS]">
-      <IndexTreePane
-        v-if="isStateLoaded"
-        class="flex-grow w-0 index-tree-pane"
-        @deselect-all="deselectAllElements"
-        @select-element="selectElement"
-        @highlight-edge="highlightEdge"
-        @clear-highlight="clearHighlight"
-        :selected-element-id="selectedElementId"
-        :highlight-edge-id="highlightEdgeId"
-      />
+    <div class="flex flex-grow h-0 set-background-color" :class="[INSIGHT_CAPTURE_CLASS]">
+      <div class="flex-col flex-grow w-0">
+        <IndexTreePane
+          v-if="isStateLoaded"
+          class="flex-grow h-0"
+          @deselect-all="deselectAllElements"
+          @select-element="selectElement"
+          @highlight-edge="highlightEdge"
+          @clear-highlight="clearHighlight"
+          :selected-element-id="selectedElementId"
+          :highlight-edge-id="highlightEdgeId"
+        />
+        <IndexLegend class="legend" :is-projection-space="false" />
+      </div>
       <IndexDrilldownPanel
         class="index-drilldown-panel"
         :selected-element-id="selectedElementId"
@@ -43,6 +46,7 @@ import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import useInsightStore from '@/services/composables/useInsightStore';
+import IndexLegend from '@/components/index-legend.vue';
 
 const store = useStore();
 const route = useRoute();
@@ -186,8 +190,13 @@ watch(
   }
 }
 
-.index-tree-pane {
+.set-background-color {
   // Duplicate background colour here so that insights include the background colour.
   background: $background-light-2;
+}
+
+.legend {
+  align-self: flex-end;
+  margin-right: 20px;
 }
 </style>
