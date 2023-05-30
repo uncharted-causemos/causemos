@@ -26,6 +26,7 @@ export const getAnalysisState = async (analysisId) => {
  * @param {object} state analysis state payload
  */
 export const saveAnalysisState = async (analysisId, state) => {
+  delete state.projectionSettings;
   const result = await API.put(
     `analyses/${analysisId}`,
     { state },

@@ -144,8 +144,18 @@ export interface IndexProjectionScenario {
 }
 
 /**
+ * An object representing a country that has been selected for display in the projeciton space
+ */
+export interface IndexProjectionCountry {
+  name: string;
+  color: string;
+}
+
+/**
  * Index projection settings object
  */
 export interface IndexProjectionSettings {
   scenarios: IndexProjectionScenario[];
+  selectedCountry: string;
+  selectedCountries: IndexProjectionCountry[];
 }

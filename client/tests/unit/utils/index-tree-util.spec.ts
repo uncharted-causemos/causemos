@@ -12,6 +12,8 @@ import {
   isConceptNodeWithoutDataset,
   isConceptNodeWithDatasetAttached,
   createNewConceptNode,
+  countOppositeEdgesBetweenNodes,
+  addChild,
 } from '@/utils/index-tree-util';
 import { AggregationOption, ProjectionAlgorithm, TemporalResolutionOption } from '@/types/Enums';
 import { ConceptNodeWithoutDataset } from '@/types/Index';
@@ -529,6 +531,43 @@ describe('index-tree-util', () => {
       const expectedWeight = (tree.components[1].weight * targetComponent.weight) / 100;
       const result = calculateOverallWeight(tree, targetComponent.componentNode);
       expect(result).to.equal(expectedWeight);
+    });
+  });
+
+  describe('countOppositeEdgesBetweenNodes', () => {
+    it('should return -1 when provided a tree with one node', () => {
+      const tree = createNewOutputIndex();
+      const result = countOppositeEdgesBetweenNodes(createNewConceptNode(), tree);
+      expect(result).to.equal(-1);
+    });
+    it('should return 0 when the target node has a "same" polarity edge directly to the ancestor node', () => {
+      const tree = createNewOutputIndex();
+      const node = createNewConceptNode();
+      addChild(tree, node, null);
+      const result = countOppositeEdgesBetweenNodes(node, tree);
+      expect(result).to.equal(0);
+    });
+    it('should return 1 when the target node has an "opposite" polarity edge directly to the ancestor node', () => {
+      const tree = createNewOutputIndex();
+      const node = createNewConceptNode();
+      addChild(tree, node, null);
+      tree.components[0].isOppositePolarity = true;
+      const result = countOppositeEdgesBetweenNodes(node, tree);
+      expect(result).to.equal(1);
+    });
+    it('should correctly count "opposite" polarity edges when there are multiple', () => {
+      const tree = createNewOutputIndex();
+      const grandparent = createNewConceptNode();
+      const parent = createNewConceptNode();
+      const node = createNewConceptNode();
+      addChild(parent, node, null);
+      parent.components[0].isOppositePolarity = true;
+      addChild(grandparent, parent, null);
+      grandparent.components[0].isOppositePolarity = true;
+      addChild(tree, grandparent, null);
+      tree.components[0].isOppositePolarity = true;
+      const result = countOppositeEdgesBetweenNodes(node, tree);
+      expect(result).to.equal(3);
     });
   });
 });

@@ -1,6 +1,12 @@
-import { ConceptNode, GridCell } from '@/types/Index';
+import { ConceptNode, GridCell, SelectableIndexElementId } from '@/types/Index';
 import _ from 'lodash';
-import { isConceptNodeWithoutDataset, isEmptyNode } from './index-tree-util';
+import {
+  FindNodeResult,
+  hasChildren,
+  isConceptNodeWithoutDataset,
+  isEdge,
+  isEmptyNode,
+} from './index-tree-util';
 
 /**
  * This file contains helper functions to support the GridCell data structure, which is used when
@@ -143,3 +149,73 @@ export const getGridCellsFromIndexTreeAndWorkbench = (
   // Flatten list of grids into one list of grid cells.
   return _.flatten([...shiftedWorkbenchTreeCellLists, mainTreeCellList]);
 };
+
+export const getIncomingEdgeClassObject = (
+  cell: GridCell,
+  selectedElementId: SelectableIndexElementId | null,
+  highlightedEdgeId: SelectableIndexElementId | null
+) => ({
+  visible: hasChildren(cell.node),
+  'selected-edge':
+    selectedElementId && isEdge(selectedElementId) && selectedElementId.targetId === cell.node.id,
+  highlighted:
+    highlightedEdgeId && isEdge(highlightedEdgeId) && highlightedEdgeId.targetId === cell.node.id,
+  'polarity-negative': hasChildren(cell.node) && cell.node.components[0].isOppositePolarity,
+});
+
+const isHigherThanSibling = (
+  nodeId: string,
+  siblingEdgeId: SelectableIndexElementId,
+  searchForNode: (nodeId: string) => FindNodeResult
+) => {
+  if (!isEdge(siblingEdgeId)) {
+    return false;
+  }
+  const node = searchForNode(nodeId);
+  if (node && node.parent) {
+    const nodeIndex = node.parent.components.findIndex(
+      ({ componentNode }) => componentNode.id === nodeId
+    );
+    const siblingNodeIndex = node.parent.components.findIndex(
+      ({ componentNode }) => componentNode.id === siblingEdgeId.sourceId
+    );
+    return siblingNodeIndex > nodeIndex;
+  }
+};
+
+const isNextSiblingPolarityNegative = (
+  nodeId: string,
+  searchForNode: (nodeId: string) => FindNodeResult
+) => {
+  const node = searchForNode(nodeId);
+  if (node && node.parent) {
+    const nodeIndex = node.parent.components.findIndex(
+      ({ componentNode }) => componentNode.id === nodeId
+    );
+    return (
+      nodeIndex < node.parent.components.length - 1 &&
+      node.parent.components[nodeIndex + 1].isOppositePolarity
+    );
+  }
+  return false;
+};
+
+export const getOutgoingEdgeClassObject = (
+  cell: GridCell,
+  selectedElementId: SelectableIndexElementId | null,
+  highlightedEdgeId: SelectableIndexElementId | null,
+  searchForNode: (nodeId: string) => FindNodeResult
+) => ({
+  visible: cell.hasOutputLine,
+  'last-child': cell.isLastChild,
+  'selected-edge':
+    selectedElementId && isEdge(selectedElementId) && selectedElementId.sourceId === cell.node.id,
+  'selected-y':
+    selectedElementId && isHigherThanSibling(cell.node.id, selectedElementId, searchForNode),
+  highlighted:
+    highlightedEdgeId && isEdge(highlightedEdgeId) && highlightedEdgeId.sourceId === cell.node.id,
+  'highlighted-y':
+    highlightedEdgeId && isHigherThanSibling(cell.node.id, highlightedEdgeId, searchForNode),
+  'polarity-negative': cell.isOppositePolarity,
+  'next-sibling-polarity-negative': isNextSiblingPolarityNegative(cell.node.id, searchForNode),
+});

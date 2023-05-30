@@ -34,7 +34,7 @@ export const isConceptNodeWithoutDataset = (
   return (indexNode as ConceptNodeWithoutDataset).components !== undefined;
 };
 
-export const hasChildren = (indexNode: ConceptNode) => {
+export const hasChildren = (indexNode: ConceptNode): indexNode is ConceptNodeWithoutDataset => {
   return isConceptNodeWithoutDataset(indexNode) && indexNode.components.length > 0;
 };
 
@@ -448,4 +448,42 @@ export const getNodeDataSourceText = (node: ConceptNode) => {
     default:
       return `Weighted sum of ${componentCount} inputs.`;
   }
+};
+
+/**
+ * Performs a depth-first-search within `ancestorNode` to find `node` and counts the opposite edges
+ *  between them.
+ * Returns -1 if `node` is not a descendant of `ancestorNode`.
+ * Otherwise, returns an integer >= 0.
+ */
+export const countOppositeEdgesBetweenNodes = (node: ConceptNode, ancestorNode: ConceptNode) => {
+  const _countOppositeEdgesBetweenNodes = (
+    currentNode: ConceptNode,
+    targetNode: ConceptNode,
+    currentCount: number
+  ): number => {
+    if (currentNode.id === targetNode.id) {
+      // Reached node
+      return currentCount;
+    }
+    if (isConceptNodeWithDatasetAttached(currentNode)) {
+      // Reached a leaf that's not the node
+      return -1;
+    }
+    // Else, continue searching through children
+    for (const weightedComponent of currentNode.components) {
+      // Add one if the next node in the depth-first-search is connected with an opposite edge.
+      const nextCount = weightedComponent.isOppositePolarity ? currentCount + 1 : currentCount;
+      const oppositeEdgeCount = _countOppositeEdgesBetweenNodes(
+        weightedComponent.componentNode,
+        targetNode,
+        nextCount
+      );
+      if (oppositeEdgeCount >= 0) {
+        return oppositeEdgeCount;
+      }
+    }
+    return -1;
+  };
+  return _countOppositeEdgesBetweenNodes(ancestorNode, node, 0);
 };

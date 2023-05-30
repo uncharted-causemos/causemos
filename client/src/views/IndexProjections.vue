@@ -32,26 +32,40 @@
           :selected-item="isSingleCountryModeActive"
           @item-selected="(newValue) => (isSingleCountryModeActive = newValue)"
         />
-        <p>Country</p>
-        <DropdownButton
-          :is-dropdown-left-aligned="true"
-          :items="selectableCountries"
-          :selected-item="selectedCountry"
-          :is-warning-state-active="selectedCountry === NO_COUNTRY_SELECTED.value"
-          @item-selected="setSelectedCountry"
-        />
-        <p v-if="selectedCountry === NO_COUNTRY_SELECTED.value" class="warning">
-          Select a country to display projections.
-        </p>
-        <br />
+        <div class="subsection" v-if="isSingleCountryModeActive">
+          <p>Country</p>
+          <DropdownButton
+            :is-dropdown-left-aligned="true"
+            :items="selectableCountryDropdownItems"
+            :selected-item="selectedCountry"
+            :is-warning-state-active="selectedCountry === NO_COUNTRY_SELECTED.value"
+            @item-selected="setSelectedCountry"
+          />
+          <p v-if="selectedCountry === NO_COUNTRY_SELECTED.value" class="warning">
+            Select a country to display projections.
+          </p>
+        </div>
         <IndexProjectionsSettingsScenarios
+          v-if="isSingleCountryModeActive && selectedCountry !== NO_COUNTRY_SELECTED.value"
+          class="subsection"
           :scenarios="scenarios"
-          :max-scenarios="MAX_NUM_SCENARIOS"
+          :max-scenarios="MAX_NUM_TIMESERIES"
           @create="handleCreateScenario"
           @duplicate="handleDuplicateScenario"
           @edit="handleEditScenario"
           @delete="handleDeleteScenario"
           @toggleVisible="toggleScenarioVisibility"
+        />
+
+        <IndexProjectionsSettingsCountries
+          v-if="!isSingleCountryModeActive"
+          class="subsection"
+          :countries="selectedCountries"
+          :selectable-countries="selectableCountryDropdownItems"
+          :max-countries="MAX_NUM_TIMESERIES"
+          @add="addSelectedCountry"
+          @remove="removeSelectedCountry"
+          @change="changeSelectedCountry"
         />
       </section>
       <footer>
@@ -146,7 +160,6 @@
           Click a concept to add or edit constraints.
         </p>
         <p v-else class="subdued un-font-small">Click a concept to enlarge it.</p>
-        <!-- TODO: Editing <strong>{{ 'Untitled Scenario' }}</strong>'s constraints -->
       </div>
       <IndexProjectionsGraphView
         v-if="selectedNodeId === null"
@@ -192,17 +205,23 @@ import { TimeseriesPoint } from '@/types/Timeseries';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
 import { createProjectionRunner } from '@/utils/projection-util';
-import { createNewScenario } from '@/utils/index-projection-util';
+import {
+  MAX_NUM_TIMESERIES,
+  NO_COUNTRY_SELECTED_VALUE,
+  createNewScenario,
+  getAvailableTimeseriesColor,
+} from '@/utils/index-projection-util';
 import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
 import IndexProjectionsSettingsScenarios from '@/components/index-projections/index-projections-settings-scenarios.vue';
-import { COLORS } from '@/utils/colors-util';
 import useInsightStore from '@/services/composables/useInsightStore';
 import useToaster from '@/services/composables/useToaster';
 import { getInsightById } from '@/services/insight-service';
 import { Insight, IndexProjectionsDataState } from '@/types/Insight';
 import { INSIGHT_CAPTURE_CLASS, isIndexProjectionsDataState } from '@/utils/insight-util';
 import { TYPE } from 'vue-toastification';
+import IndexProjectionsSettingsCountries from '@/components/index-projections/index-projections-settings-countries.vue';
+import useSelectedCountries from '@/services/composables/useSelectedCountries';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -266,9 +285,12 @@ const isSingleCountryModeActive = ref(true);
 const temporalResolutionOption = ref(TemporalResolutionOption.Month);
 
 const indexTree = useIndexTree();
-const NO_COUNTRY_SELECTED: DropdownItem = { displayName: 'No country selected', value: '' };
+const NO_COUNTRY_SELECTED: DropdownItem = {
+  displayName: 'No country selected',
+  value: NO_COUNTRY_SELECTED_VALUE,
+};
 // Countries covered by one or more datasets
-const selectableCountries = ref<DropdownItem[]>([NO_COUNTRY_SELECTED]);
+const selectableCountries = ref<string[]>([NO_COUNTRY_SELECTED_VALUE]);
 // Get list of selectable countries whenever indexTree.tree changes.
 // The list is a union of the countries that are covered by each dataset in the tree.
 watch([indexTree.tree], async () => {
@@ -286,13 +308,17 @@ watch([indexTree.tree], async () => {
     return;
   }
   const sortedCountries = countriesInOneOrMoreDataset.sort();
-  const dropdownItems = sortedCountries.map<DropdownItem>((country) => ({
-    displayName: country,
-    value: country,
-  }));
-  dropdownItems.push(NO_COUNTRY_SELECTED);
-  selectableCountries.value = dropdownItems;
+  sortedCountries.push(NO_COUNTRY_SELECTED_VALUE);
+  selectableCountries.value = sortedCountries;
 });
+
+const selectableCountryDropdownItems = computed(() =>
+  selectableCountries.value.map((country) =>
+    country === NO_COUNTRY_SELECTED_VALUE
+      ? NO_COUNTRY_SELECTED
+      : { displayName: country, value: country }
+  )
+);
 
 // The country whose historical data and projections will be displayed.
 const selectedCountry = ref(NO_COUNTRY_SELECTED.value);
@@ -303,8 +329,7 @@ const setSelectedCountry = (newValue: string) => {
 //  in the list, reset it to NO_COUNTRY_SELECTED.value.
 watch([selectableCountries], () => {
   if (
-    selectableCountries.value.find((country) => country.value === selectedCountry.value) ===
-    undefined
+    selectableCountries.value.find((country) => country === selectedCountry.value) === undefined
   ) {
     setSelectedCountry(NO_COUNTRY_SELECTED.value);
   }
@@ -461,7 +486,6 @@ watch(
 
 // ========================== Scenario Management ==========================
 
-const MAX_NUM_SCENARIOS = COLORS.length + 1; // + 1 for the default scenario
 const scenarios = computed(() => indexProjectionSettings.value.scenarios);
 const scenarioBeingEdited = ref<IndexProjectionScenario | null>(null);
 const updateScenarios = (scenarios: IndexProjectionScenario[]) => {
@@ -471,9 +495,8 @@ const updateScenarios = (scenarios: IndexProjectionScenario[]) => {
   });
 };
 const getAvailableScenarioColor = () => {
-  if (scenarios.value.length >= MAX_NUM_SCENARIOS) return;
-  const used = scenarios.value.map((v) => v.color);
-  return COLORS.filter((v) => !used.includes(v)).shift();
+  const usedColors = scenarios.value.map((scenario) => scenario.color);
+  return getAvailableTimeseriesColor(usedColors);
 };
 
 const handleCreateScenario = () => {
@@ -562,7 +585,8 @@ watch(
     // Don't run projection for entire tree while on scenario editing mode
     if (scenarioBeingEdited.value !== null) return;
 
-    // TODO: For the Optimization, only run projection when new scenario is added. When a scenario is deleted, just remove the projection for that scenario from the projection data.
+    // TODO: For the Optimization, only run projection when new scenario is added or the edit is done.
+    // When a scenario is deleted, just remove the projection for that scenario from the projection data.
 
     overlay.enable();
     const inputData: { [nodeId: string]: TimeseriesPoint[] } = {};
@@ -594,6 +618,8 @@ watch(
     overlay.disable();
   }
 );
+const { selectedCountries, addSelectedCountry, removeSelectedCountry, changeSelectedCountry } =
+  useSelectedCountries(selectableCountries, indexProjectionSettings, updateIndexProjectionSettings);
 </script>
 
 <style lang="scss" scoped>
@@ -613,7 +639,7 @@ watch(
   padding: 20px;
   overflow-y: auto;
   border-right: 1px solid $un-color-black-10;
-  gap: 20px;
+  gap: 40px;
 
   position: relative;
   // Make sure the lowest items are never covered by the footer content
@@ -644,6 +670,10 @@ section {
     display: flex;
     justify-content: space-between;
   }
+}
+
+.subsection {
+  margin-top: 40px;
 }
 
 .projection-date {

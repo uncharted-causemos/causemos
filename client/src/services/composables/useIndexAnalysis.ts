@@ -47,7 +47,14 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     }
 
     // ensure default values
-    _analysisState.value = { ...createIndexAnalysisObject(), ...analysis.state };
+    const defaults = createIndexAnalysisObject();
+    _analysisState.value = {
+      ...defaults,
+      ...analysis.state,
+      // For settings object, copy properties from one level deep
+      resultsSettings: { ...defaults.resultsSettings, ...analysis.state.resultsSettings },
+      projectionSettings: { ...defaults.projectionSettings, ...analysis.state.projectionSettings },
+    };
     // Initialize workbench items and the index tree
     workbench.initialize(analysisId.value, _analysisState.value.workBench);
     indexTree.initialize(analysisId.value, _analysisState.value.index);

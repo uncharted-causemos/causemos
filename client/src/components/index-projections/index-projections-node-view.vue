@@ -1,19 +1,36 @@
 <template>
   <div class="index-projections-node-view-container">
     <div class="node-column child-column">
-      <div v-for="(childNode, i) of childNodes" :key="childNode.id" class="node-and-edge-container">
+      <div
+        v-for="(inputComponent, i) of inputComponents"
+        :key="inputComponent.componentNode.id"
+        class="node-and-edge-container"
+      >
         <IndexProjectionsNode
-          :node-data="childNode"
+          :node-data="inputComponent.componentNode"
           :projection-start-timestamp="projectionStartTimestamp"
           :projection-end-timestamp="projectionEndTimestamp"
-          :timeseries="getProjectionsForNode(projections, childNode.id)"
-          @select="emit('select-element', childNode.id)"
+          :timeseries="getProjectionsForNode(projections, inputComponent.componentNode.id)"
+          @select="emit('select-element', inputComponent.componentNode.id)"
         />
-        <div class="edge outgoing visible" :class="{ 'last-child': i === childNodes.length - 1 }" />
+        <div
+          class="edge outgoing visible"
+          :class="{
+            'last-child': i === inputComponents.length - 1,
+            'next-sibling-polarity-negative': inputComponents[i + 1]?.isOppositePolarity,
+            'polarity-negative': inputComponent.isOppositePolarity,
+          }"
+        />
       </div>
     </div>
     <div class="node-and-edge-container">
-      <div class="edge incoming" :class="{ visible: childNodes.length > 0 }" />
+      <div
+        class="edge incoming"
+        :class="{
+          visible: inputComponents.length > 0,
+          'polarity-negative': inputComponents[0]?.isOppositePolarity,
+        }"
+      />
       <IndexProjectionsExpandedNode
         v-if="selectedNode !== null"
         :node-data="selectedNode.found"
@@ -22,11 +39,20 @@
         :timeseries="getProjectionsForNode(projections, selectedNode.found.id)"
         @click-chart="(...params) => emit('click-chart', ...params)"
       />
-      <div class="edge outgoing last-child" :class="{ visible: parentNode !== null }" />
+      <div
+        class="edge outgoing last-child"
+        :class="{
+          visible: parentNode !== null,
+          'polarity-negative': isOutgoingEdgeOppositePolarity,
+        }"
+      />
     </div>
     <div class="node-column">
       <div v-if="parentNode !== null" class="node-and-edge-container">
-        <div class="edge incoming visible" />
+        <div
+          class="edge incoming visible"
+          :class="{ 'polarity-negative': isOutgoingEdgeOppositePolarity }"
+        />
         <IndexProjectionsNode
           :node-data="parentNode"
           :projection-start-timestamp="projectionStartTimestamp"
@@ -74,16 +100,20 @@ const selectedNode = computed(() => {
   }
   return searchForNode(props.selectedNodeId) ?? null;
 });
-const childNodes = computed(() => {
+const inputComponents = computed(() => {
   if (!selectedNode.value || !isConceptNodeWithoutDataset(selectedNode.value.found)) {
     return [];
   }
-  return selectedNode.value.found.components.map(
-    (weightedComponent) => weightedComponent.componentNode
-  );
+  return selectedNode.value.found.components;
 });
 const parentNode = computed(() => {
   return selectedNode.value?.parent ?? null;
+});
+const isOutgoingEdgeOppositePolarity = computed(() => {
+  const selectedNodeComponent = parentNode.value?.components.find(
+    ({ componentNode }) => componentNode.id === props.selectedNodeId
+  );
+  return selectedNodeComponent !== undefined && selectedNodeComponent.isOppositePolarity;
 });
 </script>
 
@@ -113,6 +143,10 @@ const parentNode = computed(() => {
 .node-and-edge-container {
   position: relative;
   display: flex;
+}
+
+.edge {
+  @include index-tree-edge();
 }
 
 .edge.incoming {

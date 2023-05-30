@@ -9,13 +9,7 @@
       }"
       class="grid-cell"
     >
-      <div
-        class="edge incoming"
-        :class="{
-          visible: hasChildren(cell.node),
-          inactive: !hasChildren(cell.node),
-        }"
-      ></div>
+      <div class="edge incoming" :class="getIncomingEdgeClassObject(cell, null, null)" />
       <IndexProjectionsNode
         :node-data="cell.node"
         class="index-tree-node"
@@ -26,11 +20,7 @@
       />
       <div
         class="edge outgoing"
-        :class="{
-          visible: cell.hasOutputLine,
-          inactive: !cell.hasOutputLine,
-          'last-child': cell.isLastChild,
-        }"
+        :class="getOutgoingEdgeClassObject(cell, null, null, searchForNode)"
       />
     </div>
   </div>
@@ -39,14 +29,17 @@
 <script setup lang="ts">
 import _ from 'lodash';
 
-import { hasChildren } from '@/utils/index-tree-util';
 import { GridCell, IndexProjection, SelectableIndexElementId } from '@/types/Index';
 import { computed } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { getGridCellsFromIndexTreeAndWorkbench } from '@/utils/grid-cell-util';
-import { getProjectionsForNode } from '@/utils/index-projection-util';
+import {
+  getGridCellsFromIndexTreeAndWorkbench,
+  getIncomingEdgeClassObject,
+  getOutgoingEdgeClassObject,
+} from '@/utils/grid-cell-util';
 import IndexProjectionsNode from './index-projections-node.vue';
+import { getProjectionsForNode } from '@/utils/index-projection-util';
 
 defineProps<{
   projectionStartTimestamp: number;
@@ -71,6 +64,11 @@ const workbench = useIndexWorkBench();
 const gridCells = computed<GridCell[]>(() => {
   return getGridCellsFromIndexTreeAndWorkbench(indexTree.tree.value, workbench.items.value);
 });
+
+const searchForNode = (id: string) => {
+  const foundInTree = indexTree.findNode(id);
+  return foundInTree ?? workbench.findNode(id);
+};
 </script>
 
 <style lang="scss" scoped>
@@ -80,5 +78,9 @@ const gridCells = computed<GridCell[]>(() => {
 
 .grid-cell {
   position: relative;
+}
+
+.edge {
+  @include index-tree-edge();
 }
 </style>
