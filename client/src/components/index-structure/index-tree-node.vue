@@ -165,10 +165,10 @@ const selectNode = () => {
   if (!canSelectNode.value) {
     return;
   }
-  if (!props.isConnecting) {
-    emit('select', props.nodeData.id);
-  } else {
+  if (props.isConnecting) {
     emit('create-edge', props.nodeData.id);
+  } else {
+    emit('select', props.nodeData.id);
   }
 };
 
