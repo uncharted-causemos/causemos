@@ -61,7 +61,7 @@
       <button
         v-if="!showEditName"
         class="btn btn-default full-width-button"
-        @click="emit('create-child', props.nodeData.id)"
+        @click.stop="emit('create-child', props.nodeData.id)"
       >
         Add input concept
       </button>
