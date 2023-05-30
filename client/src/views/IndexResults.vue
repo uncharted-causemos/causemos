@@ -5,13 +5,15 @@
   <div class="index-results-container flex" :class="[INSIGHT_CAPTURE_CLASS]">
     <div class="flex-col structure-column">
       <header>
+        <button class="btn btn-sm" @click="modifyStructure">
+          <i class="fa fa-fw fa-caret-left" />Edit structure
+        </button>
         <h3>Index results</h3>
         <p class="subtitle">{{ selectedNodeName }}</p>
       </header>
       <section>
         <header class="flex index-structure-header">
           <h4>Index structure</h4>
-          <button class="btn btn-sm" @click="modifyStructure">Edit</button>
         </header>
         <IndexResultsStructurePreview class="index-structure-preview" :selected-node-id="tree.id" />
         <IndexResultsComponentList />
