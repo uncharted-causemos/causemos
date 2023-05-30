@@ -141,25 +141,33 @@ const emit = defineEmits<{
   (e: 'create-edge', nodeId: string): void;
 }>();
 
-const classObject = computed(() => {
-  return {
-    selected: props.isSelected,
-    'flexible-width': showDatasetSearch.value,
-    disabled: disableInteraction.value,
-    'no-highlight':
-      props.isConnecting &&
-      (!isConceptNodeWithoutDataset(props.nodeData) || props.isDescendentOfConnectingNode),
-  };
+const canSelectNode = computed(() => {
+  if (props.isConnecting) {
+    // We're adding a new edge, so we can select the node if
+    //  - it has no dataset and
+    //  - adding an edge to it won't create a loop in the graph
+    return isConceptNodeWithoutDataset(props.nodeData) && !props.isDescendentOfConnectingNode;
+  } else {
+    // We're not adding a new edge, so we can select the node if it has been given a name already.
+    return props.nodeData.name !== '';
+  }
 });
 
+const classObject = computed(() => ({
+  selected: props.isSelected,
+  'flexible-width': showDatasetSearch.value,
+  disabled: disableInteraction.value,
+  'highlight-on-hover': canSelectNode.value,
+  'click-not-allowed': props.isConnecting && !canSelectNode.value,
+}));
+
 const selectNode = () => {
+  if (!canSelectNode.value) {
+    return;
+  }
   if (!props.isConnecting) {
     emit('select', props.nodeData.id);
-  } else if (
-    props.isConnecting &&
-    !props.isDescendentOfConnectingNode &&
-    isConceptNodeWithoutDataset(props.nodeData)
-  ) {
+  } else {
     emit('create-edge', props.nodeData.id);
   }
 };
@@ -332,12 +340,12 @@ $option-button-width: 16px;
     width: auto;
   }
 
-  &.no-highlight:hover {
-    cursor: not-allowed;
+  &.highlight-on-hover:hover {
+    @include index-tree-node-hover;
   }
 
-  &:not(.no-highlight):hover {
-    @include index-tree-node-hover;
+  &.click-not-allowed:hover {
+    cursor: not-allowed;
   }
 
   // When node is selected, we want to show a 2px accent color border outside.
