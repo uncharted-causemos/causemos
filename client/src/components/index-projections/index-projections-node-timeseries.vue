@@ -33,10 +33,29 @@ watch(
     const { clientWidth: width, clientHeight: height } = parentElement;
     // Set new size
     svg.attr('width', width).attr('height', height);
+
+    // TODO: replace testData with real timeseries
+    const testData = [
+      {
+        id: 'real data',
+        name: 'real data',
+        color: 'black',
+        points: timeseries.value,
+      },
+      {
+        id: 'fake data data',
+        name: 'fake data data',
+        color: 'blue',
+        points: timeseries.value.map((point) => ({
+          ...point,
+          value: Math.random() * 0.3 + 0.3,
+        })),
+      },
+    ];
     // Rerender whenever dependencies change
     renderChart(
       svg,
-      timeseries.value,
+      testData,
       width,
       height,
       projectionStartTimestamp.value,
