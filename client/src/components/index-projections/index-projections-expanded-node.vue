@@ -26,6 +26,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        @click-chart="(...params) => emit('click-chart', ...params)"
         :is-weighted-sum-node="false"
       />
 
@@ -56,6 +57,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        @click-chart="(...params) => emit('click-chart', ...params)"
         :is-weighted-sum-node="true"
       />
     </div>
@@ -74,7 +76,7 @@ import {
 import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
-import { TimeseriesPointProjected } from '@/types/Timeseries';
+import { ProjectionTimeseries } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 
 const optionsButtonMenu = [
@@ -102,7 +104,11 @@ const props = defineProps<{
   nodeData: ConceptNode;
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
-  timeseries: TimeseriesPointProjected[];
+  timeseries: ProjectionTimeseries[];
+}>();
+
+const emit = defineEmits<{
+  (e: 'click-chart', timestamp: number, value: number): void;
 }>();
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));

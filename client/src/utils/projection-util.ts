@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import forecast, { ForecastResult, ForecastMethod } from './forecast';
+import forecast from './forecast';
 import {
   getYearFromTimestamp,
   getNumberOfMonthsSinceEpoch,
@@ -10,7 +10,12 @@ import { isConceptNodeWithDatasetAttached } from '@/utils/index-tree-util';
 
 import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
-import { ConceptNode } from '@/types/Index';
+import {
+  ConceptNode,
+  ProjectionConstraint,
+  ProjectionResults,
+  ProjectionRunInfo,
+} from '@/types/Index';
 
 export enum WeightedSumNodeProjectionType {
   WeightedSum = 'Weighted Sum',
@@ -20,16 +25,6 @@ type ProjectionPoint = {
   x: number;
   y: number;
   projectionType: ProjectionPointType;
-};
-
-type ProjectionResults = {
-  [nodeId: string]: TimeseriesPointProjected[];
-};
-
-type ProjectionRunInfo = {
-  [nodeId: string]:
-    | ForecastResult<ForecastMethod>
-    | { method: WeightedSumNodeProjectionType.WeightedSum };
 };
 
 const multiply = (data: TimeseriesPointProjected[], factor: number) =>
@@ -253,6 +248,8 @@ export const createProjectionRunner = (
   const resultForWeightedSumNodes: ProjectionResults = {};
   const runInfo: ProjectionRunInfo = {};
 
+  let _constraints: { [nodeId: string]: ProjectionConstraint[] } | null = null;
+
   const _calculateWeightedSum = (node: ConceptNode) => {
     if (isConceptNodeWithDatasetAttached(node)) {
       if (!resultForDatasetNode[node.id]) return null;
@@ -276,6 +273,7 @@ export const createProjectionRunner = (
 
     // Calculate the sum of children's weighted projected timeseries data
     const weightedSumSeries = sum(...childProjectionSeriesData);
+    // TODO: apply constraints for node.id
     resultForWeightedSumNodes[node.id] = weightedSumSeries;
     runInfo[node.id] = { method: WeightedSumNodeProjectionType.WeightedSum };
     return weightedSumSeries;
@@ -283,10 +281,19 @@ export const createProjectionRunner = (
 
   const runner = {
     /**
+     * Set constraints
+     */
+    setConstraints(constraints: { [nodeId: string]: ProjectionConstraint[] } | null) {
+      _constraints = constraints;
+      return runner;
+    },
+
+    /**
      * Run projection on all dataset nodes
      */
     projectAllDatasetNodes() {
       for (const [nodeId, series] of Object.entries(data).filter((v) => v[1] !== undefined)) {
+        // TODO: apply constraints
         const { method, forecast, backcast, projectionData } = runProjection(
           series,
           period,

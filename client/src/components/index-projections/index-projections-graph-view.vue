@@ -21,7 +21,7 @@
         class="index-tree-node"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :timeseries="getProjectionsForNode(cell.node.id)"
+        :timeseries="getProjectionsForNode(projections, cell.node.id)"
         @select="(id) => emit('select-element', id)"
       />
       <div
@@ -40,18 +40,18 @@
 import _ from 'lodash';
 
 import { hasChildren } from '@/utils/index-tree-util';
-import { GridCell, SelectableIndexElementId } from '@/types/Index';
+import { GridCell, IndexProjection, SelectableIndexElementId } from '@/types/Index';
 import { computed } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { getGridCellsFromIndexTreeAndWorkbench } from '@/utils/grid-cell-util';
+import { getProjectionsForNode } from '@/utils/index-projection-util';
 import IndexProjectionsNode from './index-projections-node.vue';
-import { TimeseriesPointProjected } from '@/types/Timeseries';
 
-const props = defineProps<{
+defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
-  projections: Map<string, TimeseriesPointProjected[]>;
+  projections: IndexProjection[];
 }>();
 
 const emit = defineEmits<{
@@ -71,10 +71,6 @@ const workbench = useIndexWorkBench();
 const gridCells = computed<GridCell[]>(() => {
   return getGridCellsFromIndexTreeAndWorkbench(indexTree.tree.value, workbench.items.value);
 });
-
-const getProjectionsForNode = (nodeId: string) => {
-  return props.projections.get(nodeId) ?? [];
-};
 </script>
 
 <style lang="scss" scoped>

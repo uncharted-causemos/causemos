@@ -6,7 +6,7 @@
           :node-data="childNode"
           :projection-start-timestamp="projectionStartTimestamp"
           :projection-end-timestamp="projectionEndTimestamp"
-          :timeseries="getProjectionsForNode(childNode.id)"
+          :timeseries="getProjectionsForNode(projections, childNode.id)"
           @select="emit('select-element', childNode.id)"
         />
         <div class="edge outgoing visible" :class="{ 'last-child': i === childNodes.length - 1 }" />
@@ -19,7 +19,8 @@
         :node-data="selectedNode.found"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :timeseries="getProjectionsForNode(selectedNode.found.id)"
+        :timeseries="getProjectionsForNode(projections, selectedNode.found.id)"
+        @click-chart="(...params) => emit('click-chart', ...params)"
       />
       <div class="edge outgoing last-child" :class="{ visible: parentNode !== null }" />
     </div>
@@ -30,7 +31,7 @@
           :node-data="parentNode"
           :projection-start-timestamp="projectionStartTimestamp"
           :projection-end-timestamp="projectionEndTimestamp"
-          :timeseries="getProjectionsForNode(parentNode.id)"
+          :timeseries="getProjectionsForNode(projections, parentNode.id)"
           @select="emit('select-element', parentNode.id)"
         />
       </div>
@@ -43,20 +44,21 @@ import useIndexTree from '@/services/composables/useIndexTree';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { computed } from 'vue';
 import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
-import { SelectableIndexElementId } from '@/types/Index';
+import { getProjectionsForNode } from '@/utils/index-projection-util';
+import { IndexProjection, SelectableIndexElementId } from '@/types/Index';
 import IndexProjectionsNode from './index-projections-node.vue';
 import IndexProjectionsExpandedNode from './index-projections-expanded-node.vue';
-import { TimeseriesPointProjected } from '@/types/Timeseries';
 
 const props = defineProps<{
   selectedNodeId: string | null;
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
-  projections: Map<string, TimeseriesPointProjected[]>;
+  projections: IndexProjection[];
 }>();
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
+  (e: 'click-chart', timestamp: number, value: number): void;
 }>();
 
 const { findNode } = useIndexTree();
@@ -83,10 +85,6 @@ const childNodes = computed(() => {
 const parentNode = computed(() => {
   return selectedNode.value?.parent ?? null;
 });
-
-const getProjectionsForNode = (nodeId: string) => {
-  return props.projections.get(nodeId) ?? [];
-};
 </script>
 
 <style lang="scss" scoped>

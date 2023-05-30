@@ -142,7 +142,7 @@
             </button>
           </div>
         </div>
-        <p v-if="scenarioBeingEdited !== null" class="subdued un-font-small">
+        <p v-if="scenarioBeingEdited !== null" class="edit-msg subdued un-font-small">
           Click a concept to add or edit constraints.
         </p>
         <p v-else class="subdued un-font-small">Click a concept to enlarge it.</p>
@@ -153,7 +153,7 @@
         class="fill-space"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :projections="projectionData"
+        :projections="visibleMultiScenarioProjectionData"
         @select-element="selectElement"
       />
       <IndexProjectionsNodeView
@@ -162,9 +162,10 @@
         :selected-node-id="selectedNodeId"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :projections="projectionData"
+        :projections="visibleMultiScenarioProjectionData"
         @select-element="selectElement"
         @deselect-node="deselectNode"
+        @click-chart="onNodeChartClick"
       />
       <IndexLegend class="legend" :is-projection-space="true" />
     </main>
@@ -183,11 +184,11 @@ import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useProjectionDates from '@/services/composables/useProjectionDates';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
-import { IndexProjectionScenario, SelectableIndexElementId } from '@/types/Index';
+import { IndexProjectionScenario, SelectableIndexElementId, IndexProjection } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
 import timestampFormatter from '@/formatters/timestamp-formatter';
-import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
+import { TimeseriesPoint } from '@/types/Timeseries';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
 import { createProjectionRunner } from '@/utils/projection-util';
@@ -379,37 +380,6 @@ const onDoneEditingTimeRange = () => {
   saveProjectionDates();
 };
 
-const projectionData = ref(new Map<string, TimeseriesPointProjected[]>());
-// Whenever historical data changes, re-run projections
-watch(
-  [
-    historicalData,
-    indexTree.tree,
-    projectionStartTimestamp,
-    projectionEndTimestamp,
-    temporalResolutionOption,
-  ],
-  () => {
-    overlay.enable();
-    const inputData: { [nodeId: string]: TimeseriesPoint[] } = {};
-    // Filter out empty or single point timeseries data since projection runner expect data length >= 2
-    for (const [nodeId, data] of historicalData.value) {
-      if (data?.length && data.length > 1) {
-        inputData[nodeId] = data;
-      }
-    }
-    const result = createProjectionRunner(
-      indexTree.tree.value,
-      inputData,
-      { start: projectionStartTimestamp.value, end: projectionEndTimestamp.value },
-      temporalResolutionOption.value
-    )
-      .runProjection()
-      .getResults();
-    projectionData.value = new Map(Object.entries(result));
-    overlay.disable();
-  }
-);
 const { setContextId, setDataState, setViewState } = useInsightStore();
 onMounted(() => {
   setContextId(analysisId.value + '--projections');
@@ -548,7 +518,82 @@ const toggleScenarioVisibility = (scenarioId: string) => {
   updateScenarios(updatedScenarios);
 };
 
+const updateScenarioConstraints = (
+  nodeId: string,
+  constraint: { timestamp: number; value: number }
+) => {
+  // Only update constraint on scenario edit mode
+  if (!scenarioBeingEdited.value || !nodeId) return;
+  const constraints = scenarioBeingEdited.value.constraints[nodeId] || [];
+  // If exactly same constraint is found, remove it.
+  const newConstraints = constraints.filter((c) => !_.isEqual(constraint, c));
+  // If nothing is removed, add a constraints
+  if (newConstraints.length === constraints.length) {
+    newConstraints.push(constraint);
+  }
+  scenarioBeingEdited.value.constraints[nodeId] = newConstraints;
+};
+
+const onNodeChartClick = (timestamp: number, value: number) => {
+  updateScenarioConstraints(selectedNodeId.value || '', { timestamp, value });
+  console.log(timestamp, value);
+};
+
 // ======================== Scenario Management End ========================
+
+const projectionData = ref<IndexProjection[]>([]);
+const visibleMultiScenarioProjectionData = computed(() => {
+  const visibleScenarios = scenarios.value.filter((scenario) => scenario.isVisible);
+  // Note that projection id === scenario id
+  return projectionData.value.filter((p) => !!visibleScenarios.find((s) => s.id === p.id));
+});
+
+// Whenever historical data changes, re-run projections
+watch(
+  [
+    historicalData,
+    indexTree.tree,
+    projectionStartTimestamp,
+    projectionEndTimestamp,
+    temporalResolutionOption,
+    scenarios,
+  ],
+  () => {
+    // Don't run projection for entire tree while on scenario editing mode
+    if (scenarioBeingEdited.value !== null) return;
+
+    // TODO: For the Optimization, only run projection when new scenario is added. When a scenario is deleted, just remove the projection for that scenario from the projection data.
+
+    overlay.enable();
+    const inputData: { [nodeId: string]: TimeseriesPoint[] } = {};
+    // Filter out empty or single point timeseries data since projection runner expect data length >= 2
+    for (const [nodeId, data] of historicalData.value) {
+      if (data?.length && data.length > 1) {
+        inputData[nodeId] = data;
+      }
+    }
+    projectionData.value = scenarios.value.map((scenario) => {
+      // TODO: pass constraints to the projection runner
+      console.log('constraints: ', scenario.id, scenario.constraints);
+      const result = createProjectionRunner(
+        indexTree.tree.value,
+        inputData,
+        { start: projectionStartTimestamp.value, end: projectionEndTimestamp.value },
+        temporalResolutionOption.value
+      )
+        .runProjection()
+        .getResults();
+
+      return {
+        id: scenario.id,
+        color: scenario.color,
+        name: scenario.name,
+        result,
+      };
+    });
+    overlay.disable();
+  }
+);
 </script>
 
 <style lang="scss" scoped>
@@ -636,6 +681,9 @@ main {
     label:first-child input {
       width: 180px;
     }
+  }
+  .edit-msg {
+    color: $accent-main;
   }
 }
 
