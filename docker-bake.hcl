@@ -25,12 +25,12 @@ function "check_suffix" {
 }
 
 # ---------------------------------
-group "prod" {
+group "causemos" {
   targets = ["causemos"]
 }
 
-group "default" {
-  targets = ["causemos-base"]
+group "ci" {
+  targets = ["causemos-ci"]
 }
 
 # ---------------------------------
@@ -46,4 +46,14 @@ target "causemos-base" {
 
 target "causemos" {
   inherits = ["_platforms", "causemos-base"]
+}
+
+target "causemos-ci-base" {
+	context = "."
+	tags = tag("causemos-ci", "", "")
+	dockerfile = "./ci/Dockerfile"
+}
+
+target "causemos-ci" {
+  inherits = ["_platforms", "causemos-ci-base"]
 }
