@@ -33,10 +33,11 @@ watch(
     const { clientWidth: width, clientHeight: height } = parentElement;
     // Set new size
     svg.attr('width', width).attr('height', height);
+
     // Rerender whenever dependencies change
     renderChart(
       svg,
-      _.last(timeseries.value)?.points || [],
+      timeseries.value,
       width,
       height,
       projectionStartTimestamp.value,
