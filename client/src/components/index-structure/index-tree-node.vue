@@ -223,12 +223,33 @@ const MENU_OPTION_DELETE = {
   icon: 'fa-trash',
 };
 
+const MENU_OPTION_CHANGE_DATASET = {
+  type: OptionButtonMenu.ChangeDataset,
+  text: 'Change dataset',
+  icon: 'fa-repeat',
+};
+
+const MENU_OPTION_REMOVE_DATASET = {
+  type: OptionButtonMenu.RemoveDataset,
+  text: 'Remove dataset',
+  icon: 'fa-times-circle',
+};
+
 const optionsButtonMenu = computed(() => {
   if (props.nodeData.isOutputNode) {
     return [MENU_OPTION_RENAME];
   }
   if (showEditName.value) {
     return [MENU_OPTION_DELETE];
+  }
+  if (isConceptNodeWithDatasetAttached(props.nodeData)) {
+    return [
+      MENU_OPTION_RENAME,
+      MENU_OPTION_DUPLICATE,
+      MENU_OPTION_DELETE,
+      MENU_OPTION_CHANGE_DATASET,
+      MENU_OPTION_REMOVE_DATASET,
+    ];
   }
   return [MENU_OPTION_RENAME, MENU_OPTION_DUPLICATE, MENU_OPTION_DELETE];
 });

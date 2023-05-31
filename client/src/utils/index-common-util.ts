@@ -3,6 +3,8 @@ export enum OptionButtonMenu {
   Duplicate = 'Duplicate',
   Delete = 'Delete',
   DeleteEdge = 'DeleteEdge',
+  ChangeDataset = 'ChangeDataset',
+  RemoveDataset = 'RemoveDataset',
 }
 
 export enum DropdownOptions {
