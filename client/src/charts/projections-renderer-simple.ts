@@ -2,7 +2,7 @@ import { D3Selection } from '@/types/D3';
 import { ProjectionPointType } from '@/types/Enums';
 import { ProjectionTimeseries } from '@/types/Timeseries';
 import { splitProjectionsIntoLineSegments } from '@/utils/projection-util';
-import { renderDashedLine, renderLine, renderPoint } from '@/utils/timeseries-util';
+import { renderDashedLine, renderLine, renderPoint, renderSquares } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 
 const DASHED_LINE = {
@@ -12,6 +12,8 @@ const DASHED_LINE = {
 };
 const SOLID_LINE_WIDTH = 1;
 const WEIGHTED_SUM_LINE_OPACITY = 0.25;
+const CONSTRAINT_SIDE_LENGTH = 3;
+const POINT_RADIUS = 2;
 
 export default function render(
   selection: D3Selection,
@@ -50,7 +52,19 @@ export default function render(
       const fullDataPoints = timeseries.points.filter(
         (point) => point.projectionType === ProjectionPointType.Historical
       );
-      renderPoint(groupElement, fullDataPoints, xScale, yScale, timeseries.color, 2);
+      renderPoint(groupElement, fullDataPoints, xScale, yScale, timeseries.color, POINT_RADIUS);
+      // Render a square at any point where one or more inputs have a constraint
+      const constraints = timeseries.points.filter(
+        (point) => point.projectionType === ProjectionPointType.Constraint
+      );
+      renderSquares(
+        groupElement,
+        constraints,
+        xScale,
+        yScale,
+        timeseries.color,
+        CONSTRAINT_SIDE_LENGTH
+      );
     });
     return;
   }
@@ -73,5 +87,22 @@ export default function render(
         renderLine(groupElement, segment, xScale, yScale, timeseries.color, SOLID_LINE_WIDTH);
       }
     });
+    // Render a circle at all historical data points
+    const fullDataPoints = timeseries.points.filter(
+      (point) => point.projectionType === ProjectionPointType.Historical
+    );
+    renderPoint(groupElement, fullDataPoints, xScale, yScale, timeseries.color, POINT_RADIUS);
+    // Render a square at any point with a constraint
+    const constraints = timeseries.points.filter(
+      (point) => point.projectionType === ProjectionPointType.Constraint
+    );
+    renderSquares(
+      groupElement,
+      constraints,
+      xScale,
+      yScale,
+      timeseries.color,
+      CONSTRAINT_SIDE_LENGTH
+    );
   });
 }
