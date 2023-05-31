@@ -32,6 +32,8 @@
         @rename="renameNode"
         @delete="deleteNode"
         @duplicate="duplicateNode"
+        @detachDataset="detachDataset"
+        @switchDataset="switchDataset"
         @select="(id) => emit('select-element', id)"
         @create-child="createChild"
         @attach-dataset="attachDatasetToNode"
@@ -193,6 +195,14 @@ const duplicateNode = (duplicated: ConceptNode) => {
   if (isOutputIndexNode(duplicated)) return;
   workbench.addItem(duplicated);
 };
+
+const detachDataset = (nodeId: string) => {
+  workbench.detachDatasetFromNode(nodeId);
+  indexTree.detachDatasetFromNode(nodeId);
+};
+
+const switchDataset = (nodeId: string) =>
+  console.log(`WIP: switching dataset from nodeid=${nodeId}`);
 
 const createChild = (parentNodeId: string) => {
   workbench.findAndAddNewChild(parentNodeId);
