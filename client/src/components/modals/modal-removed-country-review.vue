@@ -48,7 +48,6 @@ export default defineComponent({
   mounted() {
     const el = this.$refs.close as HTMLButtonElement;
     el.focus();
-    console.log(JSON.stringify(this.removedCountries));
   },
   methods: {
     close() {
