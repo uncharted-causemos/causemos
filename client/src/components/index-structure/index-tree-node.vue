@@ -132,6 +132,8 @@ const emit = defineEmits<{
   (e: 'duplicate', duplicated: ConceptNode): void;
   (e: 'select', nodeId: string): void;
   (e: 'create-child', parentNodeId: string): void;
+  (e: 'detach-dataset', nodeId: string): void;
+  (e: 'switch-dataset', nodeId: string): void;
   (
     e: 'attach-dataset',
     nodeId: string,
@@ -265,6 +267,12 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
       break;
     case OptionButtonMenu.Delete:
       emit('delete', props.nodeData);
+      break;
+    case OptionButtonMenu.ChangeDataset:
+      emit('switch-dataset', props.nodeData.id);
+      break;
+    case OptionButtonMenu.RemoveDataset:
+      emit('detach-dataset', props.nodeData.id);
       break;
     default:
       break;

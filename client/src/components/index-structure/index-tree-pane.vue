@@ -197,12 +197,14 @@ const duplicateNode = (duplicated: ConceptNode) => {
 };
 
 const detachDataset = (nodeId: string) => {
+  workbench.revertNode(nodeId);
+  indexTree.revertNode(nodeId);
+};
+
+const switchDataset = (nodeId: string) => {
   workbench.detachDatasetFromNode(nodeId);
   indexTree.detachDatasetFromNode(nodeId);
 };
-
-const switchDataset = (nodeId: string) =>
-  console.log(`WIP: switching dataset from nodeid=${nodeId}`);
 
 const createChild = (parentNodeId: string) => {
   workbench.findAndAddNewChild(parentNodeId);

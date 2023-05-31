@@ -76,6 +76,7 @@ export default function useIndexTree() {
     findAndAddChild,
     attachDatasetToNode,
     detachDatasetFromNode,
+    revertNode,
     setDatasetIsInverted,
     containsElement,
   } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
@@ -90,6 +91,7 @@ export default function useIndexTree() {
     findAndAddNewChild,
     findAndAddChild,
     attachDatasetToNode,
+    revertNode,
     detachDatasetFromNode,
     getAnalysisId,
     updateIsOppositePolarity,
