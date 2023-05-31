@@ -211,7 +211,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/variables';
+@import '@/styles/variables';
 
 :deep(.modal-container) {
   width: max-content;
