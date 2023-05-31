@@ -5,13 +5,15 @@
   <div class="index-results-container flex" :class="[INSIGHT_CAPTURE_CLASS]">
     <div class="flex-col structure-column">
       <header>
+        <button class="btn btn-sm" @click="modifyStructure">
+          <i class="fa fa-fw fa-caret-left" />Edit structure
+        </button>
         <h3>Index results</h3>
         <p class="subtitle">{{ selectedNodeName }}</p>
       </header>
       <section>
         <header class="flex index-structure-header">
           <h4>Index structure</h4>
-          <button class="btn btn-sm" @click="modifyStructure">Edit</button>
         </header>
         <IndexResultsStructurePreview class="index-structure-preview" :selected-node-id="tree.id" />
         <IndexResultsComponentList />
@@ -30,6 +32,7 @@
       :index-results-data="indexResultsData"
       :index-results-settings="indexResultsSettings"
       :selected-node-name="selectedNodeName"
+      :removed-countries="removedCountriesData"
       @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
     />
   </div>
@@ -50,7 +53,7 @@ import {
   countOppositeEdgesBetweenNodes,
 } from '@/utils/index-tree-util';
 import { calculateIndexResults } from '@/utils/index-results-util';
-import { IndexResultsData } from '@/types/Index';
+import { ConceptNodeWithDatasetAttached, IndexResultsData } from '@/types/Index';
 import { getRegionAggregationNormalized } from '@/services/outputdata-service';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
@@ -64,6 +67,7 @@ import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/services/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import { INSIGHT_CAPTURE_CLASS, isIndexResultsDataState } from '@/utils/insight-util';
+import { RegionalAggregation } from '@/types/Outputdata';
 
 const store = useStore();
 const route = useRoute();
@@ -120,11 +124,25 @@ function sortForDisplay<T>(list: T[], accessor: (item: T) => number | null) {
 
 /**
  * Sorts countries and their contributing datasets.
- * Removes any countributing datasets that don't have a value for the current country.
+ *
+ * Removes any contributing datasets that don't have a value for the current country and removes
+ * any countries (stored for review) that are not present in all datasets to avoid misleading data.
+ *
  * @param results Unsorted index results, that may contain contributing datasets with null values.
  */
 const prepareResultsForDisplay = (results: IndexResultsData[]): IndexResultsData[] => {
-  const preparedResults = _.cloneDeep(results);
+  removedCountries.value = [];
+  const preparedResultsAll = _.cloneDeep(results);
+
+  // Remove countries that are missing from some datasets during clone. Store for reference.
+  const preparedResults = preparedResultsAll.filter((country) => {
+    if (countryIntersection.value.includes(country.countryName)) {
+      return true;
+    }
+    removedCountries.value = [...removedCountries.value, _.cloneDeep(country)];
+    return false;
+  });
+
   // Remove datasets that don't include the current country
   preparedResults.forEach((countryWithData) => {
     const filteredDatasets = countryWithData.contributingDatasets.filter(
@@ -136,10 +154,79 @@ const prepareResultsForDisplay = (results: IndexResultsData[]): IndexResultsData
   });
   // Sort countries by overall value
   sortForDisplay(preparedResults, (result) => result.value);
+
   return preparedResults;
 };
 
 const indexResultsData = ref<IndexResultsData[]>([]);
+const removedCountries = ref<IndexResultsData[]>([]);
+const countryIntersection = ref<string[]>([]);
+
+/**
+ * associate removed countries with their source data.
+ */
+const removedCountriesData = computed(() => {
+  let countryData: any[] = [];
+  removedCountries.value.forEach((country) => {
+    countryData = [
+      ...countryData,
+      { countryName: country.countryName, removedFrom: countryMissingFrom(country.countryName) },
+    ];
+  });
+
+  return countryData;
+});
+
+/**
+ * Check a country against all datasets and list the datasets from which it is absent
+ * @param countryName
+ */
+const countryMissingFrom = (countryName: string) => {
+  let missingFromList: string[] = [];
+  regionDataForEachDataset.value.forEach((dataset: any, index) => {
+    if (dataset.country.filter((aCountry: any) => aCountry.id === countryName).length === 0) {
+      missingFromList = [...missingFromList, datasets.value[index].dataset.datasetName];
+    }
+  });
+  return missingFromList;
+};
+
+/**
+ * Given a set of data sources with country based data, generate a list of common (intersection)
+ * countries.  Can be used to filter displayed data when missing country data may have a negative effect
+ * on some calculations (weights and such).
+ *
+ * @param datasets
+ */
+const findCountryIntersection = (): string[] => {
+  const allPossible: string[] = [];
+  regionDataForEachDataset.value.forEach((dataset: any) => {
+    dataset.country.forEach((aCountry: any) => {
+      allPossible.push(aCountry.id);
+    });
+  });
+
+  const uniqueCountries: string[] = _.uniq(allPossible);
+
+  const commonCountries: string[] = [];
+  uniqueCountries.forEach((country) => {
+    let isCommon = true;
+    regionDataForEachDataset.value.forEach((dataset: any) => {
+      if (dataset.country.findIndex((c: any) => c.id === country) < 0) {
+        isCommon = false;
+      }
+    });
+    if (isCommon) {
+      commonCountries.push(country);
+    }
+  });
+
+  return commonCountries;
+};
+
+const datasets = ref<ConceptNodeWithDatasetAttached[]>([]);
+const regionDataForEachDataset = ref<RegionalAggregation[]>([]);
+
 // Whenever the tree changes, fetch data and calculate `indexResultsData`.
 watch([tree], async () => {
   // Save a reference to the current version of the tree so that if it changes before all of the
@@ -149,26 +236,29 @@ watch([tree], async () => {
   // Go through tree and pull out all the datasets.
   //  Multiply each dataset's weight by the weight of each of its ancestor to get the dataset's
   //  overall weight.
-  const datasets = findAllDatasets(tree.value);
+  datasets.value = findAllDatasets(tree.value);
+
   // Prepare an "output spec" for each dataset to fetch its regional data
-  const promises = datasets.map((dataset) =>
+  const promises = datasets.value.map((dataset) =>
     getRegionAggregationNormalized(convertDataConfigToOutputSpec(dataset.dataset.config))
   );
   // Wait for all fetches to complete.
-  const regionDataForEachDataset = await Promise.all(promises);
+  regionDataForEachDataset.value = await Promise.all(promises);
+  countryIntersection.value = findCountryIntersection();
+
   if (tree.value !== frozenTreeState) {
     // Tree has changed since the fetches began, so ignore these results.
     return;
   }
   // Calculate each dataset's overall weight.
-  const overallWeightForEachDataset = datasets.map((dataset) =>
+  const overallWeightForEachDataset = datasets.value.map((dataset) =>
     calculateOverallWeight(frozenTreeState, dataset)
   );
   // Calculate whether each dataset should be inverted.
   // Datasets can be inverted for two reasons:
   //  1. It represents the opposite of its concept (e.g. a "gdp" dataset on a "poverty" concept)
   //  2. There are "opposite" polarity edges between its concept and the output.
-  const shouldDatasetsBeInverted = datasets.map((dataset) => {
+  const shouldDatasetsBeInverted = datasets.value.map((dataset) => {
     const oppositeEdgeCount = countOppositeEdgesBetweenNodes(dataset, frozenTreeState);
     const isOppositeEdgeCountOdd = oppositeEdgeCount % 2 === 1;
     const isDatasetInverted = dataset.dataset.isInverted;
@@ -179,7 +269,7 @@ watch([tree], async () => {
     );
   });
   // Invert those datasets.
-  regionDataForEachDataset.forEach((regionData, i) => {
+  regionDataForEachDataset.value.forEach((regionData, i) => {
     // If this dataset is inverted, higher original values should map closer to 0 and lower
     //  original values should map closer to 1.
     if (shouldDatasetsBeInverted[i]) {
@@ -192,9 +282,9 @@ watch([tree], async () => {
 
   // All the data has been fetched and normalized, perform the actual result calculations.
   const unsortedResults = calculateIndexResults(
-    datasets,
+    datasets.value,
     overallWeightForEachDataset,
-    regionDataForEachDataset
+    regionDataForEachDataset.value
   );
   indexResultsData.value = prepareResultsForDisplay(unsortedResults);
 });

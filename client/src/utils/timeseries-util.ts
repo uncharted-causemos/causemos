@@ -16,6 +16,7 @@ import { colorFromIndex } from './colors-util';
 const DEFAULT_LINE_COLOR = '#000';
 const DEFAULT_LINE_WIDTH = 2;
 const DEFAULT_POINT_RADIUS = 2.5;
+const DEFAULT_SQUARE_SIDE_LENGTH = 4;
 
 export function applyReference(
   timeseriesData: Timeseries[],
@@ -399,7 +400,7 @@ export function renderPoint(
   color?: string,
   radius = DEFAULT_POINT_RADIUS
 ) {
-  const circles = parentGroupElement.selectAll('segment-line').data(points);
+  const circles = parentGroupElement.selectAll('.circle').data(points);
   circles
     .enter()
     .append('circle')
@@ -410,6 +411,28 @@ export function renderPoint(
     .style('stroke', '#fff')
     .style('stroke-width', 1.5)
     .style('fill', color || DEFAULT_LINE_COLOR);
+}
+
+export function renderSquares(
+  parentGroupElement: D3GElementSelection,
+  points: TimeseriesPoint[],
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  color?: string,
+  sideLength = DEFAULT_SQUARE_SIDE_LENGTH
+) {
+  const squares = parentGroupElement.selectAll('.square').data(points);
+  squares
+    .enter()
+    .append('rect')
+    .classed('square', true)
+    .attr('width', sideLength)
+    .attr('height', sideLength)
+    .attr('x', (d) => xScale(d.timestamp) - sideLength / 2)
+    .attr('y', (d) => yScale(d.value) - sideLength / 2)
+    .style('stroke', color || DEFAULT_LINE_COLOR)
+    .style('stroke-width', 1.5)
+    .style('fill', '#fff');
 }
 
 export function normalizeTimeseriesList(timeseriesList: Timeseries[]) {

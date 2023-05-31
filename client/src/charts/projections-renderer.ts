@@ -8,6 +8,7 @@ import {
   renderDashedLine,
   renderLine,
   renderPoint,
+  renderSquares,
   renderXaxis,
   renderYaxis,
 } from '@/utils/timeseries-util';
@@ -47,6 +48,11 @@ const DASHED_LINE = {
 const SOLID_LINE_WIDTH = 1;
 const WEIGHTED_SUM_LINE_OPACITY = 0.25;
 const POINT_RADIUS = 3;
+const CONSTRAINT_SIDE_LENGTH = 4;
+
+// The SVG element attribute where we store the focused time range so it can be persisted across
+//  renders.
+const PERSISTED_TIME_RANGE_ATTRIBUTE = 'data-time-range';
 
 const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
 const VALUE_FORMATTER = (value: number) => value.toPrecision(2);
@@ -74,11 +80,6 @@ const renderTimeseries = (
   isWeightedSum: boolean,
   color = 'black'
 ) => {
-  // Render a circle at any point where all inputs have historical data
-  const fullDataPoints = timeseries.filter(
-    (point) => point.projectionType === ProjectionPointType.Historical
-  );
-  renderPoint(parentGroupElement, fullDataPoints, xScale, yScale, color, POINT_RADIUS);
   if (isWeightedSum) {
     // Render a lighter line across the whole series
     const lineSelection = renderLine(
@@ -90,26 +91,36 @@ const renderTimeseries = (
       SOLID_LINE_WIDTH
     );
     lineSelection.attr('opacity', WEIGHTED_SUM_LINE_OPACITY);
-    return;
+  } else {
+    // This node has a dataset attached, so split the timeseries into solid and dashed segments
+    const segments = splitProjectionsIntoLineSegments(timeseries);
+    segments.forEach(({ isProjectedData, segment }) => {
+      if (isProjectedData) {
+        renderDashedLine(
+          parentGroupElement,
+          segment,
+          xScale,
+          yScale,
+          DASHED_LINE.length,
+          DASHED_LINE.gap,
+          color,
+          DASHED_LINE.width
+        );
+      } else {
+        renderLine(parentGroupElement, segment, xScale, yScale, color, SOLID_LINE_WIDTH);
+      }
+    });
   }
-  // This node has a dataset attached, so split the timeseries into solid and dashed segments
-  const segments = splitProjectionsIntoLineSegments(timeseries);
-  segments.forEach(({ isProjectedData, segment }) => {
-    if (isProjectedData) {
-      renderDashedLine(
-        parentGroupElement,
-        segment,
-        xScale,
-        yScale,
-        DASHED_LINE.length,
-        DASHED_LINE.gap,
-        color,
-        DASHED_LINE.width
-      );
-    } else {
-      renderLine(parentGroupElement, segment, xScale, yScale, color, SOLID_LINE_WIDTH);
-    }
-  });
+  // Render a circle at any point where all inputs have historical data
+  const fullDataPoints = timeseries.filter(
+    (point) => point.projectionType === ProjectionPointType.Historical
+  );
+  renderPoint(parentGroupElement, fullDataPoints, xScale, yScale, color, POINT_RADIUS);
+  // Render a square at any point where one or more inputs have a constraint
+  const constraints = timeseries.filter(
+    (point) => point.projectionType === ProjectionPointType.Constraint
+  );
+  renderSquares(parentGroupElement, constraints, xScale, yScale, color, CONSTRAINT_SIDE_LENGTH);
 };
 
 const renderBrushHandles = (g: D3GElementSelection, handlePositions: [number, number]) => {
@@ -192,6 +203,17 @@ export default function render(
   isWeightedSum: boolean,
   onClick: (timestamp: number, value: number) => void
 ) {
+  // Initialize focused range to the entire time range
+  let focusedTimeRange = [projectionStartTimestamp, projectionEndTimestamp];
+  // If we're re-rendering, preserve the focused time range from the previous render
+  const previousFocusGroupElement = selection.select('.focusGroupElement');
+  const previousFocusedTimeRange =
+    previousFocusGroupElement.size() > 0
+      ? previousFocusGroupElement.attr(PERSISTED_TIME_RANGE_ATTRIBUTE)
+      : null;
+  if (previousFocusedTimeRange !== null) {
+    focusedTimeRange = JSON.parse(previousFocusedTimeRange);
+  }
   // Clear any existing elements
   selection.selectAll('*').remove();
   // Add chart `g` element to the page
@@ -209,8 +231,6 @@ export default function render(
     .attr('stroke', 'none')
     .attr('fill', SCROLL_BAR_BACKGROUND_COLOR)
     .attr('fill-opacity', SCROLL_BAR_BACKGROUND_OPACITY);
-  // Initialize focused range to the entire time range
-  let focusedTimeRange: [number, number] = [projectionStartTimestamp, projectionEndTimestamp];
 
   /**
    * Validates that the new time range values are within the projection range, and that the start
@@ -225,6 +245,9 @@ export default function render(
       focusEndBeforeProjectionEnd
     );
     focusedTimeRange = [focusRangeStartBeforeFocusEnd, focusEndBeforeProjectionEnd];
+    // Store the new time range on the focus group element as an attribute so it can be preserved
+    //  across renders.
+    focusGroupElement.attr(PERSISTED_TIME_RANGE_ATTRIBUTE, JSON.stringify(focusedTimeRange));
   };
 
   // Calculate scales to map the date and value ranges to pixels for the main "focus" area
@@ -280,9 +303,10 @@ export default function render(
 
     // Render timeseries itself
     timeseriesList.forEach((timeseries) => {
+      const timeseriesGroup = focusGroupElement.append('g').classed('timeseries', true);
       renderTimeseries(
         timeseries.points,
-        focusGroupElement,
+        timeseriesGroup,
         xScale,
         yScale,
         isWeightedSum,
@@ -334,9 +358,10 @@ export default function render(
   // Render timeseries to scrollbar and fade it out.
   const yScaleScrollbar = d3.scaleLinear().domain([0, 1]).range([SCROLL_BAR_HEIGHT, 0]);
   timeseriesList.forEach((timeseries) => {
+    const timeseriesGroup = scrollBarGroupElement.append('g').classed('timeseries', true);
     renderTimeseries(
       timeseries.points,
-      scrollBarGroupElement,
+      timeseriesGroup,
       xScaleScrollbar,
       yScaleScrollbar,
       isWeightedSum,
@@ -344,7 +369,7 @@ export default function render(
     );
   });
   scrollBarGroupElement
-    .selectAll('.segment-line, .circle')
+    .selectAll('.segment-line, .circle, .square')
     .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
   // Render time range labels
   renderScrollBarLabels(
