@@ -209,5 +209,5 @@ export enum ProjectionPointType {
   Backcasted = 'backcasted',
   Interpolated = 'interpolated',
   Historical = 'historical',
-  Clamped = 'clamped',
+  Constraint = 'constraint',
 }

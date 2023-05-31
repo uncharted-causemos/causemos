@@ -10,7 +10,7 @@
           :node-data="inputComponent.componentNode"
           :projection-start-timestamp="projectionStartTimestamp"
           :projection-end-timestamp="projectionEndTimestamp"
-          :timeseries="getProjectionsForNode(projections, inputComponent.componentNode.id)"
+          :timeseries="getProjectionsForNode(projectionData, inputComponent.componentNode.id)"
           @select="emit('select-element', inputComponent.componentNode.id)"
         />
         <div
@@ -36,7 +36,7 @@
         :node-data="selectedNode.found"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :timeseries="getProjectionsForNode(projections, selectedNode.found.id)"
+        :timeseries="getProjectionsForNode(projectionData, selectedNode.found.id)"
         @click-chart="(...params) => emit('click-chart', ...params)"
       />
       <div
@@ -57,7 +57,7 @@
           :node-data="parentNode"
           :projection-start-timestamp="projectionStartTimestamp"
           :projection-end-timestamp="projectionEndTimestamp"
-          :timeseries="getProjectionsForNode(projections, parentNode.id)"
+          :timeseries="getProjectionsForNode(projectionData, parentNode.id)"
           @select="emit('select-element', parentNode.id)"
         />
       </div>
@@ -80,6 +80,7 @@ const props = defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   projections: IndexProjection[];
+  projectionForScenarioBeingEdited: IndexProjection | null;
 }>();
 
 const emit = defineEmits<{
@@ -94,6 +95,11 @@ const searchForNode = (id: string) => {
   const foundInTree = findNode(id);
   return foundInTree ?? workbench.findNode(id);
 };
+const projectionData = computed(() => {
+  return !props.projectionForScenarioBeingEdited
+    ? props.projections
+    : [props.projectionForScenarioBeingEdited];
+});
 const selectedNode = computed(() => {
   if (props.selectedNodeId === null) {
     return null;

@@ -221,6 +221,87 @@ export const runProjection = (
 };
 
 /**
+ * Apply constraints to the timeseries data and return new timeseries data.
+ * It either adds new points to the data or override existing data points with corresponding constraint points at same timestamp.
+ * @param timeseries Timeseries or projected timeseries data
+ * @param constraints constraints
+ */
+export const applyConstraints = <T extends TimeseriesPoint | TimeseriesPointProjected>(
+  timeseries: T[],
+  constraints: ProjectionConstraint[]
+): T[] => {
+  if (constraints.length === 0) return timeseries;
+  let constraintsSorted: T[] = _.orderBy(constraints, ['timestamp'], ['asc']) as T[];
+
+  // if timeseries is projected timeseries, add projectionType to each constraint point
+  const isProjectedTimeseries =
+    (timeseries as TimeseriesPointProjected[])[0]?.projectionType !== undefined;
+  if (isProjectedTimeseries) {
+    constraintsSorted = constraintsSorted.map((v) => ({
+      ...v,
+      projectionType: ProjectionPointType.Constraint,
+    }));
+  }
+
+  const result: T[] = [];
+  let i = 0;
+  let j = 0;
+  const tLength = timeseries.length;
+  const cLength = constraintsSorted.length;
+  while (i < tLength && j < cLength) {
+    const tPoint = timeseries[i];
+    const cPoint = constraintsSorted[j];
+    if (tPoint.timestamp < cPoint.timestamp) {
+      // Insert the timeseries point
+      result.push(tPoint);
+      i++;
+    } else if (tPoint.timestamp === cPoint.timestamp) {
+      // Override the timeseries point with the constraint point
+      result.push(cPoint);
+      i++;
+      j++;
+    } else {
+      // Insert the constraint
+      result.push(cPoint);
+      j++;
+    }
+  }
+  // Insert rest of the timeseries points
+  while (i < tLength) {
+    result.push(timeseries[i]);
+    i++;
+  }
+  // Insert rest of the constraints points
+  while (j < cLength) {
+    result.push(constraintsSorted[j]);
+    j++;
+  }
+  return result;
+};
+
+/**
+ * Set `projectionType` to constraint type for the constraint that are applied to given timeseries data.
+ * We are assuming that constraints are already applied to the timeseries data but only constraint type values are not set for each constraint data point.
+ * @param timeseries timeseries data with constraints
+ * @param constraints constraints used applied to the timeseries data
+ */
+const setConstraintsType = (
+  timeseries: TimeseriesPointProjected[],
+  constraints: ProjectionConstraint[]
+) => {
+  if (constraints.length === 0) return timeseries;
+  const constraintMap = new Map<number, number>();
+  for (const c of constraints) {
+    constraintMap.set(c.timestamp, c.value);
+  }
+  return timeseries.map((v) => {
+    return constraintMap.has(v.timestamp)
+      ? { ...v, projectionType: ProjectionPointType.Constraint }
+      : v;
+  });
+};
+
+/**
  * Create a projection runner that runs projection on the dataset nodes and computes weighted sum of children nodes for
  * the provided concept tree
  * @param conceptTree Concept tree
@@ -273,8 +354,8 @@ export const createProjectionRunner = (
 
     // Calculate the sum of children's weighted projected timeseries data
     const weightedSumSeries = sum(...childProjectionSeriesData);
-    // TODO: apply constraints for node.id
-    resultForWeightedSumNodes[node.id] = weightedSumSeries;
+    const constraints = (_constraints && _constraints[node.id]) || [];
+    resultForWeightedSumNodes[node.id] = applyConstraints(weightedSumSeries, constraints);
     runInfo[node.id] = { method: WeightedSumNodeProjectionType.WeightedSum };
     return weightedSumSeries;
   };
@@ -293,9 +374,9 @@ export const createProjectionRunner = (
      */
     projectAllDatasetNodes() {
       for (const [nodeId, series] of Object.entries(data).filter((v) => v[1] !== undefined)) {
-        // TODO: apply constraints
+        const constraints = (_constraints && _constraints[nodeId]) || [];
         const { method, forecast, backcast, projectionData } = runProjection(
-          series,
+          applyConstraints(series, constraints),
           period,
           dataTempResOption
         );
@@ -304,7 +385,7 @@ export const createProjectionRunner = (
           forecast,
           backcast,
         };
-        resultForDatasetNode[nodeId] = projectionData;
+        resultForDatasetNode[nodeId] = setConstraintsType(projectionData, constraints);
       }
       return runner;
     },
