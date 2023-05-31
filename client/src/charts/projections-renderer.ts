@@ -50,6 +50,10 @@ const WEIGHTED_SUM_LINE_OPACITY = 0.25;
 const POINT_RADIUS = 3;
 const CONSTRAINT_SIDE_LENGTH = 4;
 
+// The SVG element attribute where we store the focused time range so it can be persisted across
+//  renders.
+const PERSISTED_TIME_RANGE_ATTRIBUTE = 'data-time-range';
+
 const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
 const VALUE_FORMATTER = (value: number) => value.toPrecision(2);
 
@@ -199,6 +203,17 @@ export default function render(
   isWeightedSum: boolean,
   onClick: (timestamp: number, value: number) => void
 ) {
+  // Initialize focused range to the entire time range
+  let focusedTimeRange = [projectionStartTimestamp, projectionEndTimestamp];
+  // If we're re-rendering, preserve the focused time range from the previous render
+  const previousFocusGroupElement = selection.select('.focusGroupElement');
+  const previousFocusedTimeRange =
+    previousFocusGroupElement.size() > 0
+      ? previousFocusGroupElement.attr(PERSISTED_TIME_RANGE_ATTRIBUTE)
+      : null;
+  if (previousFocusedTimeRange !== null) {
+    focusedTimeRange = JSON.parse(previousFocusedTimeRange);
+  }
   // Clear any existing elements
   selection.selectAll('*').remove();
   // Add chart `g` element to the page
@@ -216,8 +231,6 @@ export default function render(
     .attr('stroke', 'none')
     .attr('fill', SCROLL_BAR_BACKGROUND_COLOR)
     .attr('fill-opacity', SCROLL_BAR_BACKGROUND_OPACITY);
-  // Initialize focused range to the entire time range
-  let focusedTimeRange: [number, number] = [projectionStartTimestamp, projectionEndTimestamp];
 
   /**
    * Validates that the new time range values are within the projection range, and that the start
@@ -232,6 +245,9 @@ export default function render(
       focusEndBeforeProjectionEnd
     );
     focusedTimeRange = [focusRangeStartBeforeFocusEnd, focusEndBeforeProjectionEnd];
+    // Store the new time range on the focus group element as an attribute so it can be preserved
+    //  across renders.
+    focusGroupElement.attr(PERSISTED_TIME_RANGE_ATTRIBUTE, JSON.stringify(focusedTimeRange));
   };
 
   // Calculate scales to map the date and value ranges to pixels for the main "focus" area
