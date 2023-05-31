@@ -3,7 +3,7 @@ import { DataConfig } from '@/types/Datacube';
 import { DiscreteOuputScale } from '@/types/Enums';
 import type { WeightedComponent } from '@/types/WeightedComponent';
 import { ForecastMethod, ForecastResult } from '@/utils/forecast';
-import { WeightedSumNodeProjectionType } from '@/utils/projection-util';
+import { NodeProjectionType } from '@/utils/projection-util';
 
 export interface DatasetSearchResult {
   displayName: string;
@@ -115,9 +115,7 @@ export type ProjectionResults = {
 };
 
 export type ProjectionRunInfo = {
-  [nodeId: string]:
-    | ForecastResult<ForecastMethod>
-    | { method: WeightedSumNodeProjectionType.WeightedSum };
+  [nodeId: string]: ForecastResult<ForecastMethod> | { method: NodeProjectionType };
 };
 
 /**

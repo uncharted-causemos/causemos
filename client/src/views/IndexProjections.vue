@@ -502,10 +502,10 @@ const {
 
 const onNodeChartClick = (timestamp: number, value: number) => {
   updateScenarioConstraints(selectedNodeId.value || '', { timestamp, value });
-  console.log(timestamp, value);
 };
 
-// useScenarioProjections
+// =========================================================================================
+// TODO: move following into useScenarioProjections composable
 
 const projectionForScenarioBeingEdited = ref<IndexProjection | null>(null);
 const constraintsForScenarioBeingEdited = computed(() =>
@@ -522,6 +522,8 @@ watch(constraintsForScenarioBeingEdited, () => {
     ) as IndexProjection;
   }
   // Apply constraints
+  // TODO: instead of just applying constraints to the projection data, re-run projection for the scenario
+  // to show projected result as clamps are being edited
   for (const [nodeId, constraints] of Object.entries(constraintsForScenarioBeingEdited.value)) {
     projectionForScenarioBeingEdited.value.result[nodeId] = applyConstraints(
       projectionForScenarioBeingEdited.value.result[nodeId],
@@ -553,15 +555,13 @@ const runScenarioProjections = (
   dataResOption: TemporalResolutionOption,
   scenarios: IndexProjectionScenario[]
 ) => {
-  const inputData: { [nodeId: string]: TimeseriesPoint[] } = {};
-  // Filter out empty or single point timeseries data since projection runner expect data length >= 2
-  for (const [nodeId, data] of historicalData) {
-    if (data?.length && data.length > 1) {
-      inputData[nodeId] = data;
-    }
-  }
   return scenarios.map((scenario) => {
-    const result = createProjectionRunner(conceptTree, inputData, targetPeriod, dataResOption)
+    const result = createProjectionRunner(
+      conceptTree,
+      Object.fromEntries(historicalData),
+      targetPeriod,
+      dataResOption
+    )
       .setConstraints(scenario.constraints)
       .runProjection()
       .getResults();

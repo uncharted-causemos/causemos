@@ -17,8 +17,19 @@ import {
   ProjectionRunInfo,
 } from '@/types/Index';
 
-export enum WeightedSumNodeProjectionType {
+export enum NodeProjectionType {
+  /**
+   * This projection type is used when data is empty and there's no projection result.
+   */
+  None = 'None',
+  /**
+   * This projection type is used when the projection data for the node is calculated from weighed sum of its children node.
+   */
   WeightedSum = 'Weighted Sum',
+  /**
+   * This projection type is used if input data with a single point is interpolated constantly
+   */
+  ConstantInterpolation = 'Constant Interpolation',
 }
 
 type ProjectionPoint = {
@@ -152,6 +163,50 @@ export const interpolateLinear = <T extends { x: number; y: number }>(data: T[])
   }
   result.push({ dataPoint: { ...lastPoint }, isInterpolated: false });
   return result;
+};
+
+export const runConstantInterpolation = (
+  point: TimeseriesPoint,
+  targetPeriod: { start: number; end: number },
+  dataResOption: TemporalResolutionOption.Month | TemporalResolutionOption.Year
+): TimeseriesPointProjected[] => {
+  const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(dataResOption);
+  const pointX = fromTimestamp(point.timestamp);
+  const startX = fromTimestamp(targetPeriod.start);
+  const endX = fromTimestamp(targetPeriod.end);
+  const points: ProjectionPoint[] = [
+    {
+      x: startX,
+      y: point.value,
+      projectionType:
+        pointX === startX ? ProjectionPointType.Historical : ProjectionPointType.Interpolated,
+    },
+    {
+      x: endX,
+      y: point.value,
+      projectionType:
+        pointX === endX ? ProjectionPointType.Historical : ProjectionPointType.Interpolated,
+    },
+  ];
+  // if the point is within the target period window, insert the point between them
+  if (startX < pointX && pointX < endX) {
+    points.splice(1, 0, {
+      x: pointX,
+      y: point.value,
+      projectionType: ProjectionPointType.Historical,
+    });
+  }
+  return interpolateLinear(points).map(({ dataPoint }) => {
+    let projectionType = ProjectionPointType.Interpolated;
+    if ('projectionType' in dataPoint) {
+      projectionType = dataPoint.projectionType;
+    }
+    return {
+      timestamp: toTimestamp(dataPoint.x),
+      value: dataPoint.y,
+      projectionType,
+    };
+  });
 };
 
 /**
@@ -356,7 +411,7 @@ export const createProjectionRunner = (
     const weightedSumSeries = sum(...childProjectionSeriesData);
     const constraints = (_constraints && _constraints[node.id]) || [];
     resultForWeightedSumNodes[node.id] = applyConstraints(weightedSumSeries, constraints);
-    runInfo[node.id] = { method: WeightedSumNodeProjectionType.WeightedSum };
+    runInfo[node.id] = { method: NodeProjectionType.WeightedSum };
     return weightedSumSeries;
   };
 
@@ -373,19 +428,8 @@ export const createProjectionRunner = (
      * Run projection on all dataset nodes
      */
     projectAllDatasetNodes() {
-      for (const [nodeId, series] of Object.entries(data).filter((v) => v[1] !== undefined)) {
-        const constraints = (_constraints && _constraints[nodeId]) || [];
-        const { method, forecast, backcast, projectionData } = runProjection(
-          applyConstraints(series, constraints),
-          period,
-          dataTempResOption
-        );
-        runInfo[nodeId] = {
-          method,
-          forecast,
-          backcast,
-        };
-        resultForDatasetNode[nodeId] = setConstraintsType(projectionData, constraints);
+      for (const nodeId of Object.keys(data)) {
+        runner.projectDatasetNode(nodeId);
       }
       return runner;
     },
@@ -395,9 +439,34 @@ export const createProjectionRunner = (
      * @param nodeId node id
      * @param options options - options e.g forecast method
      */
-    projectDatasetNode(nodeId: string, options: any) {
-      console.log('Not Yet Implemented', nodeId, options);
-      // TODO: Implement this method
+    projectDatasetNode(nodeId: string) {
+      const series = data[nodeId];
+      if (!series) return runner;
+
+      const constraints = (_constraints && _constraints[nodeId]) || [];
+      const inputData = applyConstraints(series, constraints);
+      if (inputData.length > 1) {
+        const { method, forecast, backcast, projectionData } = runProjection(
+          inputData,
+          period,
+          dataTempResOption
+        );
+        runInfo[nodeId] = {
+          method,
+          forecast,
+          backcast,
+        };
+        resultForDatasetNode[nodeId] = setConstraintsType(projectionData, constraints);
+      } else if (inputData.length === 1) {
+        // Handle data with single point
+        const data = runConstantInterpolation(inputData[0], period, dataTempResOption);
+        runInfo[nodeId] = { method: NodeProjectionType.ConstantInterpolation };
+        resultForDatasetNode[nodeId] = setConstraintsType(data, constraints);
+      } else {
+        // Empty input data
+        runInfo[nodeId] = { method: NodeProjectionType.None };
+        resultForDatasetNode[nodeId] = [];
+      }
       return runner;
     },
 
