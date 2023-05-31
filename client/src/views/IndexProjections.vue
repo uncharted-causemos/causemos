@@ -515,21 +515,23 @@ watch(constraintsForScenarioBeingEdited, () => {
     projectionForScenarioBeingEdited.value = null;
     return;
   }
-  if (!projectionForScenarioBeingEdited.value) {
-    projectionForScenarioBeingEdited.value = _.cloneDeep(
-      projectionData.value.find((p) => p.id === scenarioBeingEdited.value?.id)
-    ) as IndexProjection;
-  }
+  // Create a copy of existing projection data for this scenario
+  const { id, color, name, result } = projectionData.value.find(
+    (p) => p.id === scenarioBeingEdited.value?.id
+  ) as IndexProjection;
+  const updatedProjection: IndexProjection = {
+    id,
+    color,
+    name,
+    result: { ...result },
+  };
   // Apply constraints
   // TODO: instead of just applying constraints to the projection data, re-run projection for the scenario
   // to show projected result as clamps are being edited
   for (const [nodeId, constraints] of Object.entries(constraintsForScenarioBeingEdited.value)) {
-    projectionForScenarioBeingEdited.value.result[nodeId] = applyConstraints(
-      projectionForScenarioBeingEdited.value.result[nodeId],
-      constraints
-    );
+    updatedProjection.result[nodeId] = applyConstraints(result[nodeId], constraints);
   }
-  projectionForScenarioBeingEdited.value = { ...projectionForScenarioBeingEdited.value };
+  projectionForScenarioBeingEdited.value = updatedProjection;
 });
 
 const projectionData = ref<IndexProjection[]>([]);
