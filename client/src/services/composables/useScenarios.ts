@@ -72,10 +72,11 @@ export default function useScenarios(
     // Only allow updating scenario when editing scenario is enabled
     if (!scenarioBeingEdited.value || !nodeId) return;
     const constraints = scenarioBeingEdited.value.constraints[nodeId] || [];
-    // If exactly same constraint is found, remove it.
-    const newConstraints = constraints.filter((c) => !_.isEqual(constraint, c));
-    // If nothing is removed, add a constraints
-    if (newConstraints.length === constraints.length) {
+
+    // If exact same constraint already exists, remove. Otherwise replace existing at same timestamp or add new.
+    const existingConstraint = constraints.find((c) => _.isEqual(c, constraint));
+    const newConstraints = constraints.filter((c) => c.timestamp !== constraint.timestamp);
+    if (!existingConstraint) {
       newConstraints.push(constraint);
     }
     scenarioBeingEdited.value.constraints = {
