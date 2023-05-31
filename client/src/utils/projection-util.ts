@@ -286,17 +286,10 @@ export const applyConstraints = <T extends TimeseriesPoint | TimeseriesPointProj
   constraints: ProjectionConstraint[]
 ): T[] => {
   if (constraints.length === 0) return timeseries;
-  let constraintsSorted: T[] = _.orderBy(constraints, ['timestamp'], ['asc']) as T[];
-
-  // if timeseries is projected timeseries, add projectionType to each constraint point
-  const isProjectedTimeseries =
-    (timeseries as TimeseriesPointProjected[])[0]?.projectionType !== undefined;
-  if (isProjectedTimeseries) {
-    constraintsSorted = constraintsSorted.map((v) => ({
-      ...v,
-      projectionType: ProjectionPointType.Constraint,
-    }));
-  }
+  const constraintsSorted: T[] = _.orderBy(constraints, ['timestamp'], ['asc']).map((v) => ({
+    ...v,
+    projectionType: ProjectionPointType.Constraint,
+  })) as T[];
 
   const result: T[] = [];
   let i = 0;
@@ -412,7 +405,7 @@ export const createProjectionRunner = (
     const constraints = (_constraints && _constraints[node.id]) || [];
     resultForWeightedSumNodes[node.id] = applyConstraints(weightedSumSeries, constraints);
     runInfo[node.id] = { method: NodeProjectionType.WeightedSum };
-    return weightedSumSeries;
+    return resultForWeightedSumNodes[node.id];
   };
 
   const runner = {

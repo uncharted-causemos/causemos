@@ -46,7 +46,7 @@ export const createNewScenario = (
     name,
     description,
     color: color,
-    isVisible: false,
+    isVisible: true,
     isDefault: false,
     constraints: {},
   };

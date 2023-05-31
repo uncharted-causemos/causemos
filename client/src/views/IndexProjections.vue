@@ -165,7 +165,7 @@
         class="fill-space"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :projections="visibleMultiScenarioProjectionData"
+        :projections="visibleScenarioProjectionData"
         @select-element="selectElement"
       />
       <IndexProjectionsNodeView
@@ -174,7 +174,7 @@
         :selected-node-id="selectedNodeId"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :projections="visibleMultiScenarioProjectionData"
+        :projections="visibleScenarioProjectionData"
         :projection-for-scenario-being-edited="projectionForScenarioBeingEdited"
         @select-element="selectElement"
         @deselect-node="deselectNode"
@@ -197,19 +197,13 @@ import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useProjectionDates from '@/services/composables/useProjectionDates';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
-import {
-  IndexProjectionScenario,
-  SelectableIndexElementId,
-  IndexProjection,
-  ConceptNode,
-} from '@/types/Index';
+import { SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
 import timestampFormatter from '@/formatters/timestamp-formatter';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
-import { applyConstraints, createProjectionRunner } from '@/utils/projection-util';
 import { MAX_NUM_TIMESERIES, NO_COUNTRY_SELECTED_VALUE } from '@/utils/index-projection-util';
 import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
@@ -223,6 +217,7 @@ import { TYPE } from 'vue-toastification';
 import IndexProjectionsSettingsCountries from '@/components/index-projections/index-projections-settings-countries.vue';
 import useSelectedCountries from '@/services/composables/useSelectedCountries';
 import useScenarios from '@/services/composables/useScenarios';
+import useScenarioProjections from '@/services/composables/useScenarioProjections';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -503,79 +498,9 @@ const onNodeChartClick = (timestamp: number, value: number) => {
   updateScenarioConstraints(selectedNodeId.value || '', { timestamp, value });
 };
 
-// =========================================================================================
-// TODO: move following into useScenarioProjections composable
-
-const projectionForScenarioBeingEdited = ref<IndexProjection | null>(null);
-const constraintsForScenarioBeingEdited = computed(() =>
-  !scenarioBeingEdited.value ? null : scenarioBeingEdited.value.constraints
-);
-watch(constraintsForScenarioBeingEdited, () => {
-  if (!constraintsForScenarioBeingEdited.value || !scenarioBeingEdited.value) {
-    projectionForScenarioBeingEdited.value = null;
-    return;
-  }
-  // Create a copy of existing projection data for this scenario
-  const { id, color, name, result } = projectionData.value.find(
-    (p) => p.id === scenarioBeingEdited.value?.id
-  ) as IndexProjection;
-  const updatedProjection: IndexProjection = {
-    id,
-    color,
-    name,
-    result: { ...result },
-  };
-  // Apply constraints
-  // TODO: instead of just applying constraints to the projection data, re-run projection for the scenario
-  // to show projected result as clamps are being edited
-  for (const [nodeId, constraints] of Object.entries(constraintsForScenarioBeingEdited.value)) {
-    updatedProjection.result[nodeId] = applyConstraints(result[nodeId], constraints);
-  }
-  projectionForScenarioBeingEdited.value = updatedProjection;
-});
-
-const projectionData = ref<IndexProjection[]>([]);
-const visibleMultiScenarioProjectionData = computed(() => {
-  const visibleScenarios = scenarios.value.filter((scenario) => scenario.isVisible);
-  // Note that projection id === scenario id
-  return projectionData.value.filter((p) => !!visibleScenarios.find((s) => s.id === p.id));
-});
-
-/**
- * Run projections for the tree with historical data with given scenarios
- * @param conceptTree
- * @param historicalData
- * @param targetPeriod
- * @param dataResOption
- * @param scenarios
- */
-const runScenarioProjections = (
-  conceptTree: ConceptNode,
-  historicalData: Map<string, TimeseriesPoint[]>,
-  targetPeriod: { start: number; end: number },
-  dataResOption: TemporalResolutionOption,
-  scenarios: IndexProjectionScenario[]
-) => {
-  return scenarios.map((scenario) => {
-    const result = createProjectionRunner(
-      conceptTree,
-      Object.fromEntries(historicalData),
-      targetPeriod,
-      dataResOption
-    )
-      .setConstraints(scenario.constraints)
-      .runProjection()
-      .getResults();
-
-    return {
-      // Set projection id equal to the scenario id
-      id: scenario.id,
-      color: scenario.color,
-      name: scenario.name,
-      result,
-    };
-  });
-};
+// Scenario projections
+const { visibleScenarioProjectionData, projectionForScenarioBeingEdited, runScenarioProjections } =
+  useScenarioProjections(scenarios, scenarioBeingEdited);
 
 // Whenever historical data changes, re-run projections
 watch(
@@ -592,7 +517,7 @@ watch(
     // TODO: For optimization, other than initial run, only run projection for the specific scenario when a new scenario is added or when the edit for a scenario is done.
     // Check diff from old and new scenarios data and only run the projection for a scenario if necessary.
     // When a scenario is deleted, just remove the projection for that scenario from the projection data.
-    projectionData.value = runScenarioProjections(
+    runScenarioProjections(
       indexTree.tree.value,
       historicalData.value,
       { start: projectionStartTimestamp.value, end: projectionEndTimestamp.value },
