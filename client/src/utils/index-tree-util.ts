@@ -361,8 +361,9 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     addChild(parentNode.found, childNode, parentNode.parent);
   };
 
-  const findAndAddNewChild = (parentNodeId: string) => {
+  const findAndAddNewChild = (parentNodeId: string, childName = '') => {
     const newNode = createNewConceptNode();
+    newNode.name = childName;
     findAndAddChild(parentNodeId, newNode);
     onSuccess();
   };

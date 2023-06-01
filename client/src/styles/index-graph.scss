@@ -142,3 +142,11 @@ $node-content-vertical-padding: 5px;
 @mixin index-tree-node-content() {
   padding: $node-content-vertical-padding $node-content-horizontal-padding;
 }
+
+@mixin arrow-head($color: $un-color-black-30, $width: 5px, $height: 5px) {
+  width: 0;
+  height: 0;
+  border-top: $width solid transparent;
+  border-bottom: $width solid transparent;
+  border-left: $height solid $color;
+}

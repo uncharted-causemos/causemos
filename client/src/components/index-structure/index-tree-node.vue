@@ -1,97 +1,105 @@
 <template>
-  <div class="index-tree-node-container" :class="classObject" @click="selectNode">
-    <div class="disable-overlay" />
-    <div v-if="isConceptNodeWithoutDataset(props.nodeData)" class="input-arrow" />
-    <template v-if="showDatasetSearch">
-      <IndexTreeNodeSearchBar
-        :initial-search-text="props.nodeData.name"
-        @select-dataset="attachDataset"
-        @set-node-name="setNodeName"
-        @cancel="cancelDatasetSearch"
-      />
-      <IndexTreeNodeAdvancedSearchButton
-        class="advanced-search-button"
-        :node-id="props.nodeData.id"
-      />
-    </template>
-    <div v-else-if="showEditName" class="rename content flex">
-      <input
-        v-focus
-        class="form-control"
-        type="text"
-        :placeholder="renameInputTextPlaceholder"
-        v-model="renameInputText"
-        @keyup.escape="cancelRename"
-        @keyup.enter="handleRenameDone"
-      />
-      <button
-        class="btn btn-default"
-        @click="handleRenameDone"
-        :disabled="renameInputText === '' && renameInputTextPlaceholder === ''"
-      >
-        Done
-      </button>
-    </div>
-    <div v-else class="header content">
-      <div class="name">
-        {{ props.nodeData.name }}
+  <div class="index-tree-node-container">
+    <div class="index-tree-node-body" :class="classObject" @click="selectNode">
+      <div class="disable-overlay" />
+      <div v-if="isConceptNodeWithoutDataset(props.nodeData)" class="input-arrow" />
+      <template v-if="showDatasetSearch">
+        <IndexTreeNodeSearchBar
+          :initial-search-text="props.nodeData.name"
+          @select-dataset="attachDataset"
+          @set-node-name="setNodeName"
+          @cancel="cancelDatasetSearch"
+        />
+        <IndexTreeNodeAdvancedSearchButton
+          class="advanced-search-button"
+          :node-id="props.nodeData.id"
+        />
+      </template>
+      <div v-else-if="showEditName" class="rename content flex">
+        <input
+          v-focus
+          class="form-control"
+          type="text"
+          :placeholder="renameInputTextPlaceholder"
+          v-model="renameInputText"
+          @keyup.escape="cancelRename"
+          @keyup.enter="handleRenameDone"
+        />
+        <button
+          class="btn btn-default"
+          @click="handleRenameDone"
+          :disabled="renameInputText === '' && renameInputTextPlaceholder === ''"
+        >
+          Done
+        </button>
       </div>
-      <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
-        <template #content>
-          <div
-            v-for="item in optionsButtonMenu"
-            class="dropdown-option"
-            :key="item.type"
-            @click="handleOptionsButtonClick(item.type)"
-          >
-            <i class="fa fa-fw" :class="item.icon" />
-            {{ item.text }}
-          </div>
-        </template>
-      </OptionsButton>
-    </div>
-    <div v-if="isConceptNodeWithoutDataset(props.nodeData) && !showDatasetSearch" class="content">
-      <p
-        v-if="dataSourceText.length > 0"
-        class="un-font-small data-source-text subdued"
-        :class="{ warning: isEmptyNode(props.nodeData) }"
-      >
-        {{ dataSourceText }}
-      </p>
-      <button
-        v-if="!showEditName"
-        class="btn btn-default full-width-button"
-        @click.stop="emit('create-child', props.nodeData.id)"
-      >
-        Add input concept
-      </button>
-      <button
-        v-if="showAttachDatasetButton"
-        class="btn btn-default full-width-button button-top-margin"
-        @click="isSearchingForDataset = true"
-      >
-        <i class="fa fa-fw" :class="DATASET_ICON" />
-        Attach dataset
-      </button>
-      <button
-        v-if="showSeeResultsButton"
-        class="btn btn-sm btn-call-to-action full-width-button button-top-margin"
-        :disabled="!canViewResults"
-        @click="seeResults"
-      >
-        See results
-      </button>
-    </div>
-    <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)" class="content">
-      <div class="flex dataset-label" :style="{ color: DATASET_COLOR }">
-        <i class="fa fa-fw" :class="DATASET_ICON" />
-        <span class="un-font-small expand">Dataset</span>
-        <InvertedDatasetLabel v-if="props.nodeData.dataset.isInverted" />
+      <div v-else class="header content">
+        <div class="name">
+          {{ props.nodeData.name }}
+        </div>
+        <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
+          <template #content>
+            <div
+              v-for="item in optionsButtonMenu"
+              class="dropdown-option"
+              :key="item.type"
+              @click="handleOptionsButtonClick(item.type)"
+            >
+              <i class="fa fa-fw" :class="item.icon" />
+              {{ item.text }}
+            </div>
+          </template>
+        </OptionsButton>
       </div>
-      <p class="un-font-small subdued">
-        {{ dataSourceText }}
-      </p>
+      <div v-if="isConceptNodeWithoutDataset(props.nodeData) && !showDatasetSearch" class="content">
+        <p
+          v-if="dataSourceText.length > 0"
+          class="un-font-small data-source-text subdued"
+          :class="{ warning: isEmptyNode(props.nodeData) }"
+        >
+          {{ dataSourceText }}
+        </p>
+        <button
+          v-if="!showEditName"
+          class="btn btn-default full-width-button"
+          @click.stop="emit('create-child', props.nodeData.id)"
+        >
+          Add input concept
+        </button>
+        <button
+          v-if="showAttachDatasetButton"
+          class="btn btn-default full-width-button button-top-margin"
+          @click="isSearchingForDataset = true"
+        >
+          <i class="fa fa-fw" :class="DATASET_ICON" />
+          Attach dataset
+        </button>
+        <button
+          v-if="showSeeResultsButton"
+          class="btn btn-sm btn-call-to-action full-width-button button-top-margin"
+          :disabled="!canViewResults"
+          @click="seeResults"
+        >
+          See results
+        </button>
+      </div>
+      <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)" class="content">
+        <div class="flex dataset-label" :style="{ color: DATASET_COLOR }">
+          <i class="fa fa-fw" :class="DATASET_ICON" />
+          <span class="un-font-small expand">Dataset</span>
+          <InvertedDatasetLabel v-if="props.nodeData.dataset.isInverted" />
+        </div>
+        <p class="un-font-small subdued">
+          {{ dataSourceText }}
+        </p>
+      </div>
     </div>
+    <IndexStructureRecommendations
+      v-if="props.nodeData.name === ''"
+      class="recommendations"
+      :parent-node="parentNode"
+      @add-suggestion="addSuggestion"
+    />
   </div>
 </template>
 <script setup lang="ts">
@@ -117,6 +125,8 @@ import useIndexTree from '@/services/composables/useIndexTree';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { ProjectType } from '@/types/Enums';
+import IndexStructureRecommendations from './index-structure-recommendations.vue';
+import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 
 interface Props {
   nodeData: ConceptNode;
@@ -323,6 +333,20 @@ const attachDataset = (dataset: DatasetSearchResult, nodeNameAfterAttachingDatas
 };
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
+
+const indexWorkbench = useIndexWorkBench();
+const parentNode = computed(() => {
+  const foundInTree = indexTree.findNode(props.nodeData.id);
+  const found = foundInTree ?? indexWorkbench.findNode(props.nodeData.id);
+  return found?.parent ?? null;
+});
+const addSuggestion = (suggestion: string) => {
+  if (parentNode.value === null) {
+    return;
+  }
+  indexTree.findAndAddNewChild(parentNode.value.id, suggestion);
+  indexWorkbench.findAndAddNewChild(parentNode.value.id, suggestion);
+};
 </script>
 
 <style scoped lang="scss">
@@ -333,7 +357,7 @@ const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 
 $option-button-width: 16px;
 
-.index-tree-node-container {
+.index-tree-node-body {
   @include index-tree-node;
 
   &.flexible-width {
@@ -477,5 +501,9 @@ $option-button-width: 16px;
 
 .warning {
   color: $un-color-feedback-warning;
+}
+
+.recommendations {
+  margin-top: 20px;
 }
 </style>
