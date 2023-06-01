@@ -165,6 +165,9 @@ export const interpolateLinear = <T extends { x: number; y: number }>(data: T[])
   return result;
 };
 
+/**
+ * Run linear interpolation within the target period window using the value of provided timeseries point
+ */
 export const runConstantInterpolation = (
   point: TimeseriesPoint,
   targetPeriod: { start: number; end: number },
@@ -540,7 +543,7 @@ export const splitProjectionsIntoLineSegments = (timeseries: TimeseriesPointProj
   // If no historical point is found, return one projected segment that includes the whole
   //  timeseries.
   if (indexOfFirstHistoricalPoint === -1) {
-    return [{ isProjectedData: false, segment: timeseries }];
+    return [{ isProjectedData: true, segment: timeseries }];
   }
   // Add one so that the backcast line is drawn right up to and including the first historical
   //  data point.
