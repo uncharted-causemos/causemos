@@ -9,7 +9,6 @@ export interface TimeseriesPoint {
 export interface TimeseriesPointProjected extends TimeseriesPoint {
   projectionType: ProjectionPointType;
 }
-
 export interface TimeseriesDistributionPoint {
   values: number[];
   timestamp: number;

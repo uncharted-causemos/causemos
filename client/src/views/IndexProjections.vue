@@ -49,10 +49,10 @@
           class="subsection"
           :scenarios="scenarios"
           :max-scenarios="MAX_NUM_TIMESERIES"
-          @create="handleCreateScenario"
-          @duplicate="handleDuplicateScenario"
-          @edit="handleEditScenario"
-          @delete="handleDeleteScenario"
+          @create="createScenario"
+          @duplicate="duplicateScenario"
+          @edit="enableEditingScenario"
+          @delete="deleteScenario"
           @toggleVisible="toggleScenarioVisibility"
         />
 
@@ -149,13 +149,13 @@
             <input class="flex-grow" type="text" v-model="scenarioBeingEdited.description" />
           </label>
           <div>
-            <button class="btn btn-sm" @click="handleCancelEditScenario">Cancel</button>
-            <button class="btn btn-sm btn-call-to-action" @click="handleDoneEditScenario">
+            <button class="btn btn-sm" @click="cancelEditingScenario">Cancel</button>
+            <button class="btn btn-sm btn-call-to-action" @click="finishEditingScenario">
               Done
             </button>
           </div>
         </div>
-        <p v-if="scenarioBeingEdited !== null" class="subdued un-font-small">
+        <p v-if="scenarioBeingEdited !== null" class="edit-msg subdued un-font-small">
           Click a concept to add or edit constraints.
         </p>
         <p v-else class="subdued un-font-small">Click a concept to enlarge it.</p>
@@ -165,7 +165,7 @@
         class="fill-space"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :projections="projectionData"
+        :projections="visibleScenarioProjectionData"
         @select-element="selectElement"
       />
       <IndexProjectionsNodeView
@@ -174,9 +174,11 @@
         :selected-node-id="selectedNodeId"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :projections="projectionData"
+        :projections="visibleScenarioProjectionData"
+        :projection-for-scenario-being-edited="projectionForScenarioBeingEdited"
         @select-element="selectElement"
         @deselect-node="deselectNode"
+        @click-chart="onNodeChartClick"
       />
       <IndexLegend class="legend" :is-projection-space="true" />
     </main>
@@ -195,20 +197,14 @@ import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useProjectionDates from '@/services/composables/useProjectionDates';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
-import { IndexProjectionScenario, SelectableIndexElementId } from '@/types/Index';
+import { SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
 import timestampFormatter from '@/formatters/timestamp-formatter';
-import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
+import { TimeseriesPoint } from '@/types/Timeseries';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
-import { createProjectionRunner } from '@/utils/projection-util';
-import {
-  MAX_NUM_TIMESERIES,
-  NO_COUNTRY_SELECTED_VALUE,
-  createNewScenario,
-  getAvailableTimeseriesColor,
-} from '@/utils/index-projection-util';
+import { MAX_NUM_TIMESERIES, NO_COUNTRY_SELECTED_VALUE } from '@/utils/index-projection-util';
 import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
 import IndexProjectionsSettingsScenarios from '@/components/index-projections/index-projections-settings-scenarios.vue';
@@ -220,6 +216,8 @@ import { INSIGHT_CAPTURE_CLASS, isIndexProjectionsDataState } from '@/utils/insi
 import { TYPE } from 'vue-toastification';
 import IndexProjectionsSettingsCountries from '@/components/index-projections/index-projections-settings-countries.vue';
 import useSelectedCountries from '@/services/composables/useSelectedCountries';
+import useScenarios from '@/services/composables/useScenarios';
+import useScenarioProjections from '@/services/composables/useScenarioProjections';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -403,37 +401,6 @@ const onDoneEditingTimeRange = () => {
   saveProjectionDates();
 };
 
-const projectionData = ref(new Map<string, TimeseriesPointProjected[]>());
-// Whenever historical data changes, re-run projections
-watch(
-  [
-    historicalData,
-    indexTree.tree,
-    projectionStartTimestamp,
-    projectionEndTimestamp,
-    temporalResolutionOption,
-  ],
-  () => {
-    overlay.enable();
-    const inputData: { [nodeId: string]: TimeseriesPoint[] } = {};
-    // Filter out empty or single point timeseries data since projection runner expect data length >= 2
-    for (const [nodeId, data] of historicalData.value) {
-      if (data?.length && data.length > 1) {
-        inputData[nodeId] = data;
-      }
-    }
-    const result = createProjectionRunner(
-      indexTree.tree.value,
-      inputData,
-      { start: projectionStartTimestamp.value, end: projectionEndTimestamp.value },
-      temporalResolutionOption.value
-    )
-      .runProjection()
-      .getResults();
-    projectionData.value = new Map(Object.entries(result));
-    overlay.disable();
-  }
-);
 const { setContextId, setDataState, setViewState } = useInsightStore();
 onMounted(() => {
   setContextId(analysisId.value + '--projections');
@@ -513,64 +480,52 @@ watch(
   { immediate: true }
 );
 
-// ========================== Scenario Management ==========================
+// Scenario Management
+const {
+  scenarios,
+  scenarioBeingEdited,
+  createScenario,
+  duplicateScenario,
+  toggleScenarioVisibility,
+  deleteScenario,
+  enableEditingScenario,
+  cancelEditingScenario,
+  finishEditingScenario,
+  updateScenarioConstraints,
+} = useScenarios(indexProjectionSettings, updateIndexProjectionSettings);
 
-const scenarios = computed(() => indexProjectionSettings.value.scenarios);
-const scenarioBeingEdited = ref<IndexProjectionScenario | null>(null);
-const updateScenarios = (scenarios: IndexProjectionScenario[]) => {
-  updateIndexProjectionSettings({
-    ...indexProjectionSettings.value,
+const onNodeChartClick = (timestamp: number, value: number) => {
+  updateScenarioConstraints(selectedNodeId.value || '', { timestamp, value });
+};
+
+// Scenario projections
+const { visibleScenarioProjectionData, projectionForScenarioBeingEdited, runScenarioProjections } =
+  useScenarioProjections(scenarios, scenarioBeingEdited);
+
+watch(
+  [
+    historicalData,
+    indexTree.tree,
+    projectionStartTimestamp,
+    projectionEndTimestamp,
+    temporalResolutionOption,
     scenarios,
-  });
-};
-const getAvailableScenarioColor = () => {
-  const usedColors = scenarios.value.map((scenario) => scenario.color);
-  return getAvailableTimeseriesColor(usedColors);
-};
-
-const handleCreateScenario = () => {
-  const color = getAvailableScenarioColor();
-  if (!color) return;
-  updateScenarios([...scenarios.value, createNewScenario(undefined, '', color)]);
-};
-
-const handleEditScenario = (scenarioId: string) => {
-  const target = scenarios.value.find((v) => v.id === scenarioId);
-  if (!target) return;
-  scenarioBeingEdited.value = _.cloneDeep(target);
-};
-
-const handleDuplicateScenario = (scenarioId: string) => {
-  const target = scenarios.value.find((v) => v.id === scenarioId);
-  const color = getAvailableScenarioColor();
-  if (!target || !color) return;
-  updateScenarios([...scenarios.value, createNewScenario(target.name, target.description, color)]);
-};
-
-const handleDeleteScenario = (scenarioId: string) => {
-  updateScenarios(scenarios.value.filter((item) => item.id !== scenarioId));
-};
-
-const handleCancelEditScenario = () => {
-  scenarioBeingEdited.value = null;
-};
-
-const handleDoneEditScenario = () => {
-  const updatedScenarios = scenarios.value.map((scenario) =>
-    scenario.id === scenarioBeingEdited.value?.id ? scenarioBeingEdited.value : scenario
-  );
-  updateScenarios(updatedScenarios);
-  scenarioBeingEdited.value = null;
-};
-
-const toggleScenarioVisibility = (scenarioId: string) => {
-  const updatedScenarios = scenarios.value.map((scenario) =>
-    scenario.id === scenarioId ? { ...scenario, isVisible: !scenario.isVisible } : scenario
-  );
-  updateScenarios(updatedScenarios);
-};
-
-// ======================== Scenario Management End ========================
+  ],
+  () => {
+    overlay.enable();
+    // TODO: For optimization, other than initial run, only run projection for the specific scenario when a new scenario is added or when the edit for a scenario is done.
+    // Check diff from old and new scenarios data and only run the projection for a scenario if necessary.
+    // When a scenario is deleted, just remove the projection for that scenario from the projection data.
+    runScenarioProjections(
+      indexTree.tree.value,
+      historicalData.value,
+      { start: projectionStartTimestamp.value, end: projectionEndTimestamp.value },
+      temporalResolutionOption.value,
+      scenarios.value
+    );
+    overlay.disable();
+  }
+);
 
 const { selectedCountries, addSelectedCountry, removeSelectedCountry, changeSelectedCountry } =
   useSelectedCountries(selectableCountries, indexProjectionSettings, updateIndexProjectionSettings);
@@ -665,6 +620,9 @@ main {
     label:first-child input {
       width: 180px;
     }
+  }
+  .edit-msg {
+    color: $accent-main;
   }
 }
 
