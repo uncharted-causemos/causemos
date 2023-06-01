@@ -1,10 +1,6 @@
 <template>
   <div class="index-structure-recommendations-container">
-    <p v-if="isLoading" class="subdued title">Finding drivers of {{ parentNodeName }}...</p>
-    <p v-else-if="recommendationsToDisplay.length === 0" class="subdued title">
-      No drivers of {{ parentNodeName }} were found.
-    </p>
-    <p v-else class="subdued title">Drivers of {{ parentNodeName }}</p>
+    <p class="subdued title">{{ title }}</p>
     <div
       v-for="recommendation of recommendationsToDisplay"
       :key="recommendation"
@@ -65,6 +61,16 @@ const recommendationsToDisplay = computed(() => {
   return recommendations.value.filter(
     (recommendation) => existingChildren.includes(recommendation) === false
   );
+});
+
+const title = computed(() => {
+  if (isLoading.value) {
+    return `Finding drivers of ${parentNodeName.value}...`;
+  }
+  if (recommendationsToDisplay.value.length === 0) {
+    return `No drivers of ${parentNodeName.value} were found.`;
+  }
+  return `Drivers of ${parentNodeName.value}`;
 });
 </script>
 

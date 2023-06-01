@@ -1,7 +1,6 @@
 <template>
-  <!-- TODO: RENAME ME -->
-  <div class="rename-me">
-    <div class="index-tree-node-container" :class="classObject" @click="selectNode">
+  <div class="index-tree-node-container">
+    <div class="index-tree-node-body" :class="classObject" @click="selectNode">
       <div class="disable-overlay" />
       <div v-if="isConceptNodeWithoutDataset(props.nodeData)" class="input-arrow" />
       <template v-if="showDatasetSearch">
@@ -358,7 +357,7 @@ const addSuggestion = (suggestion: string) => {
 
 $option-button-width: 16px;
 
-.index-tree-node-container {
+.index-tree-node-body {
   @include index-tree-node;
 
   &.flexible-width {
