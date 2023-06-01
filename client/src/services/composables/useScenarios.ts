@@ -32,7 +32,7 @@ export default function useScenarios(
     if (!target || !color) return;
     updateScenarios([
       ...scenarios.value,
-      createNewScenario(target.name, target.description, color),
+      createNewScenario(target.name, target.description, color, _.cloneDeep(target.constraints)),
     ]);
   };
 

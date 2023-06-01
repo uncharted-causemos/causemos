@@ -1,6 +1,11 @@
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
-import { IndexProjection, IndexProjectionScenario, IndexProjectionSettings } from '@/types/Index';
+import {
+  IndexProjection,
+  IndexProjectionScenario,
+  IndexProjectionSettings,
+  ProjectionConstraint,
+} from '@/types/Index';
 import { COLORS } from './colors-util';
 import { ProjectionTimeseries } from '@/types/Timeseries';
 
@@ -39,7 +44,8 @@ export const createNewIndexProjectionSettings = (): IndexProjectionSettings => {
 export const createNewScenario = (
   name = 'Untitled scenario',
   description: string,
-  color: string
+  color: string,
+  constraints: { [nodeId: string]: ProjectionConstraint[] } = {}
 ) => {
   const newScenario: IndexProjectionScenario = {
     id: uuidv4(),
@@ -48,7 +54,7 @@ export const createNewScenario = (
     color: color,
     isVisible: true,
     isDefault: false,
-    constraints: {},
+    constraints: constraints,
   };
   return newScenario;
 };
