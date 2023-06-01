@@ -15,6 +15,13 @@ export interface TimeseriesDistributionPoint {
   timestamp: number;
 }
 
+export interface ProjectionTimeseries {
+  id: string;
+  name: string;
+  color: string;
+  points: TimeseriesPointProjected[];
+}
+
 export interface Timeseries {
   id: string;
   name: string;

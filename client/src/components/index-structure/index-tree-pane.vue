@@ -263,7 +263,7 @@ const searchForNode = (id: string) => {
         border-color: $accent-light;
       }
       div.input-arrow {
-        border-left: 5px solid $accent-light;
+        border-left-color: $accent-light;
       }
     }
     &.connecting {
@@ -275,19 +275,13 @@ const searchForNode = (id: string) => {
         border-color: $accent-light;
       }
       div.input-arrow {
-        border-left: 5px solid $accent-light;
+        border-left-color: $accent-light;
       }
     }
   }
 
   .input-arrow {
-    // position: absolute;
-    margin-top: 9px;
-    width: 0;
-    height: 0;
-    border-top: 5px solid transparent;
-    border-bottom: 5px solid transparent;
-    border-left: 5px solid #b3b4b5;
+    @include arrow-head();
   }
 }
 

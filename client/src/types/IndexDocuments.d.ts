@@ -76,3 +76,16 @@ export interface Highlight {
   highlight: boolean;
   text: string;
 }
+
+export interface CausalRecommenderQuery {
+  topic: string;
+  location?: string;
+}
+
+export interface CausalRecommenderResponse {
+  causes: string[];
+  effects: string[];
+}
+
+export type CausalRecommenderResponseEffects = Omit<CausalRecommenderResponse, 'causes'>;
+export type CausalRecommenderResponseCauses = Omit<CausalRecommenderResponse, 'effects'>;
