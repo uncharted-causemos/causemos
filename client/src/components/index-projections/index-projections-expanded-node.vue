@@ -54,6 +54,7 @@
       </div>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
+        :class="{ edit: editMode === EditMode.Constraints }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
@@ -64,7 +65,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts">
 import { ConceptNode } from '@/types/Index';
 import {
   DATASET_COLOR,
@@ -79,6 +80,12 @@ import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded
 import { ProjectionTimeseries } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 
+export enum EditMode {
+  Constraints,
+  DataPoints,
+}
+</script>
+<script setup lang="ts">
 const optionsButtonMenu = [
   {
     text: 'Edit data points',
@@ -105,6 +112,7 @@ const props = defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
+  editMode?: EditMode;
 }>();
 
 const emit = defineEmits<{
@@ -172,7 +180,18 @@ $horizontal-margin: 30px;
   margin-left: $horizontal-margin - $chartPadding;
 
   &.warning {
-    border-color: $un-color-feedback-warning;
+    :deep(g.focusMouseEventGroup) {
+      outline: solid 2px $un-color-feedback-warning;
+      outline-offset: -2px;
+      cursor: pointer;
+    }
+  }
+  &.edit {
+    :deep(g.focusMouseEventGroup) {
+      outline: solid 2px $accent-main;
+      outline-offset: -2px;
+      cursor: pointer;
+    }
   }
 }
 
