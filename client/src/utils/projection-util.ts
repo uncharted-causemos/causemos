@@ -289,6 +289,7 @@ export const applyConstraints = <T extends TimeseriesPoint | TimeseriesPointProj
   constraints: ProjectionConstraint[]
 ): T[] => {
   if (constraints.length === 0) return timeseries;
+  // TODO: Make sure constraints are always sorted when adding a constraint to existing list then remove this orderBy function.
   const constraintsSorted: T[] = _.orderBy(constraints, ['timestamp'], ['asc']).map((v) => ({
     ...v,
     projectionType: ProjectionPointType.Constraint,
