@@ -502,7 +502,6 @@ const onNodeChartClick = (timestamp: number, value: number) => {
 const { visibleScenarioProjectionData, projectionForScenarioBeingEdited, runScenarioProjections } =
   useScenarioProjections(scenarios, scenarioBeingEdited);
 
-// Whenever historical data changes, re-run projections
 watch(
   [
     historicalData,
@@ -527,7 +526,6 @@ watch(
     overlay.disable();
   }
 );
-// =========================================================================================
 
 const { selectedCountries, addSelectedCountry, removeSelectedCountry, changeSelectedCountry } =
   useSelectedCountries(selectableCountries, indexProjectionSettings, updateIndexProjectionSettings);
