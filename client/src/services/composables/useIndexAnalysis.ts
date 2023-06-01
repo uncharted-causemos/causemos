@@ -51,7 +51,7 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     _analysisState.value = {
       ...defaults,
       ...analysis.state,
-      // For settings object, copy properties from one level deep
+      // For settings object, copy properties from one level deeper
       resultsSettings: { ...defaults.resultsSettings, ...analysis.state.resultsSettings },
       projectionSettings: { ...defaults.projectionSettings, ...analysis.state.projectionSettings },
     };
