@@ -23,6 +23,7 @@
       </div>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
+        :class="{ edit: editMode === EditMode.Constraints }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
