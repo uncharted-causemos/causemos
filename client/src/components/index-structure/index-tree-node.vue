@@ -312,7 +312,13 @@ const seeResults = () => {
 
 const disableInteraction = ref(false);
 // Whenever the data for this node changes (e.g. when attaching a dataset), re-enable interactions.
-watch([props.nodeData], () => (disableInteraction.value = false));
+watch(
+  () => props.nodeData,
+  () => {
+    disableInteraction.value = false;
+  },
+  { deep: true }
+);
 const isSearchingForDataset = ref(false);
 
 const showDatasetSearch = computed(

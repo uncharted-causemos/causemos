@@ -396,9 +396,11 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     //  object from the parent's component list and then adding the new object to the component
     //  list. We should replace this shortcut with the real thing, since we need to include logic
     //  here to manually ensure the result doesn't have properties from both node types.
+
     Object.assign(node, datasetNode);
     // @ts-ignore
     delete node.components;
+
     // Parent should never be null unless we found a disconnected node.
     if (parent !== null) {
       // Update unset siblings with their new auto-balanced weight
