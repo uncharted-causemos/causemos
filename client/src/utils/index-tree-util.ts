@@ -34,7 +34,7 @@ export const isConceptNodeWithoutDataset = (
   return (indexNode as ConceptNodeWithoutDataset).components !== undefined;
 };
 
-export const hasChildren = (indexNode: ConceptNode) => {
+export const hasChildren = (indexNode: ConceptNode): indexNode is ConceptNodeWithoutDataset => {
   return isConceptNodeWithoutDataset(indexNode) && indexNode.components.length > 0;
 };
 
@@ -361,8 +361,9 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     addChild(parentNode.found, childNode, parentNode.parent);
   };
 
-  const findAndAddNewChild = (parentNodeId: string) => {
+  const findAndAddNewChild = (parentNodeId: string, childName = '') => {
     const newNode = createNewConceptNode();
+    newNode.name = childName;
     findAndAddChild(parentNodeId, newNode);
     onSuccess();
   };
@@ -396,9 +397,83 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     //  object from the parent's component list and then adding the new object to the component
     //  list. We should replace this shortcut with the real thing, since we need to include logic
     //  here to manually ensure the result doesn't have properties from both node types.
+
     Object.assign(node, datasetNode);
     // @ts-ignore
     delete node.components;
+
+    // Parent should never be null unless we found a disconnected node.
+    if (parent !== null) {
+      // Update unset siblings with their new auto-balanced weight
+      parent.components = rebalanceInputWeights(parent.components);
+    }
+    onSuccess();
+  };
+
+  /**
+   * Detach dataset and set node to a "select options" state.
+   * @param nodeId
+   */
+  const detachDatasetFromNode = (nodeId: string) => {
+    const foundResult = findNode(nodeId) ?? null;
+    if (foundResult === null) {
+      return;
+    }
+    const { found: node, parent } = foundResult;
+
+    const nodeWithoutDataset: ConceptNodeWithoutDataset = {
+      // Set starting values for new dataset node
+      // Store values from the search result and pre-calculated starting weight
+      id: node.id,
+      name: node.name,
+      components: [],
+      isOutputNode: false,
+    };
+    // HACK: Update the `node` object's properties in place, as a shortcut to removing the old
+    //  object from the parent's component list and then adding the new object to the component
+    //  list. We should replace this shortcut with the real thing, since we need to include logic
+    //  here to manually ensure the result doesn't have properties from both node types.
+    Object.assign(node, nodeWithoutDataset);
+
+    // @ts-ignore
+    delete node.dataset;
+
+    // Parent should never be null unless we found a disconnected node.
+    if (parent !== null) {
+      // Update unset siblings with their new auto-balanced weight
+      parent.components = rebalanceInputWeights(parent.components);
+    }
+    onSuccess();
+  };
+
+  /**
+   * Clear the node back to an initial state.
+   * @param nodeId
+   */
+  const revertNode = (nodeId: string) => {
+    const foundResult = findNode(nodeId) ?? null;
+    if (foundResult === null) {
+      return;
+    }
+    const { found: node, parent } = foundResult;
+
+    const nodeWithoutDataset: ConceptNodeWithoutDataset = {
+      // Set starting values for new dataset node
+      // Store values from the search result and pre-calculated starting weight
+      id: node.id,
+      name: '',
+      components: [],
+      isOutputNode: false,
+    };
+    // HACK: Update the `node` object's properties in place, as a shortcut to removing the old
+    //  object from the parent's component list and then adding the new object to the component
+    //  list. We should replace this shortcut with the real thing, since we need to include logic
+    //  here to manually ensure the result doesn't have properties from both node types.
+    Object.assign(node, nodeWithoutDataset);
+
+    // @ts-ignore
+    delete node.dataset;
+
     // Parent should never be null unless we found a disconnected node.
     if (parent !== null) {
       // Update unset siblings with their new auto-balanced weight
@@ -430,6 +505,8 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     findAndAddNewChild,
     findAndAddChild,
     attachDatasetToNode,
+    revertNode,
+    detachDatasetFromNode,
     setDatasetIsInverted,
     containsElement,
   };
@@ -448,4 +525,42 @@ export const getNodeDataSourceText = (node: ConceptNode) => {
     default:
       return `Weighted sum of ${componentCount} inputs.`;
   }
+};
+
+/**
+ * Performs a depth-first-search within `ancestorNode` to find `node` and counts the opposite edges
+ *  between them.
+ * Returns -1 if `node` is not a descendant of `ancestorNode`.
+ * Otherwise, returns an integer >= 0.
+ */
+export const countOppositeEdgesBetweenNodes = (node: ConceptNode, ancestorNode: ConceptNode) => {
+  const _countOppositeEdgesBetweenNodes = (
+    currentNode: ConceptNode,
+    targetNode: ConceptNode,
+    currentCount: number
+  ): number => {
+    if (currentNode.id === targetNode.id) {
+      // Reached node
+      return currentCount;
+    }
+    if (isConceptNodeWithDatasetAttached(currentNode)) {
+      // Reached a leaf that's not the node
+      return -1;
+    }
+    // Else, continue searching through children
+    for (const weightedComponent of currentNode.components) {
+      // Add one if the next node in the depth-first-search is connected with an opposite edge.
+      const nextCount = weightedComponent.isOppositePolarity ? currentCount + 1 : currentCount;
+      const oppositeEdgeCount = _countOppositeEdgesBetweenNodes(
+        weightedComponent.componentNode,
+        targetNode,
+        nextCount
+      );
+      if (oppositeEdgeCount >= 0) {
+        return oppositeEdgeCount;
+      }
+    }
+    return -1;
+  };
+  return _countOppositeEdgesBetweenNodes(ancestorNode, node, 0);
 };

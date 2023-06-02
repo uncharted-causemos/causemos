@@ -1,8 +1,8 @@
 import { D3Selection } from '@/types/D3';
 import { ProjectionPointType } from '@/types/Enums';
-import { TimeseriesPointProjected } from '@/types/Timeseries';
+import { ProjectionTimeseries } from '@/types/Timeseries';
 import { splitProjectionsIntoLineSegments } from '@/utils/projection-util';
-import { renderDashedLine, renderLine, renderPoint } from '@/utils/timeseries-util';
+import { renderDashedLine, renderLine, renderPoint, renderSquares } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 
 const DASHED_LINE = {
@@ -12,16 +12,17 @@ const DASHED_LINE = {
 };
 const SOLID_LINE_WIDTH = 1;
 const WEIGHTED_SUM_LINE_OPACITY = 0.25;
+const CONSTRAINT_SIDE_LENGTH = 3;
+const POINT_RADIUS = 2;
 
 export default function render(
   selection: D3Selection,
-  timeseries: TimeseriesPointProjected[],
+  timeseriesList: ProjectionTimeseries[],
   totalWidth: number,
   totalHeight: number,
   projectionStartTimestamp: number,
   projectionEndTimestamp: number,
-  isWeightedSum: boolean,
-  color = 'black'
+  isWeightedSum: boolean
 ) {
   // Clear any existing elements
   selection.selectAll('*').remove();
@@ -36,39 +37,72 @@ export default function render(
 
   // Render the series
   if (isWeightedSum) {
-    // Render a lighter line across the whole series
-    const lineSelection = renderLine(
-      groupElement,
-      timeseries,
-      xScale,
-      yScale,
-      color,
-      SOLID_LINE_WIDTH
-    );
-    lineSelection.attr('opacity', WEIGHTED_SUM_LINE_OPACITY);
-    // Render a circle at any point where all inputs have historical data
-    const fullDataPoints = timeseries.filter(
-      (point) => point.projectionType === ProjectionPointType.Historical
-    );
-    renderPoint(groupElement, fullDataPoints, xScale, yScale, color, 2);
+    timeseriesList.forEach((timeseries) => {
+      // Render a lighter line across the whole series
+      const lineSelection = renderLine(
+        groupElement,
+        timeseries.points,
+        xScale,
+        yScale,
+        timeseries.color,
+        SOLID_LINE_WIDTH
+      );
+      lineSelection.attr('opacity', WEIGHTED_SUM_LINE_OPACITY);
+      // Render a circle at any point where all inputs have historical data
+      const fullDataPoints = timeseries.points.filter(
+        (point) => point.projectionType === ProjectionPointType.Historical
+      );
+      renderPoint(groupElement, fullDataPoints, xScale, yScale, timeseries.color, POINT_RADIUS);
+      // Render a square at any point where one or more inputs have a constraint
+      const constraints = timeseries.points.filter(
+        (point) => point.projectionType === ProjectionPointType.Constraint
+      );
+      renderSquares(
+        groupElement,
+        constraints,
+        xScale,
+        yScale,
+        timeseries.color,
+        CONSTRAINT_SIDE_LENGTH
+      );
+    });
     return;
   }
   // This node has a dataset attached, so split the timeseries into solid and dashed segments
-  const segments = splitProjectionsIntoLineSegments(timeseries);
-  segments.forEach(({ isProjectedData, segment }) => {
-    if (isProjectedData) {
-      renderDashedLine(
-        groupElement,
-        segment,
-        xScale,
-        yScale,
-        DASHED_LINE.length,
-        DASHED_LINE.gap,
-        color,
-        DASHED_LINE.width
-      );
-    } else {
-      renderLine(groupElement, segment, xScale, yScale, color, SOLID_LINE_WIDTH);
-    }
+  timeseriesList.forEach((timeseries) => {
+    const segments = splitProjectionsIntoLineSegments(timeseries.points);
+    segments.forEach(({ isProjectedData, segment }) => {
+      if (isProjectedData) {
+        renderDashedLine(
+          groupElement,
+          segment,
+          xScale,
+          yScale,
+          DASHED_LINE.length,
+          DASHED_LINE.gap,
+          timeseries.color,
+          DASHED_LINE.width
+        );
+      } else {
+        renderLine(groupElement, segment, xScale, yScale, timeseries.color, SOLID_LINE_WIDTH);
+      }
+    });
+    // Render a circle at all historical data points
+    const fullDataPoints = timeseries.points.filter(
+      (point) => point.projectionType === ProjectionPointType.Historical
+    );
+    renderPoint(groupElement, fullDataPoints, xScale, yScale, timeseries.color, POINT_RADIUS);
+    // Render a square at any point with a constraint
+    const constraints = timeseries.points.filter(
+      (point) => point.projectionType === ProjectionPointType.Constraint
+    );
+    renderSquares(
+      groupElement,
+      constraints,
+      xScale,
+      yScale,
+      timeseries.color,
+      CONSTRAINT_SIDE_LENGTH
+    );
   });
 }

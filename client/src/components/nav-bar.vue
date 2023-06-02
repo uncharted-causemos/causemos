@@ -205,7 +205,7 @@ export default defineComponent({
     const currentView = computed(() => store.getters['app/currentView']);
     const navItems = computed(() => siteMap.value[currentView.value] ?? null);
     const isNavbarVisible = computed(() => navItems.value !== null);
-    const VIEWS_WITH_NAVBAR_INSIGHTS_PANEL = ['indexStructure', 'indexResults'];
+    const VIEWS_WITH_NAVBAR_INSIGHTS_PANEL = ['indexStructure', 'indexResults', 'indexProjections'];
     const showNavbarInsightsPanelButton = computed(() =>
       VIEWS_WITH_NAVBAR_INSIGHTS_PANEL.includes(currentView.value)
     );

@@ -34,21 +34,42 @@
         :is-expanded="isShowingKeyDatasets"
       />
     </div>
+    <div v-if="removedCountries.length > 0" class="removed-countries subdued">
+      <p>
+        {{ removedCountries.length }}
+        {{ removedCountries.length === 1 ? 'country' : 'countries' }} are hidden because they are
+        not covered by one or more datasets.
+      </p>
+      <button class="btn btn-default full-width-btn" @click="showReview = true">
+        Review hidden {{ removedCountries.length === 1 ? 'country' : 'countries' }}
+      </button>
+    </div>
+    <modal-removed-country-review
+      class="country-review"
+      v-if="showReview"
+      :removed-countries="removedCountries"
+      @close="showReview = false"
+    >
+    </modal-removed-country-review>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import IndexResultsBarChartRow from '@/components/index-results/index-results-bar-chart-row.vue';
 import { IndexResultsData, IndexResultsSettings } from '@/types/Index';
 import { getIndexResultsColorConfig } from '@/utils/index-results-util';
+import ModalRemovedCountryReview from '@/components/modals/modal-removed-country-review.vue';
 
 const props = defineProps<{
   isShowingKeyDatasets: boolean;
   indexResultsData: IndexResultsData[];
   indexResultsSettings: IndexResultsSettings;
   selectedNodeName: string;
+  removedCountries: IndexResultsData[];
 }>();
+
+const showReview = ref<boolean>(false);
 
 const emit = defineEmits<{
   (e: 'toggle-is-showing-key-datasets'): void;
@@ -93,6 +114,12 @@ header {
     display: flex;
     gap: $index-result-table-key-datasets-column-gap;
     align-items: flex-end;
+  }
+}
+
+.removed-countries {
+  .full-width-btn {
+    width: 100%;
   }
 }
 </style>

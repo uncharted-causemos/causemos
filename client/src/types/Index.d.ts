@@ -2,6 +2,8 @@ import { COLOR } from '@/utils/colors-util';
 import { DataConfig } from '@/types/Datacube';
 import { DiscreteOuputScale } from '@/types/Enums';
 import type { WeightedComponent } from '@/types/WeightedComponent';
+import { ForecastMethod, ForecastResult } from '@/utils/forecast';
+import { NodeProjectionType } from '@/utils/projection-util';
 
 export interface DatasetSearchResult {
   displayName: string;
@@ -96,4 +98,62 @@ export interface GridCell {
   hasOutputLine: boolean;
   isLastChild: boolean;
   isOppositePolarity: boolean;
+}
+
+// =============  Index Projection ===============-
+
+/**
+ * An object representing a clamp
+ */
+export interface ProjectionConstraint {
+  timestamp: number;
+  value: number;
+}
+
+export type ProjectionResults = {
+  [nodeId: string]: TimeseriesPointProjected[];
+};
+
+export type ProjectionRunInfo = {
+  [nodeId: string]: ForecastResult<ForecastMethod> | { method: NodeProjectionType };
+};
+
+/**
+ * An object representing a projection result
+ */
+export interface IndexProjection {
+  id: string; // An unique identifier, it can be scenario id or country name
+  name: string;
+  color: string;
+  result: ProjectionResults;
+}
+
+/**
+ * An object representing an index projection scenario
+ */
+export interface IndexProjectionScenario {
+  id: string;
+  name: string;
+  description: string;
+  isVisible: boolean;
+  color: string;
+  isDefault: boolean;
+  constraints: { [nodeId: string]: ProjectionConstraint[] };
+}
+
+/**
+ * An object representing a country that has been selected for display in the projeciton space
+ */
+export interface IndexProjectionCountry {
+  name: string;
+  color: string;
+}
+
+/**
+ * Index projection settings object
+ */
+export interface IndexProjectionSettings {
+  scenarios: IndexProjectionScenario[];
+  selectedCountry: string;
+  selectedCountries: IndexProjectionCountry[];
 }

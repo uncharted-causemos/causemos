@@ -9,10 +9,16 @@ export interface TimeseriesPoint {
 export interface TimeseriesPointProjected extends TimeseriesPoint {
   projectionType: ProjectionPointType;
 }
-
 export interface TimeseriesDistributionPoint {
   values: number[];
   timestamp: number;
+}
+
+export interface ProjectionTimeseries {
+  id: string;
+  name: string;
+  color: string;
+  points: TimeseriesPointProjected[];
 }
 
 export interface Timeseries {

@@ -6,7 +6,7 @@ import { createIndexAnalysisObject } from '../analysis-service-new';
 
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import useIndexTree from '@/services/composables/useIndexTree';
-import { IndexResultsSettings } from '@/types/Index';
+import { IndexProjectionSettings, IndexResultsSettings } from '@/types/Index';
 
 // Whenever a change is made, wait SYNC_DELAY_MS before saving to the backend to
 //  group requests together.
@@ -47,7 +47,14 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     }
 
     // ensure default values
-    _analysisState.value = { ...createIndexAnalysisObject(), ...analysis.state };
+    const defaults = createIndexAnalysisObject();
+    _analysisState.value = {
+      ...defaults,
+      ...analysis.state,
+      // For settings object, copy properties from one level deeper
+      resultsSettings: { ...defaults.resultsSettings, ...analysis.state.resultsSettings },
+      projectionSettings: { ...defaults.projectionSettings, ...analysis.state.projectionSettings },
+    };
     // Initialize workbench items and the index tree
     workbench.initialize(analysisId.value, _analysisState.value.workBench);
     indexTree.initialize(analysisId.value, _analysisState.value.index);
@@ -106,7 +113,7 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
 
   const indexResultsSettings = computed(() => _analysisState.value.resultsSettings);
 
-  const saveIndexResultsSettings = (config: IndexResultsSettings) => {
+  const updateIndexResultsSettings = (config: IndexResultsSettings) => {
     _analysisState.value = {
       ..._analysisState.value,
       resultsSettings: config,
@@ -114,10 +121,25 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     _saveState(analysisId, _analysisState.value);
   };
 
+  // index projection settings
+
+  const indexProjectionSettings = computed(() => _analysisState.value.projectionSettings);
+
+  const updateIndexProjectionSettings = (settings: IndexProjectionSettings) => {
+    _analysisState.value = {
+      ..._analysisState.value,
+      projectionSettings: settings,
+    };
+    // TODO: enable when ready to sync with server
+    // _saveState(analysisId, _analysisState.value);
+  };
+
   return {
     analysisName,
     indexResultsSettings,
-    saveIndexResultsSettings,
+    indexProjectionSettings,
+    updateIndexResultsSettings,
+    updateIndexProjectionSettings,
     refresh: fetchAnalysis,
     waitForStateInSync,
   };

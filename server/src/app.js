@@ -53,6 +53,7 @@ const mapProxyRouter = rootRequire('/routes/map-proxy');
 const jatawareParagraphsRouter = rootRequire('/routes/jataware-paragraphs');
 const jatawareDocumentsRouter = rootRequire('/routes/jataware-documents');
 const jatawareFeaturesRouter = rootRequire('/routes/jataware-features');
+const jatawareRecommenderRouter = rootRequire('/routes/jataware-recommender');
 
 const compression = require('compression');
 const requestAsPromise = require('./util/request-as-promise');
@@ -218,6 +219,7 @@ app.use('/api/bibliography', bibliographyRouter);
 app.use('/api/dojo/paragraphs', [jatawareParagraphsRouter]);
 app.use('/api/dojo/documents', [jatawareDocumentsRouter]);
 app.use('/api/dojo/features', [jatawareFeaturesRouter]);
+app.use('/api/dojo/causal-recommender', [jatawareRecommenderRouter]);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

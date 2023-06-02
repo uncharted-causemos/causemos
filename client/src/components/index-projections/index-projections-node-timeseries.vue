@@ -9,12 +9,12 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import { ref, toRefs, watch } from 'vue';
 import renderChart from '@/charts/projections-renderer-simple';
-import { TimeseriesPointProjected } from '@/types/Timeseries';
+import { ProjectionTimeseries } from '@/types/Timeseries';
 
 const props = defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
-  timeseries: TimeseriesPointProjected[];
+  timeseries: ProjectionTimeseries[];
   isWeightedSumNode: boolean;
 }>();
 
@@ -33,6 +33,7 @@ watch(
     const { clientWidth: width, clientHeight: height } = parentElement;
     // Set new size
     svg.attr('width', width).attr('height', height);
+
     // Rerender whenever dependencies change
     renderChart(
       svg,

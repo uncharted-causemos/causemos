@@ -1,89 +1,105 @@
 <template>
-  <div class="index-tree-node-container" :class="classObject" @click="selectNode">
-    <div class="disable-overlay" />
-    <div v-if="isConceptNodeWithoutDataset(props.nodeData)" class="input-arrow" />
-    <template v-if="showDatasetSearch">
-      <IndexTreeNodeSearchBar
-        :initial-search-text="props.nodeData.name"
-        @select-dataset="attachDataset"
-        @set-node-name="setNodeName"
-        @cancel="cancelDatasetSearch"
-      />
-      <IndexTreeNodeAdvancedSearchButton
-        class="advanced-search-button"
-        :node-id="props.nodeData.id"
-      />
-    </template>
-    <div v-else-if="showEditName" class="rename content flex">
-      <input
-        v-focus
-        class="form-control"
-        type="text"
-        :placeholder="renameInputTextPlaceholder"
-        v-model="renameInputText"
-        @keyup.escape="cancelRename"
-        @keyup.enter="handleRenameDone"
-      />
-      <button
-        class="btn btn-default"
-        @click="handleRenameDone"
-        :disabled="renameInputText === '' && renameInputTextPlaceholder === ''"
-      >
-        Done
-      </button>
-    </div>
-    <div v-else class="header content">
-      <div class="name">
-        {{ props.nodeData.name }}
+  <div class="index-tree-node-container">
+    <div class="index-tree-node-body" :class="classObject" @click="selectNode">
+      <div class="disable-overlay" />
+      <div v-if="isConceptNodeWithoutDataset(props.nodeData)" class="input-arrow" />
+      <template v-if="showDatasetSearch">
+        <IndexTreeNodeSearchBar
+          :initial-search-text="props.nodeData.name"
+          @select-dataset="attachDataset"
+          @set-node-name="setNodeName"
+          @cancel="cancelDatasetSearch"
+        />
+        <IndexTreeNodeAdvancedSearchButton
+          class="advanced-search-button"
+          :node-id="props.nodeData.id"
+        />
+      </template>
+      <div v-else-if="showEditName" class="rename content flex">
+        <input
+          v-focus
+          class="form-control"
+          type="text"
+          :placeholder="renameInputTextPlaceholder"
+          v-model="renameInputText"
+          @keyup.escape="cancelRename"
+          @keyup.enter="handleRenameDone"
+        />
+        <button
+          class="btn btn-default"
+          @click="handleRenameDone"
+          :disabled="renameInputText === '' && renameInputTextPlaceholder === ''"
+        >
+          Done
+        </button>
       </div>
-      <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
-        <template #content>
-          <div
-            v-for="item in optionsButtonMenu"
-            class="dropdown-option"
-            :key="item.type"
-            @click="handleOptionsButtonClick(item.type)"
-          >
-            <i class="fa fa-fw" :class="item.icon" />
-            {{ item.text }}
-          </div>
-        </template>
-      </OptionsButton>
-    </div>
-    <div v-if="isConceptNodeWithoutDataset(props.nodeData) && !showDatasetSearch" class="content">
-      <p
-        v-if="dataSourceText.length > 0"
-        class="un-font-small data-source-text subdued"
-        :class="{ warning: isEmptyNode(props.nodeData) }"
-      >
-        {{ dataSourceText }}
-      </p>
-      <button
-        v-if="!showEditName"
-        class="btn btn-default full-width-button"
-        @click="emit('create-child', props.nodeData.id)"
-      >
-        Add input concept
-      </button>
-      <button
-        v-if="showAttachDatasetButton"
-        class="btn btn-default full-width-button attach-dataset-button"
-        @click="isSearchingForDataset = true"
-      >
-        <i class="fa fa-fw" :class="DATASET_ICON" />
-        Attach dataset
-      </button>
-    </div>
-    <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)" class="content">
-      <div class="flex dataset-label" :style="{ color: DATASET_COLOR }">
-        <i class="fa fa-fw" :class="DATASET_ICON" />
-        <span class="un-font-small expand">Dataset</span>
-        <InvertedDatasetLabel v-if="props.nodeData.dataset.isInverted" />
+      <div v-else class="header content">
+        <div class="name">
+          {{ props.nodeData.name }}
+        </div>
+        <OptionsButton :dropdown-below="true" :wider-dropdown-options="true" @click.stop="">
+          <template #content>
+            <div
+              v-for="item in optionsButtonMenu"
+              class="dropdown-option"
+              :key="item.type"
+              @click="handleOptionsButtonClick(item.type)"
+            >
+              <i class="fa fa-fw" :class="item.icon" />
+              {{ item.text }}
+            </div>
+          </template>
+        </OptionsButton>
       </div>
-      <p class="un-font-small subdued">
-        {{ dataSourceText }}
-      </p>
+      <div v-if="isConceptNodeWithoutDataset(props.nodeData) && !showDatasetSearch" class="content">
+        <p
+          v-if="dataSourceText.length > 0"
+          class="un-font-small data-source-text subdued"
+          :class="{ warning: isEmptyNode(props.nodeData) }"
+        >
+          {{ dataSourceText }}
+        </p>
+        <button
+          v-if="!showEditName"
+          class="btn btn-default full-width-button"
+          @click.stop="emit('create-child', props.nodeData.id)"
+        >
+          Add input concept
+        </button>
+        <button
+          v-if="showAttachDatasetButton"
+          class="btn btn-default full-width-button button-top-margin"
+          @click="isSearchingForDataset = true"
+        >
+          <i class="fa fa-fw" :class="DATASET_ICON" />
+          Attach dataset
+        </button>
+        <button
+          v-if="showSeeResultsButton"
+          class="btn btn-sm btn-call-to-action full-width-button button-top-margin"
+          :disabled="!canViewResults"
+          @click="seeResults"
+        >
+          See results
+        </button>
+      </div>
+      <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)" class="content">
+        <div class="flex dataset-label" :style="{ color: DATASET_COLOR }">
+          <i class="fa fa-fw" :class="DATASET_ICON" />
+          <span class="un-font-small expand">Dataset</span>
+          <InvertedDatasetLabel v-if="props.nodeData.dataset.isInverted" />
+        </div>
+        <p class="un-font-small subdued">
+          {{ dataSourceText }}
+        </p>
+      </div>
     </div>
+    <IndexStructureRecommendations
+      v-if="props.nodeData.name === ''"
+      class="recommendations"
+      :parent-node="parentNode"
+      @add-suggestion="addSuggestion"
+    />
   </div>
 </template>
 <script setup lang="ts">
@@ -98,12 +114,19 @@ import {
   isOutputIndexNode,
   getNodeDataSourceText,
   DATASET_COLOR,
+  indexNodeTreeContainsDataset,
 } from '@/utils/index-tree-util';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
 import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
-import { OptionButtonMenu } from '@/utils/index-common-util';
+import { OptionButtonMenu, MENU_OPTIONS } from '@/utils/index-common-util';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
+import useIndexTree from '@/services/composables/useIndexTree';
+import { useRoute, useRouter } from 'vue-router';
+import { useStore } from 'vuex';
+import { ProjectType } from '@/types/Enums';
+import IndexStructureRecommendations from './index-structure-recommendations.vue';
+import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 
 interface Props {
   nodeData: ConceptNode;
@@ -119,6 +142,8 @@ const emit = defineEmits<{
   (e: 'duplicate', duplicated: ConceptNode): void;
   (e: 'select', nodeId: string): void;
   (e: 'create-child', parentNodeId: string): void;
+  (e: 'detach-dataset', nodeId: string): void;
+  (e: 'switch-dataset', nodeId: string): void;
   (
     e: 'attach-dataset',
     nodeId: string,
@@ -128,26 +153,34 @@ const emit = defineEmits<{
   (e: 'create-edge', nodeId: string): void;
 }>();
 
-const classObject = computed(() => {
-  return {
-    selected: props.isSelected,
-    'flexible-width': showDatasetSearch.value,
-    disabled: disableInteraction.value,
-    'no-highlight':
-      props.isConnecting &&
-      (!isConceptNodeWithoutDataset(props.nodeData) || props.isDescendentOfConnectingNode),
-  };
+const canSelectNode = computed(() => {
+  if (props.isConnecting) {
+    // We're adding a new edge, so we can select the node if
+    //  - it has no dataset and
+    //  - adding an edge to it won't create a loop in the graph
+    return isConceptNodeWithoutDataset(props.nodeData) && !props.isDescendentOfConnectingNode;
+  } else {
+    // We're not adding a new edge, so we can select the node if it has been given a name already.
+    return props.nodeData.name !== '';
+  }
 });
 
+const classObject = computed(() => ({
+  selected: props.isSelected,
+  'flexible-width': showDatasetSearch.value,
+  disabled: disableInteraction.value,
+  'highlight-on-hover': canSelectNode.value,
+  'click-not-allowed': props.isConnecting && !canSelectNode.value,
+}));
+
 const selectNode = () => {
-  if (!props.isConnecting) {
-    emit('select', props.nodeData.id);
-  } else if (
-    props.isConnecting &&
-    !props.isDescendentOfConnectingNode &&
-    isConceptNodeWithoutDataset(props.nodeData)
-  ) {
+  if (!canSelectNode.value) {
+    return;
+  }
+  if (props.isConnecting) {
     emit('create-edge', props.nodeData.id);
+  } else {
+    emit('select', props.nodeData.id);
   }
 };
 
@@ -190,34 +223,22 @@ const handleRenameDone = () => {
   renameInputText.value = '';
 };
 
-// Options button
-
-const MENU_OPTION_RENAME = {
-  type: OptionButtonMenu.Rename,
-  text: 'Rename',
-  icon: 'fa-pencil',
-};
-
-const MENU_OPTION_DUPLICATE = {
-  type: OptionButtonMenu.Duplicate,
-  text: 'Duplicate',
-  icon: 'fa-copy',
-};
-
-const MENU_OPTION_DELETE = {
-  type: OptionButtonMenu.Delete,
-  text: 'Delete',
-  icon: 'fa-trash',
-};
-
 const optionsButtonMenu = computed(() => {
   if (props.nodeData.isOutputNode) {
-    return [MENU_OPTION_RENAME];
+    return [MENU_OPTIONS.RENAME];
   }
   if (showEditName.value) {
-    return [MENU_OPTION_DELETE];
+    return [MENU_OPTIONS.DELETE];
   }
-  return [MENU_OPTION_RENAME, MENU_OPTION_DUPLICATE, MENU_OPTION_DELETE];
+  if (isConceptNodeWithDatasetAttached(props.nodeData)) {
+    return [
+      MENU_OPTIONS.RENAME,
+      MENU_OPTIONS.DUPLICATE,
+      MENU_OPTIONS.DELETE,
+      MENU_OPTIONS.REMOVE_DATASET,
+    ];
+  }
+  return [MENU_OPTIONS.RENAME, MENU_OPTIONS.DUPLICATE, MENU_OPTIONS.DELETE];
 });
 
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
@@ -232,6 +253,12 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
     case OptionButtonMenu.Delete:
       emit('delete', props.nodeData);
       break;
+    case OptionButtonMenu.ChangeDataset:
+      emit('detach-dataset', props.nodeData.id); // menu option has been removed for now, to be reassessed later
+      break;
+    case OptionButtonMenu.RemoveDataset:
+      emit('switch-dataset', props.nodeData.id);
+      break;
     default:
       break;
   }
@@ -245,11 +272,38 @@ const showAttachDatasetButton = computed(
     !showEditName.value
 );
 
+const showSeeResultsButton = computed(
+  () => isOutputIndexNode(props.nodeData) && !showDatasetSearch.value && !showEditName.value
+);
+const indexTree = useIndexTree();
+const canViewResults = computed(() => indexNodeTreeContainsDataset(indexTree.tree.value));
+const router = useRouter();
+const route = useRoute();
+const store = useStore();
+const project = computed(() => store.getters['app/project']);
+const analysisId = computed(() => route.params.analysisId as string);
+const seeResults = () => {
+  router.push({
+    name: 'indexResults',
+    params: {
+      project: project.value,
+      analysisId: analysisId.value,
+      projectType: ProjectType.Analysis,
+    },
+  });
+};
+
 // Dataset search
 
 const disableInteraction = ref(false);
 // Whenever the data for this node changes (e.g. when attaching a dataset), re-enable interactions.
-watch([props.nodeData], () => (disableInteraction.value = false));
+watch(
+  () => props.nodeData,
+  () => {
+    disableInteraction.value = false;
+  },
+  { deep: true }
+);
 const isSearchingForDataset = ref(false);
 
 const showDatasetSearch = computed(
@@ -281,6 +335,20 @@ const attachDataset = (dataset: DatasetSearchResult, nodeNameAfterAttachingDatas
 };
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
+
+const indexWorkbench = useIndexWorkBench();
+const parentNode = computed(() => {
+  const foundInTree = indexTree.findNode(props.nodeData.id);
+  const found = foundInTree ?? indexWorkbench.findNode(props.nodeData.id);
+  return found?.parent ?? null;
+});
+const addSuggestion = (suggestion: string) => {
+  if (parentNode.value === null) {
+    return;
+  }
+  indexTree.findAndAddNewChild(parentNode.value.id, suggestion);
+  indexWorkbench.findAndAddNewChild(parentNode.value.id, suggestion);
+};
 </script>
 
 <style scoped lang="scss">
@@ -291,19 +359,19 @@ const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 
 $option-button-width: 16px;
 
-.index-tree-node-container {
+.index-tree-node-body {
   @include index-tree-node;
 
   &.flexible-width {
     width: auto;
   }
 
-  &.no-highlight:hover {
-    cursor: not-allowed;
+  &.highlight-on-hover:hover {
+    @include index-tree-node-hover;
   }
 
-  &:not(.no-highlight):hover {
-    @include index-tree-node-hover;
+  &.click-not-allowed:hover {
+    cursor: not-allowed;
   }
 
   // When node is selected, we want to show a 2px accent color border outside.
@@ -429,11 +497,15 @@ $option-button-width: 16px;
   margin-bottom: 2px;
 }
 
-.attach-dataset-button {
+.button-top-margin {
   margin-top: 10px;
 }
 
 .warning {
   color: $un-color-feedback-warning;
+}
+
+.recommendations {
+  margin-top: 20px;
 }
 </style>

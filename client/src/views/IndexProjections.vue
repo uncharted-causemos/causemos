@@ -1,6 +1,10 @@
 <template>
-  <div class="index-projections-container">
-    <div class="flex-col config-column">
+  <div class="index-projections-container" :class="[INSIGHT_CAPTURE_CLASS]">
+    <div
+      class="flex-col config-column"
+      :class="{ 'settings-disabled': scenarioBeingEdited !== null }"
+    >
+      <div class="disable-overlay" />
       <header>
         <button v-if="selectedNodeId !== null" class="btn btn-sm" @click="deselectNode">
           <i class="fa fa-fw fa-caret-left" />View all concepts
@@ -13,7 +17,6 @@
       <section v-if="selectedNodeId !== null">
         <header class="flex index-structure-header">
           <h4>Index structure</h4>
-          <button class="btn btn-sm" @click="modifyStructure">Edit</button>
         </header>
         <IndexResultsStructurePreview
           class="index-structure-preview"
@@ -28,17 +31,41 @@
           :selected-item="isSingleCountryModeActive"
           @item-selected="(newValue) => (isSingleCountryModeActive = newValue)"
         />
-        <p>Country</p>
-        <DropdownButton
-          :is-dropdown-left-aligned="true"
-          :items="selectableCountries"
-          :selected-item="selectedCountry"
-          :is-warning-state-active="selectedCountry === NO_COUNTRY_SELECTED.value"
-          @item-selected="setSelectedCountry"
+        <div class="subsection" v-if="isSingleCountryModeActive">
+          <p>Country</p>
+          <DropdownButton
+            :is-dropdown-left-aligned="true"
+            :items="selectableCountryDropdownItems"
+            :selected-item="selectedCountry"
+            :is-warning-state-active="selectedCountry === NO_COUNTRY_SELECTED.value"
+            @item-selected="setSelectedCountry"
+          />
+          <p v-if="selectedCountry === NO_COUNTRY_SELECTED.value" class="warning">
+            Select a country to display projections.
+          </p>
+        </div>
+        <IndexProjectionsSettingsScenarios
+          v-if="isSingleCountryModeActive && selectedCountry !== NO_COUNTRY_SELECTED.value"
+          class="subsection"
+          :scenarios="scenarios"
+          :max-scenarios="MAX_NUM_TIMESERIES"
+          @create="createScenario"
+          @duplicate="duplicateScenario"
+          @edit="enableEditingScenario"
+          @delete="deleteScenario"
+          @toggleVisible="toggleScenarioVisibility"
         />
-        <p v-if="selectedCountry === NO_COUNTRY_SELECTED.value" class="warning">
-          Select a country to display projections.
-        </p>
+
+        <IndexProjectionsSettingsCountries
+          v-if="!isSingleCountryModeActive"
+          class="subsection"
+          :countries="selectedCountries"
+          :selectable-countries="selectableCountryDropdownItems"
+          :max-countries="MAX_NUM_TIMESERIES"
+          @add="addSelectedCountry"
+          @remove="removeSelectedCountry"
+          @change="changeSelectedCountry"
+        />
       </section>
       <footer>
         <section>
@@ -111,17 +138,34 @@
       </footer>
     </div>
     <main class="flex-col">
-      <div class="editing-state-indicator">
-        <p class="subdued un-font-small">Click a concept to enlarge it.</p>
-        <!-- TODO: Editing <strong>{{ 'Untitled Scenario' }}</strong>'s constraints -->
-        <!-- <p class="subdued un-font-small">Click a concept to add or edit constraints.</p> -->
+      <div class="editing-container">
+        <div v-if="scenarioBeingEdited !== null" class="editing-ui-group">
+          <label
+            >Editing
+            <input type="text" v-model="scenarioBeingEdited.name" />
+          </label>
+          <label class="flex-grow"
+            >Description
+            <input class="flex-grow" type="text" v-model="scenarioBeingEdited.description" />
+          </label>
+          <div>
+            <button class="btn btn-sm" @click="cancelEditingScenario">Cancel</button>
+            <button class="btn btn-sm btn-call-to-action" @click="finishEditingScenario">
+              Done
+            </button>
+          </div>
+        </div>
+        <p v-if="scenarioBeingEdited !== null" class="edit-msg subdued un-font-small">
+          Click a concept to add or edit constraints.
+        </p>
+        <p v-else class="subdued un-font-small">Click a concept to enlarge it.</p>
       </div>
       <IndexProjectionsGraphView
         v-if="selectedNodeId === null"
         class="fill-space"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :projections="projectionData"
+        :projections="visibleScenarioProjectionData"
         @select-element="selectElement"
       />
       <IndexProjectionsNodeView
@@ -130,9 +174,11 @@
         :selected-node-id="selectedNodeId"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :projections="projectionData"
+        :projections="visibleScenarioProjectionData"
+        :projection-for-scenario-being-edited="projectionForScenarioBeingEdited"
         @select-element="selectElement"
         @deselect-node="deselectNode"
+        @click-chart="onNodeChartClick"
       />
       <IndexLegend class="legend" :is-projection-space="true" />
     </main>
@@ -155,12 +201,23 @@ import { SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
 import timestampFormatter from '@/formatters/timestamp-formatter';
-import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
+import { TimeseriesPoint } from '@/types/Timeseries';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
-import { createProjectionRunner } from '@/utils/projection-util';
+import { MAX_NUM_TIMESERIES, NO_COUNTRY_SELECTED_VALUE } from '@/utils/index-projection-util';
 import { getTimeseriesNormalized } from '@/services/outputdata-service';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
+import IndexProjectionsSettingsScenarios from '@/components/index-projections/index-projections-settings-scenarios.vue';
+import useInsightStore from '@/services/composables/useInsightStore';
+import useToaster from '@/services/composables/useToaster';
+import { getInsightById } from '@/services/insight-service';
+import { Insight, IndexProjectionsDataState } from '@/types/Insight';
+import { INSIGHT_CAPTURE_CLASS, isIndexProjectionsDataState } from '@/utils/insight-util';
+import { TYPE } from 'vue-toastification';
+import IndexProjectionsSettingsCountries from '@/components/index-projections/index-projections-settings-countries.vue';
+import useSelectedCountries from '@/services/composables/useSelectedCountries';
+import useScenarios from '@/services/composables/useScenarios';
+import useScenarioProjections from '@/services/composables/useScenarioProjections';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -183,7 +240,8 @@ const router = useRouter();
 const overlay = useOverlay();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const { analysisName, refresh } = useIndexAnalysis(analysisId);
+const { analysisName, refresh, indexProjectionSettings, updateIndexProjectionSettings } =
+  useIndexAnalysis(analysisId);
 // If selectedNodeId === null, no node is selected and we're looking at the graph view
 const selectedNodeId = ref<string | null>(null);
 const selectElement = (id: SelectableIndexElementId) => {
@@ -223,9 +281,12 @@ const isSingleCountryModeActive = ref(true);
 const temporalResolutionOption = ref(TemporalResolutionOption.Month);
 
 const indexTree = useIndexTree();
-const NO_COUNTRY_SELECTED: DropdownItem = { displayName: 'No country selected', value: '' };
+const NO_COUNTRY_SELECTED: DropdownItem = {
+  displayName: 'No country selected',
+  value: NO_COUNTRY_SELECTED_VALUE,
+};
 // Countries covered by one or more datasets
-const selectableCountries = ref<DropdownItem[]>([NO_COUNTRY_SELECTED]);
+const selectableCountries = ref<string[]>([NO_COUNTRY_SELECTED_VALUE]);
 // Get list of selectable countries whenever indexTree.tree changes.
 // The list is a union of the countries that are covered by each dataset in the tree.
 watch([indexTree.tree], async () => {
@@ -243,13 +304,17 @@ watch([indexTree.tree], async () => {
     return;
   }
   const sortedCountries = countriesInOneOrMoreDataset.sort();
-  const dropdownItems = sortedCountries.map<DropdownItem>((country) => ({
-    displayName: country,
-    value: country,
-  }));
-  dropdownItems.push(NO_COUNTRY_SELECTED);
-  selectableCountries.value = dropdownItems;
+  sortedCountries.push(NO_COUNTRY_SELECTED_VALUE);
+  selectableCountries.value = sortedCountries;
 });
+
+const selectableCountryDropdownItems = computed(() =>
+  selectableCountries.value.map((country) =>
+    country === NO_COUNTRY_SELECTED_VALUE
+      ? NO_COUNTRY_SELECTED
+      : { displayName: country, value: country }
+  )
+);
 
 // The country whose historical data and projections will be displayed.
 const selectedCountry = ref(NO_COUNTRY_SELECTED.value);
@@ -260,8 +325,7 @@ const setSelectedCountry = (newValue: string) => {
 //  in the list, reset it to NO_COUNTRY_SELECTED.value.
 watch([selectableCountries], () => {
   if (
-    selectableCountries.value.find((country) => country.value === selectedCountry.value) ===
-    undefined
+    selectableCountries.value.find((country) => country === selectedCountry.value) === undefined
   ) {
     setSelectedCountry(NO_COUNTRY_SELECTED.value);
   }
@@ -337,8 +401,107 @@ const onDoneEditingTimeRange = () => {
   saveProjectionDates();
 };
 
-const projectionData = ref(new Map<string, TimeseriesPointProjected[]>());
-// Whenever historical data changes, re-run projections
+const { setContextId, setDataState, setViewState } = useInsightStore();
+onMounted(() => {
+  setContextId(analysisId.value + '--projections');
+});
+
+// Whenever state changes, sync it to insight panel store so that the latest state is captured when
+//  taking an insight.
+watch(
+  [
+    isSingleCountryModeActive,
+    selectedCountry,
+    projectionStartYear,
+    projectionStartMonth,
+    projectionEndYear,
+    projectionEndMonth,
+    selectedNodeId,
+  ],
+  () => {
+    const newDataState: IndexProjectionsDataState = {
+      isSingleCountryModeActive: isSingleCountryModeActive.value,
+      selectedCountry: selectedCountry.value,
+      projectionStartYear: projectionStartYear.value,
+      projectionStartMonth: projectionStartMonth.value,
+      projectionEndYear: projectionEndYear.value,
+      projectionEndMonth: projectionEndMonth.value,
+      selectedNodeId: selectedNodeId.value,
+    };
+    setDataState(newDataState);
+    // No view state for this page. Set it to an empty object so that any view state from previous
+    //  pages is cleared and not associated with insights taken from this page.
+    setViewState({});
+  },
+  { immediate: true }
+);
+const toaster = useToaster();
+const updateStateFromInsight = async (insightId: string) => {
+  const loadedInsight: Insight = await getInsightById(insightId);
+  const dataState = loadedInsight?.data_state;
+  if (!dataState || !isIndexProjectionsDataState(dataState)) {
+    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
+    return;
+  }
+  isSingleCountryModeActive.value = dataState.isSingleCountryModeActive;
+  selectedCountry.value = dataState.selectedCountry;
+  projectionStartYear.value = dataState.projectionStartYear;
+  projectionStartMonth.value = dataState.projectionStartMonth;
+  projectionEndYear.value = dataState.projectionEndYear;
+  projectionEndMonth.value = dataState.projectionEndMonth;
+  saveProjectionDates();
+  if (dataState.selectedNodeId !== null && !indexTree.containsElement(dataState.selectedNodeId)) {
+    toaster(
+      'The node that is selected in this insight no longer exists in the analysis.',
+      TYPE.ERROR,
+      true
+    );
+    return;
+  }
+  selectedNodeId.value = dataState.selectedNodeId;
+};
+
+watch(
+  [route],
+  () => {
+    const insight_id = route.query.insight_id as any;
+    if (insight_id !== undefined) {
+      updateStateFromInsight(insight_id);
+      // Remove the insight_id from the url so that
+      //  (1) future insight capture is valid
+      //  (2) we can re-apply the same insight if necessary
+      router
+        .push({
+          query: { insight_id: undefined },
+        })
+        .catch(() => {});
+    }
+  },
+  { immediate: true }
+);
+
+// Scenario Management
+const {
+  scenarios,
+  scenarioBeingEdited,
+  createScenario,
+  duplicateScenario,
+  toggleScenarioVisibility,
+  deleteScenario,
+  enableEditingScenario,
+  cancelEditingScenario,
+  finishEditingScenario,
+  updateScenarioConstraints,
+} = useScenarios(indexProjectionSettings, updateIndexProjectionSettings);
+
+const onNodeChartClick = (timestamp: number, value: number) => {
+  updateScenarioConstraints(selectedNodeId.value || '', { timestamp, value });
+};
+
+// Scenario projections
+const { visibleScenarioProjectionData, projectionForScenarioBeingEdited, runScenarioProjections } =
+  useScenarioProjections(scenarios, scenarioBeingEdited);
+
 watch(
   [
     historicalData,
@@ -346,28 +509,26 @@ watch(
     projectionStartTimestamp,
     projectionEndTimestamp,
     temporalResolutionOption,
+    scenarios,
   ],
   () => {
     overlay.enable();
-    const inputData: { [nodeId: string]: TimeseriesPoint[] } = {};
-    // Filter out empty or single point timeseries data since projection runner expect data length >= 2
-    for (const [nodeId, data] of historicalData.value) {
-      if (data?.length && data.length > 1) {
-        inputData[nodeId] = data;
-      }
-    }
-    const result = createProjectionRunner(
+    // TODO: For optimization, other than initial run, only run projection for the specific scenario when a new scenario is added or when the edit for a scenario is done.
+    // Check diff from old and new scenarios data and only run the projection for a scenario if necessary.
+    // When a scenario is deleted, just remove the projection for that scenario from the projection data.
+    runScenarioProjections(
       indexTree.tree.value,
-      inputData,
+      historicalData.value,
       { start: projectionStartTimestamp.value, end: projectionEndTimestamp.value },
-      temporalResolutionOption.value
-    )
-      .runProjection()
-      .getResults();
-    projectionData.value = new Map(Object.entries(result));
+      temporalResolutionOption.value,
+      scenarios.value
+    );
     overlay.disable();
   }
 );
+
+const { selectedCountries, addSelectedCountry, removeSelectedCountry, changeSelectedCountry } =
+  useSelectedCountries(selectableCountries, indexProjectionSettings, updateIndexProjectionSettings);
 </script>
 
 <style lang="scss" scoped>
@@ -378,6 +539,7 @@ watch(
 .index-projections-container {
   display: flex;
   height: $content-full-height;
+  background: $background-light-2;
 }
 
 .config-column {
@@ -386,7 +548,7 @@ watch(
   padding: 20px;
   overflow-y: auto;
   border-right: 1px solid $un-color-black-10;
-  gap: 20px;
+  gap: 40px;
 
   position: relative;
   // Make sure the lowest items are never covered by the footer content
@@ -419,6 +581,10 @@ section {
   }
 }
 
+.subsection {
+  margin-top: 40px;
+}
+
 .projection-date {
   display: flex;
   gap: 5px;
@@ -439,12 +605,47 @@ main {
   }
 }
 
-.editing-state-indicator {
+.editing-container {
   padding: 10px $index-graph-padding-horizontal;
   height: $navbar-outer-height;
+  .editing-ui-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 50px;
+    label {
+      display: flex;
+      gap: 5px;
+      align-items: baseline;
+    }
+    label:first-child input {
+      width: 180px;
+    }
+  }
+  .edit-msg {
+    color: $accent-main;
+  }
 }
 
 .warning {
   color: $un-color-feedback-warning;
+}
+
+.settings-disabled {
+  pointer-events: none;
+  .disable-overlay {
+    display: block;
+  }
+}
+
+.disable-overlay {
+  display: none;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 999;
+  opacity: 0.4;
+  background: white;
+  top: 0px;
+  left: 0px;
 }
 </style>

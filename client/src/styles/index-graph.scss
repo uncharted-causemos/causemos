@@ -9,7 +9,6 @@ $incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
 $outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-length);
 $edge-top-offset-from-node: 13px;
 $edge-styles: 2px solid $un-color-black-20;
-$edge-selected: $accent-main;
 
 $index-graph-padding-horizontal: 30px;
 $index-graph-padding-vertical: 40px;
@@ -37,10 +36,20 @@ $index-graph-padding-vertical: 40px;
   }
 }
 
-.edge {
+@mixin index-tree-edge(
+  $edge-top-offset-from-node: $edge-top-offset-from-node,
+  $space-between-columns: $space-between-columns
+) {
+  $incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
+  $outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-length);
+
   position: relative;
   top: $edge-top-offset-from-node;
-  pointer-events: auto;
+  pointer-events: none;
+
+  &.visible {
+    pointer-events: auto;
+  }
 
   &.incoming {
     max-height: 5px;
@@ -50,45 +59,18 @@ $index-graph-padding-vertical: 40px;
     flex: 1;
     &.visible {
       border-top: $edge-styles;
-      &.polarity-pos {
-        border-color: $positive;
-      }
-      &.polarity-neg {
-        border-color: $negative;
-      }
-      &.highlighted {
-        border-color: $accent-light;
-        &.polarity-pos {
-          border-color: $positive-bright;
-          &.highlighted-source-neg {
-            border-color: $negative-bright;
-          }
-        }
-        &.polarity-neg {
-          border-color: $negative-bright;
-          &.highlighted-source-pos {
-            border-color: $positive-bright;
-          }
-        }
-      }
+      border-color: $positive;
+      &.highlighted,
       &.selected-edge {
-        border-color: $edge-selected;
-        &.polarity-pos {
-          border-color: $positive-bright;
-          &.selected-source-neg {
-            border-color: $negative-bright;
-          }
-        }
-        &.polarity-neg {
+        border-color: $positive-bright;
+      }
+      &.polarity-negative {
+        border-color: $negative;
+        &.highlighted,
+        &.selected-edge {
           border-color: $negative-bright;
-          &.selected-source-pos {
-            border-color: $positive-bright;
-          }
         }
       }
-    }
-    &.inactive {
-      pointer-events: none;
     }
   }
 
@@ -98,74 +80,38 @@ $index-graph-padding-vertical: 40px;
       border-top: $edge-styles;
       // Extend edge down to the sibling below this one
       height: calc(100% + #{$space-between-rows});
-      border-right: $edge-styles;
-      &.polarity-pos {
-        border-color: $positive;
-        &.next-sibling-polarity-neg {
-          border-right-color: $negative;
-        }
-      }
-      &.polarity-neg {
-        border-color: $negative;
-        &.next-sibling-polarity-pos {
-          border-right-color: $positive;
-        }
-      }
-      &.highlighted {
-        border-top-color: $accent-light;
-        &.polarity-neg {
-          border-top-color: $negative-bright;
-        }
-        &.polarity-pos {
-          border-top-color: $positive-bright;
-        }
-      }
-      &.highlighted-y {
-        border-right-color: $accent-light;
-        &.polarity-neg {
-          border-right-color: $negative-bright;
-          &.next-sibling-polarity-pos {
-            border-right-color: $positive-bright;
-          }
-        }
-        &.polarity-pos {
-          border-right-color: $positive-bright;
-          &.next-sibling-polarity-neg {
-            border-right-color: $negative-bright;
-          }
-        }
-      }
+      border-top-color: $positive;
+      &.highlighted,
       &.selected-edge {
-        border-top-color: $edge-selected;
-        &.polarity-neg {
+        border-top-color: $positive-bright;
+      }
+      &.polarity-negative {
+        border-top-color: $negative;
+        &.highlighted,
+        &.selected-edge {
           border-top-color: $negative-bright;
         }
-        &.polarity-pos {
-          border-top-color: $positive-bright;
-        }
       }
+
+      border-right: $edge-styles;
+      border-right-color: $positive;
+      &.highlighted-y,
       &.selected-y {
-        border-right-color: $edge-selected;
-        &.polarity-neg {
+        border-right-color: $positive-bright;
+      }
+      &.next-sibling-polarity-negative {
+        border-right-color: $negative;
+        &.highlighted-y,
+        &.selected-y {
           border-right-color: $negative-bright;
-          &.next-sibling-polarity-pos {
-            border-right-color: $positive-bright;
-          }
-        }
-        &.polarity-pos {
-          border-right-color: $positive-bright;
-          &.next-sibling-polarity-neg {
-            border-right-color: $negative-bright;
-          }
         }
       }
-    }
-    &.inactive {
-      pointer-events: none;
     }
 
     &.last-child {
       border-right: none;
+      // No need to extend below this cell since we're not drawing a right border.
+      height: 0;
     }
   }
 }
@@ -195,4 +141,12 @@ $node-content-horizontal-padding: 10px;
 $node-content-vertical-padding: 5px;
 @mixin index-tree-node-content() {
   padding: $node-content-vertical-padding $node-content-horizontal-padding;
+}
+
+@mixin arrow-head($color: $un-color-black-30, $width: 5px, $height: 5px) {
+  width: 0;
+  height: 0;
+  border-top: $width solid transparent;
+  border-bottom: $width solid transparent;
+  border-left: $height solid $color;
 }

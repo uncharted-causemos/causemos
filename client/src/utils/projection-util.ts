@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import forecast, { ForecastResult, ForecastMethod } from './forecast';
+import forecast from './forecast';
 import {
   getYearFromTimestamp,
   getNumberOfMonthsSinceEpoch,
@@ -10,26 +10,32 @@ import { isConceptNodeWithDatasetAttached } from '@/utils/index-tree-util';
 
 import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
-import { ConceptNode } from '@/types/Index';
+import {
+  ConceptNode,
+  ProjectionConstraint,
+  ProjectionResults,
+  ProjectionRunInfo,
+} from '@/types/Index';
 
-export enum WeightedSumNodeProjectionType {
+export enum NodeProjectionType {
+  /**
+   * This projection type is used when data is empty and there's no projection result.
+   */
+  None = 'None',
+  /**
+   * This projection type is used when the projection data for the node is calculated from weighed sum of its children node.
+   */
   WeightedSum = 'Weighted Sum',
+  /**
+   * This projection type is used if input data with a single point is interpolated constantly
+   */
+  ConstantInterpolation = 'Constant Interpolation',
 }
 
 type ProjectionPoint = {
   x: number;
   y: number;
   projectionType: ProjectionPointType;
-};
-
-type ProjectionResults = {
-  [nodeId: string]: TimeseriesPointProjected[];
-};
-
-type ProjectionRunInfo = {
-  [nodeId: string]:
-    | ForecastResult<ForecastMethod>
-    | { method: WeightedSumNodeProjectionType.WeightedSum };
 };
 
 const multiply = (data: TimeseriesPointProjected[], factor: number) =>
@@ -160,6 +166,53 @@ export const interpolateLinear = <T extends { x: number; y: number }>(data: T[])
 };
 
 /**
+ * Run linear interpolation within the target period window using the value of provided timeseries point
+ */
+export const runConstantInterpolation = (
+  point: TimeseriesPoint,
+  targetPeriod: { start: number; end: number },
+  dataResOption: TemporalResolutionOption.Month | TemporalResolutionOption.Year
+): TimeseriesPointProjected[] => {
+  const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(dataResOption);
+  const pointX = fromTimestamp(point.timestamp);
+  const startX = fromTimestamp(targetPeriod.start);
+  const endX = fromTimestamp(targetPeriod.end);
+  const points: ProjectionPoint[] = [
+    {
+      x: startX,
+      y: point.value,
+      projectionType:
+        pointX === startX ? ProjectionPointType.Historical : ProjectionPointType.Interpolated,
+    },
+    {
+      x: endX,
+      y: point.value,
+      projectionType:
+        pointX === endX ? ProjectionPointType.Historical : ProjectionPointType.Interpolated,
+    },
+  ];
+  // if the point is within the target period window, insert the point between them
+  if (startX < pointX && pointX < endX) {
+    points.splice(1, 0, {
+      x: pointX,
+      y: point.value,
+      projectionType: ProjectionPointType.Historical,
+    });
+  }
+  return interpolateLinear(points).map(({ dataPoint }) => {
+    let projectionType = ProjectionPointType.Interpolated;
+    if ('projectionType' in dataPoint) {
+      projectionType = dataPoint.projectionType;
+    }
+    return {
+      timestamp: toTimestamp(dataPoint.x),
+      value: dataPoint.y,
+      projectionType,
+    };
+  });
+};
+
+/**
  * Run projection on the data and return new projected timeseries data with backcasted and forecasted data points
  * for the provided time window, targetPeriod.
  * @param timeseries timeseries data
@@ -226,6 +279,81 @@ export const runProjection = (
 };
 
 /**
+ * Apply constraints to the timeseries data and return new timeseries data.
+ * It either adds new points to the data or override existing data points with corresponding constraint points at same timestamp.
+ * @param timeseries Timeseries or projected timeseries data
+ * @param constraints constraints
+ */
+export const applyConstraints = <T extends TimeseriesPoint | TimeseriesPointProjected>(
+  timeseries: T[],
+  constraints: ProjectionConstraint[]
+): T[] => {
+  if (constraints.length === 0) return timeseries;
+  // TODO: Make sure constraints are always sorted when adding a constraint to existing list then remove this orderBy function.
+  const constraintsSorted: T[] = _.orderBy(constraints, ['timestamp'], ['asc']).map((v) => ({
+    ...v,
+    projectionType: ProjectionPointType.Constraint,
+  })) as T[];
+
+  const result: T[] = [];
+  let i = 0;
+  let j = 0;
+  const tLength = timeseries.length;
+  const cLength = constraintsSorted.length;
+  while (i < tLength && j < cLength) {
+    const tPoint = timeseries[i];
+    const cPoint = constraintsSorted[j];
+    if (tPoint.timestamp < cPoint.timestamp) {
+      // Insert the timeseries point
+      result.push(tPoint);
+      i++;
+    } else if (tPoint.timestamp === cPoint.timestamp) {
+      // Override the timeseries point with the constraint point
+      result.push(cPoint);
+      i++;
+      j++;
+    } else {
+      // Insert the constraint
+      result.push(cPoint);
+      j++;
+    }
+  }
+  // Insert rest of the timeseries points
+  while (i < tLength) {
+    result.push(timeseries[i]);
+    i++;
+  }
+  // Insert rest of the constraints points
+  while (j < cLength) {
+    result.push(constraintsSorted[j]);
+    j++;
+  }
+  return result;
+};
+
+/**
+ * Set `projectionType` to constraint type for the constraint that are applied to given timeseries data.
+ * We are assuming that constraints are already applied to the timeseries data but only constraint type values are not set for each constraint data point.
+ * @param timeseries timeseries data with constraints
+ * @param constraints constraints used applied to the timeseries data
+ */
+const setConstraintsType = (
+  timeseries: TimeseriesPointProjected[],
+  constraints: ProjectionConstraint[]
+) => {
+  if (constraints.length === 0) return timeseries;
+  const constraintMap = new Map<number, number>();
+  for (const c of constraints) {
+    constraintMap.set(c.timestamp, c.value);
+  }
+  return timeseries.map((v) => {
+    return constraintMap.has(v.timestamp)
+      ? { ...v, projectionType: ProjectionPointType.Constraint }
+      : v;
+  });
+};
+
+/**
  * Create a projection runner that runs projection on the dataset nodes and computes weighted sum of children nodes for
  * the provided concept tree
  * @param conceptTree Concept tree
@@ -253,6 +381,8 @@ export const createProjectionRunner = (
   const resultForWeightedSumNodes: ProjectionResults = {};
   const runInfo: ProjectionRunInfo = {};
 
+  let _constraints: { [nodeId: string]: ProjectionConstraint[] } | null = null;
+
   const _calculateWeightedSum = (node: ConceptNode) => {
     if (isConceptNodeWithDatasetAttached(node)) {
       if (!resultForDatasetNode[node.id]) return null;
@@ -276,28 +406,27 @@ export const createProjectionRunner = (
 
     // Calculate the sum of children's weighted projected timeseries data
     const weightedSumSeries = sum(...childProjectionSeriesData);
-    resultForWeightedSumNodes[node.id] = weightedSumSeries;
-    runInfo[node.id] = { method: WeightedSumNodeProjectionType.WeightedSum };
-    return weightedSumSeries;
+    const constraints = (_constraints && _constraints[node.id]) || [];
+    resultForWeightedSumNodes[node.id] = applyConstraints(weightedSumSeries, constraints);
+    runInfo[node.id] = { method: NodeProjectionType.WeightedSum };
+    return resultForWeightedSumNodes[node.id];
   };
 
   const runner = {
     /**
+     * Set constraints
+     */
+    setConstraints(constraints: { [nodeId: string]: ProjectionConstraint[] } | null) {
+      _constraints = constraints;
+      return runner;
+    },
+
+    /**
      * Run projection on all dataset nodes
      */
     projectAllDatasetNodes() {
-      for (const [nodeId, series] of Object.entries(data).filter((v) => v[1] !== undefined)) {
-        const { method, forecast, backcast, projectionData } = runProjection(
-          series,
-          period,
-          dataTempResOption
-        );
-        runInfo[nodeId] = {
-          method,
-          forecast,
-          backcast,
-        };
-        resultForDatasetNode[nodeId] = projectionData;
+      for (const nodeId of Object.keys(data)) {
+        runner.projectDatasetNode(nodeId);
       }
       return runner;
     },
@@ -307,9 +436,34 @@ export const createProjectionRunner = (
      * @param nodeId node id
      * @param options options - options e.g forecast method
      */
-    projectDatasetNode(nodeId: string, options: any) {
-      console.log('Not Yet Implemented', nodeId, options);
-      // TODO: Implement this method
+    projectDatasetNode(nodeId: string) {
+      const series = data[nodeId];
+      if (!series) return runner;
+
+      const constraints = (_constraints && _constraints[nodeId]) || [];
+      const inputData = applyConstraints(series, constraints);
+      if (inputData.length > 1) {
+        const { method, forecast, backcast, projectionData } = runProjection(
+          inputData,
+          period,
+          dataTempResOption
+        );
+        runInfo[nodeId] = {
+          method,
+          forecast,
+          backcast,
+        };
+        resultForDatasetNode[nodeId] = setConstraintsType(projectionData, constraints);
+      } else if (inputData.length === 1) {
+        // Handle data with single point
+        const data = runConstantInterpolation(inputData[0], period, dataTempResOption);
+        runInfo[nodeId] = { method: NodeProjectionType.ConstantInterpolation };
+        resultForDatasetNode[nodeId] = setConstraintsType(data, constraints);
+      } else {
+        // Empty input data
+        runInfo[nodeId] = { method: NodeProjectionType.None };
+        resultForDatasetNode[nodeId] = [];
+      }
       return runner;
     },
 
@@ -390,7 +544,7 @@ export const splitProjectionsIntoLineSegments = (timeseries: TimeseriesPointProj
   // If no historical point is found, return one projected segment that includes the whole
   //  timeseries.
   if (indexOfFirstHistoricalPoint === -1) {
-    return [{ isProjectedData: false, segment: timeseries }];
+    return [{ isProjectedData: true, segment: timeseries }];
   }
   // Add one so that the backcast line is drawn right up to and including the first historical
   //  data point.

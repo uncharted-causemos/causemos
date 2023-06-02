@@ -1,19 +1,21 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import dateFormatter from '@/formatters/date-formatter';
-import { D3GElementSelection, D3Selection } from '@/types/D3';
-import { TimeseriesPointProjected } from '@/types/Timeseries';
+import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
+import { ProjectionTimeseries, TimeseriesPointProjected } from '@/types/Timeseries';
 import {
   calculateYearlyTicks,
   renderDashedLine,
   renderLine,
   renderPoint,
+  renderSquares,
   renderXaxis,
   renderYaxis,
 } from '@/utils/timeseries-util';
-import { translate } from '@/utils/svg-util';
+import { showSvgTooltip, hideSvgTooltip, translate } from '@/utils/svg-util';
 import { ProjectionPointType } from '@/types/Enums';
 import { splitProjectionsIntoLineSegments } from '@/utils/projection-util';
+import { snapTimestampToNearestMonth } from '@/utils/date-util';
 
 const FOCUS_BORDER_COLOR = '#888';
 const FOCUS_BORDER_STROKE_WIDTH = 1;
@@ -46,8 +48,29 @@ const DASHED_LINE = {
 const SOLID_LINE_WIDTH = 1;
 const WEIGHTED_SUM_LINE_OPACITY = 0.25;
 const POINT_RADIUS = 3;
+const CONSTRAINT_SIDE_LENGTH = 4;
+
+// The SVG element attribute where we store the focused time range so it can be persisted across
+//  renders.
+const PERSISTED_TIME_RANGE_ATTRIBUTE = 'data-time-range';
 
 const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
+const VALUE_FORMATTER = (value: number) => value.toPrecision(2);
+
+const getTimestampAndValueFromMouseEvent = (
+  event: MouseEvent,
+  xScale: D3ScaleLinear,
+  yScale: D3ScaleLinear
+) => {
+  const [pointerX, pointerY] = d3.pointer(event);
+  const timestampAtMouse = xScale.invert(pointerX);
+  const snappedTimestamp = snapTimestampToNearestMonth(timestampAtMouse);
+  const value = yScale.invert(pointerY);
+  return {
+    timestamp: snappedTimestamp,
+    value,
+  };
+};
 
 const renderTimeseries = (
   timeseries: TimeseriesPointProjected[],
@@ -57,11 +80,6 @@ const renderTimeseries = (
   isWeightedSum: boolean,
   color = 'black'
 ) => {
-  // Render a circle at any point where all inputs have historical data
-  const fullDataPoints = timeseries.filter(
-    (point) => point.projectionType === ProjectionPointType.Historical
-  );
-  renderPoint(parentGroupElement, fullDataPoints, xScale, yScale, color, POINT_RADIUS);
   if (isWeightedSum) {
     // Render a lighter line across the whole series
     const lineSelection = renderLine(
@@ -73,26 +91,36 @@ const renderTimeseries = (
       SOLID_LINE_WIDTH
     );
     lineSelection.attr('opacity', WEIGHTED_SUM_LINE_OPACITY);
-    return;
+  } else {
+    // This node has a dataset attached, so split the timeseries into solid and dashed segments
+    const segments = splitProjectionsIntoLineSegments(timeseries);
+    segments.forEach(({ isProjectedData, segment }) => {
+      if (isProjectedData) {
+        renderDashedLine(
+          parentGroupElement,
+          segment,
+          xScale,
+          yScale,
+          DASHED_LINE.length,
+          DASHED_LINE.gap,
+          color,
+          DASHED_LINE.width
+        );
+      } else {
+        renderLine(parentGroupElement, segment, xScale, yScale, color, SOLID_LINE_WIDTH);
+      }
+    });
   }
-  // This node has a dataset attached, so split the timeseries into solid and dashed segments
-  const segments = splitProjectionsIntoLineSegments(timeseries);
-  segments.forEach(({ isProjectedData, segment }) => {
-    if (isProjectedData) {
-      renderDashedLine(
-        parentGroupElement,
-        segment,
-        xScale,
-        yScale,
-        DASHED_LINE.length,
-        DASHED_LINE.gap,
-        color,
-        DASHED_LINE.width
-      );
-    } else {
-      renderLine(parentGroupElement, segment, xScale, yScale, color, SOLID_LINE_WIDTH);
-    }
-  });
+  // Render a circle at any point where all inputs have historical data
+  const fullDataPoints = timeseries.filter(
+    (point) => point.projectionType === ProjectionPointType.Historical
+  );
+  renderPoint(parentGroupElement, fullDataPoints, xScale, yScale, color, POINT_RADIUS);
+  // Render a square at any point where one or more inputs have a constraint
+  const constraints = timeseries.filter(
+    (point) => point.projectionType === ProjectionPointType.Constraint
+  );
+  renderSquares(parentGroupElement, constraints, xScale, yScale, color, CONSTRAINT_SIDE_LENGTH);
 };
 
 const renderBrushHandles = (g: D3GElementSelection, handlePositions: [number, number]) => {
@@ -167,18 +195,31 @@ const renderScrollBarLabels = (
 
 export default function render(
   selection: D3Selection,
-  timeseries: TimeseriesPointProjected[],
+  timeseriesList: ProjectionTimeseries[],
   totalWidth: number,
   totalHeight: number,
   projectionStartTimestamp: number,
   projectionEndTimestamp: number,
   isWeightedSum: boolean,
-  color = 'black'
+  onClick: (timestamp: number, value: number) => void
 ) {
+  // Initialize focused range to the entire time range
+  let focusedTimeRange = [projectionStartTimestamp, projectionEndTimestamp];
+  // If we're re-rendering, preserve the focused time range from the previous render
+  const previousFocusGroupElement = selection.select('.focusGroupElement');
+  const previousFocusedTimeRange =
+    previousFocusGroupElement.size() > 0
+      ? previousFocusGroupElement.attr(PERSISTED_TIME_RANGE_ATTRIBUTE)
+      : null;
+  if (previousFocusedTimeRange !== null) {
+    focusedTimeRange = JSON.parse(previousFocusedTimeRange);
+  }
   // Clear any existing elements
   selection.selectAll('*').remove();
   // Add chart `g` element to the page
   const focusGroupElement = selection.append('g').classed('focusGroupElement', true);
+  // Create element over focus chart to detect mouse events
+  const focusMouseEventGroup = selection.append('g').classed('focusMouseEventGroup', true);
   // Add scroll bar `g` element to the page
   const scrollBarGroupElement = selection.append('g').classed('scrollBarGroupElement', true);
   // Add background to scrollbar
@@ -190,8 +231,6 @@ export default function render(
     .attr('stroke', 'none')
     .attr('fill', SCROLL_BAR_BACKGROUND_COLOR)
     .attr('fill-opacity', SCROLL_BAR_BACKGROUND_OPACITY);
-  // Initialize focused range to the entire time range
-  let focusedTimeRange: [number, number] = [projectionStartTimestamp, projectionEndTimestamp];
 
   /**
    * Validates that the new time range values are within the projection range, and that the start
@@ -206,6 +245,9 @@ export default function render(
       focusEndBeforeProjectionEnd
     );
     focusedTimeRange = [focusRangeStartBeforeFocusEnd, focusEndBeforeProjectionEnd];
+    // Store the new time range on the focus group element as an attribute so it can be preserved
+    //  across renders.
+    focusGroupElement.attr(PERSISTED_TIME_RANGE_ATTRIBUTE, JSON.stringify(focusedTimeRange));
   };
 
   // Calculate scales to map the date and value ranges to pixels for the main "focus" area
@@ -213,7 +255,15 @@ export default function render(
   const chartWidth = totalWidth - PADDING_LEFT - PADDING_RIGHT;
   const focusChartHeight = focusHeight - X_AXIS_HEIGHT;
 
-  const renderFocusChart = () => {
+  const focusMouseEventArea = focusMouseEventGroup
+    .append('rect')
+    .attr('height', focusChartHeight)
+    .attr('width', chartWidth)
+    .attr('x', PADDING_LEFT)
+    .attr('y', PADDING_TOP)
+    .attr('fill', 'transparent');
+
+  const renderFocusChart = (xScale: D3ScaleLinear, yScale: D3ScaleLinear) => {
     focusGroupElement.selectAll('*').remove();
 
     // Render border
@@ -228,18 +278,10 @@ export default function render(
       .attr('stroke-width', FOCUS_BORDER_STROKE_WIDTH);
 
     // Render focus chart X axis
-    const xScaleFocus = d3
-      .scaleLinear()
-      .domain(focusedTimeRange)
-      .range([PADDING_LEFT, PADDING_LEFT + chartWidth]);
-    const xAxisTicks = calculateYearlyTicks(
-      xScaleFocus.domain()[0],
-      xScaleFocus.domain()[1],
-      totalWidth
-    );
+    const xAxisTicks = calculateYearlyTicks(xScale.domain()[0], xScale.domain()[1], totalWidth);
     const xAxisElement = renderXaxis(
       focusGroupElement,
-      xScaleFocus,
+      xScale,
       xAxisTicks,
       PADDING_TOP + focusChartHeight,
       DATE_FORMATTER,
@@ -248,13 +290,9 @@ export default function render(
     xAxisElement.select('.domain').remove();
     xAxisElement.selectAll('.tick > line').attr('stroke', FOCUS_BORDER_COLOR);
 
-    const yScaleFocus = d3
-      .scaleLinear()
-      .domain([0, 1])
-      .range([PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]);
     const yAxisElement = renderYaxis(
       focusGroupElement,
-      yScaleFocus,
+      yScale,
       [0, 1],
       (number) => number,
       Y_AXIS_WIDTH,
@@ -264,12 +302,43 @@ export default function render(
     yAxisElement.selectAll('.tick > line').attr('stroke', FOCUS_BORDER_COLOR);
 
     // Render timeseries itself
-    renderTimeseries(timeseries, focusGroupElement, xScaleFocus, yScaleFocus, isWeightedSum, color);
+    timeseriesList.forEach((timeseries) => {
+      const timeseriesGroup = focusGroupElement.append('g').classed('timeseries', true);
+      renderTimeseries(
+        timeseries.points,
+        timeseriesGroup,
+        xScale,
+        yScale,
+        isWeightedSum,
+        timeseries.color
+      );
+    });
 
     // Don't render anything outside the main graph area (except the axes)
     focusGroupElement
       .selectChildren('*:not(.xAxis):not(.yAxis)')
       .attr('clip-path', 'url(#clipping-mask)');
+  };
+
+  // Update mouse handlers when the user changes the xScale by moving the scrollbar.
+  const updateFocusMouseEventArea = (xScale: D3ScaleLinear, yScale: D3ScaleLinear) => {
+    focusMouseEventArea.on('mousemove', (event: MouseEvent) => {
+      const { timestamp, value } = getTimestampAndValueFromMouseEvent(event, xScale, yScale);
+      showSvgTooltip(
+        focusMouseEventGroup,
+        `${VALUE_FORMATTER(value)}\n${DATE_FORMATTER(timestamp)}`,
+        [xScale(timestamp), yScale(value)],
+        0,
+        true
+      );
+    });
+    focusMouseEventArea.on('mouseleave', function () {
+      hideSvgTooltip(focusMouseEventGroup);
+    });
+    focusMouseEventArea.on('click', function (event) {
+      const { timestamp, value } = getTimestampAndValueFromMouseEvent(event, xScale, yScale);
+      onClick(timestamp, value);
+    });
   };
 
   // Scroll bar (lets the user zoom and pan)
@@ -288,16 +357,19 @@ export default function render(
   );
   // Render timeseries to scrollbar and fade it out.
   const yScaleScrollbar = d3.scaleLinear().domain([0, 1]).range([SCROLL_BAR_HEIGHT, 0]);
-  renderTimeseries(
-    timeseries,
-    scrollBarGroupElement,
-    xScaleScrollbar,
-    yScaleScrollbar,
-    isWeightedSum,
-    color
-  );
+  timeseriesList.forEach((timeseries) => {
+    const timeseriesGroup = scrollBarGroupElement.append('g').classed('timeseries', true);
+    renderTimeseries(
+      timeseries.points,
+      timeseriesGroup,
+      xScaleScrollbar,
+      yScaleScrollbar,
+      isWeightedSum,
+      timeseries.color
+    );
+  });
   scrollBarGroupElement
-    .selectAll('.segment-line, .circle')
+    .selectAll('.segment-line, .circle, .square')
     .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
   // Render time range labels
   renderScrollBarLabels(
@@ -328,7 +400,16 @@ export default function render(
     // Update brush handle positions
     brushElement.call(renderBrushHandles, focusedTimeRange.map(xScaleScrollbar));
     // Re-render the chart using the new focused range
-    renderFocusChart();
+    const xScaleFocus = d3
+      .scaleLinear()
+      .domain(focusedTimeRange)
+      .range([PADDING_LEFT, PADDING_LEFT + chartWidth]);
+    const yScaleFocus = d3
+      .scaleLinear()
+      .domain([0, 1])
+      .range([PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]);
+    renderFocusChart(xScaleFocus, yScaleFocus);
+    updateFocusMouseEventArea(xScaleFocus, yScaleFocus);
   };
   const d3BrushBehaviour = d3
     .brushX()

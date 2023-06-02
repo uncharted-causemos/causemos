@@ -13,6 +13,7 @@ import {
   SectionWithInsights,
   IndexStructureDataState,
   IndexResultsDataState,
+  IndexProjectionsDataState,
 } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import {
@@ -116,6 +117,12 @@ export function isIndexStructureDataState(
 
 export function isIndexResultsDataState(dataState: DataState): dataState is IndexResultsDataState {
   return (dataState as IndexResultsDataState).isShowingKeyDatasets !== undefined;
+}
+
+export function isIndexProjectionsDataState(
+  dataState: DataState
+): dataState is IndexProjectionsDataState {
+  return (dataState as IndexProjectionsDataState).isSingleCountryModeActive !== undefined;
 }
 
 export function isIndexAnalysisState(
