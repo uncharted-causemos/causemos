@@ -29,7 +29,7 @@
           :is-dropdown-left-aligned="true"
           :items="COUNTRY_MODES"
           :selected-item="isSingleCountryModeActive"
-          @item-selected="(newValue) => (isSingleCountryModeActive = newValue)"
+          @item-selected="setIsSingleCountryModeActive"
         />
         <div class="subsection" v-if="isSingleCountryModeActive">
           <p>Country</p>
@@ -274,7 +274,12 @@ const COUNTRY_MODES: DropdownItem[] = [
   { displayName: 'Single country', value: true },
   { displayName: 'Multiple countries', value: false },
 ];
-const isSingleCountryModeActive = ref(true);
+const isSingleCountryModeActive = computed(
+  () => indexProjectionSettings.value.isSingleCountryModeActive
+);
+const setIsSingleCountryModeActive = (val: boolean) => {
+  updateIndexProjectionSettings({ isSingleCountryModeActive: val });
+};
 
 const temporalResolutionOption = ref(TemporalResolutionOption.Month);
 
@@ -315,9 +320,11 @@ const selectableCountryDropdownItems = computed(() =>
 );
 
 // The country whose historical data and projections will be displayed.
-const selectedCountry = ref(NO_COUNTRY_SELECTED.value);
+const selectedCountry = computed(() => indexProjectionSettings.value.selectedCountry);
 const setSelectedCountry = (newValue: string) => {
-  selectedCountry.value = newValue;
+  updateIndexProjectionSettings({
+    selectedCountry: newValue,
+  });
 };
 // Whenever the list of selectable countries changes, if the currently selected country is not found
 //  in the list, reset it to NO_COUNTRY_SELECTED.value.
@@ -407,8 +414,10 @@ const updateStateFromInsight = async (insightId: string) => {
     toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
     return;
   }
-  isSingleCountryModeActive.value = dataState.isSingleCountryModeActive;
-  selectedCountry.value = dataState.selectedCountry;
+  updateIndexProjectionSettings({
+    isSingleCountryModeActive: dataState.isSingleCountryModeActive,
+    selectedCountry: dataState.selectedCountry,
+  });
   projectionStartYear.value = dataState.projectionStartYear;
   projectionStartMonth.value = dataState.projectionStartMonth;
   projectionEndYear.value = dataState.projectionEndYear;

@@ -9,17 +9,14 @@ import _ from 'lodash';
 export default function useSelectedCountries(
   selectableCountries: Ref<string[]>,
   indexProjectionSettings: Ref<IndexProjectionSettings>,
-  updateIndexProjectionSettings: (settings: IndexProjectionSettings) => void
+  updateIndexProjectionSettings: (settings: Partial<IndexProjectionSettings>) => void
 ) {
   // The countries whose historical data and projections are be displayed when multiple country mode
   //  is active.
   const selectedCountries = computed(() => indexProjectionSettings.value.selectedCountries);
 
   const updateSelectedCountries = (countries: IndexProjectionCountry[]) => {
-    updateIndexProjectionSettings({
-      ...indexProjectionSettings.value,
-      selectedCountries: countries,
-    });
+    updateIndexProjectionSettings({ selectedCountries: countries });
   };
 
   const getAvailableCountryColor = () => {

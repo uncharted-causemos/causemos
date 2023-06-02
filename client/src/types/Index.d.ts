@@ -154,6 +154,7 @@ export interface IndexProjectionCountry {
  */
 export interface IndexProjectionSettings {
   scenarios: IndexProjectionScenario[];
+  isSingleCountryModeActive: boolean;
   selectedCountry: string;
   selectedCountries: IndexProjectionCountry[];
 }

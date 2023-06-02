@@ -12,7 +12,7 @@ import { IndexProjectionSettings, IndexResultsSettings } from '@/types/Index';
 //  group requests together.
 const SYNC_DELAY_MS = 500;
 
-const _saveState = _.debounce((analysisId, state: IndexAnalysisState) => {
+const _saveState = _.debounce((analysisId: string, state: IndexAnalysisState) => {
   saveAnalysisState(analysisId, state);
 }, SYNC_DELAY_MS);
 
@@ -113,25 +113,24 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
 
   const indexResultsSettings = computed(() => _analysisState.value.resultsSettings);
 
-  const updateIndexResultsSettings = (config: IndexResultsSettings) => {
+  const updateIndexResultsSettings = (config: Partial<IndexResultsSettings>) => {
     _analysisState.value = {
       ..._analysisState.value,
-      resultsSettings: config,
+      resultsSettings: { ..._analysisState.value.resultsSettings, ...config },
     };
-    _saveState(analysisId, _analysisState.value);
+    _saveState(analysisId.value, _analysisState.value);
   };
 
   // index projection settings
 
   const indexProjectionSettings = computed(() => _analysisState.value.projectionSettings);
 
-  const updateIndexProjectionSettings = (settings: IndexProjectionSettings) => {
+  const updateIndexProjectionSettings = (settings: Partial<IndexProjectionSettings>) => {
     _analysisState.value = {
       ..._analysisState.value,
-      projectionSettings: settings,
+      projectionSettings: { ..._analysisState.value.projectionSettings, ...settings },
     };
-    // TODO: enable when ready to sync with server
-    // _saveState(analysisId, _analysisState.value);
+    _saveState(analysisId.value, _analysisState.value);
   };
 
   return {
