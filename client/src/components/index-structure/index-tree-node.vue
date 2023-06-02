@@ -111,7 +111,7 @@ import {
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
 import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
-import { OptionButtonMenu } from '@/utils/index-common-util';
+import { OptionButtonMenu, MENU_OPTIONS } from '@/utils/index-common-util';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { useRoute, useRouter } from 'vue-router';
@@ -205,55 +205,22 @@ const handleRenameDone = () => {
   renameInputText.value = '';
 };
 
-// Options button
-
-const MENU_OPTION_RENAME = {
-  type: OptionButtonMenu.Rename,
-  text: 'Rename',
-  icon: 'fa-pencil',
-};
-
-const MENU_OPTION_DUPLICATE = {
-  type: OptionButtonMenu.Duplicate,
-  text: 'Duplicate',
-  icon: 'fa-copy',
-};
-
-const MENU_OPTION_DELETE = {
-  type: OptionButtonMenu.Delete,
-  text: 'Delete',
-  icon: 'fa-trash',
-};
-
-const MENU_OPTION_CHANGE_DATASET = {
-  type: OptionButtonMenu.ChangeDataset,
-  text: 'Change dataset',
-  icon: 'fa-repeat',
-};
-
-const MENU_OPTION_REMOVE_DATASET = {
-  type: OptionButtonMenu.RemoveDataset,
-  text: 'Remove dataset',
-  icon: 'fa-times-circle',
-};
-
 const optionsButtonMenu = computed(() => {
   if (props.nodeData.isOutputNode) {
-    return [MENU_OPTION_RENAME];
+    return [MENU_OPTIONS.RENAME];
   }
   if (showEditName.value) {
-    return [MENU_OPTION_DELETE];
+    return [MENU_OPTIONS.DELETE];
   }
   if (isConceptNodeWithDatasetAttached(props.nodeData)) {
     return [
-      MENU_OPTION_RENAME,
-      MENU_OPTION_DUPLICATE,
-      MENU_OPTION_DELETE,
-      MENU_OPTION_CHANGE_DATASET,
-      MENU_OPTION_REMOVE_DATASET,
+      MENU_OPTIONS.RENAME,
+      MENU_OPTIONS.DUPLICATE,
+      MENU_OPTIONS.DELETE,
+      MENU_OPTIONS.REMOVE_DATASET,
     ];
   }
-  return [MENU_OPTION_RENAME, MENU_OPTION_DUPLICATE, MENU_OPTION_DELETE];
+  return [MENU_OPTIONS.RENAME, MENU_OPTIONS.DUPLICATE, MENU_OPTIONS.DELETE];
 });
 
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
@@ -269,10 +236,10 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
       emit('delete', props.nodeData);
       break;
     case OptionButtonMenu.ChangeDataset:
-      emit('switch-dataset', props.nodeData.id);
+      emit('detach-dataset', props.nodeData.id); // menu option has been removed for now, to be reassessed later
       break;
     case OptionButtonMenu.RemoveDataset:
-      emit('detach-dataset', props.nodeData.id);
+      emit('switch-dataset', props.nodeData.id);
       break;
     default:
       break;
