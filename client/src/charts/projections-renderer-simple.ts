@@ -11,7 +11,7 @@ const DASHED_LINE = {
   width: 0.5,
 };
 const SOLID_LINE_WIDTH = 1;
-const WEIGHTED_SUM_LINE_OPACITY = 0.25;
+export const WEIGHTED_SUM_LINE_OPACITY = 0.25;
 const CONSTRAINT_SIDE_LENGTH = 3;
 const POINT_RADIUS = 2;
 
