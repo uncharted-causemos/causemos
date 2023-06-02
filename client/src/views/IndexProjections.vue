@@ -190,7 +190,6 @@ import _ from 'lodash';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { computed, onMounted, ref, watch } from 'vue';
-import useOverlay from '@/services/composables/useOverlay';
 import { ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
@@ -237,7 +236,6 @@ const MONTHS: DropdownItem[] = [
 const store = useStore();
 const route = useRoute();
 const router = useRouter();
-const overlay = useOverlay();
 
 const analysisId = computed(() => route.params.analysisId as string);
 const { analysisName, refresh, indexProjectionSettings, updateIndexProjectionSettings } =
@@ -478,7 +476,6 @@ watch(
     scenarios,
   ],
   () => {
-    overlay.enable();
     // TODO: For optimization, other than initial run, only run projection for the specific scenario when a new scenario is added or when the edit for a scenario is done.
     // Check diff from old and new scenarios data and only run the projection for a scenario if necessary.
     // When a scenario is deleted, just remove the projection for that scenario from the projection data.
@@ -489,7 +486,6 @@ watch(
       temporalResolutionOption.value,
       scenarios.value
     );
-    overlay.disable();
   }
 );
 
@@ -514,7 +510,6 @@ watch(
     selectedCountries,
   ],
   () => {
-    overlay.enable();
     runMultipleCountryProjections(
       indexTree.tree.value,
       historicalDataForSelectedCountries.value,
@@ -522,7 +517,6 @@ watch(
       temporalResolutionOption.value,
       selectedCountries.value
     );
-    overlay.disable();
   }
 );
 
