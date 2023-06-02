@@ -83,7 +83,10 @@ build:
     # Build and push the docker image
     - >
       if [ ${CI_PIPELINE_SOURCE} != "merge_request_event" ]; then
-        docker buildx create --use --name ciBuilder
-        docker buildx inspect --bootstrap
-        VERSION=${DOCKER_TAG} docker buildx bake causemos --push --provenance=false
+        DOCKER_PARAMS=" --push --provenance=false"
+      else
+        DOCKER_PARAMS=""
       fi
+      docker buildx create --use --name ciBuilder
+      docker buildx inspect --bootstrap
+      VERSION=${DOCKER_TAG} docker buildx bake causemos${DOCKER_PARAMS}
