@@ -8,7 +8,7 @@ stages:
   only:
     - main
     - merge_requests
-  image: docker-hub.uncharted.software/mhart/alpine-node:16
+  image: docker-hub.uncharted.software/node:18-alpine
   cache:
     paths:
       - node_modules/
