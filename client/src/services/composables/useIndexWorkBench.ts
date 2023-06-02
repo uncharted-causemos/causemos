@@ -106,6 +106,8 @@ export default function useIndexWorkBench() {
     findAndAddNewChild,
     findAndAddChild,
     attachDatasetToNode,
+    detachDatasetFromNode,
+    revertNode,
     setDatasetIsInverted,
     containsElement,
   } = createIndexTreeActions({ findNode, onSuccess: triggerUpdate });
@@ -130,6 +132,8 @@ export default function useIndexWorkBench() {
     findAndAddChild,
     setDatasetIsInverted,
     attachDatasetToNode,
+    detachDatasetFromNode,
+    revertNode,
     getAnalysisId,
     deleteEdge,
     popItem,

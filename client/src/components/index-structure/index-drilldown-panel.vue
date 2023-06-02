@@ -211,7 +211,7 @@ import {
   isConceptNodeWithDatasetAttached,
   isEdge,
 } from '@/utils/index-tree-util';
-import { OptionButtonMenu } from '@/utils/index-common-util';
+import { OptionButtonMenu, MENU_OPTIONS } from '@/utils/index-common-util';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { NEGATIVE_COLOR, POSITIVE_COLOR } from '@/utils/colors-util';
@@ -250,18 +250,12 @@ const isPolarityOppositeOptions = [
 
 // Options button
 
-const optionsButtonMenu = [
-  {
-    type: OptionButtonMenu.Duplicate,
-    text: 'Duplicate',
-    icon: 'fa-copy',
-  },
-  {
-    type: OptionButtonMenu.Delete,
-    text: 'Delete',
-    icon: 'fa-trash',
-  },
-];
+const optionsButtonMenu = computed(() => {
+  if (selectedNode.value !== null && isConceptNodeWithDatasetAttached(selectedNode.value)) {
+    return [MENU_OPTIONS.RENAME, MENU_OPTIONS.DUPLICATE, MENU_OPTIONS.REMOVE_DATASET];
+  }
+  return [MENU_OPTIONS.DUPLICATE, MENU_OPTIONS.DELETE];
+});
 
 const edgeOptionsButtonMenu = [
   {
@@ -291,6 +285,12 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
     case OptionButtonMenu.Delete:
       workbench.findAndDeleteItem(node.id);
       indexTree.findAndDelete(node.id);
+      break;
+    case OptionButtonMenu.RemoveDataset:
+      workbench.detachDatasetFromNode(node.id);
+      indexTree.detachDatasetFromNode(node.id);
+      break;
+    default:
       break;
   }
 };

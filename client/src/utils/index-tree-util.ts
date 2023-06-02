@@ -397,9 +397,83 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     //  object from the parent's component list and then adding the new object to the component
     //  list. We should replace this shortcut with the real thing, since we need to include logic
     //  here to manually ensure the result doesn't have properties from both node types.
+
     Object.assign(node, datasetNode);
     // @ts-ignore
     delete node.components;
+
+    // Parent should never be null unless we found a disconnected node.
+    if (parent !== null) {
+      // Update unset siblings with their new auto-balanced weight
+      parent.components = rebalanceInputWeights(parent.components);
+    }
+    onSuccess();
+  };
+
+  /**
+   * Detach dataset and set node to a "select options" state.
+   * @param nodeId
+   */
+  const detachDatasetFromNode = (nodeId: string) => {
+    const foundResult = findNode(nodeId) ?? null;
+    if (foundResult === null) {
+      return;
+    }
+    const { found: node, parent } = foundResult;
+
+    const nodeWithoutDataset: ConceptNodeWithoutDataset = {
+      // Set starting values for new dataset node
+      // Store values from the search result and pre-calculated starting weight
+      id: node.id,
+      name: node.name,
+      components: [],
+      isOutputNode: false,
+    };
+    // HACK: Update the `node` object's properties in place, as a shortcut to removing the old
+    //  object from the parent's component list and then adding the new object to the component
+    //  list. We should replace this shortcut with the real thing, since we need to include logic
+    //  here to manually ensure the result doesn't have properties from both node types.
+    Object.assign(node, nodeWithoutDataset);
+
+    // @ts-ignore
+    delete node.dataset;
+
+    // Parent should never be null unless we found a disconnected node.
+    if (parent !== null) {
+      // Update unset siblings with their new auto-balanced weight
+      parent.components = rebalanceInputWeights(parent.components);
+    }
+    onSuccess();
+  };
+
+  /**
+   * Clear the node back to an initial state.
+   * @param nodeId
+   */
+  const revertNode = (nodeId: string) => {
+    const foundResult = findNode(nodeId) ?? null;
+    if (foundResult === null) {
+      return;
+    }
+    const { found: node, parent } = foundResult;
+
+    const nodeWithoutDataset: ConceptNodeWithoutDataset = {
+      // Set starting values for new dataset node
+      // Store values from the search result and pre-calculated starting weight
+      id: node.id,
+      name: '',
+      components: [],
+      isOutputNode: false,
+    };
+    // HACK: Update the `node` object's properties in place, as a shortcut to removing the old
+    //  object from the parent's component list and then adding the new object to the component
+    //  list. We should replace this shortcut with the real thing, since we need to include logic
+    //  here to manually ensure the result doesn't have properties from both node types.
+    Object.assign(node, nodeWithoutDataset);
+
+    // @ts-ignore
+    delete node.dataset;
+
     // Parent should never be null unless we found a disconnected node.
     if (parent !== null) {
       // Update unset siblings with their new auto-balanced weight
@@ -431,6 +505,8 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     findAndAddNewChild,
     findAndAddChild,
     attachDatasetToNode,
+    revertNode,
+    detachDatasetFromNode,
     setDatasetIsInverted,
     containsElement,
   };
