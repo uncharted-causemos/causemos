@@ -5,15 +5,12 @@ import _ from 'lodash';
 
 export default function useScenarios(
   indexProjectionSettings: Ref<IndexProjectionSettings>,
-  updateIndexProjectionSettings: (settings: IndexProjectionSettings) => void
+  updateIndexProjectionSettings: (settings: Partial<IndexProjectionSettings>) => void
 ) {
   const scenarios = computed(() => indexProjectionSettings.value.scenarios);
   const scenarioBeingEdited = ref<IndexProjectionScenario | null>(null);
   const updateScenarios = (scenarios: IndexProjectionScenario[]) => {
-    updateIndexProjectionSettings({
-      ...indexProjectionSettings.value,
-      scenarios,
-    });
+    updateIndexProjectionSettings({ scenarios });
   };
   const getAvailableScenarioColor = () => {
     const usedColors = scenarios.value.map((scenario) => scenario.color);
