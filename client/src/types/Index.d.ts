@@ -2,6 +2,8 @@ import { COLOR } from '@/utils/colors-util';
 import { DataConfig } from '@/types/Datacube';
 import { DiscreteOuputScale } from '@/types/Enums';
 import type { WeightedComponent } from '@/types/WeightedComponent';
+import { ForecastMethod, ForecastResult } from '@/utils/forecast';
+import { NodeProjectionType } from '@/utils/projection-util';
 
 export interface DatasetSearchResult {
   displayName: string;
@@ -103,9 +105,27 @@ export interface GridCell {
 /**
  * An object representing a clamp
  */
-export interface IndexProjectionConstraint {
+export interface ProjectionConstraint {
   timestamp: number;
   value: number;
+}
+
+export type ProjectionResults = {
+  [nodeId: string]: TimeseriesPointProjected[];
+};
+
+export type ProjectionRunInfo = {
+  [nodeId: string]: ForecastResult<ForecastMethod> | { method: NodeProjectionType };
+};
+
+/**
+ * An object representing a projection result
+ */
+export interface IndexProjection {
+  id: string; // An unique identifier, it can be scenario id or country name
+  name: string;
+  color: string;
+  result: ProjectionResults;
 }
 
 /**
@@ -118,7 +138,7 @@ export interface IndexProjectionScenario {
   isVisible: boolean;
   color: string;
   isDefault: boolean;
-  constraints: { [nodeId: string]: IndexProjectionConstraint[] };
+  constraints: { [nodeId: string]: ProjectionConstraint[] };
 }
 
 /**

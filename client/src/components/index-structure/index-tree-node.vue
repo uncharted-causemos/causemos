@@ -119,7 +119,7 @@ import {
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
 import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
-import { OptionButtonMenu } from '@/utils/index-common-util';
+import { OptionButtonMenu, MENU_OPTIONS } from '@/utils/index-common-util';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { useRoute, useRouter } from 'vue-router';
@@ -142,6 +142,8 @@ const emit = defineEmits<{
   (e: 'duplicate', duplicated: ConceptNode): void;
   (e: 'select', nodeId: string): void;
   (e: 'create-child', parentNodeId: string): void;
+  (e: 'detach-dataset', nodeId: string): void;
+  (e: 'switch-dataset', nodeId: string): void;
   (
     e: 'attach-dataset',
     nodeId: string,
@@ -221,34 +223,22 @@ const handleRenameDone = () => {
   renameInputText.value = '';
 };
 
-// Options button
-
-const MENU_OPTION_RENAME = {
-  type: OptionButtonMenu.Rename,
-  text: 'Rename',
-  icon: 'fa-pencil',
-};
-
-const MENU_OPTION_DUPLICATE = {
-  type: OptionButtonMenu.Duplicate,
-  text: 'Duplicate',
-  icon: 'fa-copy',
-};
-
-const MENU_OPTION_DELETE = {
-  type: OptionButtonMenu.Delete,
-  text: 'Delete',
-  icon: 'fa-trash',
-};
-
 const optionsButtonMenu = computed(() => {
   if (props.nodeData.isOutputNode) {
-    return [MENU_OPTION_RENAME];
+    return [MENU_OPTIONS.RENAME];
   }
   if (showEditName.value) {
-    return [MENU_OPTION_DELETE];
+    return [MENU_OPTIONS.DELETE];
   }
-  return [MENU_OPTION_RENAME, MENU_OPTION_DUPLICATE, MENU_OPTION_DELETE];
+  if (isConceptNodeWithDatasetAttached(props.nodeData)) {
+    return [
+      MENU_OPTIONS.RENAME,
+      MENU_OPTIONS.DUPLICATE,
+      MENU_OPTIONS.DELETE,
+      MENU_OPTIONS.REMOVE_DATASET,
+    ];
+  }
+  return [MENU_OPTIONS.RENAME, MENU_OPTIONS.DUPLICATE, MENU_OPTIONS.DELETE];
 });
 
 const handleOptionsButtonClick = (option: OptionButtonMenu) => {
@@ -262,6 +252,12 @@ const handleOptionsButtonClick = (option: OptionButtonMenu) => {
       break;
     case OptionButtonMenu.Delete:
       emit('delete', props.nodeData);
+      break;
+    case OptionButtonMenu.ChangeDataset:
+      emit('detach-dataset', props.nodeData.id); // menu option has been removed for now, to be reassessed later
+      break;
+    case OptionButtonMenu.RemoveDataset:
+      emit('switch-dataset', props.nodeData.id);
       break;
     default:
       break;
@@ -301,7 +297,13 @@ const seeResults = () => {
 
 const disableInteraction = ref(false);
 // Whenever the data for this node changes (e.g. when attaching a dataset), re-enable interactions.
-watch([props.nodeData], () => (disableInteraction.value = false));
+watch(
+  () => props.nodeData,
+  () => {
+    disableInteraction.value = false;
+  },
+  { deep: true }
+);
 const isSearchingForDataset = ref(false);
 
 const showDatasetSearch = computed(

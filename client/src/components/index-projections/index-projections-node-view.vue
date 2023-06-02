@@ -10,7 +10,7 @@
           :node-data="inputComponent.componentNode"
           :projection-start-timestamp="projectionStartTimestamp"
           :projection-end-timestamp="projectionEndTimestamp"
-          :timeseries="getProjectionsForNode(inputComponent.componentNode.id)"
+          :timeseries="getProjectionsForNode(projectionData, inputComponent.componentNode.id)"
           @select="emit('select-element', inputComponent.componentNode.id)"
         />
         <div
@@ -36,7 +36,9 @@
         :node-data="selectedNode.found"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
-        :timeseries="getProjectionsForNode(selectedNode.found.id)"
+        :timeseries="getProjectionsForNode(projectionData, selectedNode.found.id)"
+        :edit-mode="projectionForScenarioBeingEdited !== null ? EditMode.Constraints : undefined"
+        @click-chart="(...params) => emit('click-chart', ...params)"
       />
       <div
         class="edge outgoing last-child"
@@ -56,7 +58,7 @@
           :node-data="parentNode"
           :projection-start-timestamp="projectionStartTimestamp"
           :projection-end-timestamp="projectionEndTimestamp"
-          :timeseries="getProjectionsForNode(parentNode.id)"
+          :timeseries="getProjectionsForNode(projectionData, parentNode.id)"
           @select="emit('select-element', parentNode.id)"
         />
       </div>
@@ -69,20 +71,22 @@ import useIndexTree from '@/services/composables/useIndexTree';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { computed } from 'vue';
 import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
-import { SelectableIndexElementId } from '@/types/Index';
+import { getProjectionsForNode } from '@/utils/index-projection-util';
+import { IndexProjection, SelectableIndexElementId } from '@/types/Index';
 import IndexProjectionsNode from './index-projections-node.vue';
-import IndexProjectionsExpandedNode from './index-projections-expanded-node.vue';
-import { TimeseriesPointProjected } from '@/types/Timeseries';
+import IndexProjectionsExpandedNode, { EditMode } from './index-projections-expanded-node.vue';
 
 const props = defineProps<{
   selectedNodeId: string | null;
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
-  projections: Map<string, TimeseriesPointProjected[]>;
+  projections: IndexProjection[];
+  projectionForScenarioBeingEdited: IndexProjection | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
+  (e: 'click-chart', timestamp: number, value: number): void;
 }>();
 
 const { findNode } = useIndexTree();
@@ -92,6 +96,11 @@ const searchForNode = (id: string) => {
   const foundInTree = findNode(id);
   return foundInTree ?? workbench.findNode(id);
 };
+const projectionData = computed(() => {
+  return !props.projectionForScenarioBeingEdited
+    ? props.projections
+    : [props.projectionForScenarioBeingEdited];
+});
 const selectedNode = computed(() => {
   if (props.selectedNodeId === null) {
     return null;
@@ -113,10 +122,6 @@ const isOutgoingEdgeOppositePolarity = computed(() => {
   );
   return selectedNodeComponent !== undefined && selectedNodeComponent.isOppositePolarity;
 });
-
-const getProjectionsForNode = (nodeId: string) => {
-  return props.projections.get(nodeId) ?? [];
-};
 </script>
 
 <style lang="scss" scoped>

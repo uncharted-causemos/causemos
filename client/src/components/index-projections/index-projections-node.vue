@@ -50,13 +50,13 @@ import {
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import IndexProjectionsNodeTimeseries from './index-projections-node-timeseries.vue';
-import { TimeseriesPointProjected } from '@/types/Timeseries';
+import { ProjectionTimeseries } from '@/types/Timeseries';
 
 const props = defineProps<{
   nodeData: ConceptNode;
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
-  timeseries: TimeseriesPointProjected[];
+  timeseries: ProjectionTimeseries[];
 }>();
 
 const emit = defineEmits<{
