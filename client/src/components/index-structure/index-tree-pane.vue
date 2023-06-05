@@ -291,10 +291,12 @@ const searchForNode = (id: string) => {
       }
     }
   }
+}
 
-  .input-arrow {
-    @include arrow-head();
-  }
+.input-arrow {
+  @include arrow-head();
+  margin-top: 9px;
+  border-left-color: $positive;
 }
 
 .edge {
