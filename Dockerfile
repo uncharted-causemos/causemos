@@ -10,7 +10,7 @@ ADD ./yarn.lock /client/yarn.lock
 ADD ./client/package.json /client/package.json
 WORKDIR /client
 # In order to build the client, we need dev dependencies, so yarn install without the --prod flag
-RUN yarn install
+RUN yarn install --network-timeout 100000
 # Add client files
 ADD ./client /client
 # Build client (Give node.js process enough memory since the default memory limit doesn't seem to be enough to run vite build)
@@ -20,7 +20,7 @@ FROM  docker-hub.uncharted.software/node:18-alpine
 ADD ./yarn.lock /server/yarn.lock
 ADD ./server/package.json /server/package.json
 WORKDIR /server
-RUN yarn install --prod
+RUN yarn install --prod --network-timeout 100000
 # Copy client files
 COPY --from=clientBuilder /client/dist /server/public/app
 # Add server files
