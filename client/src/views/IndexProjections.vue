@@ -372,87 +372,6 @@ const onDoneEditingTimeRange = () => {
   saveProjectionDates();
 };
 
-const { setContextId, setDataState, setViewState } = useInsightStore();
-onMounted(() => {
-  setContextId(analysisId.value + '--projections');
-});
-
-// Whenever state changes, sync it to insight panel store so that the latest state is captured when
-//  taking an insight.
-watch(
-  [
-    isSingleCountryModeActive,
-    selectedCountry,
-    projectionStartYear,
-    projectionStartMonth,
-    projectionEndYear,
-    projectionEndMonth,
-    selectedNodeId,
-  ],
-  () => {
-    const newDataState: IndexProjectionsDataState = {
-      isSingleCountryModeActive: isSingleCountryModeActive.value,
-      selectedCountry: selectedCountry.value,
-      projectionStartYear: projectionStartYear.value,
-      projectionStartMonth: projectionStartMonth.value,
-      projectionEndYear: projectionEndYear.value,
-      projectionEndMonth: projectionEndMonth.value,
-      selectedNodeId: selectedNodeId.value,
-    };
-    setDataState(newDataState);
-    // No view state for this page. Set it to an empty object so that any view state from previous
-    //  pages is cleared and not associated with insights taken from this page.
-    setViewState({});
-  },
-  { immediate: true }
-);
-const toaster = useToaster();
-const updateStateFromInsight = async (insightId: string) => {
-  const loadedInsight: Insight = await getInsightById(insightId);
-  const dataState = loadedInsight?.data_state;
-  if (!dataState || !isIndexProjectionsDataState(dataState)) {
-    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
-    return;
-  }
-  updateIndexProjectionSettings({
-    isSingleCountryModeActive: dataState.isSingleCountryModeActive,
-    selectedCountry: dataState.selectedCountry,
-  });
-  projectionStartYear.value = dataState.projectionStartYear;
-  projectionStartMonth.value = dataState.projectionStartMonth;
-  projectionEndYear.value = dataState.projectionEndYear;
-  projectionEndMonth.value = dataState.projectionEndMonth;
-  saveProjectionDates();
-  if (dataState.selectedNodeId !== null && !indexTree.containsElement(dataState.selectedNodeId)) {
-    toaster(
-      'The node that is selected in this insight no longer exists in the analysis.',
-      TYPE.ERROR,
-      true
-    );
-    return;
-  }
-  selectedNodeId.value = dataState.selectedNodeId;
-};
-
-watch(
-  [route],
-  () => {
-    const insight_id = route.query.insight_id as any;
-    if (insight_id !== undefined) {
-      updateStateFromInsight(insight_id);
-      // Remove the insight_id from the url so that
-      //  (1) future insight capture is valid
-      //  (2) we can re-apply the same insight if necessary
-      router
-        .push({
-          query: { insight_id: undefined },
-        })
-        .catch(() => {});
-    }
-  },
-  { immediate: true }
-);
-
 // Scenario Management
 const {
   scenarios,
@@ -508,6 +427,103 @@ const { historicalData: historicalDataForSelectedCountries } = useHistoricalData
 
 const { multipleCountryProjectionData, runMultipleCountryProjections } =
   useMultipleCountryProjections();
+
+const { setContextId, setDataState, setViewState } = useInsightStore();
+onMounted(() => {
+  setContextId(analysisId.value + '--projections');
+});
+
+// Whenever state changes, sync it to insight panel store so that the latest state is captured when
+//  taking an insight.
+watch(
+  [
+    isSingleCountryModeActive,
+    selectedCountry,
+    selectedCountries,
+    scenarios,
+    projectionStartYear,
+    projectionStartMonth,
+    projectionEndYear,
+    projectionEndMonth,
+    selectedNodeId,
+  ],
+  () => {
+    const newDataState: IndexProjectionsDataState = {
+      isSingleCountryModeActive: isSingleCountryModeActive.value,
+      selectedCountry: selectedCountry.value,
+      selectedCountries: selectedCountries.value,
+      scenarios: scenarios.value,
+      projectionStartYear: projectionStartYear.value,
+      projectionStartMonth: projectionStartMonth.value,
+      projectionEndYear: projectionEndYear.value,
+      projectionEndMonth: projectionEndMonth.value,
+      selectedNodeId: selectedNodeId.value,
+    };
+    setDataState(newDataState);
+    // No view state for this page. Set it to an empty object so that any view state from previous
+    //  pages is cleared and not associated with insights taken from this page.
+    setViewState({});
+  },
+  { immediate: true }
+);
+const toaster = useToaster();
+const updateStateFromInsight = async (insightId: string) => {
+  const loadedInsight: Insight = await getInsightById(insightId);
+  const dataState = loadedInsight?.data_state;
+  if (!dataState || !isIndexProjectionsDataState(dataState)) {
+    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
+    return;
+  }
+  // Hide any scenarios that aren't in the insight
+  const scenarioIdsInInsight = dataState.scenarios.map(({ id }) => id);
+  const scenariosToPreserve = scenarios.value.filter(
+    (scenario) => scenarioIdsInInsight.includes(scenario.id) === false
+  );
+  const hiddenPreservedScenarios = scenariosToPreserve.map((scenario) => ({
+    ...scenario,
+    isVisible: false,
+  }));
+  const newScenarioList = [...dataState.scenarios, ...hiddenPreservedScenarios];
+  updateIndexProjectionSettings({
+    isSingleCountryModeActive: dataState.isSingleCountryModeActive,
+    selectedCountry: dataState.selectedCountry,
+    selectedCountries: dataState.selectedCountries,
+    scenarios: newScenarioList,
+  });
+  projectionStartYear.value = dataState.projectionStartYear;
+  projectionStartMonth.value = dataState.projectionStartMonth;
+  projectionEndYear.value = dataState.projectionEndYear;
+  projectionEndMonth.value = dataState.projectionEndMonth;
+  saveProjectionDates();
+  if (dataState.selectedNodeId !== null && !indexTree.containsElement(dataState.selectedNodeId)) {
+    toaster(
+      'The node that is selected in this insight no longer exists in the analysis.',
+      TYPE.ERROR,
+      true
+    );
+    return;
+  }
+  selectedNodeId.value = dataState.selectedNodeId;
+};
+
+watch(
+  [route],
+  () => {
+    const insight_id = route.query.insight_id as any;
+    if (insight_id !== undefined) {
+      updateStateFromInsight(insight_id);
+      // Remove the insight_id from the url so that
+      //  (1) future insight capture is valid
+      //  (2) we can re-apply the same insight if necessary
+      router
+        .push({
+          query: { insight_id: undefined },
+        })
+        .catch(() => {});
+    }
+  },
+  { immediate: true }
+);
 
 watch(
   [
