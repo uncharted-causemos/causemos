@@ -40,7 +40,7 @@
         {{ removedCountries.length === 1 ? 'country' : 'countries' }} are hidden because they are
         not covered by one or more datasets.
       </p>
-      <button class="btn btn-default full-width-btn" @click="showReview = true">
+      <button class="btn btn-default btn-sm review-hidden-button" @click="showReview = true">
         Review hidden {{ removedCountries.length === 1 ? 'country' : 'countries' }}
       </button>
     </div>
@@ -84,7 +84,6 @@ const colorConfig = computed(() =>
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/index-results';
 .index-results-bar-chart-column-container {
-  overflow-y: auto;
   border-right: 1px solid $un-color-black-10;
   gap: 20px;
   padding: 20px;
@@ -104,6 +103,9 @@ header {
 
 .results-rows {
   gap: 40px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 .table-header {
   display: flex;
@@ -118,8 +120,9 @@ header {
 }
 
 .removed-countries {
-  .full-width-btn {
+  .review-hidden-button {
     width: 100%;
+    margin-top: 5px;
   }
 }
 </style>
