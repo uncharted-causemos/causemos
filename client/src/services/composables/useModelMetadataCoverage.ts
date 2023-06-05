@@ -19,11 +19,14 @@ export default function useModelMetadataCoverage(
   const sparkline = ref<number[]>([]);
 
   watch([metadata, outputVariable], async () => {
-    if (!metadata?.value) return;
-    const output = getOutput(
-      metadata.value,
-      outputVariable.value ?? metadata.value.default_feature
-    );
+    if (!metadata?.value || outputVariable.value === null) return;
+    const output = getOutput(metadata.value, outputVariable.value);
+    if (output === undefined) {
+      // outputVariable is not found in the metadata for a brief moment before metadata is fetched.
+      //  Return early to avoid an unnecessary failed attempt to fetch the sparkline for the newly-
+      //  updated feature that doesn't exist in the previously selected dataset.
+      return;
+    }
     sparkline.value = await getSparkline(
       {
         modelId: metadata.value.data_id,

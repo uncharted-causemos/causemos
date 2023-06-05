@@ -33,6 +33,7 @@ const defaultScenario: IndexProjectionScenario = {
 export const createNewIndexProjectionSettings = (): IndexProjectionSettings => {
   return {
     scenarios: [defaultScenario],
+    isSingleCountryModeActive: true,
     selectedCountry: NO_COUNTRY_SELECTED_VALUE,
     selectedCountries: [
       { name: NO_COUNTRY_SELECTED_VALUE, color: TIMESERIES_COLORS[0] },
