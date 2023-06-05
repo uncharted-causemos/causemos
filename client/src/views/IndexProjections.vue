@@ -49,7 +49,7 @@
           class="subsection"
           :scenarios="scenarios"
           :max-scenarios="MAX_NUM_TIMESERIES"
-          @create="createScenario"
+          @create="createAndEditScenario"
           @duplicate="duplicateScenario"
           @edit="enableEditingScenario"
           @delete="deleteScenario"
@@ -142,7 +142,7 @@
         <div v-if="scenarioBeingEdited !== null" class="editing-ui-group">
           <label
             >Editing
-            <input type="text" v-model="scenarioBeingEdited.name" />
+            <input type="text" v-model="scenarioBeingEdited.name" v-focus />
           </label>
           <label class="flex-grow"
             >Description
@@ -457,7 +457,6 @@ watch(
 const {
   scenarios,
   scenarioBeingEdited,
-  createScenario,
   duplicateScenario,
   toggleScenarioVisibility,
   deleteScenario,
@@ -465,6 +464,7 @@ const {
   cancelEditingScenario,
   finishEditingScenario,
   updateScenarioConstraints,
+  createAndEditScenario,
 } = useScenarios(indexProjectionSettings, updateIndexProjectionSettings);
 
 const onNodeChartClick = (timestamp: number, value: number) => {
