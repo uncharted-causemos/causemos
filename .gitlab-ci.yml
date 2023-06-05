@@ -87,6 +87,6 @@ build:
       else
         DOCKER_PARAMS=""
       fi
-      docker buildx create --use --name ciBuilder
-      docker buildx inspect --bootstrap
-      VERSION=${DOCKER_TAG} docker buildx bake causemos${DOCKER_PARAMS}
+    - docker buildx create --use --name ciBuilder
+    - docker buildx inspect --bootstrap
+    - VERSION=${DOCKER_TAG} docker buildx bake causemos${DOCKER_PARAMS}
