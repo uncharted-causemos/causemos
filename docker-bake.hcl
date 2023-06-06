@@ -38,14 +38,10 @@ target "_platforms" {
   platforms = ["linux/amd64", "linux/arm64"]
 }
 
-target "causemos-base" {
+target "causemos" {
 	context = "."
 	tags = tag("causemos", "", "")
 	dockerfile = "Dockerfile"
-}
-
-target "causemos" {
-  inherits = ["_platforms", "causemos-base"]
 }
 
 target "causemos-ci-base" {
