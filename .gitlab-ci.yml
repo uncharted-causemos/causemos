@@ -70,8 +70,6 @@ build:
   dependencies:
     - environment
   image: docker.uncharted.software/worldmodeler/causemos-ci:1.0.0
-  services:
-    - docker:dind
   variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_DRIVER: overlay2

@@ -1,4 +1,4 @@
-FROM docker-hub.uncharted.software/jdrouet/docker-with-buildx:0.9
+FROM docker-hub.uncharted.software/docker:dind
 
 RUN apk update && \
     apk upgrade && \
