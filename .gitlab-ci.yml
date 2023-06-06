@@ -70,7 +70,10 @@ build:
   dependencies:
     - environment
   image: docker.uncharted.software/worldmodeler/causemos-ci:1.0.0
+  services:
+    - docker:dind
   variables:
+    DOCKER_HOST: tcp://docker:2375/
     DOCKER_DRIVER: overlay2
   before_script:
     - docker info
@@ -87,6 +90,6 @@ build:
       else
         DOCKER_PARAMS=""
       fi
-    - docker buildx create --use --name ciBuilder
+    - docker buildx create --use
     - docker buildx inspect --bootstrap
     - VERSION=${DOCKER_TAG} docker buildx bake causemos ${DOCKER_PARAMS}
