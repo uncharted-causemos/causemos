@@ -14,7 +14,7 @@ RUN yarn install --network-timeout 600000
 # Add client files
 ADD ./client /client
 # Build client (Give node.js process enough memory since the default memory limit doesn't seem to be enough to run vite build)
-RUN NODE_OPTIONS=--max_old_space_size=4096 yarn run build --network-timeout 600000
+RUN NODE_OPTIONS=--max_old_space_size=4096 yarn run build
 
 FROM  docker-hub.uncharted.software/node:18-alpine
 RUN apk update && apk upgrade
