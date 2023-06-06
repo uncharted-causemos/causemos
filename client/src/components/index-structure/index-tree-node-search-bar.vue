@@ -91,6 +91,7 @@ import {
   DojoFeatureSearchResult,
 } from '@/services/semantic-feature-search-service';
 import { capitalizeEachWord } from '@/utils/string-util';
+import newDatacubeService from '@/services/new-datacube-service';
 
 const convertFeatureSearchResultToDatasetSearchResult = (
   feature: DojoFeatureSearchResult
@@ -150,18 +151,51 @@ watch([searchText], async () => {
   isFetchingResults.value = true;
   try {
     const dojoFeatureSearchResults = await searchFeatures(queryString);
+
     if (queryString !== searchText.value) {
       // Search text has changed since we started fetching results, so let the more recent call
       //  modify state.
       return;
     }
-    results.value = dojoFeatureSearchResults.map(convertFeatureSearchResultToDatasetSearchResult);
+    const unverifiedResults = dojoFeatureSearchResults.map(
+      convertFeatureSearchResultToDatasetSearchResult
+    );
+    results.value = await verifySearchFeatures(unverifiedResults);
+
     isFetchingResults.value = false;
   } catch (e) {
     console.error('Unable to fetch search results for query', searchText.value);
     console.error(e);
   }
 });
+
+/**
+ * Ensure the system contains valid processed data before showing the user an option to select.
+ * Prevent interface problems associated with incorrect/unavailable data.
+ *
+ * Basically, we pre-run the datacube query ahead of user mouse actions to verify a return.
+ * Don't show the users options that fail to resolve data.
+ *
+ * Note: The reason for this filter is that the data cubes (that are local) may not have processed correctly.
+ * The semantic search is done against a remote (Jataware) service that assumes we have processed the data
+ * correctly and the cube is available.
+ *
+ * @param features
+ */
+const verifySearchFeatures = async (features: DatasetSearchResult[]) => {
+  const verified: any[] = features.map((feature) =>
+    newDatacubeService.getDatacubeByDataIdAndOutputVariable(feature.dataId, feature.outputName)
+  );
+  const allVerified = await Promise.allSettled(verified);
+
+  return features.filter((feature, index) => {
+    const test = allVerified[index];
+    if ('value' in test) {
+      return test.value !== null;
+    }
+    return false;
+  });
+};
 
 /**
  * The currently highlighted result.
@@ -247,9 +281,9 @@ const selectDataset = (dataset: DatasetSearchResult) => {
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/variables';
-@import '~styles/uncharted-design-tokens';
-@import '~styles/common';
+@import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
+@import '@/styles/common';
 
 .search-bar-container {
   padding: 5px 10px;
