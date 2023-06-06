@@ -10,10 +10,9 @@
         <div class="flex action-group">
           <button
             class="btn btn-sm btn-scenario-visible"
-            :class="{ active: scenario.isVisible }"
             @mousedown="(e) => handleScenarioVisibleClick(e, scenario.id)"
           >
-            <i class="fa fa-eye" />
+            <i class="fa" :class="[scenario.isVisible ? 'fa-eye' : 'fa-eye-slash']" />
           </button>
           <button class="btn btn-sm color-box">
             <div :style="{ 'background-color': scenario.color }"></div>
@@ -143,9 +142,6 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
   }
   .scenario-item .btn {
     padding: 2px;
-  }
-  .scenario-item .btn-scenario-visible.active {
-    color: grey;
   }
   .scenario-item .color-box div {
     width: 100%;

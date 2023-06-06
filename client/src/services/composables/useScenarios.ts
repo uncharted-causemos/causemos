@@ -20,7 +20,9 @@ export default function useScenarios(
   const createScenario = () => {
     const color = getAvailableScenarioColor();
     if (!color) return;
-    updateScenarios([...scenarios.value, createNewScenario(undefined, '', color)]);
+    const newScenario = createNewScenario(undefined, '', color);
+    updateScenarios([...scenarios.value, newScenario]);
+    return newScenario.id;
   };
 
   const duplicateScenario = (scenarioId: string) => {
@@ -82,6 +84,13 @@ export default function useScenarios(
     };
   };
 
+  const createAndEditScenario = () => {
+    const newScenarioId = createScenario();
+    if (newScenarioId !== undefined) {
+      enableEditingScenario(newScenarioId);
+    }
+  };
+
   return {
     scenarios,
     scenarioBeingEdited,
@@ -93,5 +102,6 @@ export default function useScenarios(
     cancelEditingScenario,
     finishEditingScenario,
     updateScenarioConstraints,
+    createAndEditScenario,
   };
 }

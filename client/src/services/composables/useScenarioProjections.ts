@@ -16,14 +16,19 @@ export default function useScenarioProjections(
 
   // Watch for change in constraints and update the projection data for the scenario being edited
   watch(constraintsForScenarioBeingEdited, () => {
-    if (!constraintsForScenarioBeingEdited.value || !scenarioBeingEdited.value) {
+    // Create a copy of existing projection data for this scenario
+    const existingProjectionData = projectionData.value.find(
+      (p) => p.id === scenarioBeingEdited.value?.id
+    );
+    if (
+      !constraintsForScenarioBeingEdited.value ||
+      !scenarioBeingEdited.value ||
+      existingProjectionData === undefined
+    ) {
       projectionForScenarioBeingEdited.value = null;
       return;
     }
-    // Create a copy of existing projection data for this scenario
-    const { id, color, name, result } = projectionData.value.find(
-      (p) => p.id === scenarioBeingEdited.value?.id
-    ) as IndexProjection;
+    const { id, color, name, result } = existingProjectionData;
     const updatedProjection: IndexProjection = {
       id,
       color,

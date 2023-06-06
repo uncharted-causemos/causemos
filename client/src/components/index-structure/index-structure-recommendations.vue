@@ -1,6 +1,6 @@
 <template>
   <div class="index-structure-recommendations-container">
-    <p class="subdued title">{{ title }}</p>
+    <p v-if="parentNode !== null" class="subdued title">{{ title }}</p>
     <div
       v-for="recommendation of recommendationsToDisplay"
       :key="recommendation"
