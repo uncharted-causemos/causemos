@@ -89,5 +89,5 @@ build:
       fi
     - docker buildx create --use --name ciBuilder
     - docker buildx inspect --bootstrap
-    - VERSION=${DOCKER_TAG} docker buildx bake causemos --platform=linux/amd64 ${DOCKER_PARAMS}
-    - VERSION=${DOCKER_TAG} docker buildx bake causemos --platform=linux/arm64 ${DOCKER_PARAMS}
+    - VERSION=${DOCKER_TAG} docker buildx bake causemos --set causemos.platform=linux/amd64 ${DOCKER_PARAMS}
+    - VERSION=${DOCKER_TAG} docker buildx bake causemos --set causemos.platform=linux/arm64 ${DOCKER_PARAMS}
