@@ -139,6 +139,8 @@ const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVar
 </script>
 
 <style lang="scss" scoped>
+@use 'sass:math';
+
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/index-graph';
 @import '@/styles/common';
@@ -176,7 +178,7 @@ $horizontal-margin: 30px;
   $chartPadding: 20px;
   $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
   width: $timeseriesWidth;
-  height: 1 / 4 * $timeseriesWidth + 40px;
+  height: math.div(1, 4) * $timeseriesWidth + 40px;
   margin-top: 5px;
   margin-left: $horizontal-margin - $chartPadding;
 
