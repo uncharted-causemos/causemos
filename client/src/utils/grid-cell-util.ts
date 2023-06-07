@@ -27,6 +27,7 @@ export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
     depth: number,
     isRootNode: boolean,
     isLastChild: boolean,
+    isFirstChild: boolean,
     isOppositePolarity: boolean
   ) => {
     const currentCell: GridCell = {
@@ -39,6 +40,7 @@ export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
       rowCount: 1,
       hasOutputLine: !isRootNode,
       isLastChild,
+      isFirstChild,
       isOppositePolarity,
     };
     // If this is a leaf node:
@@ -56,12 +58,14 @@ export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
     const lastChildArrayPosition = currentNode.components.length - 1;
     currentNode.components.forEach((input, i) => {
       const isLastChild = i === lastChildArrayPosition;
+      const isFirstChild = i === 0;
       // Call the helper function with the same depth for each child, one greater than the parent.
       const cells = _convertTreeToGridCells(
         input.componentNode,
         depth + 1,
         false,
         isLastChild,
+        isFirstChild,
         input.isOppositePolarity
       );
       directChildCells.push(cells[0]);
@@ -73,7 +77,7 @@ export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
     currentCell.rowCount = _.sumBy(directChildCells, (child) => child.rowCount);
     return [currentCell, ...descendentCells];
   };
-  return _convertTreeToGridCells(tree, 0, true, false, false);
+  return _convertTreeToGridCells(tree, 0, true, false, false, false);
 };
 
 /**
@@ -219,3 +223,34 @@ export const getOutgoingEdgeClassObject = (
   'polarity-negative': cell.isOppositePolarity,
   'next-sibling-polarity-negative': isNextSiblingPolarityNegative(cell.node.id, searchForNode),
 });
+
+/**
+ * Generate a "hit-box" for mouse events over the connecting edges that better reflect the actual edge action space.
+ * The box should be transparent, over the desired edge and intercept the mouse events required for highlighting and
+ * selecting edges.
+ *
+ * @param cell
+ * @param gridCellElements
+ */
+export const getHitBoxStyle = (cell: GridCell, gridCellElements: HTMLElement[]) => {
+  const firstOffset = 15;
+  const columnCells = gridCellElements.filter(
+    (el) => parseInt(el.style.gridColumn.split('/')[0].trim()) === cell.startColumn
+  );
+  const matchIndex = columnCells.findIndex(
+    (el) => parseInt(el.style.gridRow.split('/')[0].trim()) === cell.startRow
+  );
+
+  let height = firstOffset;
+  if (matchIndex > 0) {
+    height = columnCells[matchIndex].offsetTop - columnCells[matchIndex - 1].offsetTop;
+  }
+
+  return {
+    position: 'absolute',
+    top: cell.isFirstChild ? '0' : `-${height - firstOffset}px`,
+    right: '-20px',
+    width: '40px',
+    height: `${height}px`,
+  };
+};

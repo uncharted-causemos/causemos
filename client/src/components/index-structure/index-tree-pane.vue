@@ -9,6 +9,7 @@
   >
     <div
       v-for="cell in gridCells"
+      ref="gridCellElements"
       :key="cell.node.id"
       :style="{
         'grid-row': `${cell.startRow} / span ${cell.rowCount}`,
@@ -44,9 +45,6 @@
         v-if="!cell.node.isOutputNode && cell.hasOutputLine"
         class="edge outgoing"
         :class="getOutgoingEdgeClassObject(cell, selectedElementId, highlightEdgeId, searchForNode)"
-        @mouseenter="() => !isConnecting && handleMouseEnter(cell.node.id)"
-        @mouseleave="highlightClear"
-        @click="() => !isConnecting && handleMouseClick(cell.node.id)"
       />
       <div
         v-if="!cell.node.isOutputNode && !cell.hasOutputLine"
@@ -62,12 +60,19 @@
         <div class="edge outgoing visible last-child"></div>
         <div class="input-arrow"></div>
       </div>
+      <div
+        v-if="!cell.node.isOutputNode && cell.hasOutputLine"
+        class="hit-box"
+        :style="getHitBoxStyle(cell, gridCellElements as HTMLElement[])"
+        @mouseenter="() => !isConnecting && handleMouseEnter(cell.node.id)"
+        @mouseleave="highlightClear"
+        @click="() => !isConnecting && handleMouseClick(cell.node.id)"
+      ></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import _ from 'lodash';
 import { computed, ref } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import {
@@ -81,6 +86,7 @@ import useIndexTree from '@/services/composables/useIndexTree';
 import { isOutputIndexNode, isEdge, isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import {
   getGridCellsFromIndexTreeAndWorkbench,
+  getHitBoxStyle,
   getIncomingEdgeClassObject,
   getOutgoingEdgeClassObject,
 } from '@/utils/grid-cell-util';
@@ -97,6 +103,7 @@ const props = defineProps<{
  */
 const isConnecting = ref<boolean>(false);
 const connectingId = ref<string | null>(null);
+const gridCellElements = ref([]);
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
@@ -301,5 +308,10 @@ const searchForNode = (id: string) => {
 
 .edge {
   @include index-tree-edge();
+}
+
+.hit-box {
+  position: absolute;
+  pointer-events: auto;
 }
 </style>
