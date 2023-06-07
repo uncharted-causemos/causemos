@@ -183,6 +183,17 @@
       <IndexLegend class="legend" :is-projection-space="true" />
     </main>
   </div>
+
+  <modal-confirmation
+    v-if="isShowingConfirmInsightModal"
+    @confirm="confirmUpdateStateFromInsight"
+    @close="isShowingConfirmInsightModal = false"
+  >
+    <template #title>Are you sure you want to overwrite the current scenarios?</template>
+    <template #message>
+      <p>Applying this insight will remove some scenarios that don't exist in the insight.</p>
+    </template>
+  </modal-confirmation>
 </template>
 
 <script setup lang="ts">
@@ -199,6 +210,7 @@ import IndexProjectionsNodeView from '@/components/index-projections/index-proje
 import { SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
+import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import timestampFormatter from '@/formatters/timestamp-formatter';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
@@ -467,28 +479,40 @@ watch(
   { immediate: true }
 );
 const toaster = useToaster();
-const updateStateFromInsight = async (insightId: string) => {
+const isShowingConfirmInsightModal = ref(false);
+const insightDataState = ref<IndexProjectionsDataState | null>(null);
+const tryToUpdateStateFromInsight = async (insightId: string) => {
   const loadedInsight: Insight = await getInsightById(insightId);
   const dataState = loadedInsight?.data_state;
   if (!dataState || !isIndexProjectionsDataState(dataState)) {
     toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
     return;
   }
-  // Hide any scenarios that aren't in the insight
+  // Need to store dataState in the component's state since confirmUpdateStateFromInsight may be
+  //  called from a confirmation modal.
+  insightDataState.value = dataState;
+  // Prompt the user for confirmation if some scenarios will be removed.
   const scenarioIdsInInsight = dataState.scenarios.map(({ id }) => id);
-  const scenariosToPreserve = scenarios.value.filter(
+  const scenariosThatWillBeRemoved = scenarios.value.filter(
     (scenario) => scenarioIdsInInsight.includes(scenario.id) === false
   );
-  const hiddenPreservedScenarios = scenariosToPreserve.map((scenario) => ({
-    ...scenario,
-    isVisible: false,
-  }));
-  const newScenarioList = [...dataState.scenarios, ...hiddenPreservedScenarios];
+  if (scenariosThatWillBeRemoved.length === 0) {
+    confirmUpdateStateFromInsight();
+    return;
+  }
+  isShowingConfirmInsightModal.value = true;
+};
+
+const confirmUpdateStateFromInsight = () => {
+  const dataState = insightDataState.value;
+  isShowingConfirmInsightModal.value = false;
+  insightDataState.value = null;
+  if (dataState === null) return;
   updateIndexProjectionSettings({
     isSingleCountryModeActive: dataState.isSingleCountryModeActive,
     selectedCountry: dataState.selectedCountry,
     selectedCountries: dataState.selectedCountries,
-    scenarios: newScenarioList,
+    scenarios: [...dataState.scenarios],
   });
   projectionStartYear.value = dataState.projectionStartYear;
   projectionStartMonth.value = dataState.projectionStartMonth;
@@ -511,7 +535,7 @@ watch(
   () => {
     const insight_id = route.query.insight_id as any;
     if (insight_id !== undefined) {
-      updateStateFromInsight(insight_id);
+      tryToUpdateStateFromInsight(insight_id);
       // Remove the insight_id from the url so that
       //  (1) future insight capture is valid
       //  (2) we can re-apply the same insight if necessary
