@@ -63,7 +63,7 @@
       <div
         v-if="!cell.node.isOutputNode && cell.hasOutputLine"
         class="hit-box"
-        :style="getHitBoxStyle(cell, gridCellElements as HTMLElement[])"
+        :style="getHitBoxStyle(cell, gridCellElementsAsHTML)"
         @mouseenter="() => !isConnecting && handleMouseEnter(cell.node.id)"
         @mouseleave="highlightClear"
         @click="() => !isConnecting && handleMouseClick(cell.node.id)"
@@ -186,6 +186,10 @@ const isSelected = (id: string) => {
 const gridCells = computed<GridCell[]>(() => {
   return getGridCellsFromIndexTreeAndWorkbench(indexTree.tree.value, workbench.items.value);
 });
+
+const gridCellElementsAsHTML = computed<HTMLElement[]>(
+  () => gridCellElements.value as HTMLElement[]
+);
 
 const renameNode = (nodeId: string, newName: string) => {
   workbench.findAndRenameNode(nodeId, newName);

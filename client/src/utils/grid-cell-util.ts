@@ -234,16 +234,18 @@ export const getOutgoingEdgeClassObject = (
  */
 export const getHitBoxStyle = (cell: GridCell, gridCellElements: HTMLElement[]) => {
   const firstOffset = 15;
-  const columnCells = gridCellElements.filter(
-    (el) => parseInt(el.style.gridColumn.split('/')[0].trim()) === cell.startColumn
-  );
-  const matchIndex = columnCells.findIndex(
-    (el) => parseInt(el.style.gridRow.split('/')[0].trim()) === cell.startRow
-  );
+  const columnCells = gridCellElements
+    .filter((el) => parseInt(el.style.gridColumn.split('/')[0].trim()) === cell.startColumn)
+    .sort((e1, e2) => e1.offsetTop - e2.offsetTop);
 
   let height = firstOffset;
-  if (matchIndex > 0) {
-    height = columnCells[matchIndex].offsetTop - columnCells[matchIndex - 1].offsetTop;
+  if (columnCells.length > 1 && !cell.isFirstChild) {
+    const matchIndex = columnCells.findIndex(
+      (el) => parseInt(el.style.gridRow.split('/')[0].trim()) === cell.startRow
+    );
+    if (matchIndex > 0) {
+      height = columnCells[matchIndex].offsetTop - columnCells[matchIndex - 1].offsetTop;
+    }
   }
 
   return {
