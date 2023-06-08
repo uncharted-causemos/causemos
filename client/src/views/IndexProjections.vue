@@ -183,6 +183,17 @@
       <IndexLegend class="legend" :is-projection-space="true" />
     </main>
   </div>
+
+  <modal-confirmation
+    v-if="isShowingConfirmInsightModal"
+    @confirm="confirmUpdateStateFromInsight"
+    @close="isShowingConfirmInsightModal = false"
+  >
+    <template #title>Are you sure you want to overwrite the current scenarios?</template>
+    <template #message>
+      <p>Applying this insight will remove some scenarios that don't exist in the insight.</p>
+    </template>
+  </modal-confirmation>
 </template>
 
 <script setup lang="ts">
@@ -199,6 +210,7 @@ import IndexProjectionsNodeView from '@/components/index-projections/index-proje
 import { SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
+import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import timestampFormatter from '@/formatters/timestamp-formatter';
 import useIndexTree from '@/services/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
@@ -372,87 +384,6 @@ const onDoneEditingTimeRange = () => {
   saveProjectionDates();
 };
 
-const { setContextId, setDataState, setViewState } = useInsightStore();
-onMounted(() => {
-  setContextId(analysisId.value + '--projections');
-});
-
-// Whenever state changes, sync it to insight panel store so that the latest state is captured when
-//  taking an insight.
-watch(
-  [
-    isSingleCountryModeActive,
-    selectedCountry,
-    projectionStartYear,
-    projectionStartMonth,
-    projectionEndYear,
-    projectionEndMonth,
-    selectedNodeId,
-  ],
-  () => {
-    const newDataState: IndexProjectionsDataState = {
-      isSingleCountryModeActive: isSingleCountryModeActive.value,
-      selectedCountry: selectedCountry.value,
-      projectionStartYear: projectionStartYear.value,
-      projectionStartMonth: projectionStartMonth.value,
-      projectionEndYear: projectionEndYear.value,
-      projectionEndMonth: projectionEndMonth.value,
-      selectedNodeId: selectedNodeId.value,
-    };
-    setDataState(newDataState);
-    // No view state for this page. Set it to an empty object so that any view state from previous
-    //  pages is cleared and not associated with insights taken from this page.
-    setViewState({});
-  },
-  { immediate: true }
-);
-const toaster = useToaster();
-const updateStateFromInsight = async (insightId: string) => {
-  const loadedInsight: Insight = await getInsightById(insightId);
-  const dataState = loadedInsight?.data_state;
-  if (!dataState || !isIndexProjectionsDataState(dataState)) {
-    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
-    return;
-  }
-  updateIndexProjectionSettings({
-    isSingleCountryModeActive: dataState.isSingleCountryModeActive,
-    selectedCountry: dataState.selectedCountry,
-  });
-  projectionStartYear.value = dataState.projectionStartYear;
-  projectionStartMonth.value = dataState.projectionStartMonth;
-  projectionEndYear.value = dataState.projectionEndYear;
-  projectionEndMonth.value = dataState.projectionEndMonth;
-  saveProjectionDates();
-  if (dataState.selectedNodeId !== null && !indexTree.containsElement(dataState.selectedNodeId)) {
-    toaster(
-      'The node that is selected in this insight no longer exists in the analysis.',
-      TYPE.ERROR,
-      true
-    );
-    return;
-  }
-  selectedNodeId.value = dataState.selectedNodeId;
-};
-
-watch(
-  [route],
-  () => {
-    const insight_id = route.query.insight_id as any;
-    if (insight_id !== undefined) {
-      updateStateFromInsight(insight_id);
-      // Remove the insight_id from the url so that
-      //  (1) future insight capture is valid
-      //  (2) we can re-apply the same insight if necessary
-      router
-        .push({
-          query: { insight_id: undefined },
-        })
-        .catch(() => {});
-    }
-  },
-  { immediate: true }
-);
-
 // Scenario Management
 const {
   scenarios,
@@ -508,6 +439,115 @@ const { historicalData: historicalDataForSelectedCountries } = useHistoricalData
 
 const { multipleCountryProjectionData, runMultipleCountryProjections } =
   useMultipleCountryProjections();
+
+const { setContextId, setDataState, setViewState } = useInsightStore();
+onMounted(() => {
+  setContextId(analysisId.value + '--projections');
+});
+
+// Whenever state changes, sync it to insight panel store so that the latest state is captured when
+//  taking an insight.
+watch(
+  [
+    isSingleCountryModeActive,
+    selectedCountry,
+    selectedCountries,
+    scenarios,
+    projectionStartYear,
+    projectionStartMonth,
+    projectionEndYear,
+    projectionEndMonth,
+    selectedNodeId,
+  ],
+  () => {
+    const newDataState: IndexProjectionsDataState = {
+      isSingleCountryModeActive: isSingleCountryModeActive.value,
+      selectedCountry: selectedCountry.value,
+      selectedCountries: selectedCountries.value,
+      scenarios: scenarios.value,
+      projectionStartYear: projectionStartYear.value,
+      projectionStartMonth: projectionStartMonth.value,
+      projectionEndYear: projectionEndYear.value,
+      projectionEndMonth: projectionEndMonth.value,
+      selectedNodeId: selectedNodeId.value,
+    };
+    setDataState(newDataState);
+    // No view state for this page. Set it to an empty object so that any view state from previous
+    //  pages is cleared and not associated with insights taken from this page.
+    setViewState({});
+  },
+  { immediate: true }
+);
+const toaster = useToaster();
+const isShowingConfirmInsightModal = ref(false);
+const insightDataState = ref<IndexProjectionsDataState | null>(null);
+const tryToUpdateStateFromInsight = async (insightId: string) => {
+  const loadedInsight: Insight = await getInsightById(insightId);
+  const dataState = loadedInsight?.data_state;
+  if (!dataState || !isIndexProjectionsDataState(dataState)) {
+    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
+    return;
+  }
+  // Need to store dataState in the component's state since confirmUpdateStateFromInsight may be
+  //  called from a confirmation modal.
+  insightDataState.value = dataState;
+  // Prompt the user for confirmation if some scenarios will be removed.
+  const scenarioIdsInInsight = dataState.scenarios.map(({ id }) => id);
+  const scenariosThatWillBeRemoved = scenarios.value.filter(
+    (scenario) => scenarioIdsInInsight.includes(scenario.id) === false
+  );
+  if (scenariosThatWillBeRemoved.length === 0) {
+    confirmUpdateStateFromInsight();
+    return;
+  }
+  isShowingConfirmInsightModal.value = true;
+};
+
+const confirmUpdateStateFromInsight = () => {
+  const dataState = insightDataState.value;
+  isShowingConfirmInsightModal.value = false;
+  insightDataState.value = null;
+  if (dataState === null) return;
+  updateIndexProjectionSettings({
+    isSingleCountryModeActive: dataState.isSingleCountryModeActive,
+    selectedCountry: dataState.selectedCountry,
+    selectedCountries: dataState.selectedCountries,
+    scenarios: [...dataState.scenarios],
+  });
+  projectionStartYear.value = dataState.projectionStartYear;
+  projectionStartMonth.value = dataState.projectionStartMonth;
+  projectionEndYear.value = dataState.projectionEndYear;
+  projectionEndMonth.value = dataState.projectionEndMonth;
+  saveProjectionDates();
+  if (dataState.selectedNodeId !== null && !indexTree.containsElement(dataState.selectedNodeId)) {
+    toaster(
+      'The node that is selected in this insight no longer exists in the analysis.',
+      TYPE.ERROR,
+      true
+    );
+    return;
+  }
+  selectedNodeId.value = dataState.selectedNodeId;
+};
+
+watch(
+  [route],
+  () => {
+    const insight_id = route.query.insight_id as any;
+    if (insight_id !== undefined) {
+      tryToUpdateStateFromInsight(insight_id);
+      // Remove the insight_id from the url so that
+      //  (1) future insight capture is valid
+      //  (2) we can re-apply the same insight if necessary
+      router
+        .push({
+          query: { insight_id: undefined },
+        })
+        .catch(() => {});
+    }
+  },
+  { immediate: true }
+);
 
 watch(
   [

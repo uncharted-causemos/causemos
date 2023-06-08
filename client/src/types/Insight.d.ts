@@ -3,7 +3,7 @@ import { COLOR, ColorScaleType } from '@/utils/colors-util';
 import { DatacubeViewMode, DataTransform } from '@/types/Enums';
 import { Filters } from './Filters';
 import { FeatureConfig } from './Outputdata';
-import { SelectableIndexElementId } from './Index';
+import { IndexProjectionCountry, IndexProjectionScenario, SelectableIndexElementId } from './Index';
 
 // view-specific values (no data dependency)
 export interface ViewState {
@@ -82,6 +82,8 @@ export interface IndexResultsDataState {
 export interface IndexProjectionsDataState {
   isSingleCountryModeActive: boolean;
   selectedCountry: string;
+  selectedCountries: IndexProjectionCountry[];
+  scenarios: IndexProjectionScenario[];
   projectionStartYear: number;
   projectionStartMonth: number;
   projectionEndYear: number;
@@ -95,7 +97,8 @@ export type DataState =
   | QualitativeDataState
   | ModelsSpaceDataState
   | IndexStructureDataState
-  | IndexStructureResultsState;
+  | IndexStructureResultsState
+  | IndexProjectionsDataState;
 
 // @base/abstract type
 export interface Snapshot {
