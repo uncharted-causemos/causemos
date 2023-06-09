@@ -97,6 +97,7 @@ export interface GridCell {
   startColumn: number;
   hasOutputLine: boolean;
   isLastChild: boolean;
+  isFirstChild: boolean;
   isOppositePolarity: boolean;
 }
 
