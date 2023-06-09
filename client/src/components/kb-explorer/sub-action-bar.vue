@@ -13,7 +13,7 @@
     </div>
     <!-- Actions shared across views-->
     <div class="shared-actions">
-      <div>
+      <div v-if="!hideUploadDocumentButton">
         <button
           v-tooltip.top-center="'Add new document'"
           type="button"
@@ -67,6 +67,7 @@ export default defineComponent({
       // KB based states
       filters: 'query/filters',
       view: 'query/view',
+      applicationConfiguration: 'app/applicationConfiguration',
     }),
     showSelfLoop: function () {
       const enable = filtersUtil.findPositiveFacetClause(this.filters, 'enable');
@@ -74,6 +75,13 @@ export default defineComponent({
         return false;
       }
       return true;
+    },
+    hideUploadDocumentButton: function () {
+      const configValue = this.applicationConfiguration.CLIENT__HIDE_ADD_DOCUMENT_BUTTON ?? null;
+      if (configValue !== null) {
+        return configValue;
+      }
+      return false;
     },
   },
   watch: {

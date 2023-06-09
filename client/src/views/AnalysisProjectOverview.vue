@@ -63,7 +63,9 @@
         <div>
           <strong>{{ numberFormatter(numStatements) }}</strong> causal relationships
         </div>
-        <button class="button" @click="showDocumentModal = true">Add Documents</button>
+        <button v-if="!hideUploadDocumentButton" class="button" @click="showDocumentModal = true">
+          Add Documents
+        </button>
         <modal-upload-document
           v-if="showDocumentModal === true"
           @close="showDocumentModal = false"
@@ -290,6 +292,7 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       projectMetadata: 'app/projectMetadata',
+      applicationConfiguration: 'app/applicationConfiguration',
     }),
     filteredAnalyses() {
       return this.analyses.filter((analysis) => {
@@ -298,6 +301,13 @@ export default defineComponent({
     },
     tags() {
       return []; // FIXME
+    },
+    hideUploadDocumentButton: function () {
+      const configValue = this.applicationConfiguration.CLIENT__HIDE_ADD_DOCUMENT_BUTTON ?? null;
+      if (configValue !== null) {
+        return configValue;
+      }
+      return false;
     },
   },
   watch: {
