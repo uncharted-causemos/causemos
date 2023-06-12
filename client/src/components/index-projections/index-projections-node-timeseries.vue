@@ -16,10 +16,16 @@ const props = defineProps<{
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
   isWeightedSumNode: boolean;
+  isInverted: boolean;
 }>();
 
-const { projectionStartTimestamp, projectionEndTimestamp, timeseries, isWeightedSumNode } =
-  toRefs(props);
+const {
+  projectionStartTimestamp,
+  projectionEndTimestamp,
+  timeseries,
+  isWeightedSumNode,
+  isInverted,
+} = toRefs(props);
 const chartRef = ref<HTMLElement | null>(null);
 
 watch(
@@ -42,7 +48,8 @@ watch(
       height,
       projectionStartTimestamp.value,
       projectionEndTimestamp.value,
-      isWeightedSumNode.value
+      isWeightedSumNode.value,
+      isInverted.value
     );
   }
 );

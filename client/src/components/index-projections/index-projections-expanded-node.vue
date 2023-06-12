@@ -29,6 +29,7 @@
         :timeseries="timeseries"
         @click-chart="(...params) => emit('click-chart', ...params)"
         :is-weighted-sum-node="false"
+        :is-inverted="isInvertedData"
       />
 
       <div class="dataset-metadata add-horizontal-margin">
@@ -61,6 +62,7 @@
         :timeseries="timeseries"
         @click-chart="(...params) => emit('click-chart', ...params)"
         :is-weighted-sum-node="true"
+        :is-inverted="isInvertedData"
       />
     </div>
   </div>
@@ -121,6 +123,9 @@ const emit = defineEmits<{
 }>();
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
+const isInvertedData = computed(() =>
+  isConceptNodeWithDatasetAttached(props.nodeData) ? props.nodeData.dataset.isInverted : false
+);
 
 const dataId = computed(() => {
   if (!isConceptNodeWithDatasetAttached(props.nodeData)) {

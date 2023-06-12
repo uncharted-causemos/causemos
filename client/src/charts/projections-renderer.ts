@@ -201,7 +201,8 @@ export default function render(
   projectionStartTimestamp: number,
   projectionEndTimestamp: number,
   isWeightedSum: boolean,
-  onClick: (timestamp: number, value: number) => void
+  onClick: (timestamp: number, value: number) => void,
+  isInverted: boolean
 ) {
   // Initialize focused range to the entire time range
   let focusedTimeRange = [projectionStartTimestamp, projectionEndTimestamp];
@@ -356,7 +357,10 @@ export default function render(
     chartWidth - 2 * (SCROLL_BAR_LABEL_WIDTH + SCROLL_BAR_HANDLE_WIDTH)
   );
   // Render timeseries to scrollbar and fade it out.
-  const yScaleScrollbar = d3.scaleLinear().domain([0, 1]).range([SCROLL_BAR_HEIGHT, 0]);
+  const yScaleScrollbar = d3
+    .scaleLinear()
+    .domain([0, 1])
+    .range(isInverted ?? false ? [0, SCROLL_BAR_HEIGHT] : [SCROLL_BAR_HEIGHT, 0]);
   timeseriesList.forEach((timeseries) => {
     const timeseriesGroup = scrollBarGroupElement.append('g').classed('timeseries', true);
     renderTimeseries(
@@ -407,7 +411,11 @@ export default function render(
     const yScaleFocus = d3
       .scaleLinear()
       .domain([0, 1])
-      .range([PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]);
+      .range(
+        isInverted ?? false
+          ? [PADDING_TOP, PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH]
+          : [PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]
+      );
     renderFocusChart(xScaleFocus, yScaleFocus);
     updateFocusMouseEventArea(xScaleFocus, yScaleFocus);
   };
