@@ -5,9 +5,12 @@ const datacubeService = rootRequire('/services/datacube-service');
 const searchService = rootRequire('/services/search-service');
 const filtersUtil = rootRequire('/util/filters-util');
 const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
+const Logger = rootRequire('/config/logger');
 
 /* Keycloak Authentication */
 const authUtil = rootRequire('/util/auth-util.js');
+
+const VALID_STATUS = 'READY';
 
 /**
  * Insert a new model or indicator metadata doc
@@ -127,7 +130,16 @@ router.get(
     const filters = filtersUtil.parse(req.query.filters);
     const options = JSON.parse(req.query.options) || {};
     const result = await datacubeService.getDatacubes(filters, options);
-    res.json(result);
+
+    const validResults = result.filter((data) => data.status === VALID_STATUS);
+    if (validResults.length !== result.length) {
+      Logger.warn(
+        `Some datacube results (${result.length - validResults.length} of ${
+          result.length
+        }) have been filtered out due to invalid status.`
+      );
+    }
+    res.json(validResults);
   })
 );
 
@@ -210,6 +222,7 @@ router.get(
  */
 router.get(
   '/coverage',
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const dataIds = req.query.data_ids || [];
     // Get metadata for each datacube with a dataId in the array

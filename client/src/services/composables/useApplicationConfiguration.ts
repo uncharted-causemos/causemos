@@ -14,6 +14,7 @@ export const DEFAULT_APPLICATION_CONFIGURATION: ApplicationConfiguration = {
   CLIENT__IS_ANALYST_WORKFLOW_VISIBLE: true,
   CLIENT__DOJO_LOG_API_URL: 'https://phantom.dojo-test.com',
   CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE: false,
+  CLIENT__HIDE_ADD_DOCUMENT_BUTTON: true,
 };
 
 // Parse client settings object and return parsed results.
@@ -22,12 +23,16 @@ const parseSettings = (clientSettings: { [key: string]: string }) => {
   const { CLIENT__DOJO_LOG_API_URL } = clientSettings;
   let CLIENT__IS_ANALYST_WORKFLOW_VISIBLE;
   let CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE;
+  let CLIENT__HIDE_ADD_DOCUMENT_BUTTON;
   try {
     CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = convertStringToBoolean(
       clientSettings.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
     );
     CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE = convertStringToBoolean(
       clientSettings.CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE
+    );
+    CLIENT__HIDE_ADD_DOCUMENT_BUTTON = convertStringToBoolean(
+      clientSettings.CLIENT__HIDE_ADD_DOCUMENT_BUTTON
     );
   } catch (e) {
     console.error(e);
@@ -36,6 +41,7 @@ const parseSettings = (clientSettings: { [key: string]: string }) => {
     CLIENT__DOJO_LOG_API_URL,
     CLIENT__IS_ANALYST_WORKFLOW_VISIBLE,
     CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE,
+    CLIENT__HIDE_ADD_DOCUMENT_BUTTON,
   };
   // Filter out undefined and return
   return _.omit(result, 'undefined');
