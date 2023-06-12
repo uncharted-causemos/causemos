@@ -37,7 +37,7 @@ export default function render(
   const yScale = d3
     .scaleLinear()
     .domain([0, 1])
-    .range(isInverted ?? false ? [0, totalHeight] : [totalHeight, 0]);
+    .range(isInverted ? [0, totalHeight] : [totalHeight, 0]);
 
   // Render the series
   if (isWeightedSum) {

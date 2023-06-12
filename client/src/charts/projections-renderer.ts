@@ -360,7 +360,7 @@ export default function render(
   const yScaleScrollbar = d3
     .scaleLinear()
     .domain([0, 1])
-    .range(isInverted ?? false ? [0, SCROLL_BAR_HEIGHT] : [SCROLL_BAR_HEIGHT, 0]);
+    .range(isInverted ? [0, SCROLL_BAR_HEIGHT] : [SCROLL_BAR_HEIGHT, 0]);
   timeseriesList.forEach((timeseries) => {
     const timeseriesGroup = scrollBarGroupElement.append('g').classed('timeseries', true);
     renderTimeseries(
@@ -412,7 +412,7 @@ export default function render(
       .scaleLinear()
       .domain([0, 1])
       .range(
-        isInverted ?? false
+        isInverted
           ? [PADDING_TOP, PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH]
           : [PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]
       );
