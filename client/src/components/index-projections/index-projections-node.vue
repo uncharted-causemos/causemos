@@ -16,7 +16,7 @@
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
         :is-weighted-sum-node="false"
-        :is-inverted="isInvertedData ?? false"
+        :is-inverted="isInvertedData"
       />
     </div>
 
@@ -35,7 +35,7 @@
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
         :is-weighted-sum-node="true"
-        :is-inverted="isInvertedData ?? false"
+        :is-inverted="isInvertedData"
       />
     </div>
   </div>
