@@ -11,6 +11,7 @@ import {
   renderSquares,
   renderXaxis,
   renderYaxis,
+  invertTimeseriesList,
 } from '@/utils/timeseries-util';
 import { showSvgTooltip, hideSvgTooltip, translate } from '@/utils/svg-util';
 import { ProjectionPointType } from '@/types/Enums';
@@ -204,6 +205,12 @@ export default function render(
   onClick: (timestamp: number, value: number) => void,
   isInverted: boolean
 ) {
+  let tsList: ProjectionTimeseries[];
+  if (isInverted) {
+    tsList = invertTimeseriesList(_.cloneDeep(timeseriesList));
+  } else {
+    tsList = timeseriesList;
+  }
   // Initialize focused range to the entire time range
   let focusedTimeRange = [projectionStartTimestamp, projectionEndTimestamp];
   // If we're re-rendering, preserve the focused time range from the previous render
@@ -303,7 +310,7 @@ export default function render(
     yAxisElement.selectAll('.tick > line').attr('stroke', FOCUS_BORDER_COLOR);
 
     // Render timeseries itself
-    timeseriesList.forEach((timeseries) => {
+    tsList.forEach((timeseries) => {
       const timeseriesGroup = focusGroupElement.append('g').classed('timeseries', true);
       renderTimeseries(
         timeseries.points,
@@ -357,11 +364,8 @@ export default function render(
     chartWidth - 2 * (SCROLL_BAR_LABEL_WIDTH + SCROLL_BAR_HANDLE_WIDTH)
   );
   // Render timeseries to scrollbar and fade it out.
-  const yScaleScrollbar = d3
-    .scaleLinear()
-    .domain(isInverted ? [1, 0] : [0, 1])
-    .range(isInverted ? [0, SCROLL_BAR_HEIGHT] : [SCROLL_BAR_HEIGHT, 0]);
-  timeseriesList.forEach((timeseries) => {
+  const yScaleScrollbar = d3.scaleLinear().domain([0, 1]).range([SCROLL_BAR_HEIGHT, 0]);
+  tsList.forEach((timeseries) => {
     const timeseriesGroup = scrollBarGroupElement.append('g').classed('timeseries', true);
     renderTimeseries(
       timeseries.points,
@@ -410,12 +414,8 @@ export default function render(
       .range([PADDING_LEFT, PADDING_LEFT + chartWidth]);
     const yScaleFocus = d3
       .scaleLinear()
-      .domain(isInverted ? [1, 0] : [0, 1])
-      .range(
-        isInverted
-          ? [PADDING_TOP, PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH]
-          : [PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]
-      );
+      .domain([0, 1])
+      .range([PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]);
     renderFocusChart(xScaleFocus, yScaleFocus);
     updateFocusMouseEventArea(xScaleFocus, yScaleFocus);
   };
