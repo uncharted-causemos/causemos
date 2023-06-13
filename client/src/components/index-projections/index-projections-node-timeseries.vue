@@ -6,7 +6,6 @@
 
 <script setup lang="ts">
 import * as d3 from 'd3';
-import _ from 'lodash';
 import { ref, toRefs, watch } from 'vue';
 import renderChart from '@/charts/projections-renderer-simple';
 import { ProjectionTimeseries } from '@/types/Timeseries';

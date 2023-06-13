@@ -359,7 +359,7 @@ export default function render(
   // Render timeseries to scrollbar and fade it out.
   const yScaleScrollbar = d3
     .scaleLinear()
-    .domain([0, 1])
+    .domain(isInverted ? [1, 0] : [0, 1])
     .range(isInverted ? [0, SCROLL_BAR_HEIGHT] : [SCROLL_BAR_HEIGHT, 0]);
   timeseriesList.forEach((timeseries) => {
     const timeseriesGroup = scrollBarGroupElement.append('g').classed('timeseries', true);
@@ -410,7 +410,7 @@ export default function render(
       .range([PADDING_LEFT, PADDING_LEFT + chartWidth]);
     const yScaleFocus = d3
       .scaleLinear()
-      .domain([0, 1])
+      .domain(isInverted ? [1, 0] : [0, 1])
       .range(
         isInverted
           ? [PADDING_TOP, PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH]
