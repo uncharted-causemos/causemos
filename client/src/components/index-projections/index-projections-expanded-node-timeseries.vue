@@ -32,7 +32,7 @@ const {
 } = toRefs(props);
 const chartRef = ref<HTMLElement | null>(null);
 const onChartClick = (timestamp: number, value: number) => {
-  emit('click-chart', timestamp, isInverted ? 1 - value : value);
+  emit('click-chart', timestamp, props.isInverted ? 1 - value : value);
 };
 
 watch(
