@@ -454,13 +454,12 @@ export function normalizeTimeseriesList(timeseriesList: Timeseries[]) {
 
 export function invertTimeseriesList(timeseriesList: ProjectionTimeseries[]) {
   const allTimestampsPoints = timeseriesList.map((timeseries) => timeseries.points).flat();
-  const allTimestampsValues = allTimestampsPoints.map((point) => point.value);
-  const minValue = _.min(allTimestampsValues) as number;
-  const maxValue = _.max(allTimestampsValues) as number;
+  const maxValue = 1; // assume data is normalized between 0 and 1
 
   allTimestampsPoints.forEach((p) => {
-    p.value = maxValue - (p.value - minValue);
+    p.value = maxValue - p.value;
   });
+
   return timeseriesList;
 }
 
