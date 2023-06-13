@@ -29,9 +29,9 @@ const actions: ActionTree<AuthState, any> = {
     if (response.ok) {
       commit('setAuthenticated', true);
       commit('setName', data.userName);
-      commit('email', data.email);
-      commit('initials', data.initials);
-      commit('isAdmin', data.admin);
+      commit('setEmail', data.email);
+      commit('setInitials', data.initials);
+      commit('setAdmin', data.admin);
     } else {
       dispatch('logout');
       throw new Error('Authentication Failed');
@@ -40,9 +40,9 @@ const actions: ActionTree<AuthState, any> = {
   logout({ commit }) {
     commit('setAuthenticated', false);
     commit('setName', null);
-    commit('email', null);
-    commit('initials', null);
-    commit('isAdmin', false);
+    commit('setEmail', null);
+    commit('setInitials', null);
+    commit('setAdmin', false);
     window.location.assign('/logout');
   },
 };
