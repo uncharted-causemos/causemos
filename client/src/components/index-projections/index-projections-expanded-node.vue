@@ -8,6 +8,7 @@
       <div class="add-horizontal-margin timeseries-label">
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
         <span class="subdued un-font-small">{{ dataSourceText }}</span>
+        <InvertedDatasetLabel v-if="isInvertedData" />
         <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
           <template #content>
             <div
@@ -82,13 +83,17 @@ import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
 import { ProjectionTimeseries } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
+</script>
+<script setup lang="ts">
+import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
+import { EditMode } from '@/utils/projection-util';
 
+/*
 export enum EditMode {
   Constraints,
   DataPoints,
-}
-</script>
-<script setup lang="ts">
+} */
+
 const optionsButtonMenu = [
   {
     text: 'Edit data points',
@@ -167,6 +172,12 @@ $horizontal-margin: 30px;
   display: flex;
   gap: 5px;
   align-items: center;
+  :nth-child(2) {
+    flex: auto;
+  }
+  :nth-child(3) {
+    flex: initial;
+  }
 
   span {
     flex: 1;
