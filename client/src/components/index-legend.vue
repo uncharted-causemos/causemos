@@ -55,7 +55,7 @@
     <div class="legend-column">
       <p class="un-font-small">Data quality</p>
       <p class="un-font-small">
-        <i class="fa fa-fw fa-square-o"></i>
+        <i class="fa fa-fw fa-square"></i>
         Old data
       </p>
       <p class="un-font-small">
@@ -95,5 +95,9 @@ const props = defineProps<{ isProjectionSpace: boolean }>();
 
 .fa-exclamation-triangle {
   color: $un-color-feedback-warning;
+}
+
+.fa-square-o {
+  color: #f0edd9;
 }
 </style>
