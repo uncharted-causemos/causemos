@@ -52,6 +52,17 @@
         <span class="un-font-small" :style="{ color: NEGATIVE_COLOR }">low</span> levels of B
       </p>
     </div>
+    <div class="legend-column">
+      <p class="un-font-small">Data quality</p>
+      <p class="un-font-small">
+        <i class="fa fa-fw fa-square-o"></i>
+        Old data
+      </p>
+      <p class="un-font-small">
+        <i class="fa fa-fw fa-exclamation-triangle"></i>
+        Ignored due to insufficient data
+      </p>
+    </div>
   </div>
 </template>
 
@@ -80,5 +91,9 @@ const props = defineProps<{ isProjectionSpace: boolean }>();
   p:not(:first-child) {
     color: $un-color-black-40;
   }
+}
+
+.fa-exclamation-triangle {
+  color: $un-color-feedback-warning;
 }
 </style>
