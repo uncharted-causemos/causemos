@@ -22,10 +22,9 @@ const parseBoolean = (val: string) => {
     return convertStringToBoolean(val);
   } catch (e: any) {
     console.warn(
-      e.message +
-        `\n
-      Check that all required environment variables are configured correctly (.env).\n
-      Refer to README for more information`
+      `${e.message}
+      Check that all required environment variables are configured correctly (.env).
+      Refer to README for more information.`
     );
     return undefined;
   }
