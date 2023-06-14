@@ -44,7 +44,6 @@
       <div class="add-horizontal-margin timeseries-label">
         <i class="fa fa-fw fa-exclamation-triangle warning" />
         <span class="un-font-small warning">{{ dataSourceText }}</span>
-        <button class="btn btn-default" disabled>Enter data points</button>
       </div>
       <div class="timeseries add-horizontal-margin warning"><!-- TODO: --></div>
     </div>

@@ -21,7 +21,6 @@
 
     <div v-else-if="isEmptyNode(props.nodeData)" class="content">
       <span class="un-font-small warning">{{ dataSourceText }}</span>
-      <button class="btn btn-default full-width-button" disabled>Enter data points</button>
     </div>
 
     <div v-else>
