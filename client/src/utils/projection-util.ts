@@ -17,6 +17,11 @@ import {
   ProjectionRunInfo,
 } from '@/types/Index';
 
+export enum EditMode {
+  Constraints,
+  DataPoints,
+}
+
 export enum NodeProjectionType {
   /**
    * This projection type is used when data is empty and there's no projection result.
