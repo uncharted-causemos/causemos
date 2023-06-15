@@ -55,11 +55,11 @@
     <div class="legend-column">
       <p class="un-font-small">Data quality</p>
       <p class="un-font-small">
-        <i class="fa fa-fw fa-square"></i>
+        <i class="fa fa-fw fa-square old-data"></i>
         Old data
       </p>
       <p class="un-font-small">
-        <i class="fa fa-fw fa-exclamation-triangle"></i>
+        <i class="fa fa-fw fa-exclamation-triangle data-warning"></i>
         Ignored due to insufficient data
       </p>
     </div>
@@ -93,11 +93,11 @@ const props = defineProps<{ isProjectionSpace: boolean }>();
   }
 }
 
-.fa-exclamation-triangle {
+.data-warning {
   color: $un-color-feedback-warning;
 }
 
-.fa-square-o {
+.old-data {
   color: #f0edd9;
 }
 </style>
