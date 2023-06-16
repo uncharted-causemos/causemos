@@ -419,9 +419,7 @@ const checkHistoricalData = () => {
       oldData: false,
       insufficientData: false,
     };
-    console.log(
-      `Projection start timestamp: ${projectionStartTimestamp.value} (Doesn't seem to be updated when selected).`
-    ); // todo: remove this reminder once corrected.
+
     if (
       item.filter((point: TimeseriesPoint) => point.timestamp >= projectionStartTimestamp.value)
         .length <= WARNING_OLD_DATA_MINCOUNT
