@@ -419,14 +419,22 @@ const checkHistoricalData = () => {
       oldData: false,
       insufficientData: false,
     };
-
+    // old data test
     if (
       item.filter((point: TimeseriesPoint) => point.timestamp >= projectionStartTimestamp.value)
         .length <= WARNING_OLD_DATA_MINCOUNT
     ) {
       dataWarning.oldData = true;
     }
-    if (item.length <= WARNING_INSUFFICIENT_DATA_MINCOUNT) {
+
+    // insufficient data test
+    if (
+      item.filter(
+        (point: TimeseriesPoint) =>
+          point.timestamp >= projectionStartTimestamp.value &&
+          point.timestamp <= projectionEndTimestamp.value
+      ).length <= WARNING_INSUFFICIENT_DATA_MINCOUNT
+    ) {
       dataWarning.insufficientData = true;
     }
     dataWarnings.value.set(id, dataWarning);
