@@ -1,11 +1,17 @@
 <template>
-  <div class="index-projections-expanded-node-container">
+  <div
+    class="index-projections-expanded-node-container"
+    :class="{
+      'old-data-warning': oldDataWarning,
+    }"
+  >
     <p class="add-horizontal-margin">{{ props.nodeData.name ?? 'none' }}</p>
     <span v-if="props.nodeData.name.length === 0" class="subdued add-horizontal-margin"
       >(Missing name)</span
     >
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)">
       <div class="add-horizontal-margin timeseries-label">
+        <i v-if="insufficientDataWarning" class="fa fa-fw fa-exclamation-triangle warning"></i>
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
         <span class="subdued un-font-small">{{ dataSourceText }}</span>
         <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
@@ -78,7 +84,7 @@ import {
 import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
-import { ProjectionTimeseries } from '@/types/Timeseries';
+import { DataWarning, ProjectionTimeseries } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 
 export enum EditMode {
@@ -114,6 +120,7 @@ const props = defineProps<{
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
   editMode?: EditMode;
+  dataWarnings?: Map<string, DataWarning>;
 }>();
 
 const emit = defineEmits<{
@@ -133,6 +140,26 @@ const outputVariable = computed(() => {
     return null;
   }
   return props.nodeData.dataset.config.outputVariable;
+});
+
+const insufficientDataWarning = computed(() => {
+  if (isConceptNodeWithDatasetAttached(props.nodeData) && props.dataWarnings !== undefined) {
+    const warnings: DataWarning | undefined = props.dataWarnings.get(props.nodeData.id);
+    if (warnings !== undefined) {
+      return warnings.insufficientData;
+    }
+  }
+  return false;
+});
+
+const oldDataWarning = computed(() => {
+  if (isConceptNodeWithDatasetAttached(props.nodeData) && props.dataWarnings !== undefined) {
+    const warnings: DataWarning | undefined = props.dataWarnings.get(props.nodeData.id);
+    if (warnings !== undefined) {
+      return warnings.oldData;
+    }
+  }
+  return false;
 });
 
 const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVariable);
@@ -207,5 +234,9 @@ $horizontal-margin: 30px;
   .margin-top {
     margin-top: 10px;
   }
+}
+
+.old-data-warning {
+  background-color: #f0edd9;
 }
 </style>

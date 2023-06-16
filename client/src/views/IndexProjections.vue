@@ -166,6 +166,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
+        :data-warnings="dataWarnings"
         @select-element="selectElement"
       />
       <IndexProjectionsNodeView
@@ -176,6 +177,7 @@
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
         :projection-for-scenario-being-edited="projectionForScenarioBeingEdited"
+        :data-warnings="dataWarnings"
         @select-element="selectElement"
         @deselect-node="deselectNode"
         @click-chart="onNodeChartClick"
@@ -197,7 +199,6 @@
 </template>
 
 <script setup lang="ts">
-import _ from 'lodash';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -229,6 +230,7 @@ import useScenarios from '@/services/composables/useScenarios';
 import useScenarioProjections from '@/services/composables/useScenarioProjections';
 import useHistoricalData from '@/services/composables/useHistoricalData';
 import useMultipleCountryProjections from '@/services/composables/useMultipleCountryProjections';
+import { DataWarning, TimeseriesPoint } from '@/types/Timeseries';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -244,6 +246,9 @@ const MONTHS: DropdownItem[] = [
   { value: 10, displayName: 'November' },
   { value: 11, displayName: 'December' },
 ];
+
+const WARNING_INSUFFICIENT_DATA_MINCOUNT = 5;
+const WARNING_OLD_DATA_MINCOUNT = 5;
 
 const store = useStore();
 const route = useRoute();
@@ -406,6 +411,30 @@ const onNodeChartClick = (timestamp: number, value: number) => {
 const { visibleScenarioProjectionData, projectionForScenarioBeingEdited, runScenarioProjections } =
   useScenarioProjections(scenarios, scenarioBeingEdited);
 
+const dataWarnings = ref(new Map());
+const checkHistoricalData = () => {
+  dataWarnings.value.clear();
+  historicalData.value.forEach((item, id) => {
+    const dataWarning: DataWarning = {
+      oldData: false,
+      insufficientData: false,
+    };
+    console.log(
+      `Projection start timestamp: ${projectionStartTimestamp.value} (Doesn't seem to be updated when selected).`
+    ); // todo: remove this reminder once corrected.
+    if (
+      item.filter((point: TimeseriesPoint) => point.timestamp >= projectionStartTimestamp.value)
+        .length <= WARNING_OLD_DATA_MINCOUNT
+    ) {
+      dataWarning.oldData = true;
+    }
+    if (item.length <= WARNING_INSUFFICIENT_DATA_MINCOUNT) {
+      dataWarning.insufficientData = true;
+    }
+    dataWarnings.value.set(id, dataWarning);
+  });
+};
+
 watch(
   [
     historicalData,
@@ -416,6 +445,11 @@ watch(
     scenarios,
   ],
   () => {
+    // scan data for warnings
+    // Old data: datasets that have 5 or fewer points for the selected country after the projection start date
+    // Insufficient data: datasets that have 5 or fewer points for the selected country
+    checkHistoricalData();
+
     // TODO: For optimization, other than initial run, only run projection for the specific scenario when a new scenario is added or when the edit for a scenario is done.
     // Check diff from old and new scenarios data and only run the projection for a scenario if necessary.
     // When a scenario is deleted, just remove the projection for that scenario from the projection data.

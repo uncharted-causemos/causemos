@@ -1,5 +1,11 @@
 <template>
-  <div class="index-projections-node-container" @click="emit('select', props.nodeData.id)">
+  <div
+    class="index-projections-node-container"
+    :class="{
+      'old-data-warning': oldDataWarning,
+    }"
+    @click="emit('select', props.nodeData.id)"
+  >
     <div class="content node-header">
       {{ props.nodeData.name }}
       <span v-if="props.nodeData.name.length === 0" class="subdued">(Missing name)</span>
@@ -7,6 +13,7 @@
 
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)">
       <div class="content timeseries-label">
+        <i v-if="insufficientDataWarning" class="fa fa-fw fa-exclamation-triangle warning"></i>
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
         <span class="subdued un-font-small overflow-ellipsis">{{ dataSourceText }}</span>
       </div>
@@ -50,18 +57,39 @@ import {
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import IndexProjectionsNodeTimeseries from './index-projections-node-timeseries.vue';
-import { ProjectionTimeseries } from '@/types/Timeseries';
+import { DataWarning, ProjectionTimeseries } from '@/types/Timeseries';
 
 const props = defineProps<{
   nodeData: ConceptNode;
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
+  dataWarnings?: Map<string, DataWarning>;
 }>();
 
 const emit = defineEmits<{
   (e: 'select', nodeId: string): void;
 }>();
+
+const insufficientDataWarning = computed(() => {
+  if (isConceptNodeWithDatasetAttached(props.nodeData) && props.dataWarnings !== undefined) {
+    const warnings: DataWarning | undefined = props.dataWarnings.get(props.nodeData.id);
+    if (warnings !== undefined) {
+      return warnings.insufficientData;
+    }
+  }
+  return false;
+});
+
+const oldDataWarning = computed(() => {
+  if (isConceptNodeWithDatasetAttached(props.nodeData) && props.dataWarnings !== undefined) {
+    const warnings: DataWarning | undefined = props.dataWarnings.get(props.nodeData.id);
+    if (warnings !== undefined) {
+      return warnings.oldData;
+    }
+  }
+  return false;
+});
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 </script>
@@ -109,5 +137,9 @@ const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 
 .full-width-button {
   width: 100%;
+}
+
+.old-data-warning {
+  background-color: #f0edd9;
 }
 </style>
