@@ -6,14 +6,14 @@ const pipelineReportingService = rootRequire('/services/pipeline-reporting-servi
 const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = rootRequire('/util/auth-util.js');
 
 /**
  * Sets the status of the relevant ES documents to `PROCESSING FAILED`.
  */
 router.put(
   '/processing-failed',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, pipelineReportingService.setProcessingFailed, [req.body]);
   })
@@ -24,7 +24,7 @@ router.put(
  */
 router.put(
   '/processing-succeeded',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, pipelineReportingService.setProcessingSucceeded, [req.body]);
   })
@@ -35,7 +35,7 @@ router.put(
  */
 router.put(
   '/queue-runtime',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, pipelineReportingService.setRuntimeQueued, [req.body]);
   })

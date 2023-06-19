@@ -3,11 +3,15 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const dojoSearchService = rootRequire('/services/external/dojo-semantic-search-service');
 
+/* Keycloak Authentication */
+// const authUtil = rootRequire('/util/auth-util.js');
+
 /**
  * get both causes and effects
  */
 router.post(
   '/',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const details = req.body;
 
@@ -26,6 +30,7 @@ router.post(
  */
 router.post(
   '/causes',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const details = req.body;
 
@@ -44,6 +49,7 @@ router.post(
  */
 router.post(
   '/effects',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const details = req.body;
 

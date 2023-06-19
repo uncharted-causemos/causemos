@@ -11,7 +11,7 @@ const modelUtil = rootRequire('util/model-util');
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = rootRequire('/util/auth-util.js');
 
 const OPERATION = Object.freeze({
   REMOVE: 'remove',
@@ -23,7 +23,7 @@ const OPERATION = Object.freeze({
  */
 router.put(
   '/:mid/edge-polarity',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const editTime = Date.now();
     const modelId = req.params.mid;
@@ -45,7 +45,7 @@ router.put(
  */
 router.post(
   '/:mid/',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const editTime = Date.now();
     const modelId = req.params.mid;
@@ -118,7 +118,7 @@ router.post(
  */
 router.put(
   '/:mid/components/',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const editTime = Date.now();
     const modelId = req.params.mid;
@@ -196,7 +196,7 @@ router.put(
 
 router.put(
   '/:mid/groups/',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const editTime = Date.now();
     const modelId = req.params.mid;
@@ -224,7 +224,7 @@ router.put(
  */
 router.get(
   '/:mid/components/',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const modelId = req.params.mid;
     const result = await cagService.getComponents(modelId);
@@ -234,7 +234,7 @@ router.get(
 
 router.get(
   '/:mid/edge-statements',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const modelId = req.params.mid;
     const source = req.query.source;
@@ -246,7 +246,7 @@ router.get(
 
 router.get(
   '/:mid/node-statements',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const modelId = req.params.mid;
     const concept = req.query.concept;
@@ -261,7 +261,7 @@ router.get(
  */
 router.post(
   '/:mid/recalculate',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const modelId = req.params.mid;
     const result = await cagService.recalculateCAG(modelId);
@@ -274,7 +274,7 @@ router.post(
  */
 router.post(
   '/:mid/change-concept',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const change = req.body;
     const modelId = req.params.mid;

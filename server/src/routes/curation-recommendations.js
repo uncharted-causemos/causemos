@@ -7,7 +7,7 @@ const curationRecommendationsService = rootRequire(
 );
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = rootRequire('/util/auth-util.js');
 
 // Helpers
 const getCAGStatements = async (cagId, sourceNode, targetNode) => {
@@ -60,7 +60,7 @@ const getKBStatements = async (projectId, sourceNode, targetNode) => {
 
 router.get(
   '/regrounding',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const q = req.query;
     const projectId = q.project_id;
@@ -88,7 +88,7 @@ router.get(
 
 router.get(
   '/polarity',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const q = req.query;
     const projectId = q.project_id;
@@ -121,7 +121,7 @@ router.get(
 
 router.get(
   '/edge-regrounding',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const q = req.query;
     const projectId = q.project_id;
@@ -141,7 +141,7 @@ router.get(
 
 router.get(
   '/similar-concepts',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const q = req.query;
     const projectId = q.project_id;
@@ -159,7 +159,7 @@ router.get(
 
 router.put(
   '/tracking/:trackingId',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const payload = req.body.payload;
     const trackingId = req.params.trackingId;
