@@ -22,7 +22,8 @@ export default function render(
   totalHeight: number,
   projectionStartTimestamp: number,
   projectionEndTimestamp: number,
-  isWeightedSum: boolean
+  isWeightedSum: boolean,
+  isInverted: boolean
 ) {
   // Clear any existing elements
   selection.selectAll('*').remove();
@@ -33,7 +34,10 @@ export default function render(
     .scaleLinear()
     .domain([projectionStartTimestamp, projectionEndTimestamp])
     .range([0, totalWidth]);
-  const yScale = d3.scaleLinear().domain([0, 1]).range([totalHeight, 0]);
+  const yScale = d3
+    .scaleLinear()
+    .domain([0, 1])
+    .range(isInverted ? [0, totalHeight] : [totalHeight, 0]);
 
   // Render the series
   if (isWeightedSum) {

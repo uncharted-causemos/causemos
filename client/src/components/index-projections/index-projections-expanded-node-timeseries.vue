@@ -16,17 +16,23 @@ const props = defineProps<{
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
   isWeightedSumNode: boolean;
+  isInverted: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'click-chart', timestamp: number, value: number): void;
 }>();
 
-const { projectionStartTimestamp, projectionEndTimestamp, timeseries, isWeightedSumNode } =
-  toRefs(props);
+const {
+  projectionStartTimestamp,
+  projectionEndTimestamp,
+  timeseries,
+  isWeightedSumNode,
+  isInverted,
+} = toRefs(props);
 const chartRef = ref<HTMLElement | null>(null);
 const onChartClick = (timestamp: number, value: number) => {
-  emit('click-chart', timestamp, value);
+  emit('click-chart', timestamp, props.isInverted ? 1 - value : value);
 };
 
 watch(
@@ -49,7 +55,8 @@ watch(
       projectionStartTimestamp.value,
       projectionEndTimestamp.value,
       isWeightedSumNode.value,
-      onChartClick
+      onChartClick,
+      isInverted.value
     );
   }
 );
