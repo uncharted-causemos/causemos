@@ -5,7 +5,7 @@
       :class="{ 'settings-disabled': scenarioBeingEdited !== null }"
     >
       <div class="disable-overlay" />
-      <header>
+      <header class="title-header">
         <button v-if="selectedNodeId !== null" class="btn btn-sm" @click="deselectNode">
           <i class="fa fa-fw fa-caret-left" />View all concepts
         </button>
@@ -590,13 +590,18 @@ const timeseriesToDisplay = computed(() =>
 .config-column {
   background: white;
   width: 300px;
-  padding: 20px;
   border-right: 1px solid $un-color-black-10;
   gap: 40px;
+
+  .title-header {
+    padding: 20px 20px 0 20px;
+  }
 
   .settings-section {
     flex: 1;
     overflow-y: auto;
+    padding-left: 20px;
+    padding-right: 20px;
   }
   footer {
     section {
