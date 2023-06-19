@@ -7,8 +7,8 @@
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)">
       <div class="add-horizontal-margin timeseries-label">
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
-        <span class="subdued un-font-small">{{ dataSourceText }}</span>
-        <InvertedDatasetLabel v-if="isInvertedData" />
+        <span class="subdued un-font-small dataset-name">{{ dataSourceText }}</span>
+        <InvertedDatasetLabel class="inverted-label" v-if="isInvertedData" />
         <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
           <template #content>
             <div
@@ -164,16 +164,14 @@ $horizontal-margin: 30px;
   display: flex;
   gap: 5px;
   align-items: center;
-  :nth-child(2) {
-    flex: auto;
-  }
-  :nth-child(3) {
-    flex: initial;
+
+  .dataset-name {
+    flex: 1;
   }
 
-  span {
-    flex: 1;
-    min-width: 0;
+  .inverted-label {
+    flex: initial;
+    min-width: initial;
   }
 }
 

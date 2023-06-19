@@ -8,8 +8,10 @@
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)">
       <div class="content timeseries-label" style="display: flex">
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
-        <span class="subdued un-font-small overflow-ellipsis">{{ dataSourceText }}</span>
-        <InvertedDatasetLabel v-if="isInvertedData" />
+        <span class="subdued un-font-small overflow-ellipsis dataset-name">{{
+          dataSourceText
+        }}</span>
+        <InvertedDatasetLabel class="inverted-label" v-if="isInvertedData" />
       </div>
       <IndexProjectionsNodeTimeseries
         class="timeseries"
@@ -99,18 +101,13 @@ const isInvertedData = computed(() =>
   gap: 5px;
   align-items: center;
 
-  span {
+  .dataset-name {
     flex: 1;
-    min-width: 0;
   }
 
-  &.content {
-    :nth-child(2) {
-      flex: auto;
-    }
-    :nth-child(3) {
-      flex: initial;
-    }
+  .inverted-label {
+    flex: initial;
+    min-width: initial;
   }
 }
 
