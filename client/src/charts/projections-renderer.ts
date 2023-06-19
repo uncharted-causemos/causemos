@@ -11,6 +11,7 @@ import {
   renderSquares,
   renderXaxis,
   renderYaxis,
+  invertTimeseriesList,
 } from '@/utils/timeseries-util';
 import { showSvgTooltip, hideSvgTooltip, translate } from '@/utils/svg-util';
 import { ProjectionPointType } from '@/types/Enums';
@@ -201,8 +202,15 @@ export default function render(
   projectionStartTimestamp: number,
   projectionEndTimestamp: number,
   isWeightedSum: boolean,
-  onClick: (timestamp: number, value: number) => void
+  onClick: (timestamp: number, value: number) => void,
+  isInverted: boolean
 ) {
+  let tsList: ProjectionTimeseries[];
+  if (isInverted) {
+    tsList = invertTimeseriesList(_.cloneDeep(timeseriesList));
+  } else {
+    tsList = timeseriesList;
+  }
   // Initialize focused range to the entire time range
   let focusedTimeRange = [projectionStartTimestamp, projectionEndTimestamp];
   // If we're re-rendering, preserve the focused time range from the previous render
@@ -302,7 +310,7 @@ export default function render(
     yAxisElement.selectAll('.tick > line').attr('stroke', FOCUS_BORDER_COLOR);
 
     // Render timeseries itself
-    timeseriesList.forEach((timeseries) => {
+    tsList.forEach((timeseries) => {
       const timeseriesGroup = focusGroupElement.append('g').classed('timeseries', true);
       renderTimeseries(
         timeseries.points,
@@ -357,7 +365,7 @@ export default function render(
   );
   // Render timeseries to scrollbar and fade it out.
   const yScaleScrollbar = d3.scaleLinear().domain([0, 1]).range([SCROLL_BAR_HEIGHT, 0]);
-  timeseriesList.forEach((timeseries) => {
+  tsList.forEach((timeseries) => {
     const timeseriesGroup = scrollBarGroupElement.append('g').classed('timeseries', true);
     renderTimeseries(
       timeseries.points,

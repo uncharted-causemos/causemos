@@ -16,6 +16,7 @@
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
         :is-weighted-sum-node="false"
+        :is-inverted="isInvertedData"
       />
     </div>
 
@@ -34,6 +35,7 @@
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
         :is-weighted-sum-node="true"
+        :is-inverted="isInvertedData"
       />
     </div>
   </div>
@@ -64,6 +66,9 @@ const emit = defineEmits<{
 }>();
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
+const isInvertedData = computed(() =>
+  isConceptNodeWithDatasetAttached(props.nodeData) ? props.nodeData.dataset.isInverted : false
+);
 </script>
 
 <style lang="scss" scoped>

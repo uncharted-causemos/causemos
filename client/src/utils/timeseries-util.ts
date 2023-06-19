@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
 import moment from 'moment';
-import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
+import { ProjectionTimeseries, Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3GElementSelection } from '@/types/D3';
 import { translate } from './svg-util';
 import {
@@ -450,6 +450,17 @@ export function normalizeTimeseriesList(timeseriesList: Timeseries[]) {
       p.normalizedValue = (p.value - minValue) / (maxValue - minValue);
     });
   }
+}
+
+export function invertTimeseriesList(timeseriesList: ProjectionTimeseries[]) {
+  const allTimestampsPoints = timeseriesList.map((timeseries) => timeseries.points).flat();
+  const maxValue = 1; // assume data is normalized between 0 and 1
+
+  allTimestampsPoints.forEach((p) => {
+    p.value = maxValue - p.value;
+  });
+
+  return timeseriesList;
 }
 
 export const MAX_TIMESERIES_LABEL_CHAR_LENGTH = 10;
