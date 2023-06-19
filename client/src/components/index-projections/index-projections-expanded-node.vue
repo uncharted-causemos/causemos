@@ -69,7 +69,7 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { ConceptNode } from '@/types/Index';
 import {
   DATASET_COLOR,
@@ -83,16 +83,8 @@ import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
 import { ProjectionTimeseries } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
-</script>
-<script setup lang="ts">
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 import { EditMode } from '@/utils/projection-util';
-
-/*
-export enum EditMode {
-  Constraints,
-  DataPoints,
-} */
 
 const optionsButtonMenu = [
   {
