@@ -6,9 +6,12 @@
     </div>
 
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)">
-      <div class="content timeseries-label">
+      <div class="content timeseries-label" style="display: flex">
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
-        <span class="subdued un-font-small overflow-ellipsis">{{ dataSourceText }}</span>
+        <span class="subdued un-font-small overflow-ellipsis dataset-name">{{
+          dataSourceText
+        }}</span>
+        <InvertedDatasetLabel class="inverted-label" v-if="isInvertedData" />
       </div>
       <IndexProjectionsNodeTimeseries
         class="timeseries"
@@ -53,6 +56,7 @@ import {
 import { computed } from 'vue';
 import IndexProjectionsNodeTimeseries from './index-projections-node-timeseries.vue';
 import { ProjectionTimeseries } from '@/types/Timeseries';
+import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 
 const props = defineProps<{
   nodeData: ConceptNode;
@@ -97,9 +101,14 @@ const isInvertedData = computed(() =>
   gap: 5px;
   align-items: center;
 
-  span {
+  .dataset-name {
     flex: 1;
     min-width: 0;
+  }
+
+  .inverted-label {
+    flex: initial;
+    min-width: initial;
   }
 }
 
