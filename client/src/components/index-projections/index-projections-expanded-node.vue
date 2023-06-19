@@ -167,6 +167,7 @@ $horizontal-margin: 30px;
 
   .dataset-name {
     flex: 1;
+    min-width: 0;
   }
 
   .inverted-label {

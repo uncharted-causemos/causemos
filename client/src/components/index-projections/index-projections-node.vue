@@ -103,6 +103,7 @@ const isInvertedData = computed(() =>
 
   .dataset-name {
     flex: 1;
+    min-width: 0;
   }
 
   .inverted-label {
