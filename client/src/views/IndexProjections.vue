@@ -23,7 +23,7 @@
           :selected-node-id="selectedNodeId"
         />
       </section>
-      <section>
+      <section class="settings-section">
         <header><h4>Settings</h4></header>
         <DropdownButton
           :is-dropdown-left-aligned="true"
@@ -591,19 +591,14 @@ const timeseriesToDisplay = computed(() =>
   background: white;
   width: 300px;
   padding: 20px;
-  overflow-y: auto;
   border-right: 1px solid $un-color-black-10;
   gap: 40px;
 
-  position: relative;
-  // Make sure the lowest items are never covered by the footer content
-  padding-bottom: 100px;
+  .settings-section {
+    flex: 1;
+    overflow-y: auto;
+  }
   footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-
     section {
       border-top: 1px solid $un-color-black-10;
       padding: 10px 20px;
