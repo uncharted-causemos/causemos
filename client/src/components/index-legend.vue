@@ -60,7 +60,7 @@
       </p>
       <p class="un-font-small">
         <i class="fa fa-fw fa-exclamation-triangle data-warning"></i>
-        Ignored due to insufficient data
+        Insufficient data for accurate projection
       </p>
     </div>
   </div>
