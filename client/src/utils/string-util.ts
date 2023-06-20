@@ -131,15 +131,20 @@ export const safeD3StringId = (hoverValue: string) => {
 };
 
 export const convertStringToBoolean = (input: string) => {
-  if (input.toLowerCase() === 'true') {
-    return true;
+  const throwError = () => {
+    throw new Error(`Unable to convert string "${input}" to boolean.`);
+  };
+  try {
+    if (input.toLowerCase() === 'true') {
+      return true;
+    }
+    if (input.toLowerCase() === 'false') {
+      return false;
+    }
+    throwError();
+  } catch (e) {
+    throwError();
   }
-  if (input.toLowerCase() === 'false') {
-    return false;
-  }
-  throw new Error(`Unable to convert string "${input}" to boolean.\n
-  Check that all required environment variables are configured correctly (.env).\n
-  Refer to README for more information`);
 };
 
 export const capitalizeEachWord = (input: string) => _.words(input).map(_.capitalize).join(' ');
