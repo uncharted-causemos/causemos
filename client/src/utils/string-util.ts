@@ -131,6 +131,9 @@ export const safeD3StringId = (hoverValue: string) => {
 };
 
 export const convertStringToBoolean = (input: string) => {
+  const throwError = () => {
+    throw new Error(`Unable to convert string "${input}" to boolean.`);
+  };
   try {
     if (input.toLowerCase() === 'true') {
       return true;
@@ -138,8 +141,9 @@ export const convertStringToBoolean = (input: string) => {
     if (input.toLowerCase() === 'false') {
       return false;
     }
+    throwError();
   } catch (e) {
-    throw new Error(`Unable to convert string "${input}" to boolean`);
+    throwError();
   }
 };
 
