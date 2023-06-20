@@ -19,7 +19,6 @@ import {
 
 export enum EditMode {
   Constraints,
-  DataPoints,
 }
 
 export enum NodeProjectionType {
