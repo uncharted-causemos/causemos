@@ -5,7 +5,7 @@
       :class="{ 'settings-disabled': scenarioBeingEdited !== null }"
     >
       <div class="disable-overlay" />
-      <header>
+      <header class="title-header">
         <button v-if="selectedNodeId !== null" class="btn btn-sm" @click="deselectNode">
           <i class="fa fa-fw fa-caret-left" />View all concepts
         </button>
@@ -23,7 +23,7 @@
           :selected-node-id="selectedNodeId"
         />
       </section>
-      <section>
+      <section class="settings-section">
         <header><h4>Settings</h4></header>
         <DropdownButton
           :is-dropdown-left-aligned="true"
@@ -590,20 +590,20 @@ const timeseriesToDisplay = computed(() =>
 .config-column {
   background: white;
   width: 300px;
-  padding: 20px;
-  overflow-y: auto;
   border-right: 1px solid $un-color-black-10;
   gap: 40px;
-
   position: relative;
-  // Make sure the lowest items are never covered by the footer content
-  padding-bottom: 100px;
-  footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
+  .title-header {
+    padding: 20px 20px 0 20px;
+  }
 
+  .settings-section {
+    flex: 1;
+    overflow-y: auto;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  footer {
     section {
       border-top: 1px solid $un-color-black-10;
       padding: 10px 20px;
