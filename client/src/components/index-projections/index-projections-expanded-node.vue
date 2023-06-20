@@ -119,7 +119,7 @@ const props = defineProps<{
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
   editMode?: EditMode;
-  dataWarnings?: Map<string, DataWarning>;
+  dataWarnings: Map<string, DataWarning>;
 }>();
 
 const emit = defineEmits<{
@@ -144,25 +144,10 @@ const outputVariable = computed(() => {
   return props.nodeData.dataset.config.outputVariable;
 });
 
-const insufficientDataWarning = computed(() => {
-  if (isConceptNodeWithDatasetAttached(props.nodeData) && props.dataWarnings !== undefined) {
-    const warnings: DataWarning | undefined = props.dataWarnings.get(props.nodeData.id);
-    if (warnings !== undefined) {
-      return warnings.insufficientData;
-    }
-  }
-  return false;
-});
-
-const oldDataWarning = computed(() => {
-  if (isConceptNodeWithDatasetAttached(props.nodeData) && props.dataWarnings !== undefined) {
-    const warnings: DataWarning | undefined = props.dataWarnings.get(props.nodeData.id);
-    if (warnings !== undefined) {
-      return warnings.oldData;
-    }
-  }
-  return false;
-});
+const insufficientDataWarning = computed(
+  () => props.dataWarnings.get(props.nodeData.id)?.insufficientData ?? false
+);
+const oldDataWarning = computed(() => props.dataWarnings.get(props.nodeData.id)?.oldData ?? false);
 
 const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVariable);
 </script>
