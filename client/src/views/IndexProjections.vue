@@ -592,7 +592,7 @@ const timeseriesToDisplay = computed(() =>
   width: 300px;
   border-right: 1px solid $un-color-black-10;
   gap: 40px;
-
+  position: relative;
   .title-header {
     padding: 20px 20px 0 20px;
   }
