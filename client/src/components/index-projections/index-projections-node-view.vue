@@ -74,7 +74,8 @@ import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import { getProjectionsForNode } from '@/utils/index-projection-util';
 import { IndexProjection, SelectableIndexElementId } from '@/types/Index';
 import IndexProjectionsNode from './index-projections-node.vue';
-import IndexProjectionsExpandedNode, { EditMode } from './index-projections-expanded-node.vue';
+import IndexProjectionsExpandedNode from './index-projections-expanded-node.vue';
+import { EditMode } from '@/utils/projection-util';
 
 const props = defineProps<{
   selectedNodeId: string | null;

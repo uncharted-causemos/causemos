@@ -7,7 +7,8 @@
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)">
       <div class="add-horizontal-margin timeseries-label">
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
-        <span class="subdued un-font-small">{{ dataSourceText }}</span>
+        <span class="subdued un-font-small dataset-name">{{ dataSourceText }}</span>
+        <InvertedDatasetLabel class="inverted-label" v-if="isInvertedData" />
         <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
           <template #content>
             <div
@@ -29,6 +30,7 @@
         :timeseries="timeseries"
         @click-chart="(...params) => emit('click-chart', ...params)"
         :is-weighted-sum-node="false"
+        :is-inverted="isInvertedData"
       />
 
       <div class="dataset-metadata add-horizontal-margin">
@@ -60,12 +62,13 @@
         :timeseries="timeseries"
         @click-chart="(...params) => emit('click-chart', ...params)"
         :is-weighted-sum-node="true"
+        :is-inverted="isInvertedData"
       />
     </div>
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { ConceptNode } from '@/types/Index';
 import {
   DATASET_COLOR,
@@ -79,13 +82,9 @@ import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
 import { ProjectionTimeseries } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
+import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
+import { EditMode } from '@/utils/projection-util';
 
-export enum EditMode {
-  Constraints,
-  DataPoints,
-}
-</script>
-<script setup lang="ts">
 const optionsButtonMenu = [
   {
     text: 'Edit data points',
@@ -120,6 +119,9 @@ const emit = defineEmits<{
 }>();
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
+const isInvertedData = computed(() =>
+  isConceptNodeWithDatasetAttached(props.nodeData) ? props.nodeData.dataset.isInverted : false
+);
 
 const dataId = computed(() => {
   if (!isConceptNodeWithDatasetAttached(props.nodeData)) {
@@ -162,9 +164,14 @@ $horizontal-margin: 30px;
   gap: 5px;
   align-items: center;
 
-  span {
+  .dataset-name {
     flex: 1;
     min-width: 0;
+  }
+
+  .inverted-label {
+    flex: initial;
+    min-width: initial;
   }
 }
 

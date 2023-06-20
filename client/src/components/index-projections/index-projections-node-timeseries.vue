@@ -6,7 +6,6 @@
 
 <script setup lang="ts">
 import * as d3 from 'd3';
-import _ from 'lodash';
 import { ref, toRefs, watch } from 'vue';
 import renderChart from '@/charts/projections-renderer-simple';
 import { ProjectionTimeseries } from '@/types/Timeseries';
@@ -16,10 +15,16 @@ const props = defineProps<{
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
   isWeightedSumNode: boolean;
+  isInverted: boolean;
 }>();
 
-const { projectionStartTimestamp, projectionEndTimestamp, timeseries, isWeightedSumNode } =
-  toRefs(props);
+const {
+  projectionStartTimestamp,
+  projectionEndTimestamp,
+  timeseries,
+  isWeightedSumNode,
+  isInverted,
+} = toRefs(props);
 const chartRef = ref<HTMLElement | null>(null);
 
 watch(
@@ -42,7 +47,8 @@ watch(
       height,
       projectionStartTimestamp.value,
       projectionEndTimestamp.value,
-      isWeightedSumNode.value
+      isWeightedSumNode.value,
+      isInverted.value
     );
   }
 );
