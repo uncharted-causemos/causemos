@@ -244,6 +244,6 @@ $horizontal-margin: 30px;
 }
 
 .old-data-warning {
-  background-color: #f0edd9;
+  background-color: $old-data-warning;
 }
 </style>
