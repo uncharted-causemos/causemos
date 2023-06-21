@@ -65,3 +65,9 @@ export interface DataWarning {
   oldData: boolean;
   insufficientData: boolean;
 }
+
+export interface ByCountryWarning {
+  country: string;
+  nodeId: string;
+  warning: DataWarning;
+}

@@ -230,7 +230,8 @@ import useScenarios from '@/services/composables/useScenarios';
 import useScenarioProjections from '@/services/composables/useScenarioProjections';
 import useHistoricalData from '@/services/composables/useHistoricalData';
 import useMultipleCountryProjections from '@/services/composables/useMultipleCountryProjections';
-import { DataWarning, TimeseriesPoint } from '@/types/Timeseries';
+import { ByCountryWarning, DataWarning, TimeseriesPoint } from '@/types/Timeseries';
+import { consolidateNodeWarnings } from '@/utils/projection-util';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -412,27 +413,45 @@ const { visibleScenarioProjectionData, projectionForScenarioBeingEdited, runScen
   useScenarioProjections(scenarios, scenarioBeingEdited);
 
 const dataWarnings = ref(new Map());
+const oldDataTest = (points: TimeseriesPoint[]): boolean => {
+  return (
+    points.filter((point: TimeseriesPoint) => point.timestamp >= projectionStartTimestamp.value)
+      .length <= WARNING_OLD_DATA_MINCOUNT
+  );
+};
+
+const insufficientDataTest = (points: TimeseriesPoint[]): boolean => {
+  return points.length <= WARNING_INSUFFICIENT_DATA_MINCOUNT;
+};
+
 const checkHistoricalData = () => {
   dataWarnings.value.clear();
-  historicalData.value.forEach((item, id) => {
-    const dataWarning: DataWarning = {
-      oldData: false,
-      insufficientData: false,
-    };
-    // old data test
-    if (
-      item.filter((point: TimeseriesPoint) => point.timestamp >= projectionStartTimestamp.value)
-        .length <= WARNING_OLD_DATA_MINCOUNT
-    ) {
-      dataWarning.oldData = true;
-    }
+  if (isSingleCountryModeActive.value) {
+    historicalData.value.forEach((item, id) => {
+      const dataWarning: DataWarning = {
+        oldData: oldDataTest(item),
+        insufficientData: insufficientDataTest(item),
+      };
+      dataWarnings.value.set(id, dataWarning);
+    });
+  } else {
+    const allCountryWarnings: ByCountryWarning[] = [];
 
-    // insufficient data test
-    if (item.length <= WARNING_INSUFFICIENT_DATA_MINCOUNT) {
-      dataWarning.insufficientData = true;
-    }
-    dataWarnings.value.set(id, dataWarning);
-  });
+    historicalDataForSelectedCountries.value.forEach((countryItems, countryName) => {
+      countryItems.forEach((item, id) => {
+        const dataWarning: DataWarning = {
+          oldData: oldDataTest(item),
+          insufficientData: insufficientDataTest(item),
+        };
+        allCountryWarnings.push({
+          country: countryName,
+          nodeId: id,
+          warning: dataWarning,
+        });
+      });
+    });
+    dataWarnings.value = consolidateNodeWarnings(allCountryWarnings);
+  }
 };
 
 watch(
