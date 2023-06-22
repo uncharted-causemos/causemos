@@ -83,6 +83,7 @@ const props = defineProps<{
   projectionEndTimestamp: number;
   projections: IndexProjection[];
   projectionForScenarioBeingEdited: IndexProjection | null;
+  showDataOutsideNorm: boolean;
 }>();
 
 const emit = defineEmits<{

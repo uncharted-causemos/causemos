@@ -68,6 +68,18 @@
         />
       </section>
       <footer>
+        <section class="show-outside-values">
+          <label @click="showDataOutsideNorm = !showDataOutsideNorm">
+            Show values outside the <b>0</b> to <b>1</b> range
+            <i
+              class="fa fa-lg fa-fw"
+              :class="{
+                'fa-check-square-o': showDataOutsideNorm,
+                'fa-square-o': !showDataOutsideNorm,
+              }"
+            />
+          </label>
+        </section>
         <section>
           <header class="flex">
             <p>Time range</p>
@@ -166,6 +178,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
+        :showDataOutsideNorm="showDataOutsideNorm"
         @select-element="selectElement"
       />
       <IndexProjectionsNodeView
@@ -176,6 +189,7 @@
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
         :projection-for-scenario-being-edited="projectionForScenarioBeingEdited"
+        :showDataOutsideNorm="showDataOutsideNorm"
         @select-element="selectElement"
         @deselect-node="deselectNode"
         @click-chart="onNodeChartClick"
@@ -197,7 +211,6 @@
 </template>
 
 <script setup lang="ts">
-import _ from 'lodash';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -293,6 +306,7 @@ const setIsSingleCountryModeActive = (val: boolean) => {
   updateIndexProjectionSettings({ isSingleCountryModeActive: val });
 };
 
+const showDataOutsideNorm = ref<boolean>(false);
 const temporalResolutionOption = ref(TemporalResolutionOption.Month);
 
 const indexTree = useIndexTree();
@@ -602,6 +616,16 @@ const timeseriesToDisplay = computed(() =>
     overflow-y: auto;
     padding-left: 20px;
     padding-right: 20px;
+  }
+
+  .show-outside-values {
+    display: flex;
+    align-items: flex-end;
+    padding-left: 20px;
+    padding-right: 20px;
+    label i {
+      color: $positive;
+    }
   }
   footer {
     section {

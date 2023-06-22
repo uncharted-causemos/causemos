@@ -45,6 +45,7 @@ defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   projections: IndexProjection[];
+  showDataOutsideNorm: boolean;
 }>();
 
 const emit = defineEmits<{
