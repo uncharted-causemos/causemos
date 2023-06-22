@@ -178,7 +178,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
-        :showDataOutsideNorm="showDataOutsideNorm"
+        :show-data-outside-norm="showDataOutsideNorm"
         @select-element="selectElement"
       />
       <IndexProjectionsNodeView
@@ -189,7 +189,7 @@
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
         :projection-for-scenario-being-edited="projectionForScenarioBeingEdited"
-        :showDataOutsideNorm="showDataOutsideNorm"
+        :show-data-outside-norm="showDataOutsideNorm"
         @select-element="selectElement"
         @deselect-node="deselectNode"
         @click-chart="onNodeChartClick"

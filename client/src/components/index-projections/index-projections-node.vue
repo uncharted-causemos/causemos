@@ -18,6 +18,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        :show-data-outside-norm="showDataOutsideNorm"
         :is-weighted-sum-node="false"
         :is-inverted="isInvertedData"
       />
@@ -36,6 +37,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        :show-data-outside-norm="showDataOutsideNorm"
         :is-weighted-sum-node="true"
         :is-inverted="isInvertedData"
       />

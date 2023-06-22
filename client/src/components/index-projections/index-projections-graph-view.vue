@@ -16,7 +16,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="getProjectionsForNode(projections, cell.node.id)"
-        :showDataOutsideNorm="showDataOutsideNorm"
+        :show-data-outside-norm="showDataOutsideNorm"
         @select="(id) => emit('select-element', id)"
       />
       <div
