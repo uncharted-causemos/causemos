@@ -62,6 +62,7 @@ const props = defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
+  showDataOutsideNorm: boolean;
 }>();
 
 const emit = defineEmits<{

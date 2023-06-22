@@ -11,6 +11,7 @@
           :projection-start-timestamp="projectionStartTimestamp"
           :projection-end-timestamp="projectionEndTimestamp"
           :timeseries="getProjectionsForNode(projectionData, inputComponent.componentNode.id)"
+          :showDataOutsideNorm="showDataOutsideNorm"
           @select="emit('select-element', inputComponent.componentNode.id)"
         />
         <div
@@ -37,6 +38,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="getProjectionsForNode(projectionData, selectedNode.found.id)"
+        :showDataOutsideNorm="showDataOutsideNorm"
         :edit-mode="projectionForScenarioBeingEdited !== null ? EditMode.Constraints : undefined"
         @click-chart="(...params) => emit('click-chart', ...params)"
       />
@@ -59,6 +61,7 @@
           :projection-start-timestamp="projectionStartTimestamp"
           :projection-end-timestamp="projectionEndTimestamp"
           :timeseries="getProjectionsForNode(projectionData, parentNode.id)"
+          :showDataOutsideNorm="showDataOutsideNorm"
           @select="emit('select-element', parentNode.id)"
         />
       </div>
