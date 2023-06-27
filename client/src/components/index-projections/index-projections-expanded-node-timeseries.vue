@@ -40,7 +40,7 @@ const onChartClick = (timestamp: number, value: number) => {
   }
 };
 
-const GRAPH_HEIGHT_DEFAULT = 110; // normally a property of the parent, not available when we switch to variable height
+const GRAPH_HEIGHT_DEFAULT = 160; // normally a property of the parent, not available when we switch to variable height
 const expandedHeight = computed(() => {
   const { globalMaxY, globalMinY } = timeseriesFeatures(timeseries.value);
 
