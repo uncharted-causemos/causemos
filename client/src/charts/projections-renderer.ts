@@ -12,11 +12,14 @@ import {
   renderXaxis,
   renderYaxis,
   invertTimeseriesList,
+  timeseriesFeatures,
+  renderXAxisLine,
 } from '@/utils/timeseries-util';
 import { showSvgTooltip, hideSvgTooltip, translate } from '@/utils/svg-util';
 import { ProjectionPointType } from '@/types/Enums';
 import { splitProjectionsIntoLineSegments } from '@/utils/projection-util';
 import { snapTimestampToNearestMonth } from '@/utils/date-util';
+import { COLOR_SCHEME } from '@/utils/colors-util';
 
 const FOCUS_BORDER_COLOR = '#888';
 const FOCUS_BORDER_STROKE_WIDTH = 1;
@@ -46,6 +49,13 @@ const DASHED_LINE = {
   gap: 4,
   width: 1,
 };
+
+const NORMAL_LIMITS_DASHED_LINE = {
+  length: 2,
+  gap: 2,
+  width: 0.5,
+};
+
 const SOLID_LINE_WIDTH = 1;
 const WEIGHTED_SUM_LINE_OPACITY = 0.25;
 const POINT_RADIUS = 3;
@@ -203,7 +213,9 @@ export default function render(
   projectionEndTimestamp: number,
   isWeightedSum: boolean,
   onClick: (timestamp: number, value: number) => void,
-  isInverted: boolean
+  isInverted: boolean,
+  showDataOutsideNorm: boolean,
+  rangeStart: number
 ) {
   let tsList: ProjectionTimeseries[];
   if (isInverted) {
@@ -211,6 +223,12 @@ export default function render(
   } else {
     tsList = timeseriesList;
   }
+
+  const { globalMaxY, globalMinY, suggestedPadding } = timeseriesFeatures(tsList);
+  const domain = showDataOutsideNorm
+    ? [globalMinY - suggestedPadding, globalMaxY + suggestedPadding]
+    : [0, 1];
+
   // Initialize focused range to the entire time range
   let focusedTimeRange = [projectionStartTimestamp, projectionEndTimestamp];
   // If we're re-rendering, preserve the focused time range from the previous render
@@ -265,7 +283,7 @@ export default function render(
 
   const focusMouseEventArea = focusMouseEventGroup
     .append('rect')
-    .attr('height', focusChartHeight)
+    .attr('height', showDataOutsideNorm ? focusChartHeight + 200 : focusChartHeight)
     .attr('width', chartWidth)
     .attr('x', PADDING_LEFT)
     .attr('y', PADDING_TOP)
@@ -277,7 +295,7 @@ export default function render(
     // Render border
     focusGroupElement
       .append('rect')
-      .attr('height', focusChartHeight)
+      .attr('height', showDataOutsideNorm ? focusChartHeight + 200 : focusChartHeight)
       .attr('width', chartWidth)
       .attr('x', PADDING_LEFT)
       .attr('y', PADDING_TOP)
@@ -301,10 +319,11 @@ export default function render(
     const yAxisElement = renderYaxis(
       focusGroupElement,
       yScale,
-      [0, 1],
-      (number) => number,
+      domain,
+      (number) => number.toFixed(1),
       Y_AXIS_WIDTH,
-      Y_AXIS_WIDTH - AXIS_TICK_LENGTH
+      Y_AXIS_WIDTH - AXIS_TICK_LENGTH,
+      showDataOutsideNorm
     );
     yAxisElement.select('.domain').remove();
     yAxisElement.selectAll('.tick > line').attr('stroke', FOCUS_BORDER_COLOR);
@@ -321,6 +340,20 @@ export default function render(
         timeseries.color
       );
     });
+    if (showDataOutsideNorm) {
+      [0, 1].forEach((y) => {
+        renderXAxisLine(
+          focusGroupElement,
+          0,
+          totalWidth,
+          yScale(y),
+          NORMAL_LIMITS_DASHED_LINE.length,
+          NORMAL_LIMITS_DASHED_LINE.gap,
+          COLOR_SCHEME.GREYS_7[2],
+          NORMAL_LIMITS_DASHED_LINE.width
+        );
+      });
+    }
 
     // Don't render anything outside the main graph area (except the axes)
     focusGroupElement
@@ -358,13 +391,21 @@ export default function render(
       totalWidth - PADDING_RIGHT - SCROLL_BAR_LABEL_WIDTH - SCROLL_BAR_HANDLE_WIDTH,
     ]);
   // Move scrollBarGroupElement below the focus group element and resize it horizontally.
-  scrollBarGroupElement.attr('transform', translate(0, focusHeight + SCROLL_BAR_TOP_MARGIN));
+  scrollBarGroupElement.attr(
+    'transform',
+    translate(
+      0,
+      showDataOutsideNorm
+        ? focusHeight + SCROLL_BAR_TOP_MARGIN
+        : focusHeight + SCROLL_BAR_TOP_MARGIN
+    )
+  );
   scrollBarBackground.attr(
     'width',
     chartWidth - 2 * (SCROLL_BAR_LABEL_WIDTH + SCROLL_BAR_HANDLE_WIDTH)
   );
   // Render timeseries to scrollbar and fade it out.
-  const yScaleScrollbar = d3.scaleLinear().domain([0, 1]).range([SCROLL_BAR_HEIGHT, 0]);
+  const yScaleScrollbar = d3.scaleLinear().domain(domain).range([SCROLL_BAR_HEIGHT, rangeStart]);
   tsList.forEach((timeseries) => {
     const timeseriesGroup = scrollBarGroupElement.append('g').classed('timeseries', true);
     renderTimeseries(
@@ -414,7 +455,7 @@ export default function render(
       .range([PADDING_LEFT, PADDING_LEFT + chartWidth]);
     const yScaleFocus = d3
       .scaleLinear()
-      .domain([0, 1])
+      .domain(domain)
       .range([PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]);
     renderFocusChart(xScaleFocus, yScaleFocus);
     updateFocusMouseEventArea(xScaleFocus, yScaleFocus);

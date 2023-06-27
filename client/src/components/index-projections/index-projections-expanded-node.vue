@@ -24,7 +24,10 @@
       </div>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
-        :class="{ edit: editMode === EditMode.Constraints }"
+        :class="{
+          edit: editMode === EditMode.Constraints,
+          'outside-norm-viewable': showDataOutsideNorm,
+        }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
@@ -57,7 +60,10 @@
       </div>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
-        :class="{ edit: editMode === EditMode.Constraints }"
+        :class="{
+          edit: editMode === EditMode.Constraints,
+          'outside-norm-viewable': showDataOutsideNorm,
+        }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
@@ -185,9 +191,16 @@ $horizontal-margin: 30px;
   $chartPadding: 20px;
   $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
   width: $timeseriesWidth;
-  height: 1 / 4 * $timeseriesWidth + 40px;
+  // height: 1 / 4 * $timeseriesWidth + 40px;
   margin-top: 5px;
   margin-left: $horizontal-margin - $chartPadding;
+  display: flex;
+  min-height: 1 / 4 * $timeseriesWidth + 40px;
+  max-height: 1 / 4 * $timeseriesWidth + 40px;
+
+  &.outside-norm-viewable {
+    max-height: 100%;
+  }
 
   &.warning {
     :deep(g.focusMouseEventGroup) {

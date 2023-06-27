@@ -6,10 +6,10 @@
 
 <script setup lang="ts">
 import * as d3 from 'd3';
-import _ from 'lodash';
-import { ref, toRefs, watch } from 'vue';
+import { computed, ref, toRefs, watch } from 'vue';
 import renderChart from '@/charts/projections-renderer';
 import { ProjectionTimeseries } from '@/types/Timeseries';
+import { timeseriesFeatures } from '@/utils/timeseries-util';
 
 const props = defineProps<{
   projectionStartTimestamp: number;
@@ -30,34 +30,65 @@ const {
   timeseries,
   isWeightedSumNode,
   isInverted,
+  showDataOutsideNorm,
 } = toRefs(props);
 const chartRef = ref<HTMLElement | null>(null);
 const onChartClick = (timestamp: number, value: number) => {
-  emit('click-chart', timestamp, props.isInverted ? 1 - value : value);
+  // Only allow a "click" if data point is within normalized range
+  if (value >= 0 && value <= 1) {
+    emit('click-chart', timestamp, props.isInverted ? 1 - value : value);
+  }
 };
 
+const GRAPH_HEIGHT_DEFAULT = 110; // normally a property of the parent, not available when we switch to variable height
+const expandedHeight = computed(() => {
+  const { globalMaxY, globalMinY } = timeseriesFeatures(timeseries.value);
+
+  return { height: Math.ceil((globalMaxY - globalMinY) * GRAPH_HEIGHT_DEFAULT), start: globalMinY };
+});
+
 watch(
-  [projectionStartTimestamp, projectionEndTimestamp, chartRef, timeseries, isWeightedSumNode],
+  [
+    projectionStartTimestamp,
+    projectionEndTimestamp,
+    chartRef,
+    timeseries,
+    isWeightedSumNode,
+    showDataOutsideNorm,
+  ],
   () => {
     const parentElement = chartRef.value?.parentElement;
     const svg = chartRef.value ? d3.select<HTMLElement, null>(chartRef.value) : null;
     if (parentElement === null || parentElement === undefined || svg === null) {
       return;
     }
-    const { clientWidth: width, clientHeight: height } = parentElement;
+    const { clientWidth: width } = parentElement;
     // Set new size
-    svg.attr('width', width).attr('height', height);
+    svg
+      .attr('width', width)
+      .attr(
+        'height',
+        showDataOutsideNorm.value ? expandedHeight.value.height : GRAPH_HEIGHT_DEFAULT
+      )
+      .attr(
+        'viewBox',
+        `0 ${showDataOutsideNorm.value ? expandedHeight.value.start : 0} ${width} ${
+          showDataOutsideNorm.value ? expandedHeight.value.height : GRAPH_HEIGHT_DEFAULT
+        }`
+      );
 
     renderChart(
       svg,
       timeseries.value,
       width,
-      height,
+      showDataOutsideNorm.value ? expandedHeight.value.height : GRAPH_HEIGHT_DEFAULT,
       projectionStartTimestamp.value,
       projectionEndTimestamp.value,
       isWeightedSumNode.value,
       onChartClick,
-      isInverted.value
+      isInverted.value,
+      showDataOutsideNorm.value,
+      0
     );
   }
 );
