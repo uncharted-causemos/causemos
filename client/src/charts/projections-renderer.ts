@@ -226,7 +226,10 @@ export default function render(
 
   const { globalMaxY, globalMinY, suggestedPadding } = timeseriesFeatures(tsList);
   const domain = showDataOutsideNorm
-    ? [globalMinY - suggestedPadding, globalMaxY + suggestedPadding]
+    ? [
+        globalMinY - suggestedPadding,
+        globalMaxY < 1 ? 1 + suggestedPadding : globalMaxY + suggestedPadding,
+      ]
     : [0, 1];
 
   // Initialize focused range to the entire time range
@@ -283,7 +286,7 @@ export default function render(
 
   const focusMouseEventArea = focusMouseEventGroup
     .append('rect')
-    .attr('height', showDataOutsideNorm ? focusChartHeight + 200 : focusChartHeight)
+    .attr('height', focusChartHeight)
     .attr('width', chartWidth)
     .attr('x', PADDING_LEFT)
     .attr('y', PADDING_TOP)
