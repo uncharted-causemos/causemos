@@ -34,7 +34,10 @@ const GRAPH_HEIGHT_DEFAULT = 60; // normally a property of the parent, not avail
 const expandedHeight = computed(() => {
   const { globalMaxY, globalMinY } = timeseriesFeatures(timeseries.value);
 
-  return { height: Math.ceil((globalMaxY - globalMinY) * GRAPH_HEIGHT_DEFAULT), start: globalMinY };
+  return {
+    height: Math.ceil(((globalMaxY < 1 ? 1 : globalMaxY) - globalMinY) * GRAPH_HEIGHT_DEFAULT),
+    start: globalMinY,
+  };
 });
 
 watch(
