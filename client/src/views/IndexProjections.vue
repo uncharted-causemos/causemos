@@ -69,7 +69,7 @@
       </section>
       <footer>
         <section class="show-outside-values">
-          <label @click="showDataOutsideNorm = !showDataOutsideNorm">
+          <label @click="setShowDataOutsideNorm(!showDataOutsideNorm)">
             Show values outside the <b>0</b> to <b>1</b> range
             <i
               class="fa fa-lg fa-fw"
@@ -306,7 +306,11 @@ const setIsSingleCountryModeActive = (val: boolean) => {
   updateIndexProjectionSettings({ isSingleCountryModeActive: val });
 };
 
-const showDataOutsideNorm = ref<boolean>(false);
+const showDataOutsideNorm = computed(() => indexProjectionSettings.value.showDataOutsideNorm);
+const setShowDataOutsideNorm = (val: boolean) => {
+  updateIndexProjectionSettings({ showDataOutsideNorm: val });
+};
+
 const temporalResolutionOption = ref(TemporalResolutionOption.Month);
 
 const indexTree = useIndexTree();
