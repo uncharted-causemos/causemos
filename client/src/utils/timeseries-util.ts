@@ -340,11 +340,21 @@ export function renderYaxis(
   yAxisWidth: number,
   showDataOutsideNorm: boolean
 ) {
+  // yTick values should only be min and max.  Ensure we don't have a visual occlusion with normal line ticks by ensuring minimum distance
+  if (showDataOutsideNorm) {
+    if (Math.min(...yTickValues) < -0.1) {
+      yTickValues = [...yTickValues, 0];
+    }
+    if (Math.max(...yTickValues) > 1.1) {
+      yTickValues = [...yTickValues, 1];
+    }
+  }
+
   const yAxis = d3
     .axisLeft(yScale)
     .tickSize(xOffset - yAxisWidth)
     .tickFormat(valueFormatter)
-    .tickValues(showDataOutsideNorm ? [...yTickValues, 0, 1] : yTickValues);
+    .tickValues(yTickValues);
 
   return selection
     .append('g')
