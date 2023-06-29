@@ -472,6 +472,7 @@ watch(
     projectionEndYear,
     projectionEndMonth,
     selectedNodeId,
+    showDataOutsideNorm,
   ],
   () => {
     const newDataState: IndexProjectionsDataState = {
@@ -484,6 +485,7 @@ watch(
       projectionEndYear: projectionEndYear.value,
       projectionEndMonth: projectionEndMonth.value,
       selectedNodeId: selectedNodeId.value,
+      showDataOutsideNorm: showDataOutsideNorm.value,
     };
     setDataState(newDataState);
     // No view state for this page. Set it to an empty object so that any view state from previous
@@ -528,6 +530,7 @@ const confirmUpdateStateFromInsight = () => {
     selectedCountries: dataState.selectedCountries,
     scenarios: [...dataState.scenarios],
   });
+  showDataOutsideNorm.value = dataState.showDataOutsideNorm;
   projectionStartYear.value = dataState.projectionStartYear;
   projectionStartMonth.value = dataState.projectionStartMonth;
   projectionEndYear.value = dataState.projectionEndYear;
