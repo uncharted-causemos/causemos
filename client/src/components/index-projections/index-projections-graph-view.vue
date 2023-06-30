@@ -17,6 +17,7 @@
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="getProjectionsForNode(projections, cell.node.id)"
         :show-data-outside-norm="showDataOutsideNorm"
+        :data-warnings="dataWarnings"
         @select="(id) => emit('select-element', id)"
       />
       <div
@@ -28,8 +29,6 @@
 </template>
 
 <script setup lang="ts">
-import _ from 'lodash';
-
 import { GridCell, IndexProjection, SelectableIndexElementId } from '@/types/Index';
 import { computed } from 'vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
@@ -41,12 +40,14 @@ import {
 } from '@/utils/grid-cell-util';
 import IndexProjectionsNode from './index-projections-node.vue';
 import { getProjectionsForNode } from '@/utils/index-projection-util';
+import { DataWarning } from '@/types/Timeseries';
 
 defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   projections: IndexProjection[];
   showDataOutsideNorm: boolean;
+  dataWarnings?: Map<string, DataWarning>;
 }>();
 
 const emit = defineEmits<{

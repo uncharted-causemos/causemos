@@ -12,6 +12,7 @@
           :projection-end-timestamp="projectionEndTimestamp"
           :timeseries="getProjectionsForNode(projectionData, inputComponent.componentNode.id)"
           :show-data-outside-norm="showDataOutsideNorm"
+          :data-warnings="dataWarnings"
           @select="emit('select-element', inputComponent.componentNode.id)"
         />
         <div
@@ -40,6 +41,7 @@
         :timeseries="getProjectionsForNode(projectionData, selectedNode.found.id)"
         :show-data-outside-norm="showDataOutsideNorm"
         :edit-mode="projectionForScenarioBeingEdited !== null ? EditMode.Constraints : undefined"
+        :data-warnings="dataWarnings"
         @click-chart="(...params) => emit('click-chart', ...params)"
       />
       <div
@@ -62,6 +64,7 @@
           :projection-end-timestamp="projectionEndTimestamp"
           :timeseries="getProjectionsForNode(projectionData, parentNode.id)"
           :show-data-outside-norm="showDataOutsideNorm"
+          :data-warnings="dataWarnings"
           @select="emit('select-element', parentNode.id)"
         />
       </div>
@@ -79,6 +82,7 @@ import { IndexProjection, SelectableIndexElementId } from '@/types/Index';
 import IndexProjectionsNode from './index-projections-node.vue';
 import IndexProjectionsExpandedNode from './index-projections-expanded-node.vue';
 import { EditMode } from '@/utils/projection-util';
+import { DataWarning } from '@/types/Timeseries';
 
 const props = defineProps<{
   selectedNodeId: string | null;
@@ -87,6 +91,7 @@ const props = defineProps<{
   projections: IndexProjection[];
   projectionForScenarioBeingEdited: IndexProjection | null;
   showDataOutsideNorm: boolean;
+  dataWarnings?: Map<string, DataWarning>;
 }>();
 
 const emit = defineEmits<{

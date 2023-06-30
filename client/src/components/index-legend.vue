@@ -52,6 +52,17 @@
         <span class="un-font-small" :style="{ color: NEGATIVE_COLOR }">low</span> levels of B
       </p>
     </div>
+    <div v-if="props.isProjectionSpace" class="legend-column">
+      <p class="un-font-small">Data quality</p>
+      <p class="un-font-small">
+        <i class="fa fa-fw fa-square old-data"></i>
+        Old data
+      </p>
+      <p class="un-font-small">
+        <i class="fa fa-fw fa-exclamation-triangle data-warning"></i>
+        Insufficient data for accurate projection
+      </p>
+    </div>
   </div>
 </template>
 
@@ -80,5 +91,13 @@ const props = defineProps<{ isProjectionSpace: boolean }>();
   p:not(:first-child) {
     color: $un-color-black-40;
   }
+}
+
+.data-warning {
+  color: $un-color-feedback-warning;
+}
+
+.old-data {
+  color: #f0edd9;
 }
 </style>
