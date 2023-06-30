@@ -43,6 +43,13 @@ export default function render(
   rangeStart: number
 ) {
   const { globalMaxY, globalMinY, suggestedPadding } = timeseriesFeatures(timeseriesList);
+  const yScaleDomain = showDataOutsideNorm
+    ? [
+        globalMinY - suggestedPadding,
+        globalMaxY < 1 ? 1 + suggestedPadding : globalMaxY + suggestedPadding,
+      ]
+    : [0, 1];
+
   // Clear any existing elements
   selection.selectAll('*').remove();
   // Add chart `g` element to the page
@@ -54,9 +61,7 @@ export default function render(
     .range([0, totalWidth]);
   const yScale = d3
     .scaleLinear()
-    .domain(
-      showDataOutsideNorm ? [globalMinY - suggestedPadding, globalMaxY + suggestedPadding] : [0, 1]
-    )
+    .domain(yScaleDomain)
     .range(isInverted ? [rangeStart, totalHeight] : [totalHeight, rangeStart]);
 
   // Render the series

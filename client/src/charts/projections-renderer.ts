@@ -225,7 +225,7 @@ export default function render(
   }
 
   const { globalMaxY, globalMinY, suggestedPadding } = timeseriesFeatures(tsList);
-  const domain = showDataOutsideNorm
+  const yScaleDomain = showDataOutsideNorm
     ? [
         globalMinY - suggestedPadding,
         globalMaxY < 1 ? 1 + suggestedPadding : globalMaxY + suggestedPadding,
@@ -322,7 +322,7 @@ export default function render(
     const yAxisElement = renderYaxis(
       focusGroupElement,
       yScale,
-      domain,
+      yScaleDomain,
       (number) =>
         Math.ceil(Math.abs(number)) >= 10
           ? number >= 0
@@ -413,7 +413,10 @@ export default function render(
     chartWidth - 2 * (SCROLL_BAR_LABEL_WIDTH + SCROLL_BAR_HANDLE_WIDTH)
   );
   // Render timeseries to scrollbar and fade it out.
-  const yScaleScrollbar = d3.scaleLinear().domain(domain).range([SCROLL_BAR_HEIGHT, rangeStart]);
+  const yScaleScrollbar = d3
+    .scaleLinear()
+    .domain(yScaleDomain)
+    .range([SCROLL_BAR_HEIGHT, rangeStart]);
   tsList.forEach((timeseries) => {
     const timeseriesGroup = scrollBarGroupElement.append('g').classed('timeseries', true);
     renderTimeseries(
@@ -463,7 +466,7 @@ export default function render(
       .range([PADDING_LEFT, PADDING_LEFT + chartWidth]);
     const yScaleFocus = d3
       .scaleLinear()
-      .domain(domain)
+      .domain(yScaleDomain)
       .range([PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]);
     renderFocusChart(xScaleFocus, yScaleFocus);
     updateFocusMouseEventArea(xScaleFocus, yScaleFocus);
