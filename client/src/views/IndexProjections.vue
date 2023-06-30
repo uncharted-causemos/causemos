@@ -588,7 +588,7 @@ const confirmUpdateStateFromInsight = () => {
     selectedCountries: dataState.selectedCountries,
     scenarios: [...dataState.scenarios],
   });
-  showDataOutsideNorm.value = dataState.showDataOutsideNorm;
+  indexProjectionSettings.value.showDataOutsideNorm = dataState.showDataOutsideNorm;
   projectionStartYear.value = dataState.projectionStartYear;
   projectionStartMonth.value = dataState.projectionStartMonth;
   projectionEndYear.value = dataState.projectionEndYear;
