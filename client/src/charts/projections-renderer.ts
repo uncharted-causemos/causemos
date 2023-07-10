@@ -394,15 +394,7 @@ export default function render(
       totalWidth - PADDING_RIGHT - SCROLL_BAR_LABEL_WIDTH - SCROLL_BAR_HANDLE_WIDTH,
     ]);
   // Move scrollBarGroupElement below the focus group element and resize it horizontally.
-  scrollBarGroupElement.attr(
-    'transform',
-    translate(
-      0,
-      showDataOutsideNorm
-        ? focusHeight + SCROLL_BAR_TOP_MARGIN
-        : focusHeight + SCROLL_BAR_TOP_MARGIN
-    )
-  );
+  scrollBarGroupElement.attr('transform', translate(0, focusHeight + SCROLL_BAR_TOP_MARGIN));
   scrollBarBackground.attr(
     'width',
     chartWidth - 2 * (SCROLL_BAR_LABEL_WIDTH + SCROLL_BAR_HANDLE_WIDTH)
