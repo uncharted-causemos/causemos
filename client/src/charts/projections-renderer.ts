@@ -298,7 +298,7 @@ export default function render(
     // Render border
     focusGroupElement
       .append('rect')
-      .attr('height', showDataOutsideNorm ? focusChartHeight + 200 : focusChartHeight)
+      .attr('height', focusChartHeight)
       .attr('width', chartWidth)
       .attr('x', PADDING_LEFT)
       .attr('y', PADDING_TOP)
