@@ -323,12 +323,7 @@ export default function render(
       focusGroupElement,
       yScale,
       yScaleDomain,
-      (number) =>
-        Math.ceil(Math.abs(number)) >= 10
-          ? number >= 0
-            ? Math.ceil(number)
-            : Math.floor(number)
-          : number.toFixed(1),
+      (number) => (number === 0 || number === 1 ? number : number.toFixed(1)),
       Y_AXIS_WIDTH,
       Y_AXIS_WIDTH - AXIS_TICK_LENGTH,
       showDataOutsideNorm
