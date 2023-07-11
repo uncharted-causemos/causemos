@@ -224,13 +224,8 @@ export default function render(
     tsList = timeseriesList;
   }
 
-  const { globalMaxY, globalMinY, suggestedPadding } = timeseriesFeatures(tsList);
-  const yScaleDomain = showDataOutsideNorm
-    ? [
-        globalMinY - suggestedPadding,
-        globalMaxY < 1 ? 1 + suggestedPadding : globalMaxY + suggestedPadding,
-      ]
-    : [0, 1];
+  const { globalMaxY, globalMinY } = timeseriesFeatures(tsList);
+  const yScaleDomain = showDataOutsideNorm ? [globalMinY, globalMaxY] : [0, 1];
 
   // Initialize focused range to the entire time range
   let focusedTimeRange = [projectionStartTimestamp, projectionEndTimestamp];
