@@ -516,7 +516,6 @@ export const timeseriesFeatures = (timeseriesList: ProjectionTimeseries[]) => {
   return {
     globalMaxY,
     globalMinY,
-    suggestedPadding: Math.abs(globalMaxY - globalMinY) * 0.05,
   };
 };
 
