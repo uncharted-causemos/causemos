@@ -91,7 +91,7 @@ watch(
       onChartClick,
       isInverted.value,
       showDataOutsideNorm.value,
-      0
+      showDataOutsideNorm.value ? expandedHeight.value.start : 0
     );
   }
 );
