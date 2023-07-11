@@ -48,6 +48,7 @@ watch(
     chartRef,
     isWeightedSumNode,
     showDataOutsideNorm,
+    expandedHeight,
   ],
   () => {
     const parentElement = chartRef.value?.parentElement;
