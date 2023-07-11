@@ -9,7 +9,7 @@ import * as d3 from 'd3';
 import { computed, ref, toRefs, watch } from 'vue';
 import renderChart from '@/charts/projections-renderer';
 import { ProjectionTimeseries } from '@/types/Timeseries';
-import { timeseriesFeatures } from '@/utils/timeseries-util';
+import { timeseriesExtrema } from '@/utils/timeseries-util';
 
 const props = defineProps<{
   projectionStartTimestamp: number;
@@ -42,7 +42,7 @@ const onChartClick = (timestamp: number, value: number) => {
 
 const GRAPH_HEIGHT_DEFAULT = 160; // normally a property of the parent, not available when we switch to variable height
 const expandedHeight = computed(() => {
-  const { globalMaxY, globalMinY } = timeseriesFeatures(timeseries.value);
+  const { globalMaxY, globalMinY } = timeseriesExtrema(timeseries.value);
 
   return {
     height: Math.ceil(((globalMaxY < 1 ? 1 : globalMaxY) - globalMinY) * GRAPH_HEIGHT_DEFAULT),
