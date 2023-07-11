@@ -495,7 +495,7 @@ export function invertTimeseriesList(timeseriesList: ProjectionTimeseries[]) {
   return timeseriesList;
 }
 
-export const timeseriesFeatures = (timeseriesList: ProjectionTimeseries[]) => {
+export const timeseriesExtrema = (timeseriesList: ProjectionTimeseries[]) => {
   let globalMaxY = 0;
   let globalMinY = 0;
 

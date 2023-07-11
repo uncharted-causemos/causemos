@@ -12,7 +12,7 @@ import {
   renderXaxis,
   renderYaxis,
   invertTimeseriesList,
-  timeseriesFeatures,
+  timeseriesExtrema,
   renderXAxisLine,
 } from '@/utils/timeseries-util';
 import { showSvgTooltip, hideSvgTooltip, translate } from '@/utils/svg-util';
@@ -224,7 +224,7 @@ export default function render(
     tsList = timeseriesList;
   }
 
-  const { globalMaxY, globalMinY } = timeseriesFeatures(tsList);
+  const { globalMaxY, globalMinY } = timeseriesExtrema(tsList);
   const yScaleDomain = showDataOutsideNorm ? [globalMinY, globalMaxY] : [0, 1];
 
   // Initialize focused range to the entire time range

@@ -8,7 +8,7 @@ import {
   renderPoint,
   renderSquares,
   renderXAxisLine,
-  timeseriesFeatures,
+  timeseriesExtrema,
 } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 import { COLOR_SCHEME } from '@/utils/colors-util';
@@ -42,7 +42,7 @@ export default function render(
   showDataOutsideNorm: boolean,
   rangeStart: number
 ) {
-  const { globalMaxY, globalMinY } = timeseriesFeatures(timeseriesList);
+  const { globalMaxY, globalMinY } = timeseriesExtrema(timeseriesList);
   const yScaleDomain = showDataOutsideNorm ? [globalMinY, globalMaxY] : [0, 1];
 
   // Clear any existing elements
