@@ -72,12 +72,6 @@ watch(
       .attr(
         'height',
         showDataOutsideNorm.value ? expandedHeight.value.height : GRAPH_HEIGHT_DEFAULT
-      )
-      .attr(
-        'viewBox',
-        `0 ${showDataOutsideNorm.value ? expandedHeight.value.start : 0} ${width} ${
-          showDataOutsideNorm.value ? expandedHeight.value.height : GRAPH_HEIGHT_DEFAULT
-        }`
       );
 
     renderChart(

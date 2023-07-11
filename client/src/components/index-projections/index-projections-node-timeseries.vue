@@ -66,12 +66,6 @@ watch(
       'height',
       showDataOutsideNorm.value ? expandedHeight.value.height : GRAPH_HEIGHT_DEFAULT
     );
-    svg.attr(
-      'viewBox',
-      `0 ${showDataOutsideNorm.value ? expandedHeight.value.start : 0} ${width} ${
-        showDataOutsideNorm.value ? expandedHeight.value.height : GRAPH_HEIGHT_DEFAULT
-      }`
-    );
 
     // Rerender whenever dependencies change
     renderChart(
