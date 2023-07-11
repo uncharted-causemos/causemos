@@ -42,13 +42,8 @@ export default function render(
   showDataOutsideNorm: boolean,
   rangeStart: number
 ) {
-  const { globalMaxY, globalMinY, suggestedPadding } = timeseriesFeatures(timeseriesList);
-  const yScaleDomain = showDataOutsideNorm
-    ? [
-        globalMinY - suggestedPadding,
-        globalMaxY < 1 ? 1 + suggestedPadding : globalMaxY + suggestedPadding,
-      ]
-    : [0, 1];
+  const { globalMaxY, globalMinY } = timeseriesFeatures(timeseriesList);
+  const yScaleDomain = showDataOutsideNorm ? [globalMinY, globalMaxY] : [0, 1];
 
   // Clear any existing elements
   selection.selectAll('*').remove();
