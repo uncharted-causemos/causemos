@@ -44,9 +44,11 @@ const GRAPH_HEIGHT_DEFAULT = 160; // normally a property of the parent, not avai
 const expandedHeight = computed(() => {
   const { globalMaxY, globalMinY } = timeseriesExtrema(timeseries.value);
 
+  const minY = globalMinY > 0 ? 0 : globalMinY; // don't allow a minY to exceed 0
+  const height = Math.ceil(((globalMaxY < 1 ? 1 : globalMaxY) - minY) * GRAPH_HEIGHT_DEFAULT);
   return {
-    height: Math.ceil(((globalMaxY < 1 ? 1 : globalMaxY) - globalMinY) * GRAPH_HEIGHT_DEFAULT),
-    start: globalMinY,
+    height,
+    start: minY,
   };
 });
 
