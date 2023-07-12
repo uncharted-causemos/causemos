@@ -224,7 +224,7 @@ export default function render(
   }
 
   const { globalMaxY, globalMinY } = timeseriesExtrema(tsList);
-  const yScaleDomain = showDataOutsideNorm ? [globalMinY, globalMaxY] : [0, 1];
+  const yScaleDomain = showDataOutsideNorm ? [globalMinY, globalMaxY < 1 ? 1 : globalMaxY] : [0, 1];
 
   // Initialize focused range to the entire time range
   let focusedTimeRange = [projectionStartTimestamp, projectionEndTimestamp];

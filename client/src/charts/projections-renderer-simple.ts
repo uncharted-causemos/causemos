@@ -42,7 +42,7 @@ export default function render(
   showDataOutsideNorm: boolean
 ) {
   const { globalMaxY, globalMinY } = timeseriesExtrema(timeseriesList);
-  const yScaleDomain = showDataOutsideNorm ? [globalMinY, globalMaxY] : [0, 1];
+  const yScaleDomain = showDataOutsideNorm ? [globalMinY, globalMaxY < 1 ? 1 : globalMaxY] : [0, 1];
 
   // Clear any existing elements
   selection.selectAll('*').remove();
