@@ -46,10 +46,7 @@ const expandedHeight = computed(() => {
 
   const minY = globalMinY > 0 ? 0 : globalMinY; // don't allow a minY to exceed 0
   const height = Math.ceil(((globalMaxY < 1 ? 1 : globalMaxY) - minY) * GRAPH_HEIGHT_DEFAULT);
-  return {
-    height,
-    start: minY,
-  };
+  return height;
 });
 
 watch(
@@ -72,23 +69,19 @@ watch(
     // Set new size
     svg
       .attr('width', width)
-      .attr(
-        'height',
-        showDataOutsideNorm.value ? expandedHeight.value.height : GRAPH_HEIGHT_DEFAULT
-      );
+      .attr('height', showDataOutsideNorm.value ? expandedHeight.value : GRAPH_HEIGHT_DEFAULT);
 
     renderChart(
       svg,
       timeseries.value,
       width,
-      showDataOutsideNorm.value ? expandedHeight.value.height : GRAPH_HEIGHT_DEFAULT,
+      showDataOutsideNorm.value ? expandedHeight.value : GRAPH_HEIGHT_DEFAULT,
       projectionStartTimestamp.value,
       projectionEndTimestamp.value,
       isWeightedSumNode.value,
       onChartClick,
       isInverted.value,
-      showDataOutsideNorm.value,
-      showDataOutsideNorm.value ? expandedHeight.value.start : 0
+      showDataOutsideNorm.value
     );
   }
 );

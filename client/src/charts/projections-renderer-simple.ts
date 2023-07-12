@@ -39,8 +39,7 @@ export default function render(
   projectionEndTimestamp: number,
   isWeightedSum: boolean,
   isInverted: boolean,
-  showDataOutsideNorm: boolean,
-  rangeStart: number
+  showDataOutsideNorm: boolean
 ) {
   const { globalMaxY, globalMinY } = timeseriesExtrema(timeseriesList);
   const yScaleDomain = showDataOutsideNorm ? [globalMinY, globalMaxY] : [0, 1];
@@ -57,7 +56,7 @@ export default function render(
   const yScale = d3
     .scaleLinear()
     .domain(yScaleDomain)
-    .range(isInverted ? [rangeStart, totalHeight] : [totalHeight, rangeStart]);
+    .range(isInverted ? [0, totalHeight] : [totalHeight, 0]);
 
   // Render the series
   if (isWeightedSum) {

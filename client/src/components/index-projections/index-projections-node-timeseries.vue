@@ -37,10 +37,7 @@ const expandedHeight = computed(() => {
   const minY = globalMinY > 0 ? 0 : globalMinY; // don't allow a minY to exceed 0
   const height = Math.ceil(((globalMaxY < 1 ? 1 : globalMaxY) - minY) * GRAPH_HEIGHT_DEFAULT); // don't allow maxY to fall beneath 1
 
-  return {
-    height,
-    start: minY,
-  };
+  return height;
 });
 
 watch(
@@ -62,23 +59,19 @@ watch(
     const { clientWidth: width } = parentElement;
     // Set new size
     svg.attr('width', width);
-    svg.attr(
-      'height',
-      showDataOutsideNorm.value ? expandedHeight.value.height : GRAPH_HEIGHT_DEFAULT
-    );
+    svg.attr('height', showDataOutsideNorm.value ? expandedHeight.value : GRAPH_HEIGHT_DEFAULT);
 
     // Rerender whenever dependencies change
     renderChart(
       svg,
       timeseries.value,
       width,
-      showDataOutsideNorm.value ? expandedHeight.value.height : GRAPH_HEIGHT_DEFAULT,
+      showDataOutsideNorm.value ? expandedHeight.value : GRAPH_HEIGHT_DEFAULT,
       projectionStartTimestamp.value,
       projectionEndTimestamp.value,
       isWeightedSumNode.value,
       isInverted.value,
-      showDataOutsideNorm.value,
-      showDataOutsideNorm.value ? expandedHeight.value.start : 0
+      showDataOutsideNorm.value
     );
   }
 );

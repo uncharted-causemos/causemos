@@ -214,8 +214,7 @@ export default function render(
   isWeightedSum: boolean,
   onClick: (timestamp: number, value: number) => void,
   isInverted: boolean,
-  showDataOutsideNorm: boolean,
-  rangeStart: number
+  showDataOutsideNorm: boolean
 ) {
   let tsList: ProjectionTimeseries[];
   if (isInverted) {
@@ -395,10 +394,7 @@ export default function render(
     chartWidth - 2 * (SCROLL_BAR_LABEL_WIDTH + SCROLL_BAR_HANDLE_WIDTH)
   );
   // Render timeseries to scrollbar and fade it out.
-  const yScaleScrollbar = d3
-    .scaleLinear()
-    .domain(yScaleDomain)
-    .range([SCROLL_BAR_HEIGHT, rangeStart]);
+  const yScaleScrollbar = d3.scaleLinear().domain(yScaleDomain).range([SCROLL_BAR_HEIGHT, 0]);
   tsList.forEach((timeseries) => {
     const timeseriesGroup = scrollBarGroupElement.append('g').classed('timeseries', true);
     renderTimeseries(
