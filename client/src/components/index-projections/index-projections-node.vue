@@ -135,9 +135,7 @@ const isInvertedData = computed(() =>
 
 .timeseries {
   border-top: 1px solid $un-color-black-10;
-  display: flex;
   min-height: 60px;
-  max-height: 60px;
   &.outside-norm-viewable {
     max-height: 100%;
   }
