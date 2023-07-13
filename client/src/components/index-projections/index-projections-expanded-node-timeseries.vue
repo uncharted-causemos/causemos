@@ -41,11 +41,16 @@ const onChartClick = (timestamp: number, value: number) => {
 };
 
 const GRAPH_HEIGHT_DEFAULT = 160; // normally a property of the parent, not available when we switch to variable height
+const GRAPH_RECT_HEIGHT = 110; // height of rectangle defined in SVG that is the graph space (e
 const expandedHeight = computed(() => {
   const { globalMaxY, globalMinY } = timeseriesExtrema(timeseries.value);
 
   const minY = globalMinY > 0 ? 0 : globalMinY; // don't allow a minY to exceed 0
-  const height = Math.ceil(((globalMaxY < 1 ? 1 : globalMaxY) - minY) * GRAPH_HEIGHT_DEFAULT);
+
+  const totalY = (globalMaxY < 1 ? 1 : globalMaxY) - minY;
+  const height = Math.ceil(
+    GRAPH_HEIGHT_DEFAULT + (totalY > 1 ? (totalY - 1) * GRAPH_RECT_HEIGHT : 0)
+  );
   return height;
 });
 
