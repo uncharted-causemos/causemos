@@ -203,7 +203,7 @@ $horizontal-margin: 30px;
   $chartPadding: 20px;
   $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
   $timeseriesHeight: calc(1 / 4 * $timeseriesWidth) + 40px;
-
+  display: flex; // prevents a slight change in node size when showing outside norm values.
   margin-top: 5px;
   margin-left: $horizontal-margin - $chartPadding;
   width: $timeseriesWidth;
