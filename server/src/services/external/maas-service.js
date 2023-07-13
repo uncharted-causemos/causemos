@@ -117,7 +117,7 @@ const submitModelRun = async (metadata) => {
  *
  * @param {ModelRun} metadata - model run metadata
  */
-const startModelOutputPostProcessing = async (metadata) => {
+const startModelOutputPostProcessing = async (metadata, selectedOutputTasks = []) => {
   Logger.info(`Start model output processing ${metadata.model_name} ${metadata.id} `);
   if (!metadata.model_id || !metadata.id) {
     const err = 'Required ids for model output post processing were not provided';
@@ -206,6 +206,8 @@ const startModelOutputPostProcessing = async (metadata) => {
     run_id: metadata.id,
     doc_ids: docIds,
     data_paths: metadata.data_paths,
+    model_bucket: process.env.S3_MODELS_BUCKET,
+    indicator_bucket: process.env.S3_INDICATORS_BUCKET,
     qualifier_map: qualifierMap,
     weight_column: weightColumn,
     compute_tiles: true,
@@ -215,16 +217,8 @@ const startModelOutputPostProcessing = async (metadata) => {
       regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL,
     },
   };
-  // If custom target S3 is provided,
-  if (process.env.S3_URL) {
-    flowParameters.dest = {
-      endpoint_url: process.env.S3_URL,
-      region_name: 'us-east-1',
-      key: process.env.S3_ID,
-      secret: process.env.S3_SECRET,
-    };
-    flowParameters.model_bucket = process.env.S3_MODELS_BUCKET;
-    flowParameters.indicator_bucket = process.env.S3_INDICATORS_BUCKET;
+  if (selectedOutputTasks.length > 0) {
+    flowParameters.selected_output_tasks = selectedOutputTasks;
   }
   try {
     await sendToPipeline(flowParameters);
@@ -327,7 +321,11 @@ const _getFlowIdForRun = async (runId) => {
  * @param {Indicator} metadata -indicator metadata
  * @param {boolean} fullReplace -should old existing indicators be deleted
  */
-const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
+const startIndicatorPostProcessing = async (
+  metadata,
+  fullReplace = false,
+  selectedOutputTasks = []
+) => {
   Logger.info(`Start indicator processing ${metadata.name} ${metadata.id} `);
   if (!metadata.id) {
     const err = 'Required ids for indicator post processing were not provided';
@@ -488,27 +486,20 @@ const startIndicatorPostProcessing = async (metadata, fullReplace = false) => {
     doc_ids: docIds,
     run_id: 'indicator',
     data_paths: metadata.data_paths,
+    model_bucket: process.env.S3_MODELS_BUCKET,
+    indicator_bucket: process.env.S3_INDICATORS_BUCKET,
     temporal_resolution: resolutions[highestRes],
     qualifier_map: qualifierMap,
     weight_column: weightColumn,
     is_indicator: true,
-    compute_tiles: true,
     qualifier_thresholds: {
       max_count: QUALIFIER_MAX_COUNT,
       regional_timeseries_count: QUALIFIER_TIMESERIES_MAX_COUNT,
       regional_timeseries_max_level: QUALIFIER_TIMESERIES_MAX_LEVEL,
     },
   };
-  // If custom target S3 is provided,
-  if (process.env.S3_URL) {
-    flowParameters.dest = {
-      endpoint_url: process.env.S3_URL,
-      region_name: 'us-east-1',
-      key: process.env.S3_ID,
-      secret: process.env.S3_SECRET,
-    };
-    flowParameters.model_bucket = process.env.S3_MODELS_BUCKET;
-    flowParameters.indicator_bucket = process.env.S3_INDICATORS_BUCKET;
+  if (selectedOutputTasks.length > 0) {
+    flowParameters.selected_output_tasks = selectedOutputTasks;
   }
   try {
     await sendToPipeline(flowParameters);
