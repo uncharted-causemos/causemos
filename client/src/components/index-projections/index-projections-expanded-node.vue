@@ -202,13 +202,13 @@ $horizontal-margin: 30px;
   //  elements in this component, even though the left axis and svg have to extend past the margin.
   $chartPadding: 20px;
   $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
-  width: $timeseriesWidth;
+  $timeseriesHeight: calc(1 / 4 * $timeseriesWidth) + 40px;
 
   margin-top: 5px;
   margin-left: $horizontal-margin - $chartPadding;
-  display: flex;
-  min-height: calc(1 / 4 * $timeseriesWidth) + 40px; // prevent a display problem using min/max height.
-  max-height: calc(1 / 4 * $timeseriesWidth) + 40px;
+  width: $timeseriesWidth;
+  min-height: $timeseriesHeight; // prevent a display problem using min/max height.
+  max-height: $timeseriesHeight;
 
   &.outside-norm-viewable {
     max-height: 100%;
