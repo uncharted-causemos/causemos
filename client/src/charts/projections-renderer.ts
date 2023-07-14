@@ -12,16 +12,19 @@ import {
   renderXaxis,
   renderYaxis,
   invertTimeseriesList,
+  timeseriesExtrema,
+  renderXAxisLine,
 } from '@/utils/timeseries-util';
 import { showSvgTooltip, hideSvgTooltip, translate } from '@/utils/svg-util';
 import { ProjectionPointType } from '@/types/Enums';
 import { splitProjectionsIntoLineSegments } from '@/utils/projection-util';
 import { snapTimestampToNearestMonth } from '@/utils/date-util';
+import { COLOR_SCHEME } from '@/utils/colors-util';
 
 const FOCUS_BORDER_COLOR = '#888';
 const FOCUS_BORDER_STROKE_WIDTH = 1;
 const HISTORICAL_RANGE_OPACITY = 0.05;
-const SCROLL_BAR_HEIGHT = 20;
+export const SCROLL_BAR_HEIGHT = 20;
 const SCROLL_BAR_RANGE_FILL = '#ccc';
 const SCROLL_BAR_RANGE_STROKE = 'none';
 const SCROLL_BAR_RANGE_OPACITY = 0.8;
@@ -31,21 +34,28 @@ const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
 const SCROLL_BAR_HANDLE_WIDTH = 9;
 const SCROLL_BAR_LABEL_WIDTH = 40;
 
-const PADDING_TOP = 5;
+export const PADDING_TOP = 5;
 // PADDING_LEFT should be kept in sync with `index-projections-expanded-node.vue/$chartPadding`.
 //  See comment in that component for more details.
 const PADDING_LEFT = 20;
 const PADDING_RIGHT = 0;
-const X_AXIS_HEIGHT = 20;
-const Y_AXIS_WIDTH = PADDING_LEFT;
+export const X_AXIS_HEIGHT = 20;
+export const Y_AXIS_WIDTH = PADDING_LEFT;
 const AXIS_TICK_LENGTH = 2;
-const SCROLL_BAR_TOP_MARGIN = 5;
+export const SCROLL_BAR_TOP_MARGIN = 5;
 
 const DASHED_LINE = {
   length: 4,
   gap: 4,
   width: 1,
 };
+
+const NORMAL_LIMITS_DASHED_LINE = {
+  length: 2,
+  gap: 2,
+  width: 0.5,
+};
+
 const SOLID_LINE_WIDTH = 1;
 const WEIGHTED_SUM_LINE_OPACITY = 0.25;
 const POINT_RADIUS = 3;
@@ -203,7 +213,8 @@ export default function render(
   projectionEndTimestamp: number,
   isWeightedSum: boolean,
   onClick: (timestamp: number, value: number) => void,
-  isInverted: boolean
+  isInverted: boolean,
+  showDataOutsideNorm: boolean
 ) {
   let tsList: ProjectionTimeseries[];
   if (isInverted) {
@@ -211,6 +222,10 @@ export default function render(
   } else {
     tsList = timeseriesList;
   }
+
+  const { globalMaxY, globalMinY } = timeseriesExtrema(tsList);
+  const yScaleDomain = showDataOutsideNorm ? [globalMinY, globalMaxY < 1 ? 1 : globalMaxY] : [0, 1];
+
   // Initialize focused range to the entire time range
   let focusedTimeRange = [projectionStartTimestamp, projectionEndTimestamp];
   // If we're re-rendering, preserve the focused time range from the previous render
@@ -301,10 +316,11 @@ export default function render(
     const yAxisElement = renderYaxis(
       focusGroupElement,
       yScale,
-      [0, 1],
-      (number) => number,
+      yScaleDomain,
+      (number) => (number === 0 || number === 1 ? number : number.toFixed(1)),
       Y_AXIS_WIDTH,
-      Y_AXIS_WIDTH - AXIS_TICK_LENGTH
+      Y_AXIS_WIDTH - AXIS_TICK_LENGTH,
+      showDataOutsideNorm
     );
     yAxisElement.select('.domain').remove();
     yAxisElement.selectAll('.tick > line').attr('stroke', FOCUS_BORDER_COLOR);
@@ -321,6 +337,20 @@ export default function render(
         timeseries.color
       );
     });
+    if (showDataOutsideNorm) {
+      [0, 1].forEach((y) => {
+        renderXAxisLine(
+          focusGroupElement,
+          0,
+          totalWidth,
+          yScale(y),
+          NORMAL_LIMITS_DASHED_LINE.length,
+          NORMAL_LIMITS_DASHED_LINE.gap,
+          COLOR_SCHEME.GREYS_7[2],
+          NORMAL_LIMITS_DASHED_LINE.width
+        );
+      });
+    }
 
     // Don't render anything outside the main graph area (except the axes)
     focusGroupElement
@@ -364,7 +394,7 @@ export default function render(
     chartWidth - 2 * (SCROLL_BAR_LABEL_WIDTH + SCROLL_BAR_HANDLE_WIDTH)
   );
   // Render timeseries to scrollbar and fade it out.
-  const yScaleScrollbar = d3.scaleLinear().domain([0, 1]).range([SCROLL_BAR_HEIGHT, 0]);
+  const yScaleScrollbar = d3.scaleLinear().domain(yScaleDomain).range([SCROLL_BAR_HEIGHT, 0]);
   tsList.forEach((timeseries) => {
     const timeseriesGroup = scrollBarGroupElement.append('g').classed('timeseries', true);
     renderTimeseries(
@@ -414,7 +444,7 @@ export default function render(
       .range([PADDING_LEFT, PADDING_LEFT + chartWidth]);
     const yScaleFocus = d3
       .scaleLinear()
-      .domain([0, 1])
+      .domain(yScaleDomain)
       .range([PADDING_TOP + focusChartHeight - FOCUS_BORDER_STROKE_WIDTH, PADDING_TOP]);
     renderFocusChart(xScaleFocus, yScaleFocus);
     updateFocusMouseEventArea(xScaleFocus, yScaleFocus);

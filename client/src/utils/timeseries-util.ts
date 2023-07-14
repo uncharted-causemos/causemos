@@ -337,8 +337,19 @@ export function renderYaxis(
   //  seem to reflect that.
   valueFormatter: (value: any) => string,
   xOffset: number,
-  yAxisWidth: number
+  yAxisWidth: number,
+  showDataOutsideNorm: boolean
 ) {
+  // yTick values should only be min and max.  Ensure we don't have a visual occlusion with normal line ticks by ensuring minimum distance
+  if (showDataOutsideNorm) {
+    if (Math.min(...yTickValues) < -0.1) {
+      yTickValues = [...yTickValues, 0];
+    }
+    if (Math.max(...yTickValues) > 1.1) {
+      yTickValues = [...yTickValues, 1];
+    }
+  }
+
   const yAxis = d3
     .axisLeft(yScale)
     .tickSize(xOffset - yAxisWidth)
@@ -371,6 +382,27 @@ export function renderLine(
     .append('path')
     .classed('segment-line', true)
     .attr('d', () => line(points))
+    .style('fill', 'none')
+    .style('stroke', color || DEFAULT_LINE_COLOR)
+    .style('stroke-width', width || DEFAULT_LINE_WIDTH);
+  return lineSelection;
+}
+
+export function renderXAxisLine(
+  parentGroupElement: D3GElementSelection,
+  startx: number,
+  endx: number,
+  y: number,
+  dashLength: number,
+  dashGap: number,
+  color?: string,
+  width?: number
+) {
+  const lineSelection = parentGroupElement
+    .append('path')
+    .classed('normal-limit-line', true)
+    .attr('d', `M${startx},${y}L${endx},${y}`)
+    .attr('stroke-dasharray', `${dashLength},${dashGap}`)
     .style('fill', 'none')
     .style('stroke', color || DEFAULT_LINE_COLOR)
     .style('stroke-width', width || DEFAULT_LINE_WIDTH);
@@ -462,5 +494,29 @@ export function invertTimeseriesList(timeseriesList: ProjectionTimeseries[]) {
 
   return timeseriesList;
 }
+
+export const timeseriesExtrema = (timeseriesList: ProjectionTimeseries[]) => {
+  let globalMaxY = 0;
+  let globalMinY = 0;
+
+  timeseriesList.forEach((series) => {
+    const values = series.points.map((point) => point.value);
+
+    const localMin = Math.min(...values);
+    if (localMin < globalMinY) {
+      globalMinY = localMin;
+    }
+
+    const localMax = Math.max(...values);
+    if (localMax > globalMaxY) {
+      globalMaxY = localMax;
+    }
+  });
+
+  return {
+    globalMaxY,
+    globalMinY,
+  };
+};
 
 export const MAX_TIMESERIES_LABEL_CHAR_LENGTH = 10;

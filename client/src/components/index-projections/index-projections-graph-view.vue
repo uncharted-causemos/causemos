@@ -16,6 +16,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="getProjectionsForNode(projections, cell.node.id)"
+        :show-data-outside-norm="showDataOutsideNorm"
         :data-warnings="dataWarnings"
         @select="(id) => emit('select-element', id)"
       />
@@ -45,6 +46,7 @@ defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   projections: IndexProjection[];
+  showDataOutsideNorm: boolean;
   dataWarnings?: Map<string, DataWarning>;
 }>();
 
