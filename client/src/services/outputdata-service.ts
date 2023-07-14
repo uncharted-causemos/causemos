@@ -29,7 +29,6 @@ import { isSplitByQualifierActive } from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
 import { filterRawDataByRegionIds, computeTimeseriesFromRawData } from '@/utils/outputdata-util';
 import { getLevelFromRegionId, adminLevelToString } from '@/utils/admin-level-util';
-import { normalize } from '@/utils/value-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
 
 const RAW_DATA_REQUEST_CACHE_SIZE = 20;
@@ -544,22 +543,7 @@ export const getRegionAggregationNormalized = async (
   spec: OutputSpec
 ): Promise<RegionalAggregation> => {
   spec.transform = TRANSFORM_NORM;
-  const result = await getRegionAggregation(spec);
-  if (result.country === undefined || result.country.length === 0) {
-    return result;
-  }
-  const countries = result.country;
-  const values = countries.map(({ value }) => value);
-  const min = _.min(values) ?? 0;
-  const max = _.max(values) ?? 0;
-  result.country = countries.map((country) => {
-    const normalizedValue = normalize(country.value, min, max);
-    return {
-      ...country,
-      value: normalizedValue,
-    };
-  });
-  return result;
+  return await getRegionAggregation(spec);
 };
 
 export const getRegionAggregationWithQualifiers = async (
