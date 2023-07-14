@@ -24,7 +24,7 @@ import { COLOR_SCHEME } from '@/utils/colors-util';
 const FOCUS_BORDER_COLOR = '#888';
 const FOCUS_BORDER_STROKE_WIDTH = 1;
 const HISTORICAL_RANGE_OPACITY = 0.05;
-const SCROLL_BAR_HEIGHT = 20;
+export const SCROLL_BAR_HEIGHT = 20;
 const SCROLL_BAR_RANGE_FILL = '#ccc';
 const SCROLL_BAR_RANGE_STROKE = 'none';
 const SCROLL_BAR_RANGE_OPACITY = 0.8;
@@ -34,15 +34,15 @@ const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
 const SCROLL_BAR_HANDLE_WIDTH = 9;
 const SCROLL_BAR_LABEL_WIDTH = 40;
 
-const PADDING_TOP = 5;
+export const PADDING_TOP = 5;
 // PADDING_LEFT should be kept in sync with `index-projections-expanded-node.vue/$chartPadding`.
 //  See comment in that component for more details.
 const PADDING_LEFT = 20;
 const PADDING_RIGHT = 0;
-const X_AXIS_HEIGHT = 20;
-const Y_AXIS_WIDTH = PADDING_LEFT;
+export const X_AXIS_HEIGHT = 20;
+export const Y_AXIS_WIDTH = PADDING_LEFT;
 const AXIS_TICK_LENGTH = 2;
-const SCROLL_BAR_TOP_MARGIN = 5;
+export const SCROLL_BAR_TOP_MARGIN = 5;
 
 const DASHED_LINE = {
   length: 4,

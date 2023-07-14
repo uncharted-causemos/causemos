@@ -201,18 +201,10 @@ $horizontal-margin: 30px;
   // It is used to make sure the start of the chart lines up with the other `.add-horizontal-margin`
   //  elements in this component, even though the left axis and svg have to extend past the margin.
   $chartPadding: 20px;
-  $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
-  $timeseriesHeight: calc(1 / 4 * $timeseriesWidth) + 40px;
   display: flex; // prevents a slight change in node size when showing outside norm values.
   margin-top: 5px;
   margin-left: $horizontal-margin - $chartPadding;
-  width: $timeseriesWidth;
-  min-height: $timeseriesHeight; // prevent a display problem using min/max height.
-  max-height: $timeseriesHeight;
-
-  &.outside-norm-viewable {
-    max-height: 100%;
-  }
+  width: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
 
   &.warning {
     :deep(g.focusMouseEventGroup) {

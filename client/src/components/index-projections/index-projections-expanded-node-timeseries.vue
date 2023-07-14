@@ -6,8 +6,14 @@
 
 <script setup lang="ts">
 import * as d3 from 'd3';
-import { computed, ref, toRefs, watch } from 'vue';
-import renderChart from '@/charts/projections-renderer';
+import { ref, toRefs, watch } from 'vue';
+import renderChart, {
+  Y_AXIS_WIDTH,
+  PADDING_TOP,
+  SCROLL_BAR_HEIGHT,
+  SCROLL_BAR_TOP_MARGIN,
+  X_AXIS_HEIGHT,
+} from '@/charts/projections-renderer';
 import { ProjectionTimeseries } from '@/types/Timeseries';
 import { timeseriesExtrema } from '@/utils/timeseries-util';
 
@@ -40,19 +46,27 @@ const onChartClick = (timestamp: number, value: number) => {
   }
 };
 
-const GRAPH_HEIGHT_DEFAULT = 160; // normally a property of the parent, not available when we switch to variable height
-const GRAPH_RECT_HEIGHT = 110; // height of rectangle defined in SVG that is the graph space (e
-const expandedHeight = computed(() => {
+const calculateSvgHeight = (svgWidth: number, showDataOutsideNorm: boolean) => {
+  // Calculate the height of the main chart area (when only showing the 0 to 1 range) based on
+  //  its width
+  const chartWidth = svgWidth - Y_AXIS_WIDTH;
+  const defaultChartHeight = (1 / 4) * chartWidth;
+  const heightOutsideChart =
+    PADDING_TOP + SCROLL_BAR_HEIGHT + SCROLL_BAR_TOP_MARGIN + X_AXIS_HEIGHT;
+  if (!showDataOutsideNorm) {
+    return defaultChartHeight + heightOutsideChart;
+  }
+
+  // Calculate the height of the main chart area (when showing values outside 0 to 1) by scaling
+  //  the default chart height
   const { globalMaxY, globalMinY } = timeseriesExtrema(timeseries.value);
-
-  const minY = globalMinY > 0 ? 0 : globalMinY; // don't allow a minY to exceed 0
-
+  // Ensure that the minimum Y value is always 0 or lower
+  const minY = globalMinY > 0 ? 0 : globalMinY;
+  // Ensure that the maximum Y value is always 1 or higher
   const totalY = (globalMaxY < 1 ? 1 : globalMaxY) - minY;
-  const height = Math.ceil(
-    GRAPH_HEIGHT_DEFAULT + (totalY > 1 ? (totalY - 1) * GRAPH_RECT_HEIGHT : 0)
-  );
-  return height;
-});
+  const chartHeight = Math.ceil(totalY * defaultChartHeight);
+  return chartHeight + heightOutsideChart;
+};
 
 watch(
   [
@@ -62,7 +76,6 @@ watch(
     timeseries,
     isWeightedSumNode,
     showDataOutsideNorm,
-    expandedHeight,
   ],
   () => {
     const parentElement = chartRef.value?.parentElement;
@@ -71,16 +84,16 @@ watch(
       return;
     }
     const { clientWidth: width } = parentElement;
+    const svgHeight = calculateSvgHeight(width, showDataOutsideNorm.value);
+
     // Set new size
-    svg
-      .attr('width', width)
-      .attr('height', showDataOutsideNorm.value ? expandedHeight.value : GRAPH_HEIGHT_DEFAULT);
+    svg.attr('width', width).attr('height', svgHeight);
 
     renderChart(
       svg,
       timeseries.value,
       width,
-      showDataOutsideNorm.value ? expandedHeight.value : GRAPH_HEIGHT_DEFAULT,
+      svgHeight,
       projectionStartTimestamp.value,
       projectionEndTimestamp.value,
       isWeightedSumNode.value,
