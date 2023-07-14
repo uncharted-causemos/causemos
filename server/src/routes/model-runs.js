@@ -3,6 +3,7 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const maasService = rootRequire('/services/external/maas-service');
 const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
+const { getSelectedOutputTasks } = rootRequire('/util/query-param-util.js');
 
 /**
  * Submit a new model run to Jataware and store information about it in ES.
@@ -32,7 +33,10 @@ router.get(
 router.post(
   '/:runId/post-process',
   asyncHandler(async (req, res) => {
-    await respondUsingCode(res, maasService.startModelOutputPostProcessing, [req.body]);
+    await respondUsingCode(res, maasService.startModelOutputPostProcessing, [
+      req.body,
+      getSelectedOutputTasks(req.query),
+    ]);
   })
 );
 
