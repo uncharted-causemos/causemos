@@ -240,11 +240,10 @@ watch([tree], async () => {
 
   // Prepare an "output spec" for each dataset to fetch its regional data
   const promises = datasets.value.map((dataset) =>
-    getRegionAggregation(
-      Object.assign(convertDataConfigToOutputSpec(dataset.dataset.config), {
-        transform: TRANSFORM_NORM,
-      })
-    )
+    getRegionAggregation({
+      ...convertDataConfigToOutputSpec(dataset.dataset.config),
+      transform: TRANSFORM_NORM,
+    })
   );
   // Wait for all fetches to complete.
   regionDataForEachDataset.value = await Promise.all(promises);

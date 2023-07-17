@@ -61,11 +61,10 @@ const loadMapData = async () => {
     regionMapData.value = [];
     return;
   }
-  const result = await getRegionAggregation(
-    Object.assign(convertDataConfigToOutputSpec(props.node.dataset.config), {
-      transform: TRANSFORM_NORM,
-    })
-  );
+  const result = await getRegionAggregation({
+    ...convertDataConfigToOutputSpec(props.node.dataset.config),
+    transform: TRANSFORM_NORM,
+  });
   const mapData: RegionMapData[] = (result.country || []).map((country) => ({
     label: country.id,
     name: '',
