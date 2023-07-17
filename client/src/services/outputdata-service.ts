@@ -194,8 +194,8 @@ export const getTimeseries = async (spec: OutputSpecWithRegionId): Promise<any> 
 export const getTimeseriesNormalized = async (
   spec: OutputSpecWithRegionId
 ): Promise<TimeseriesPoint[]> => {
-  spec.transform = TRANSFORM_NORM;
-  return ((await getTimeseries(spec)) || []) as TimeseriesPoint[];
+  return ((await getTimeseries(Object.assign(spec, { transform: TRANSFORM_NORM }))) ||
+    []) as TimeseriesPoint[];
 };
 
 export const getBulkTimeseries = async (spec: OutputSpec, regionIds: string[]): Promise<any> => {
@@ -542,8 +542,7 @@ export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAg
 export const getRegionAggregationNormalized = async (
   spec: OutputSpec
 ): Promise<RegionalAggregation> => {
-  spec.transform = TRANSFORM_NORM;
-  return await getRegionAggregation(spec);
+  return await getRegionAggregation(Object.assign(spec, { transform: TRANSFORM_NORM }));
 };
 
 export const getRegionAggregationWithQualifiers = async (
