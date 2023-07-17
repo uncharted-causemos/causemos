@@ -36,7 +36,7 @@ const rawDataRequestCache = new FIFOCache<Promise<RawOutputDataPoint[]>>(
   RAW_DATA_REQUEST_CACHE_SIZE
 );
 
-const TRANSFORM_NORM = 'normalization';
+export const TRANSFORM_NORM = 'normalization';
 
 /*
   getRaw[something] functions:
@@ -189,13 +189,6 @@ export const getTimeseries = async (spec: OutputSpecWithRegionId): Promise<any> 
   } catch (e) {
     return [];
   }
-};
-
-export const getTimeseriesNormalized = async (
-  spec: OutputSpecWithRegionId
-): Promise<TimeseriesPoint[]> => {
-  return ((await getTimeseries(Object.assign(spec, { transform: TRANSFORM_NORM }))) ||
-    []) as TimeseriesPoint[];
 };
 
 export const getBulkTimeseries = async (spec: OutputSpec, regionIds: string[]): Promise<any> => {
@@ -801,7 +794,6 @@ export const getAggregateTimeseries = async (
 
 export default {
   getTimeseries,
-  getTimeseriesNormalized,
   getBulkTimeseries,
   getRawOutputData,
   getRawTimeseriesData,
