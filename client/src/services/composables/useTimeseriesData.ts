@@ -327,7 +327,7 @@ export default function useTimeseriesData(
                 spatialAggregation: spatialAgg,
                 transform: transform,
                 regionId: regionId,
-              });
+              }).then((data) => ({ data }));
         });
       } else if (breakdownOption.value === SPLIT_BY_VARIABLE) {
         return;
