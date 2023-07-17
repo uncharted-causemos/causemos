@@ -3,6 +3,7 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const maasService = rootRequire('/services/external/maas-service');
 const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
+const { getSelectedOutputTasks } = rootRequire('/util/query-param-util.js');
 
 /* Keycloak Authentication */
 // const authUtil = rootRequire('/util/auth-util.js');
@@ -38,7 +39,10 @@ router.post(
   '/:runId/post-process',
   // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
-    await respondUsingCode(res, maasService.startModelOutputPostProcessing, [req.body]);
+    await respondUsingCode(res, maasService.startModelOutputPostProcessing, [
+      req.body,
+      getSelectedOutputTasks(req.query),
+    ]);
   })
 );
 

@@ -273,7 +273,15 @@ export default function (
     renderXaxis(focusGroupElement, xScaleFocus, xAxisTicksFocus, yOffset, DATE_FORMATTER);
     // only render the yAxis if 0 is in the range and longer than 2 elements
     if (yScaleFocus.domain()[0] < 0 && yScaleFocus.domain()[1] > 0) {
-      renderYaxis(focusGroupElement, yScaleFocus, [0], valueFormatter, xOffset, Y_AXIS_WIDTH);
+      renderYaxis(
+        focusGroupElement,
+        yScaleFocus,
+        [0],
+        valueFormatter,
+        xOffset,
+        Y_AXIS_WIDTH,
+        false
+      );
     }
 
     focusGroupElement.selectAll('.yAxis .domain').remove();

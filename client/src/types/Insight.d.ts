@@ -89,6 +89,7 @@ export interface IndexProjectionsDataState {
   projectionEndYear: number;
   projectionEndMonth: number;
   selectedNodeId: string | null;
+  showDataOutsideNorm: boolean;
 }
 
 export type DataState =

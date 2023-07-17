@@ -1,13 +1,20 @@
 <template>
-  <div class="index-projections-expanded-node-container">
+  <div
+    class="index-projections-expanded-node-container"
+    :class="{
+      'old-data-warning': oldDataWarning,
+    }"
+  >
     <p class="add-horizontal-margin">{{ props.nodeData.name ?? 'none' }}</p>
     <span v-if="props.nodeData.name.length === 0" class="subdued add-horizontal-margin"
       >(Missing name)</span
     >
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)">
       <div class="add-horizontal-margin timeseries-label">
+        <i v-if="insufficientDataWarning" class="fa fa-fw fa-exclamation-triangle warning"></i>
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
-        <span class="subdued un-font-small">{{ dataSourceText }}</span>
+        <span class="subdued un-font-small dataset-name">{{ dataSourceText }}</span>
+        <InvertedDatasetLabel class="inverted-label" v-if="isInvertedData" />
         <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
           <template #content>
             <div
@@ -23,12 +30,17 @@
       </div>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
-        :class="{ edit: editMode === EditMode.Constraints }"
+        :class="{
+          edit: editMode === EditMode.Constraints,
+          'outside-norm-viewable': showDataOutsideNorm,
+        }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        :show-data-outside-norm="showDataOutsideNorm"
         @click-chart="(...params) => emit('click-chart', ...params)"
         :is-weighted-sum-node="false"
+        :is-inverted="isInvertedData"
       />
 
       <div class="dataset-metadata add-horizontal-margin">
@@ -44,7 +56,6 @@
       <div class="add-horizontal-margin timeseries-label">
         <i class="fa fa-fw fa-exclamation-triangle warning" />
         <span class="un-font-small warning">{{ dataSourceText }}</span>
-        <button class="btn btn-default" disabled>Enter data points</button>
       </div>
       <div class="timeseries add-horizontal-margin warning"><!-- TODO: --></div>
     </div>
@@ -55,18 +66,23 @@
       </div>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
-        :class="{ edit: editMode === EditMode.Constraints }"
+        :class="{
+          edit: editMode === EditMode.Constraints,
+          'outside-norm-viewable': showDataOutsideNorm,
+        }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        :show-data-outside-norm="showDataOutsideNorm"
         @click-chart="(...params) => emit('click-chart', ...params)"
         :is-weighted-sum-node="true"
+        :is-inverted="isInvertedData"
       />
     </div>
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { ConceptNode } from '@/types/Index';
 import {
   DATASET_COLOR,
@@ -78,15 +94,11 @@ import {
 import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
-import { ProjectionTimeseries } from '@/types/Timeseries';
+import { DataWarning, ProjectionTimeseries } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
+import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
+import { EditMode } from '@/utils/projection-util';
 
-export enum EditMode {
-  Constraints,
-  DataPoints,
-}
-</script>
-<script setup lang="ts">
 const optionsButtonMenu = [
   {
     text: 'Edit data points',
@@ -113,7 +125,9 @@ const props = defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
+  showDataOutsideNorm: boolean;
   editMode?: EditMode;
+  dataWarnings: Map<string, DataWarning>;
 }>();
 
 const emit = defineEmits<{
@@ -121,6 +135,9 @@ const emit = defineEmits<{
 }>();
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
+const isInvertedData = computed(() =>
+  isConceptNodeWithDatasetAttached(props.nodeData) ? props.nodeData.dataset.isInverted : false
+);
 
 const dataId = computed(() => {
   if (!isConceptNodeWithDatasetAttached(props.nodeData)) {
@@ -135,12 +152,15 @@ const outputVariable = computed(() => {
   return props.nodeData.dataset.config.outputVariable;
 });
 
+const insufficientDataWarning = computed(
+  () => props.dataWarnings.get(props.nodeData.id)?.insufficientData ?? false
+);
+const oldDataWarning = computed(() => props.dataWarnings.get(props.nodeData.id)?.oldData ?? false);
+
 const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVariable);
 </script>
 
 <style lang="scss" scoped>
-@use 'sass:math';
-
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/index-graph';
 @import '@/styles/common';
@@ -165,9 +185,14 @@ $horizontal-margin: 30px;
   gap: 5px;
   align-items: center;
 
-  span {
+  .dataset-name {
     flex: 1;
     min-width: 0;
+  }
+
+  .inverted-label {
+    flex: initial;
+    min-width: initial;
   }
 }
 
@@ -176,11 +201,10 @@ $horizontal-margin: 30px;
   // It is used to make sure the start of the chart lines up with the other `.add-horizontal-margin`
   //  elements in this component, even though the left axis and svg have to extend past the margin.
   $chartPadding: 20px;
-  $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
-  width: $timeseriesWidth;
-  height: math.div(1, 4) * $timeseriesWidth + 40px;
+  display: flex; // prevents a slight change in node size when showing outside norm values.
   margin-top: 5px;
   margin-left: $horizontal-margin - $chartPadding;
+  width: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
 
   &.warning {
     :deep(g.focusMouseEventGroup) {
@@ -209,5 +233,9 @@ $horizontal-margin: 30px;
   .margin-top {
     margin-top: 10px;
   }
+}
+
+.old-data-warning {
+  background-color: $old-data-warning;
 }
 </style>

@@ -5,7 +5,7 @@
       :class="{ 'settings-disabled': scenarioBeingEdited !== null }"
     >
       <div class="disable-overlay" />
-      <header>
+      <header class="title-header">
         <button v-if="selectedNodeId !== null" class="btn btn-sm" @click="deselectNode">
           <i class="fa fa-fw fa-caret-left" />View all concepts
         </button>
@@ -23,7 +23,7 @@
           :selected-node-id="selectedNodeId"
         />
       </section>
-      <section>
+      <section class="settings-section">
         <header><h4>Settings</h4></header>
         <DropdownButton
           :is-dropdown-left-aligned="true"
@@ -68,6 +68,18 @@
         />
       </section>
       <footer>
+        <section class="show-outside-values">
+          <label @click="setShowDataOutsideNorm(!showDataOutsideNorm)">
+            Show values outside the <b>0</b> to <b>1</b> range
+            <i
+              class="fa fa-lg fa-fw"
+              :class="{
+                'fa-check-square-o': showDataOutsideNorm,
+                'fa-square-o': !showDataOutsideNorm,
+              }"
+            />
+          </label>
+        </section>
         <section>
           <header class="flex">
             <p>Time range</p>
@@ -166,6 +178,8 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
+        :show-data-outside-norm="showDataOutsideNorm"
+        :data-warnings="dataWarnings"
         @select-element="selectElement"
       />
       <IndexProjectionsNodeView
@@ -176,6 +190,8 @@
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
         :projection-for-scenario-being-edited="projectionForScenarioBeingEdited"
+        :show-data-outside-norm="showDataOutsideNorm"
+        :data-warnings="dataWarnings"
         @select-element="selectElement"
         @deselect-node="deselectNode"
         @click-chart="onNodeChartClick"
@@ -197,7 +213,6 @@
 </template>
 
 <script setup lang="ts">
-import _ from 'lodash';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -229,6 +244,8 @@ import useScenarios from '@/services/composables/useScenarios';
 import useScenarioProjections from '@/services/composables/useScenarioProjections';
 import useHistoricalData from '@/services/composables/useHistoricalData';
 import useMultipleCountryProjections from '@/services/composables/useMultipleCountryProjections';
+import { ByCountryWarning, DataWarning, TimeseriesPoint } from '@/types/Timeseries';
+import { consolidateNodeWarnings } from '@/utils/projection-util';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -244,6 +261,9 @@ const MONTHS: DropdownItem[] = [
   { value: 10, displayName: 'November' },
   { value: 11, displayName: 'December' },
 ];
+
+const WARNING_INSUFFICIENT_DATA_MINCOUNT = 5;
+const WARNING_OLD_DATA_MINCOUNT = 5;
 
 const store = useStore();
 const route = useRoute();
@@ -291,6 +311,11 @@ const isSingleCountryModeActive = computed(
 );
 const setIsSingleCountryModeActive = (val: boolean) => {
   updateIndexProjectionSettings({ isSingleCountryModeActive: val });
+};
+
+const showDataOutsideNorm = computed(() => indexProjectionSettings.value.showDataOutsideNorm);
+const setShowDataOutsideNorm = (val: boolean) => {
+  updateIndexProjectionSettings({ showDataOutsideNorm: val });
 };
 
 const temporalResolutionOption = ref(TemporalResolutionOption.Month);
@@ -406,6 +431,48 @@ const onNodeChartClick = (timestamp: number, value: number) => {
 const { visibleScenarioProjectionData, projectionForScenarioBeingEdited, runScenarioProjections } =
   useScenarioProjections(scenarios, scenarioBeingEdited);
 
+const dataWarnings = ref(new Map());
+const oldDataTest = (points: TimeseriesPoint[]): boolean => {
+  return (
+    points.filter((point: TimeseriesPoint) => point.timestamp >= projectionStartTimestamp.value)
+      .length <= WARNING_OLD_DATA_MINCOUNT
+  );
+};
+
+const insufficientDataTest = (points: TimeseriesPoint[]): boolean => {
+  return points.length <= WARNING_INSUFFICIENT_DATA_MINCOUNT;
+};
+
+const checkHistoricalData = () => {
+  dataWarnings.value.clear();
+  if (isSingleCountryModeActive.value) {
+    historicalData.value.forEach((item, id) => {
+      const dataWarning: DataWarning = {
+        oldData: oldDataTest(item),
+        insufficientData: insufficientDataTest(item),
+      };
+      dataWarnings.value.set(id, dataWarning);
+    });
+  } else {
+    const allCountryWarnings: ByCountryWarning[] = [];
+
+    historicalDataForSelectedCountries.value.forEach((countryItems, countryName) => {
+      countryItems.forEach((item, id) => {
+        const dataWarning: DataWarning = {
+          oldData: oldDataTest(item),
+          insufficientData: insufficientDataTest(item),
+        };
+        allCountryWarnings.push({
+          country: countryName,
+          nodeId: id,
+          warning: dataWarning,
+        });
+      });
+    });
+    dataWarnings.value = consolidateNodeWarnings(allCountryWarnings);
+  }
+};
+
 watch(
   [
     historicalData,
@@ -416,6 +483,11 @@ watch(
     scenarios,
   ],
   () => {
+    // scan data for warnings
+    // Old data: datasets that have 5 or fewer points for the selected country after the projection start date
+    // Insufficient data: datasets that have 5 or fewer points for the selected country
+    checkHistoricalData();
+
     // TODO: For optimization, other than initial run, only run projection for the specific scenario when a new scenario is added or when the edit for a scenario is done.
     // Check diff from old and new scenarios data and only run the projection for a scenario if necessary.
     // When a scenario is deleted, just remove the projection for that scenario from the projection data.
@@ -458,6 +530,7 @@ watch(
     projectionEndYear,
     projectionEndMonth,
     selectedNodeId,
+    showDataOutsideNorm,
   ],
   () => {
     const newDataState: IndexProjectionsDataState = {
@@ -470,6 +543,7 @@ watch(
       projectionEndYear: projectionEndYear.value,
       projectionEndMonth: projectionEndMonth.value,
       selectedNodeId: selectedNodeId.value,
+      showDataOutsideNorm: showDataOutsideNorm.value,
     };
     setDataState(newDataState);
     // No view state for this page. Set it to an empty object so that any view state from previous
@@ -514,6 +588,7 @@ const confirmUpdateStateFromInsight = () => {
     selectedCountries: dataState.selectedCountries,
     scenarios: [...dataState.scenarios],
   });
+  indexProjectionSettings.value.showDataOutsideNorm = dataState.showDataOutsideNorm;
   projectionStartYear.value = dataState.projectionStartYear;
   projectionStartMonth.value = dataState.projectionStartMonth;
   projectionEndYear.value = dataState.projectionEndYear;
@@ -590,20 +665,30 @@ const timeseriesToDisplay = computed(() =>
 .config-column {
   background: white;
   width: 300px;
-  padding: 20px;
-  overflow-y: auto;
   border-right: 1px solid $un-color-black-10;
   gap: 40px;
-
   position: relative;
-  // Make sure the lowest items are never covered by the footer content
-  padding-bottom: 100px;
-  footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
+  .title-header {
+    padding: 20px 20px 0 20px;
+  }
 
+  .settings-section {
+    flex: 1;
+    overflow-y: auto;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .show-outside-values {
+    display: flex;
+    align-items: flex-end;
+    padding-left: 20px;
+    padding-right: 20px;
+    label i {
+      color: $positive;
+    }
+  }
+  footer {
     section {
       border-top: 1px solid $un-color-black-10;
       padding: 10px 20px;
