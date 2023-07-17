@@ -39,6 +39,7 @@ export const createNewIndexProjectionSettings = (): IndexProjectionSettings => {
       { name: NO_COUNTRY_SELECTED_VALUE, color: TIMESERIES_COLORS[0] },
       { name: NO_COUNTRY_SELECTED_VALUE, color: TIMESERIES_COLORS[1] },
     ],
+    showDataOutsideNorm: false,
   };
 };
 

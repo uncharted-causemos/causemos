@@ -2,14 +2,29 @@ import { D3Selection } from '@/types/D3';
 import { ProjectionPointType } from '@/types/Enums';
 import { ProjectionTimeseries } from '@/types/Timeseries';
 import { splitProjectionsIntoLineSegments } from '@/utils/projection-util';
-import { renderDashedLine, renderLine, renderPoint, renderSquares } from '@/utils/timeseries-util';
+import {
+  renderDashedLine,
+  renderLine,
+  renderPoint,
+  renderSquares,
+  renderXAxisLine,
+  timeseriesExtrema,
+} from '@/utils/timeseries-util';
 import * as d3 from 'd3';
+import { COLOR_SCHEME } from '@/utils/colors-util';
 
 const DASHED_LINE = {
   length: 2,
   gap: 2,
   width: 0.5,
 };
+
+const NORMAL_LIMITS_DASHED_LINE = {
+  length: 2,
+  gap: 2,
+  width: 0.5,
+};
+
 const SOLID_LINE_WIDTH = 1;
 export const WEIGHTED_SUM_LINE_OPACITY = 0.25;
 const CONSTRAINT_SIDE_LENGTH = 3;
@@ -23,8 +38,12 @@ export default function render(
   projectionStartTimestamp: number,
   projectionEndTimestamp: number,
   isWeightedSum: boolean,
-  isInverted: boolean
+  isInverted: boolean,
+  showDataOutsideNorm: boolean
 ) {
+  const { globalMaxY, globalMinY } = timeseriesExtrema(timeseriesList);
+  const yScaleDomain = showDataOutsideNorm ? [globalMinY, globalMaxY < 1 ? 1 : globalMaxY] : [0, 1];
+
   // Clear any existing elements
   selection.selectAll('*').remove();
   // Add chart `g` element to the page
@@ -36,7 +55,7 @@ export default function render(
     .range([0, totalWidth]);
   const yScale = d3
     .scaleLinear()
-    .domain([0, 1])
+    .domain(yScaleDomain)
     .range(isInverted ? [0, totalHeight] : [totalHeight, 0]);
 
   // Render the series
@@ -52,6 +71,21 @@ export default function render(
         SOLID_LINE_WIDTH
       );
       lineSelection.attr('opacity', WEIGHTED_SUM_LINE_OPACITY);
+
+      if (showDataOutsideNorm) {
+        [0, 1].forEach((y) => {
+          renderXAxisLine(
+            groupElement,
+            0,
+            totalWidth,
+            yScale(y),
+            NORMAL_LIMITS_DASHED_LINE.length,
+            NORMAL_LIMITS_DASHED_LINE.gap,
+            COLOR_SCHEME.GREYS_7[2],
+            NORMAL_LIMITS_DASHED_LINE.width
+          );
+        });
+      }
       // Render a circle at any point where all inputs have historical data
       const fullDataPoints = timeseries.points.filter(
         (point) => point.projectionType === ProjectionPointType.Historical
@@ -91,6 +125,21 @@ export default function render(
         renderLine(groupElement, segment, xScale, yScale, timeseries.color, SOLID_LINE_WIDTH);
       }
     });
+
+    if (showDataOutsideNorm) {
+      [0, 1].forEach((y) => {
+        renderXAxisLine(
+          groupElement,
+          0,
+          totalWidth,
+          yScale(y),
+          NORMAL_LIMITS_DASHED_LINE.length,
+          NORMAL_LIMITS_DASHED_LINE.gap,
+          COLOR_SCHEME.GREYS_7[2],
+          NORMAL_LIMITS_DASHED_LINE.width
+        );
+      });
+    }
     // Render a circle at all historical data points
     const fullDataPoints = timeseries.points.filter(
       (point) => point.projectionType === ProjectionPointType.Historical

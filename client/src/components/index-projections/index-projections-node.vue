@@ -22,9 +22,13 @@
       </div>
       <IndexProjectionsNodeTimeseries
         class="timeseries"
+        :class="{
+          'outside-norm-viewable': showDataOutsideNorm,
+        }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        :show-data-outside-norm="showDataOutsideNorm"
         :is-weighted-sum-node="false"
         :is-inverted="isInvertedData"
       />
@@ -40,9 +44,13 @@
       </div>
       <IndexProjectionsNodeTimeseries
         class="timeseries"
+        :class="{
+          'outside-norm-viewable': showDataOutsideNorm,
+        }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        :show-data-outside-norm="showDataOutsideNorm"
         :is-weighted-sum-node="true"
         :is-inverted="isInvertedData"
       />
@@ -69,6 +77,7 @@ const props = defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
+  showDataOutsideNorm: boolean;
   dataWarnings: Map<string, DataWarning>;
 }>();
 
@@ -126,7 +135,7 @@ const isInvertedData = computed(() =>
 
 .timeseries {
   border-top: 1px solid $un-color-black-10;
-  height: 60px;
+  display: flex;
 }
 
 .warning {

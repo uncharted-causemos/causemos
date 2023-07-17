@@ -158,4 +158,5 @@ export interface IndexProjectionSettings {
   isSingleCountryModeActive: boolean;
   selectedCountry: string;
   selectedCountries: IndexProjectionCountry[];
+  showDataOutsideNorm: boolean;
 }

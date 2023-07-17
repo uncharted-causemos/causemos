@@ -68,6 +68,18 @@
         />
       </section>
       <footer>
+        <section class="show-outside-values">
+          <label @click="setShowDataOutsideNorm(!showDataOutsideNorm)">
+            Show values outside the <b>0</b> to <b>1</b> range
+            <i
+              class="fa fa-lg fa-fw"
+              :class="{
+                'fa-check-square-o': showDataOutsideNorm,
+                'fa-square-o': !showDataOutsideNorm,
+              }"
+            />
+          </label>
+        </section>
         <section>
           <header class="flex">
             <p>Time range</p>
@@ -166,6 +178,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
+        :show-data-outside-norm="showDataOutsideNorm"
         :data-warnings="dataWarnings"
         @select-element="selectElement"
       />
@@ -177,6 +190,7 @@
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
         :projection-for-scenario-being-edited="projectionForScenarioBeingEdited"
+        :show-data-outside-norm="showDataOutsideNorm"
         :data-warnings="dataWarnings"
         @select-element="selectElement"
         @deselect-node="deselectNode"
@@ -297,6 +311,11 @@ const isSingleCountryModeActive = computed(
 );
 const setIsSingleCountryModeActive = (val: boolean) => {
   updateIndexProjectionSettings({ isSingleCountryModeActive: val });
+};
+
+const showDataOutsideNorm = computed(() => indexProjectionSettings.value.showDataOutsideNorm);
+const setShowDataOutsideNorm = (val: boolean) => {
+  updateIndexProjectionSettings({ showDataOutsideNorm: val });
 };
 
 const temporalResolutionOption = ref(TemporalResolutionOption.Month);
@@ -511,6 +530,7 @@ watch(
     projectionEndYear,
     projectionEndMonth,
     selectedNodeId,
+    showDataOutsideNorm,
   ],
   () => {
     const newDataState: IndexProjectionsDataState = {
@@ -523,6 +543,7 @@ watch(
       projectionEndYear: projectionEndYear.value,
       projectionEndMonth: projectionEndMonth.value,
       selectedNodeId: selectedNodeId.value,
+      showDataOutsideNorm: showDataOutsideNorm.value,
     };
     setDataState(newDataState);
     // No view state for this page. Set it to an empty object so that any view state from previous
@@ -567,6 +588,7 @@ const confirmUpdateStateFromInsight = () => {
     selectedCountries: dataState.selectedCountries,
     scenarios: [...dataState.scenarios],
   });
+  indexProjectionSettings.value.showDataOutsideNorm = dataState.showDataOutsideNorm;
   projectionStartYear.value = dataState.projectionStartYear;
   projectionStartMonth.value = dataState.projectionStartMonth;
   projectionEndYear.value = dataState.projectionEndYear;
@@ -655,6 +677,16 @@ const timeseriesToDisplay = computed(() =>
     overflow-y: auto;
     padding-left: 20px;
     padding-right: 20px;
+  }
+
+  .show-outside-values {
+    display: flex;
+    align-items: flex-end;
+    padding-left: 20px;
+    padding-right: 20px;
+    label i {
+      color: $positive;
+    }
   }
   footer {
     section {

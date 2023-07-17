@@ -30,10 +30,14 @@
       </div>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
-        :class="{ edit: editMode === EditMode.Constraints }"
+        :class="{
+          edit: editMode === EditMode.Constraints,
+          'outside-norm-viewable': showDataOutsideNorm,
+        }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        :show-data-outside-norm="showDataOutsideNorm"
         @click-chart="(...params) => emit('click-chart', ...params)"
         :is-weighted-sum-node="false"
         :is-inverted="isInvertedData"
@@ -62,10 +66,14 @@
       </div>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
-        :class="{ edit: editMode === EditMode.Constraints }"
+        :class="{
+          edit: editMode === EditMode.Constraints,
+          'outside-norm-viewable': showDataOutsideNorm,
+        }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :timeseries="timeseries"
+        :show-data-outside-norm="showDataOutsideNorm"
         @click-chart="(...params) => emit('click-chart', ...params)"
         :is-weighted-sum-node="true"
         :is-inverted="isInvertedData"
@@ -117,6 +125,7 @@ const props = defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
+  showDataOutsideNorm: boolean;
   editMode?: EditMode;
   dataWarnings: Map<string, DataWarning>;
 }>();
@@ -192,11 +201,10 @@ $horizontal-margin: 30px;
   // It is used to make sure the start of the chart lines up with the other `.add-horizontal-margin`
   //  elements in this component, even though the left axis and svg have to extend past the margin.
   $chartPadding: 20px;
-  $timeseriesWidth: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
-  width: $timeseriesWidth;
-  height: 1 / 4 * $timeseriesWidth + 40px;
+  display: flex; // prevents a slight change in node size when showing outside norm values.
   margin-top: 5px;
   margin-left: $horizontal-margin - $chartPadding;
+  width: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
 
   &.warning {
     :deep(g.focusMouseEventGroup) {
