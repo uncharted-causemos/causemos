@@ -24,7 +24,7 @@ import { getColors, COLOR } from '@/utils/colors-util';
 import { MapBounds, RegionMapData } from '@/types/Common';
 import { ConceptNodeWithDatasetAttached } from '@/types/Index';
 import { convertDataConfigToOutputSpec } from '@/utils/index-tree-util';
-import { getRegionAggregationNormalized } from '@/services/outputdata-service';
+import { getRegionAggregation, TRANSFORM_NORM } from '@/services/outputdata-service';
 
 const MAP_MIN_ZOOM = -0.5;
 const MAP_BOUNDS_ANIMATION_DURATION = 1000;
@@ -61,8 +61,10 @@ const loadMapData = async () => {
     regionMapData.value = [];
     return;
   }
-  const result = await getRegionAggregationNormalized(
-    convertDataConfigToOutputSpec(props.node.dataset.config)
+  const result = await getRegionAggregation(
+    Object.assign(convertDataConfigToOutputSpec(props.node.dataset.config), {
+      transform: TRANSFORM_NORM,
+    })
   );
   const mapData: RegionMapData[] = (result.country || []).map((country) => ({
     label: country.id,
@@ -84,7 +86,7 @@ const displayString = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/uncharted-design-tokens';
+@import '@/styles/uncharted-design-tokens';
 
 .map {
   height: 150px;

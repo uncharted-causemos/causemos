@@ -527,17 +527,6 @@ export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAg
   }
 };
 
-// TODO: temporary!
-// We probably want to
-//  - pre-normalize the data on the backend.
-//  - normalize it with respect to the min and max of the dataset across timestamps
-//  - Keep original value as well, instead of overriding it with the normalized version
-export const getRegionAggregationNormalized = async (
-  spec: OutputSpec
-): Promise<RegionalAggregation> => {
-  return await getRegionAggregation(Object.assign(spec, { transform: TRANSFORM_NORM }));
-};
-
 export const getRegionAggregationWithQualifiers = async (
   spec: OutputSpec,
   qualifier: string
