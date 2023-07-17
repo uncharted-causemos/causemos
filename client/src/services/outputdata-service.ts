@@ -508,19 +508,25 @@ export const getRegionLists = async (dataId: string, runIds: string[], feature: 
 export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAggregation> => {
   // TODO: Handle http error properly in the backend and respond with correct error code if necessary.
   //       Meanwhile just ignore the error.
+  const params = {
+    data_id: spec.modelId,
+    run_id: spec.runId,
+    feature: spec.outputVariable,
+    resolution: spec.temporalResolution,
+    temporal_agg: spec.temporalAggregation,
+    spatial_agg: spec.spatialAggregation,
+    timestamp: spec.timestamp,
+    transform: spec.transform,
+  };
+
   try {
-    const { data } = await API.get('/maas/output/regional-data', {
-      params: {
-        data_id: spec.modelId,
-        run_id: spec.runId,
-        feature: spec.outputVariable,
-        resolution: spec.temporalResolution,
-        temporal_agg: spec.temporalAggregation,
-        spatial_agg: spec.spatialAggregation,
-        timestamp: spec.timestamp,
-        transform: spec.transform,
-      },
-    });
+    // use new endpoint for normalized aggregation values otherwise use the original endpoint.
+    const { data } = await API.get(
+      params.transform === TRANSFORM_NORM
+        ? '/maas/output/regional-aggregation'
+        : '/maas/output/regional-data',
+      { params }
+    );
     return data;
   } catch (e) {
     return { country: [], admin1: [], admin2: [], admin3: [] };
