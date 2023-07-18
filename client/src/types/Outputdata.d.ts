@@ -31,7 +31,6 @@ export interface BaseSpec {
   temporalAggregation: string;
   spatialAggregation: string;
   transform?: string;
-  adminLevel?: string;
 }
 
 /**
@@ -62,6 +61,10 @@ export interface OutputSpecWithId extends OutputSpec {
 
 export interface OutputSpecWithRegionId extends OutputSpec {
   regionId?: string; // ids region for this spec if set
+}
+
+export interface OutputSpecWithAdminLevel extends OutputSpec {
+  adminLevel?: string;
 }
 
 export interface OutputStatWithZoom extends AnalysisMapRange {

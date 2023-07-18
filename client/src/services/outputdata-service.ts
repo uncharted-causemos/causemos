@@ -24,6 +24,7 @@ import {
   OutputSpecWithRegionId,
   BaseSpec,
   BulkRegionalAggregationData,
+  OutputSpecWithAdminLevel,
 } from '@/types/Outputdata';
 import { isSplitByQualifierActive } from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
@@ -505,29 +506,46 @@ export const getRegionLists = async (dataId: string, runIds: string[], feature: 
   return data;
 };
 
+export const getIndexRegionAggregation = async (
+  spec: OutputSpecWithAdminLevel
+): Promise<RegionalAggregation> => {
+  try {
+    const { data } = await API.get('/maas/output/regional-aggregation', {
+      params: {
+        data_id: spec.modelId,
+        run_id: spec.runId,
+        feature: spec.outputVariable,
+        resolution: spec.temporalResolution,
+        temporal_agg: spec.temporalAggregation,
+        spatial_agg: spec.spatialAggregation,
+        timestamp: spec.timestamp,
+        transform: spec.transform,
+        admin_level: spec.adminLevel,
+      },
+    });
+    return data;
+  } catch (e) {
+    return { country: [], admin1: [], admin2: [], admin3: [] };
+  }
+};
 export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAggregation> => {
   // TODO: Handle http error properly in the backend and respond with correct error code if necessary.
   //       Meanwhile just ignore the error.
-  const params = {
-    data_id: spec.modelId,
-    run_id: spec.runId,
-    feature: spec.outputVariable,
-    resolution: spec.temporalResolution,
-    temporal_agg: spec.temporalAggregation,
-    spatial_agg: spec.spatialAggregation,
-    timestamp: spec.timestamp,
-    transform: spec.transform,
-    admin_level: spec.adminLevel,
-  };
 
   try {
     // use new endpoint for normalized aggregation values otherwise use the original endpoint.
-    const { data } = await API.get(
-      params.transform === TRANSFORM_NORM
-        ? '/maas/output/regional-aggregation'
-        : '/maas/output/regional-data',
-      { params }
-    );
+    const { data } = await API.get('/maas/output/regional-data', {
+      params: {
+        data_id: spec.modelId,
+        run_id: spec.runId,
+        feature: spec.outputVariable,
+        resolution: spec.temporalResolution,
+        temporal_agg: spec.temporalAggregation,
+        spatial_agg: spec.spatialAggregation,
+        timestamp: spec.timestamp,
+        transform: spec.transform,
+      },
+    });
     return data;
   } catch (e) {
     return { country: [], admin1: [], admin2: [], admin3: [] };

@@ -24,7 +24,7 @@ import { getColors, COLOR } from '@/utils/colors-util';
 import { MapBounds, RegionMapData } from '@/types/Common';
 import { ConceptNodeWithDatasetAttached } from '@/types/Index';
 import { convertDataConfigToOutputSpec } from '@/utils/index-tree-util';
-import { getRegionAggregation, TRANSFORM_NORM } from '@/services/outputdata-service';
+import { getIndexRegionAggregation, TRANSFORM_NORM } from '@/services/outputdata-service';
 import { AdminLevel } from '@/types/Enums';
 
 const MAP_MIN_ZOOM = -0.5;
@@ -62,7 +62,7 @@ const loadMapData = async () => {
     regionMapData.value = [];
     return;
   }
-  const result = await getRegionAggregation({
+  const result = await getIndexRegionAggregation({
     ...convertDataConfigToOutputSpec(props.node.dataset.config),
     transform: TRANSFORM_NORM,
     adminLevel: AdminLevel.Country,
