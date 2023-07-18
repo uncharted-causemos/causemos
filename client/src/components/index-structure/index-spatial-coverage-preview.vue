@@ -25,6 +25,7 @@ import { MapBounds, RegionMapData } from '@/types/Common';
 import { ConceptNodeWithDatasetAttached } from '@/types/Index';
 import { convertDataConfigToOutputSpec } from '@/utils/index-tree-util';
 import { getRegionAggregation, TRANSFORM_NORM } from '@/services/outputdata-service';
+import { AdminLevel } from '@/types/Enums';
 
 const MAP_MIN_ZOOM = -0.5;
 const MAP_BOUNDS_ANIMATION_DURATION = 1000;
@@ -64,6 +65,7 @@ const loadMapData = async () => {
   const result = await getRegionAggregation({
     ...convertDataConfigToOutputSpec(props.node.dataset.config),
     transform: TRANSFORM_NORM,
+    adminLevel: AdminLevel.Country,
   });
   const mapData: RegionMapData[] = (result.country || []).map((country) => ({
     label: country.id,

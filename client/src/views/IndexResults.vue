@@ -60,7 +60,7 @@ import IndexResultsStructurePreview from '@/components/index-results/index-resul
 import IndexResultsMap from '@/components/index-results/index-results-map.vue';
 import IndexResultsComponentList from '@/components/index-results/index-results-component-list.vue';
 import IndexResultsDatasetWeights from '@/components/index-results/index-results-dataset-weights.vue';
-import { ProjectType } from '@/types/Enums';
+import { AdminLevel, ProjectType } from '@/types/Enums';
 import useInsightStore from '@/services/composables/useInsightStore';
 import { IndexResultsDataState, Insight } from '@/types/Insight';
 import { getInsightById } from '@/services/insight-service';
@@ -243,6 +243,7 @@ watch([tree], async () => {
     getRegionAggregation({
       ...convertDataConfigToOutputSpec(dataset.dataset.config),
       transform: TRANSFORM_NORM,
+      adminLevel: AdminLevel.Country,
     })
   );
   // Wait for all fetches to complete.

@@ -21,6 +21,7 @@ import { PreGeneratedModelRunData } from './ModelRun';
  * @temporalAggegation {string} setting for aggregating the data over time to a mean or sum
  * @spatialAggregation {string} setting for aggregating the data for a region to a mean or sum
  * @transform {string} optional setting for transforming the data (per capita or normalization)
+ * @adminLevel {string} optional setting for specifying the aggregation level (used in conjunction with transform)
  */
 export interface BaseSpec {
   modelId: string;
@@ -30,6 +31,7 @@ export interface BaseSpec {
   temporalAggregation: string;
   spatialAggregation: string;
   transform?: string;
+  adminLevel?: string;
 }
 
 /**

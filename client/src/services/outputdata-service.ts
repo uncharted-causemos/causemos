@@ -517,6 +517,7 @@ export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAg
     spatial_agg: spec.spatialAggregation,
     timestamp: spec.timestamp,
     transform: spec.transform,
+    admin_level: spec.adminLevel,
   };
 
   try {
