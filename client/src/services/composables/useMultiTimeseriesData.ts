@@ -97,9 +97,7 @@ export default function useMultiTimeseriesData(
           transform: runAndFeature.transform,
         });
       });
-      const fetchResults = (await Promise.all(promises))
-        .filter((response) => response !== null)
-        .map((response: any) => response.data);
+      const fetchResults: any[] = (await Promise.all(promises)).filter((data) => data !== null);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.

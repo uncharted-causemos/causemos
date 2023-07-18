@@ -54,7 +54,7 @@ import {
 } from '@/utils/index-tree-util';
 import { calculateIndexResults } from '@/utils/index-results-util';
 import { ConceptNodeWithDatasetAttached, IndexResultsData } from '@/types/Index';
-import { getRegionAggregationNormalized } from '@/services/outputdata-service';
+import { getRegionAggregation, TRANSFORM_NORM } from '@/services/outputdata-service';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import IndexResultsMap from '@/components/index-results/index-results-map.vue';
@@ -240,7 +240,10 @@ watch([tree], async () => {
 
   // Prepare an "output spec" for each dataset to fetch its regional data
   const promises = datasets.value.map((dataset) =>
-    getRegionAggregationNormalized(convertDataConfigToOutputSpec(dataset.dataset.config))
+    getRegionAggregation({
+      ...convertDataConfigToOutputSpec(dataset.dataset.config),
+      transform: TRANSFORM_NORM,
+    })
   );
   // Wait for all fetches to complete.
   regionDataForEachDataset.value = await Promise.all(promises);
