@@ -64,7 +64,7 @@ export interface OutputSpecWithRegionId extends OutputSpec {
 }
 
 export interface OutputSpecWithAdminLevel extends OutputSpec {
-  adminLevel?: string;
+  adminLevel?: AdminLevel;
 }
 
 export interface OutputStatWithZoom extends AnalysisMapRange {
