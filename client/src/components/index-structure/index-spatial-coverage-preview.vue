@@ -6,7 +6,7 @@
         :data="regionMapData"
         :map-bounds="mapBounds"
         :min-zoom="MAP_MIN_ZOOM"
-        :selected-admin-level="0"
+        :selected-admin-level="ADMIN_LEVEL"
         :disable-pan-zoom="true"
         :disable-popup="true"
       />
@@ -24,13 +24,15 @@ import { getColors, COLOR } from '@/utils/colors-util';
 import { MapBounds, RegionMapData } from '@/types/Common';
 import { ConceptNodeWithDatasetAttached } from '@/types/Index';
 import { convertDataConfigToOutputSpec } from '@/utils/index-tree-util';
-import { getRegionAggregation, TRANSFORM_NORM } from '@/services/outputdata-service';
+import { getIndexRegionAggregation, TRANSFORM_NORM } from '@/services/outputdata-service';
+import { adminLevelToString } from '@/utils/admin-level-util';
 
 const MAP_MIN_ZOOM = -0.5;
 const MAP_BOUNDS_ANIMATION_DURATION = 1000;
 const MAP_COLOR = COLOR.DEFAULT;
 const NUM_COLORS = 5;
 const DOMAIN = [0, 1];
+const ADMIN_LEVEL = 0;
 
 const props = defineProps<{
   node: ConceptNodeWithDatasetAttached;
@@ -61,9 +63,10 @@ const loadMapData = async () => {
     regionMapData.value = [];
     return;
   }
-  const result = await getRegionAggregation({
+  const result = await getIndexRegionAggregation({
     ...convertDataConfigToOutputSpec(props.node.dataset.config),
     transform: TRANSFORM_NORM,
+    adminLevel: adminLevelToString(ADMIN_LEVEL),
   });
   const mapData: RegionMapData[] = (result.country || []).map((country) => ({
     label: country.id,
