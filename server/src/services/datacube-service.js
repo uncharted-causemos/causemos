@@ -82,7 +82,7 @@ const insertDatacube = async (metadata) => {
   removeUnwantedData(metadata);
 
   metadata.data_id = metadata.id;
-  metadata.status = 'REGISTERED';
+  metadata.status = 'READY';
 
   // Take the first numeric output, others are not currently supported
   const validOutput =
