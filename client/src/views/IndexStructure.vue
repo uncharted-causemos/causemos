@@ -54,7 +54,7 @@ const route = useRoute();
 const router = useRouter();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const projectId = computed(() => route.params.projectId as string);
+const projectId = computed(() => route.params.project as string);
 const projectType = computed(() => route.params.projectType as string);
 
 const { analysisName, refresh } = useIndexAnalysis(analysisId);
@@ -93,6 +93,7 @@ const handleKey = (evt: KeyboardEvent) => {
 };
 
 const handleNavigateToDataset = (datacubeId: any, datacubeItemId: any) => {
+  console.log(`Project: ${projectId.value}`);
   router.push({
     name: 'indexResultsDataExplorer',
     params: {
