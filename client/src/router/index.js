@@ -100,6 +100,11 @@ const routes = [
     component: IndexNodeDataExplorer,
   },
   {
+    path: '/:projectType/:project/index-structure/:analysisId/explorer',
+    name: 'indexResultsDataExplorer',
+    component: DatacubeDrilldown,
+  },
+  {
     path: '/:projectType/:project/index-results/:analysisId',
     name: 'indexResults',
     component: IndexResults,

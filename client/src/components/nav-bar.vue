@@ -59,6 +59,7 @@ import { computed, defineComponent, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import NavbarInsightsPanel from '@/components/insight-manager/navbar-insights-panel.vue';
+import _ from 'lodash';
 
 interface NavBarItem {
   route: { name: string; params: any } | null;
@@ -177,6 +178,11 @@ export default defineComponent({
       data: [
         analysisProjectItem.value,
         quantitativeAnalysisItem.value,
+        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
+      ],
+      indexResultsDataExplorer: [
+        analysisProjectItem.value,
+        indexStructureItem.value,
         { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
       ],
       qualitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
