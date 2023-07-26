@@ -105,6 +105,11 @@ const routes = [
     component: DatacubeDrilldown,
   },
   {
+    path: '/:projectType/:project/index-projections/:analysisId/explorer',
+    name: 'projectionsDataExplorer',
+    component: DatacubeDrilldown,
+  },
+  {
     path: '/:projectType/:project/index-results/:analysisId',
     name: 'indexResults',
     component: IndexResults,

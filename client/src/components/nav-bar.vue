@@ -185,6 +185,12 @@ export default defineComponent({
         indexStructureItem.value,
         { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
       ],
+      projectionsDataExplorer: [
+        analysisProjectItem.value,
+        indexStructureItem.value,
+        indexProjectionsItem.value,
+        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
+      ],
       qualitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       quantitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       indexStructure: [analysisProjectItem.value, indexStructureItem.value],

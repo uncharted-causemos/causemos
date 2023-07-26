@@ -93,7 +93,6 @@ const handleKey = (evt: KeyboardEvent) => {
 };
 
 const handleNavigateToDataset = (datacubeId: any, datacubeItemId: any) => {
-  console.log(`Project: ${projectId.value}`);
   router.push({
     name: 'indexResultsDataExplorer',
     params: {
