@@ -43,6 +43,9 @@
         :edit-mode="projectionForScenarioBeingEdited !== null ? EditMode.Constraints : undefined"
         :data-warnings="dataWarnings"
         @click-chart="(...params) => emit('click-chart', ...params)"
+        @open-drilldown="
+          (datacubeId, datacubeItemId) => emit('open-drilldown', datacubeId, datacubeItemId)
+        "
       />
       <div
         class="edge outgoing last-child"
@@ -97,6 +100,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
   (e: 'click-chart', timestamp: number, value: number): void;
+  (e: 'open-drilldown', datacubeId: any, datacubeItemId: any): void;
 }>();
 
 const { findNode } = useIndexTree();

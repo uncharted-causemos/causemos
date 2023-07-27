@@ -134,7 +134,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'click-chart', timestamp: number, value: number): void;
-  (e: 'open-drilldown', datacubeId: any, datacubeItemId: any): void;
+  (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
 }>();
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));

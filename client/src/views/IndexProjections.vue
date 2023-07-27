@@ -653,7 +653,7 @@ const timeseriesToDisplay = computed(() =>
 
 const projectId = computed(() => route.params.project as string);
 const projectType = computed(() => route.params.projectType as string);
-const handleNavigateToDataset = (datacubeId: any, datacubeItemId: any) => {
+const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => {
   console.log('INDEX STRUCTURE: HANDLE NAVIGATION');
   router.push({
     name: 'projectionsDataExplorer',
