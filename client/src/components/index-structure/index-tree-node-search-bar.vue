@@ -11,6 +11,29 @@
       />
       <button class="btn btn-default" @click="emit('cancel')">Cancel</button>
     </div>
+    <div class="search-filter-container flex">
+      <p class="subdued">Filter datasets</p>
+      <p
+        class="filter"
+        v-for="(filter, index) in countryFilters"
+        :key="index"
+        @mouseenter="hoverCountryFilter = index"
+        @mouseleave="hoverCountryFilter = null"
+      >
+        {{ filter.country }}
+        <i
+          v-if="hoverCountryFilter === index"
+          class="fa fa-times subdued"
+          @click="deleteCountryFilter(filter.country)"
+        />
+      </p>
+      <DropdownButton
+        class="un-font-small"
+        :items="countryFilterChoicesRemaining"
+        :inner-button-label="'Select another country'"
+        @item-selected="handleNewFilter"
+      ></DropdownButton>
+    </div>
     <div class="search-results-container">
       <ul class="results-list" v-if="searchText !== ''">
         <li
@@ -92,6 +115,7 @@ import {
 } from '@/services/semantic-feature-search-service';
 import { capitalizeEachWord } from '@/utils/string-util';
 import newDatacubeService from '@/services/new-datacube-service';
+import DropdownButton from '@/components/dropdown-button.vue';
 
 const convertFeatureSearchResultToDatasetSearchResult = (
   feature: DojoFeatureSearchResult
@@ -107,7 +131,6 @@ const convertFeatureSearchResultToDatasetSearchResult = (
     outputName: feature.name,
   };
 };
-
 interface Props {
   initialSearchText: string;
 }
@@ -136,9 +159,42 @@ onMounted(() => {
 });
 
 // Search
-
+interface CountryFilter {
+  country: string;
+  isHighlighted: boolean;
+}
 const results = ref<DatasetSearchResult[]>([]);
 const isFetchingResults = ref(false);
+const hoverCountryFilter = ref<number | null>(null);
+const countryFilters = ref<CountryFilter[]>([
+  // default for now to these three
+  { country: 'United states', isHighlighted: false },
+  { country: 'China', isHighlighted: false },
+  { country: 'Russia', isHighlighted: false },
+]);
+
+const countryFilterChoices = ref<string[]>([
+  'Canada',
+  'Cuba',
+  'Denmark',
+  'Sweden',
+  'Russia',
+  'United states',
+  'China',
+  'Russia',
+]); // todo get from service
+const countryFilterChoicesRemaining = computed(() => {
+  return countryFilterChoices.value.filter(
+    (choice) => countryFilters.value.filter((item) => item.country === choice).length === 0
+  );
+});
+const handleNewFilter = (item: any) => {
+  countryFilters.value = [...countryFilters.value, { country: item, isHighlighted: false }];
+};
+
+const deleteCountryFilter = (country: string) => {
+  countryFilters.value = countryFilters.value.filter((item) => item.country !== country);
+};
 
 watch([searchText], async () => {
   // Save a copy of the current search text value in case it changes before results are fetched
@@ -293,6 +349,39 @@ const selectDataset = (dataset: DatasetSearchResult) => {
   }
   button {
     margin-left: 5px;
+  }
+}
+
+.search-filter-container {
+  padding: 3px 10px;
+  gap: 5px;
+  flex-wrap: wrap;
+
+  p {
+    @extend .un-font-small;
+    &.filter {
+      border: solid 1px $un-color-black-40;
+      border-radius: 0.8rem;
+      padding: 0 8px;
+    }
+    &:hover {
+      background-color: $un-color-black-5;
+    }
+    i {
+      padding-left: 5px;
+    }
+  }
+  ::v-deep(.dropdown-button-container) {
+    height: 1.6rem;
+  }
+  ::v-deep(.dropdown-button-container button) {
+    border: solid 1px $un-color-black-40;
+    border-radius: 0.8rem;
+    padding: 0 2px 0 8px;
+    background-color: white;
+  }
+  ::v-deep(.dropdown-button-container button span) {
+    @extend .un-font-small;
   }
 }
 
