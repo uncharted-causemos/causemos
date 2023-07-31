@@ -5,6 +5,7 @@
       'old-data-warning': oldDataWarning,
     }"
   >
+    {{ props.nodeData.dataWarnings }}
     <p class="add-horizontal-margin">{{ props.nodeData.name ?? 'none' }}</p>
     <span v-if="props.nodeData.name.length === 0" class="subdued add-horizontal-margin"
       >(Missing name)</span
@@ -83,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { ConceptNode } from '@/types/Index';
+import { ConceptNode, IndexProjectionNodeDataWarning } from '@/types/Index';
 import {
   DATASET_COLOR,
   DATASET_ICON,
@@ -94,10 +95,11 @@ import {
 import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
-import { DataWarning, ProjectionTimeseries } from '@/types/Timeseries';
+import { ProjectionTimeseries } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 import { EditMode } from '@/utils/projection-util';
+import { ProjectionDataWarning } from '@/types/Enums';
 
 const optionsButtonMenu = [
   {
@@ -127,7 +129,7 @@ const props = defineProps<{
   timeseries: ProjectionTimeseries[];
   showDataOutsideNorm: boolean;
   editMode?: EditMode;
-  dataWarnings: Map<string, DataWarning>;
+  dataWarnings?: IndexProjectionNodeDataWarning[];
 }>();
 
 const emit = defineEmits<{
@@ -153,9 +155,13 @@ const outputVariable = computed(() => {
 });
 
 const insufficientDataWarning = computed(
-  () => props.dataWarnings.get(props.nodeData.id)?.insufficientData ?? false
+  () =>
+    (props.dataWarnings || []).find((w) => w.warning === ProjectionDataWarning.InsufficientData) ??
+    false
 );
-const oldDataWarning = computed(() => props.dataWarnings.get(props.nodeData.id)?.oldData ?? false);
+const oldDataWarning = computed(
+  () => (props.dataWarnings || []).find((w) => w.warning === ProjectionDataWarning.OldData) ?? false
+);
 
 const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVariable);
 </script>

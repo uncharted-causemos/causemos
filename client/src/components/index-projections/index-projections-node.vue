@@ -59,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { ConceptNode } from '@/types/Index';
+import { ConceptNode, IndexProjectionNodeDataWarning } from '@/types/Index';
 import {
   DATASET_COLOR,
   DATASET_ICON,
@@ -69,8 +69,9 @@ import {
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import IndexProjectionsNodeTimeseries from './index-projections-node-timeseries.vue';
-import { DataWarning, ProjectionTimeseries } from '@/types/Timeseries';
+import { ProjectionTimeseries } from '@/types/Timeseries';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
+import { ProjectionDataWarning } from '@/types/Enums';
 
 const props = defineProps<{
   nodeData: ConceptNode;
@@ -78,7 +79,7 @@ const props = defineProps<{
   projectionEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
   showDataOutsideNorm: boolean;
-  dataWarnings: Map<string, DataWarning>;
+  dataWarnings?: IndexProjectionNodeDataWarning[];
 }>();
 
 const emit = defineEmits<{
@@ -86,9 +87,13 @@ const emit = defineEmits<{
 }>();
 
 const insufficientDataWarning = computed(
-  () => props.dataWarnings.get(props.nodeData.id)?.insufficientData ?? false
+  () =>
+    (props.dataWarnings || []).find((w) => w.warning === ProjectionDataWarning.InsufficientData) ??
+    false
 );
-const oldDataWarning = computed(() => props.dataWarnings.get(props.nodeData.id)?.oldData ?? false);
+const oldDataWarning = computed(
+  () => (props.dataWarnings || []).find((w) => w.warning === ProjectionDataWarning.OldData) ?? false
+);
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 const isInvertedData = computed(() =>

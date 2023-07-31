@@ -9,17 +9,13 @@ import {
 import { isConceptNodeWithDatasetAttached } from '@/utils/index-tree-util';
 
 import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
-import {
-  ByCountryWarning,
-  DataWarning,
-  TimeseriesPoint,
-  TimeseriesPointProjected,
-} from '@/types/Timeseries';
+import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
 import {
   ConceptNode,
   ProjectionConstraint,
   ProjectionResults,
   ProjectionRunInfo,
+  IndexProjectionNodeDataWarning,
 } from '@/types/Index';
 
 export enum EditMode {
@@ -581,31 +577,32 @@ export const splitProjectionsIntoLineSegments = (timeseries: TimeseriesPointProj
  * @param allWarnings - summary of all warnings keyed by country and node id
  */
 export const consolidateNodeWarnings = (
-  allWarnings: ByCountryWarning[]
-): Map<string, DataWarning> => {
-  const warnings = new Map<string, DataWarning>();
-  const nodeIds: string[] = [];
+  allWarnings: IndexProjectionNodeDataWarning[]
+): { [nodId: string]: IndexProjectionNodeDataWarning[] } => {
+  const warningsByNode = _.groupBy(allWarnings, 'nodeId');
+  return warningsByNode;
+  // console.log(warningsByNode);
 
-  allWarnings.forEach((warning: any) => {
-    if (!nodeIds.includes(warning.nodeId)) {
-      nodeIds.push(warning.nodeId);
-    }
-  });
+  // allWarnings.forEach((warning: any) => {
+  //   if (!nodeIds.includes(warning.nodeId)) {
+  //     nodeIds.push(warning.nodeId);
+  //   }
+  // });
 
-  nodeIds.forEach((id) => {
-    const consolidatedWarning = {
-      oldData: false,
-      insufficientData: false,
-    };
-    allWarnings
-      .filter((warning: any) => warning.nodeId === id)
-      .forEach((nodeWarning: any) => {
-        consolidatedWarning.oldData = consolidatedWarning.oldData || nodeWarning.warning.oldData;
-        consolidatedWarning.insufficientData =
-          consolidatedWarning.insufficientData || nodeWarning.warning.insufficientData;
-      });
-    warnings.set(id, consolidatedWarning);
-  });
+  // nodeIds.forEach((id) => {
+  //   const consolidatedWarning = {
+  //     oldData: false,
+  //     insufficientData: false,
+  //   };
+  //   allWarnings
+  //     .filter((warning: any) => warning.nodeId === id)
+  //     .forEach((nodeWarning: any) => {
+  //       consolidatedWarning.oldData = consolidatedWarning.oldData || nodeWarning.warning.oldData;
+  //       consolidatedWarning.insufficientData =
+  //         consolidatedWarning.insufficientData || nodeWarning.warning.insufficientData;
+  //     });
+  //   warnings.set(id, consolidatedWarning);
+  // });
 
-  return warnings;
+  // return warnings;
 };
