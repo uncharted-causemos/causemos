@@ -116,6 +116,7 @@ import {
 import { capitalizeEachWord } from '@/utils/string-util';
 import newDatacubeService from '@/services/new-datacube-service';
 import DropdownButton from '@/components/dropdown-button.vue';
+import { getCountryList } from '@/services/region-service';
 
 const convertFeatureSearchResultToDatasetSearchResult = (
   feature: DojoFeatureSearchResult
@@ -152,10 +153,12 @@ const searchInput = ref();
 onMounted(() => searchInput.value?.focus());
 
 const searchText = ref('');
-onMounted(() => {
+onMounted(async () => {
   if (props.initialSearchText) {
     searchText.value = props.initialSearchText;
   }
+  const list = await getCountryList();
+  countryFilterChoices.value = list;
 });
 
 // Search
@@ -173,16 +176,7 @@ const countryFilters = ref<CountryFilter[]>([
   { country: 'Russia', isHighlighted: false },
 ]);
 
-const countryFilterChoices = ref<string[]>([
-  'Canada',
-  'Cuba',
-  'Denmark',
-  'Sweden',
-  'Russia',
-  'United states',
-  'China',
-  'Russia',
-]); // todo get from service
+const countryFilterChoices = ref<string[]>([]);
 const countryFilterChoicesRemaining = computed(() => {
   return countryFilterChoices.value.filter(
     (choice) => countryFilters.value.filter((item) => item.country === choice).length === 0
@@ -356,6 +350,7 @@ const selectDataset = (dataset: DatasetSearchResult) => {
   padding: 3px 10px;
   gap: 5px;
   flex-wrap: wrap;
+  overflow-wrap: normal;
 
   p {
     @extend .un-font-small;
