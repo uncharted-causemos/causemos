@@ -571,38 +571,12 @@ export const splitProjectionsIntoLineSegments = (timeseries: TimeseriesPointProj
 };
 
 /**
- * To support projections that include multiple countries.
- * warning state may be considered true if there is a warning in any of the selected countries for a given node.
- *
- * @param allWarnings - summary of all warnings keyed by country and node id
+ * Get all node data warnings by node id
+ * @param allWarnings - summary of all warnings keyed by node id
  */
 export const consolidateNodeWarnings = (
   allWarnings: IndexProjectionNodeDataWarning[]
 ): { [nodId: string]: IndexProjectionNodeDataWarning[] } => {
   const warningsByNode = _.groupBy(allWarnings, 'nodeId');
   return warningsByNode;
-  // console.log(warningsByNode);
-
-  // allWarnings.forEach((warning: any) => {
-  //   if (!nodeIds.includes(warning.nodeId)) {
-  //     nodeIds.push(warning.nodeId);
-  //   }
-  // });
-
-  // nodeIds.forEach((id) => {
-  //   const consolidatedWarning = {
-  //     oldData: false,
-  //     insufficientData: false,
-  //   };
-  //   allWarnings
-  //     .filter((warning: any) => warning.nodeId === id)
-  //     .forEach((nodeWarning: any) => {
-  //       consolidatedWarning.oldData = consolidatedWarning.oldData || nodeWarning.warning.oldData;
-  //       consolidatedWarning.insufficientData =
-  //         consolidatedWarning.insufficientData || nodeWarning.warning.insufficientData;
-  //     });
-  //   warnings.set(id, consolidatedWarning);
-  // });
-
-  // return warnings;
 };

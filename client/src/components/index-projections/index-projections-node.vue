@@ -1,11 +1,5 @@
 <template>
-  <div
-    class="index-projections-node-container"
-    :class="{
-      'old-data-warning': oldDataWarning,
-    }"
-    @click="emit('select', props.nodeData.id)"
-  >
+  <div class="index-projections-node-container" @click="emit('select', props.nodeData.id)">
     <div class="content node-header">
       {{ props.nodeData.name }}
       <span v-if="props.nodeData.name.length === 0" class="subdued">(Missing name)</span>
@@ -13,7 +7,6 @@
 
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)">
       <div class="content timeseries-label" style="display: flex">
-        <i v-if="insufficientDataWarning" class="fa fa-fw fa-exclamation-triangle warning"></i>
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
         <span class="subdued un-font-small overflow-ellipsis dataset-name">{{
           dataSourceText
@@ -32,6 +25,7 @@
         :is-weighted-sum-node="false"
         :is-inverted="isInvertedData"
       />
+      <IndexProjectionNodeWarning class="warning-section" :data-warnings="dataWarnings" />
     </div>
 
     <div v-else-if="isEmptyNode(props.nodeData)" class="content">
@@ -69,9 +63,9 @@ import {
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import IndexProjectionsNodeTimeseries from './index-projections-node-timeseries.vue';
+import IndexProjectionNodeWarning from './index-projection-node-warning.vue';
 import { ProjectionTimeseries } from '@/types/Timeseries';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
-import { ProjectionDataWarning } from '@/types/Enums';
 
 const props = defineProps<{
   nodeData: ConceptNode;
@@ -85,15 +79,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'select', nodeId: string): void;
 }>();
-
-const insufficientDataWarning = computed(
-  () =>
-    (props.dataWarnings || []).find((w) => w.warning === ProjectionDataWarning.InsufficientData) ??
-    false
-);
-const oldDataWarning = computed(
-  () => (props.dataWarnings || []).find((w) => w.warning === ProjectionDataWarning.OldData) ?? false
-);
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 const isInvertedData = computed(() =>
@@ -142,6 +127,9 @@ const isInvertedData = computed(() =>
   border-top: 1px solid $un-color-black-10;
   display: flex;
 }
+.warning-section {
+  border-top: 1px solid $un-color-black-10;
+}
 
 .warning {
   color: $un-color-feedback-warning;
@@ -149,9 +137,5 @@ const isInvertedData = computed(() =>
 
 .full-width-button {
   width: 100%;
-}
-
-.old-data-warning {
-  background-color: $old-data-warning;
 }
 </style>

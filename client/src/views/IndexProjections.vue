@@ -434,6 +434,7 @@ const { visibleScenarioProjectionData, projectionForScenarioBeingEdited, runScen
 
 const dataWarnings = ref<{ [nodeId: string]: IndexProjectionNodeDataWarning[] }>({});
 const oldDataTest = (points: TimeseriesPoint[]): boolean => {
+  if (points.length === 0) return false;
   return (
     points.filter((point: TimeseriesPoint) => point.timestamp >= projectionStartTimestamp.value)
       .length <= WARNING_OLD_DATA_MINCOUNT
@@ -509,6 +510,16 @@ const checkHistoricalData = () => {
               ProjectionDataWarning.InsufficientData
             )
           );
+          /// FIXME: To generate test data, once `NoPatternDetected` check is implemented, remove this block of codes
+          allProjectionWarnings.push(
+            createProjectionDataWarning(
+              nodeId,
+              country.name,
+              country.color,
+              ProjectionDataWarning.NoPatternDetected
+            )
+          );
+          //  =====================================================================================
         }
       });
     });

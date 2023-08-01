@@ -84,9 +84,6 @@ $shadow-level-2: 0px 0px 8px 4px rgba(0, 0, 0, 0.02), 0px 0px 4px 2px rgba(0, 0,
 // Transitions
 $layout-transition: 0.3s ease;
 
-// projection node data warning
-$old-data-warning: #f0edd9;
-
 // FIXME: Due to some sort of SCSS restrictions, the :deep() selectors within
 //  facets-overrides don't apply correctly if this import is in "wm.scss" or
 //  "overrides.scss", but work here.
