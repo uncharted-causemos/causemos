@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import API from '@/api/api';
 import { DataConfig, Datacube, Model } from '@/types/Datacube';
-import { Filters } from '@/types/Filters';
+import { Clause, Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import { getTimeseries } from '@/services/outputdata-service';
 import fu from '@/utils/filters-util';
@@ -90,6 +90,28 @@ export const getDatacubeByDataIdAndOutputVariable = async (
         { field: 'dataId', operand: 'or', isNot: false, values: [dataId] },
         { field: 'outputName', operand: 'or', isNot: false, values: [outputVariable] },
       ],
+    },
+    { from: 0, size: 1 }
+  );
+  return result[0] ?? null;
+};
+
+export const getDatacubeByDataIdAndOutputVariableAndCountry = async (
+  dataId: string,
+  outputVariable: string,
+  countries: string[]
+): Promise<Datacube | null> => {
+  const clauses: Clause[] = [
+    { field: 'dataId', operand: 'or', isNot: false, values: [dataId] },
+    { field: 'outputName', operand: 'or', isNot: false, values: [outputVariable] },
+  ];
+  countries.forEach((country) =>
+    clauses.push({ field: 'geography.country.raw', operand: 'or', isNot: false, values: [country] })
+  );
+
+  const result = await getDatacubes(
+    {
+      clauses: clauses,
     },
     { from: 0, size: 1 }
   );
@@ -415,6 +437,7 @@ export default {
   getDatacubes,
   getDatacubeByDataId,
   getDatacubeByDataIdAndOutputVariable,
+  getDatacubeByDataIdAndOutputVariableAndCountry,
   getDatacubeById,
   getDatacubesCount,
   getDatacubeFacets,

@@ -190,8 +190,14 @@ const deleteCountryFilter = (country: string) => {
   countryFilters.value = countryFilters.value.filter((item) => item.country !== country);
 };
 
-watch([searchText], async () => {
+const selectedCountries = computed(() => {
+  return countryFilters.value.map((item) => item.country);
+});
+
+watch([searchText, selectedCountries], async () => {
   // Save a copy of the current search text value in case it changes before results are fetched
+  // note: we are watching selected countries though not using them here YET.  The semantic search
+  //       cannot take the filter presently.  The models are filtered after the semantic return currently.
   const queryString = searchText.value;
   if (queryString === '') {
     results.value = [];
@@ -234,7 +240,11 @@ watch([searchText], async () => {
  */
 const verifySearchFeatures = async (features: DatasetSearchResult[]) => {
   const verified: any[] = features.map((feature) =>
-    newDatacubeService.getDatacubeByDataIdAndOutputVariable(feature.dataId, feature.outputName)
+    newDatacubeService.getDatacubeByDataIdAndOutputVariableAndCountry(
+      feature.dataId,
+      feature.outputName,
+      selectedCountries.value
+    )
   );
   const allVerified = await Promise.allSettled(verified);
 
