@@ -220,6 +220,7 @@ $horizontal-margin: 30px;
 
 .dataset-metadata {
   margin-top: 10px;
+  margin-bottom: 10px;
   border-top: 1px solid $un-color-black-10;
 
   .margin-top {
