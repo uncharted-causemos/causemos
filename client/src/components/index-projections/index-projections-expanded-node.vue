@@ -1,6 +1,5 @@
 <template>
   <div class="index-projections-expanded-node-container">
-    {{ props.nodeData.dataWarnings }}
     <p class="add-horizontal-margin">{{ props.nodeData.name ?? 'none' }}</p>
     <span v-if="props.nodeData.name.length === 0" class="subdued add-horizontal-margin"
       >(Missing name)</span
