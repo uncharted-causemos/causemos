@@ -1,7 +1,7 @@
 import { ConceptNode } from '@/types/Index';
 import { findAllDatasets } from '@/utils/index-tree-util';
 import { Ref, ref, watch } from 'vue';
-import { getTimeseriesNormalized } from '../outputdata-service';
+import { getTimeseries, TRANSFORM_NORM } from '../outputdata-service';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { NO_COUNTRY_SELECTED_VALUE } from '@/utils/index-projection-util';
 
@@ -27,7 +27,7 @@ export default function useHistoricalData(countries: Ref<string[]>, indexTree: R
       // For each node with a dataset, fetch the current country's timeseries
       const promises = nodesWithDatasets.map(async ({ dataset }) => {
         const { config } = dataset;
-        const data = await getTimeseriesNormalized({
+        const data = ((await getTimeseries({
           modelId: config.datasetId,
           runId: config.runId,
           outputVariable: config.outputVariable,
@@ -35,7 +35,8 @@ export default function useHistoricalData(countries: Ref<string[]>, indexTree: R
           temporalAggregation: config.temporalAggregation,
           spatialAggregation: config.spatialAggregation,
           regionId: country,
-        });
+          transform: TRANSFORM_NORM,
+        })) || []) as TimeseriesPoint[];
         return data;
       });
       // Wait for all fetches to complete.

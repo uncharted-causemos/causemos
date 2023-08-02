@@ -319,17 +319,15 @@ export default defineComponent({
         const periodEndDate = new Date(doc.period?.lte ?? 0);
         const agg = AggregationOption.Mean;
 
-        const result = (
-          await getTimeseries({
-            modelId: doc.data_id,
-            runId,
-            outputVariable: doc.feature,
-            temporalResolution: temporalResolution.value,
-            temporalAggregation: agg,
-            spatialAggregation: agg,
-            regionId: '',
-          })
-        ).data as TimeseriesPoint[];
+        const result = (await getTimeseries({
+          modelId: doc.data_id,
+          runId,
+          outputVariable: doc.feature,
+          temporalResolution: temporalResolution.value,
+          temporalAggregation: agg,
+          spatialAggregation: agg,
+          regionId: '',
+        })) as TimeseriesPoint[];
 
         const { points } = correctIncompleteTimeseries(
           result,
@@ -519,7 +517,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/variables.scss';
+@import '@/styles/variables.scss';
 
 .new-node-container {
   position: absolute;

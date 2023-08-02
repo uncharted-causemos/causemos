@@ -389,7 +389,7 @@ export const getDefaultDataConfig = async (dataId: string, outputVariable: strin
       metadata?.default_view?.temporalResolution || TemporalResolutionOption.Month,
   };
   // Fetch timeseries to find the true last point we have data for. `period.lte` is unreliable.
-  const { data } = await getTimeseries({
+  const data = await getTimeseries({
     modelId: config.datasetId,
     outputVariable: config.outputVariable,
     runId: config.runId,

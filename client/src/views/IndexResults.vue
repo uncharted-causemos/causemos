@@ -54,13 +54,13 @@ import {
 } from '@/utils/index-tree-util';
 import { calculateIndexResults } from '@/utils/index-results-util';
 import { ConceptNodeWithDatasetAttached, IndexResultsData } from '@/types/Index';
-import { getRegionAggregationNormalized } from '@/services/outputdata-service';
+import { getIndexRegionAggregation, TRANSFORM_NORM } from '@/services/outputdata-service';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import IndexResultsMap from '@/components/index-results/index-results-map.vue';
 import IndexResultsComponentList from '@/components/index-results/index-results-component-list.vue';
 import IndexResultsDatasetWeights from '@/components/index-results/index-results-dataset-weights.vue';
-import { ProjectType } from '@/types/Enums';
+import { AdminLevel, ProjectType } from '@/types/Enums';
 import useInsightStore from '@/services/composables/useInsightStore';
 import { IndexResultsDataState, Insight } from '@/types/Insight';
 import { getInsightById } from '@/services/insight-service';
@@ -240,7 +240,11 @@ watch([tree], async () => {
 
   // Prepare an "output spec" for each dataset to fetch its regional data
   const promises = datasets.value.map((dataset) =>
-    getRegionAggregationNormalized(convertDataConfigToOutputSpec(dataset.dataset.config))
+    getIndexRegionAggregation({
+      ...convertDataConfigToOutputSpec(dataset.dataset.config),
+      transform: TRANSFORM_NORM,
+      adminLevel: AdminLevel.Country,
+    })
   );
   // Wait for all fetches to complete.
   regionDataForEachDataset.value = await Promise.all(promises);

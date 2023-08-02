@@ -24,18 +24,20 @@ import {
   OutputSpecWithRegionId,
   BaseSpec,
   BulkRegionalAggregationData,
+  OutputSpecWithAdminLevel,
 } from '@/types/Outputdata';
 import { isSplitByQualifierActive } from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
 import { filterRawDataByRegionIds, computeTimeseriesFromRawData } from '@/utils/outputdata-util';
 import { getLevelFromRegionId, adminLevelToString } from '@/utils/admin-level-util';
-import { normalize } from '@/utils/value-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
 
 const RAW_DATA_REQUEST_CACHE_SIZE = 20;
 const rawDataRequestCache = new FIFOCache<Promise<RawOutputDataPoint[]>>(
   RAW_DATA_REQUEST_CACHE_SIZE
 );
+
+export const TRANSFORM_NORM = 'normalization';
 
 /*
   getRaw[something] functions:
@@ -184,24 +186,10 @@ export const getTimeseries = async (spec: OutputSpecWithRegionId): Promise<any> 
         region_id: spec.regionId,
       },
     });
-    // FIXME: return result.data instead of result
-    return result;
+    return result.data;
   } catch (e) {
     return [];
   }
-};
-
-// TODO: once we integrate with jataware's normalized data path, replace this function to fetch normalized data from backend
-export const getTimeseriesNormalized = async (
-  spec: OutputSpecWithRegionId
-): Promise<TimeseriesPoint[]> => {
-  const result = ((await getTimeseries(spec)).data || []) as TimeseriesPoint[];
-  const values = result.map((d) => d.value);
-  const min = _.min(values) ?? 0;
-  const max = _.max(values) ?? 0;
-  return result.map((d) => {
-    return { ...d, value: normalize(d.value, min, max) };
-  });
 };
 
 export const getBulkTimeseries = async (spec: OutputSpec, regionIds: string[]): Promise<any> => {
@@ -518,10 +506,34 @@ export const getRegionLists = async (dataId: string, runIds: string[], feature: 
   return data;
 };
 
+export const getIndexRegionAggregation = async (
+  spec: OutputSpecWithAdminLevel
+): Promise<RegionalAggregation> => {
+  try {
+    const { data } = await API.get('/maas/output/regional-aggregation', {
+      params: {
+        data_id: spec.modelId,
+        run_id: spec.runId,
+        feature: spec.outputVariable,
+        resolution: spec.temporalResolution,
+        temporal_agg: spec.temporalAggregation,
+        spatial_agg: spec.spatialAggregation,
+        timestamp: spec.timestamp,
+        transform: spec.transform,
+        admin_level: spec.adminLevel,
+      },
+    });
+    return data;
+  } catch (e) {
+    return { country: [], admin1: [], admin2: [], admin3: [] };
+  }
+};
 export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAggregation> => {
   // TODO: Handle http error properly in the backend and respond with correct error code if necessary.
   //       Meanwhile just ignore the error.
+
   try {
+    // use new endpoint for normalized aggregation values otherwise use the original endpoint.
     const { data } = await API.get('/maas/output/regional-data', {
       params: {
         data_id: spec.modelId,
@@ -538,32 +550,6 @@ export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAg
   } catch (e) {
     return { country: [], admin1: [], admin2: [], admin3: [] };
   }
-};
-
-// TODO: temporary!
-// We probably want to
-//  - pre-normalize the data on the backend.
-//  - normalize it with respect to the min and max of the dataset across timestamps
-//  - Keep original value as well, instead of overriding it with the normalized version
-export const getRegionAggregationNormalized = async (
-  spec: OutputSpec
-): Promise<RegionalAggregation> => {
-  const result = await getRegionAggregation(spec);
-  if (result.country === undefined || result.country.length === 0) {
-    return result;
-  }
-  const countries = result.country;
-  const values = countries.map(({ value }) => value);
-  const min = _.min(values) ?? 0;
-  const max = _.max(values) ?? 0;
-  result.country = countries.map((country) => {
-    const normalizedValue = normalize(country.value, min, max);
-    return {
-      ...country,
-      value: normalizedValue,
-    };
-  });
-  return result;
 };
 
 export const getRegionAggregationWithQualifiers = async (
@@ -822,7 +808,6 @@ export const getAggregateTimeseries = async (
 
 export default {
   getTimeseries,
-  getTimeseriesNormalized,
   getBulkTimeseries,
   getRawOutputData,
   getRawTimeseriesData,
