@@ -59,7 +59,6 @@ import { computed, defineComponent, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import NavbarInsightsPanel from '@/components/insight-manager/navbar-insights-panel.vue';
-import _ from 'lodash';
 
 interface NavBarItem {
   route: { name: string; params: any } | null;
