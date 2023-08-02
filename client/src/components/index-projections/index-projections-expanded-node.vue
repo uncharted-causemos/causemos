@@ -48,7 +48,7 @@
         <p class="subdued un-font-small">{{ outputDescription }}</p>
         <p class="margin-top">Source: {{ props.nodeData.dataset.source }}</p>
         <p class="subdued un-font-small">{{ metadata?.description }}</p>
-        <button class="btn btn-default margin-top" @click="navigateToDataset">
+        <button class="btn btn-default margin-top" @click="navigateToDataset" :disabled="metadata !== null">
           <i class="fa fa-fw fa-cube" />Explore dataset
         </button>
       </div>
