@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import forecast, { ForecastMethod } from '@/utils/forecast';
+import forecast, { ForecastMethod, ForecastMethodSelectionReason } from '@/utils/forecast';
 import { expect } from 'chai';
 
 describe('forecast', () => {
@@ -26,6 +26,7 @@ describe('forecast', () => {
       const f = forecast.initialize(data, { holt: { iterations: 1 } });
       const result = f.runHolt();
       expect(result.method).to.equal(ForecastMethod.Holt);
+      expect(result.reason).to.equal(ForecastMethodSelectionReason.Manual);
       expect(result.forecast).to.deep.equal({
         data: [
           [4, 6],
@@ -86,6 +87,7 @@ describe('forecast', () => {
       });
       const result = f.runHoltWinters();
       expect(result.method).to.equal(ForecastMethod.HoltWinters);
+      expect(result.reason).to.equal(ForecastMethodSelectionReason.Manual);
       expect(result.forecast).to.deep.equal({
         data: [
           [12, 2.69488015404617],
@@ -187,6 +189,7 @@ describe('forecast', () => {
       });
       const result = f.runAuto();
       expect(result.method).to.equal(ForecastMethod.Holt);
+      expect(result.reason).to.equal(ForecastMethodSelectionReason.MinimalError);
     });
     it('should pick and run Holt-Winters with seasonal data', () => {
       const data: [number, number][] = [
@@ -205,6 +208,7 @@ describe('forecast', () => {
       });
       const result = f.runAuto();
       expect(result.method).to.equal(ForecastMethod.HoltWinters);
+      expect(result.reason).to.equal(ForecastMethodSelectionReason.MinimalError);
     });
     it('should pick and run Holt when there are not enough data points', () => {
       const data: [number, number][] = [
@@ -222,6 +226,33 @@ describe('forecast', () => {
       });
       const result = f.runAuto();
       expect(result.method).to.equal(ForecastMethod.Holt);
+      expect(result.reason).to.equal(ForecastMethodSelectionReason.NoPattern);
+    });
+    it('should pick Holt over Holt Winters if detected forecast and backcast periods are different for Holt Winters result.', () => {
+      const data: [number, number][] = [
+        [1, 1],
+        [2, 4],
+        [3, 3],
+        [4, 1],
+        [5, 4],
+        [6, 3],
+        [7, 2],
+        [8, 3],
+        [9, 2],
+        [10, 1],
+        [11, 2],
+        [12, 3],
+        [13, 2],
+        [14, 1],
+      ];
+      const f = forecast.initialize(data, {
+        backcastSteps: 3,
+        forecastSteps: 3,
+        holtWinters: { iterations: 2 },
+      });
+      const result = f.runAuto();
+      expect(result.method).to.equal(ForecastMethod.Holt);
+      expect(result.reason).to.equal(ForecastMethodSelectionReason.NoPattern);
     });
   });
 });

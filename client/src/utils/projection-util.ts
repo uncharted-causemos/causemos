@@ -448,13 +448,14 @@ export const createProjectionRunner = (
       const constraints = (_constraints && _constraints[nodeId]) || [];
       const inputData = applyConstraints(series, constraints);
       if (inputData.length > 1) {
-        const { method, forecast, backcast, projectionData } = runProjection(
+        const { method, forecast, backcast, projectionData, reason } = runProjection(
           inputData,
           period,
           dataTempResOption
         );
         runInfo[nodeId] = {
           method,
+          reason,
           forecast,
           backcast,
         };
