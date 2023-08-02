@@ -9,6 +9,26 @@ export enum ForecastMethod {
   HoltWinters = 'Holt-Winters',
 }
 
+/**
+ * Enum representing reasons for selecting a forecast method automatically.
+ */
+export enum ForecastMethodSelectionReason {
+  /**
+   * Represents the case where the method is selected manually or explicitly.
+   */
+  Manual = 'Manual',
+
+  /**
+   * Represents the case where the method is selected based on producing smaller error.
+   */
+  MinimalError = 'MinimalError',
+
+  /**
+   * Represents the case where there's no clear seasonal pattern detected in the input timeseries data.
+   */
+  NoPattern = 'NoPattern',
+}
+
 export interface ForecastOptions {
   forecastSteps: number;
   backcastSteps: number;
@@ -46,6 +66,7 @@ export interface ForecastOutput<FMethod> {
 
 export interface ForecastResult<Method> {
   method: Method;
+  reason?: ForecastMethodSelectionReason; // The reason why the method is chosen over the other method among Holt and Holt-Winters
   forecast: ForecastOutput<Method>;
   backcast: ForecastOutput<Method>;
 }
