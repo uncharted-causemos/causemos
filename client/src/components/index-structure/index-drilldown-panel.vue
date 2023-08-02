@@ -227,7 +227,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'delete-edge', value: SelectableIndexElementId): void;
-  (e: 'open-drilldown', datacubeId: any, datacubeItemId: any): void;
+  (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
 }>();
 
 const indexTree = useIndexTree();

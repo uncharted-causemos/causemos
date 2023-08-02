@@ -48,7 +48,7 @@
         <p class="subdued un-font-small">{{ outputDescription }}</p>
         <p class="margin-top">Source: {{ props.nodeData.dataset.source }}</p>
         <p class="subdued un-font-small">{{ metadata?.description }}</p>
-        <button class="btn btn-default margin-top" @click="navigateToDataset">
+        <button class="btn btn-default margin-top" @click="navigateToDataset" :disabled="metadata !== null">
           <i class="fa fa-fw fa-cube" />Explore dataset
         </button>
       </div>
@@ -165,7 +165,6 @@ const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVar
 const navigateToDataset = () => {
   if (metadata.value !== null) {
     const itemId = ''; // TODO: itemId is a qualitative analysis thing that we don't have access to yet. Interface will render but some controls will fail (generate errors)
-    console.log(`WIP: navigate to dataset ${metadata.value.id}`);
     emit('open-drilldown', metadata.value.id, itemId);
   } else {
     throw new Error('Dataset metadata not assigned.  Drill-down aborted.');

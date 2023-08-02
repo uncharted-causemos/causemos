@@ -100,7 +100,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
   (e: 'click-chart', timestamp: number, value: number): void;
-  (e: 'open-drilldown', datacubeId: any, datacubeItemId: any): void;
+  (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
 }>();
 
 const { findNode } = useIndexTree();
