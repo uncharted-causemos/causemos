@@ -106,7 +106,7 @@ export const getDatacubeByDataIdAndOutputVariableAndCountry = async (
     { field: 'outputName', operand: 'or', isNot: false, values: [outputVariable] },
   ];
   countries.forEach((country) =>
-    clauses.push({ field: 'geography.country.raw', operand: 'or', isNot: false, values: [country] })
+    clauses.push({ field: 'country', operand: 'or', isNot: false, values: [country] })
   );
 
   const result = await getDatacubes(
