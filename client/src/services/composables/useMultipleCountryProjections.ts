@@ -20,24 +20,23 @@ export default function useMultipleCountryProjections() {
   ) => {
     multipleCountryProjectionData.value = countries.map((country) => {
       const historicalData = historicalDataForSelectedCountries.get(country.name);
-      const result =
-        historicalData === undefined
-          ? {}
-          : createProjectionRunner(
-              conceptTree,
-              Object.fromEntries(historicalData),
-              targetPeriod,
-              dataResOption
-            )
-              .runProjection()
-              .getResults();
-
-      return {
+      const retVal = {
         id: country.name,
         color: country.color,
         name: country.name,
-        result,
+        result: {},
+        runInfo: {},
       };
+      if (historicalData === undefined) return retVal;
+      const runner = createProjectionRunner(
+        conceptTree,
+        Object.fromEntries(historicalData),
+        targetPeriod,
+        dataResOption
+      ).runProjection();
+      retVal.result = runner.getResults();
+      retVal.runInfo = runner.getRunInfo();
+      return retVal;
     });
   };
   return {

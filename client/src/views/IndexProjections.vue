@@ -213,6 +213,7 @@
 </template>
 
 <script setup lang="ts">
+import _ from 'lodash';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -245,7 +246,6 @@ import useScenarioProjections from '@/services/composables/useScenarioProjection
 import useHistoricalData from '@/services/composables/useHistoricalData';
 import useMultipleCountryProjections from '@/services/composables/useMultipleCountryProjections';
 import { TimeseriesPoint } from '@/types/Timeseries';
-import { consolidateNodeWarnings } from '@/utils/projection-util';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -524,7 +524,7 @@ const checkHistoricalData = () => {
       });
     });
   }
-  dataWarnings.value = consolidateNodeWarnings(allProjectionWarnings);
+  dataWarnings.value = _.groupBy(allProjectionWarnings, 'nodeId');
 };
 
 watch(

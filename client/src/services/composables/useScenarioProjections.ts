@@ -28,12 +28,13 @@ export default function useScenarioProjections(
       projectionForScenarioBeingEdited.value = null;
       return;
     }
-    const { id, color, name, result } = existingProjectionData;
+    const { id, color, name, result, runInfo } = existingProjectionData;
     const updatedProjection: IndexProjection = {
       id,
       color,
       name,
       result: { ...result },
+      runInfo: { ...runInfo },
     };
     // Apply constraints
     // TODO: instead of just applying constraints to the projection data, re-run projection for the scenario
@@ -71,15 +72,16 @@ export default function useScenarioProjections(
     scenarios: IndexProjectionScenario[]
   ) => {
     projectionData.value = scenarios.map((scenario) => {
-      const result = createProjectionRunner(
+      const runner = createProjectionRunner(
         conceptTree,
         Object.fromEntries(historicalData),
         targetPeriod,
         dataResOption
       )
         .setConstraints(scenario.constraints)
-        .runProjection()
-        .getResults();
+        .runProjection();
+      const result = runner.getResults();
+      const runInfo = runner.getRunInfo();
 
       return {
         // Set projection id equal to the scenario id
@@ -87,6 +89,7 @@ export default function useScenarioProjections(
         color: scenario.color,
         name: scenario.name,
         result,
+        runInfo,
       };
     });
   };

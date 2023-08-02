@@ -127,6 +127,7 @@ export interface IndexProjection {
   name: string;
   color: string;
   result: ProjectionResults;
+  runInfo: ProjectionRunInfo;
 }
 
 /**
