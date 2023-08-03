@@ -1,12 +1,19 @@
 import _ from 'lodash';
 import { ref } from 'vue';
 import { createProjectionRunner } from '@/utils/projection-util';
-import { ConceptNode, IndexProjection, IndexProjectionCountry } from '@/types/Index';
+import {
+  ConceptNode,
+  IndexProjection,
+  IndexProjectionCountry,
+  IndexProjectionNodeDataWarning,
+} from '@/types/Index';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { TemporalResolutionOption } from '@/types/Enums';
+import { checkProjectionWarnings } from '@/utils/index-projection-util';
 
 export default function useMultipleCountryProjections() {
   const multipleCountryProjectionData = ref<IndexProjection[]>([]);
+  const dataWarnings = ref<{ [nodeId: string]: IndexProjectionNodeDataWarning[] }>({});
 
   /**
    * Run projections for the tree with historical data for the given countries
@@ -38,9 +45,16 @@ export default function useMultipleCountryProjections() {
       retVal.runInfo = runner.getRunInfo();
       return retVal;
     });
+    dataWarnings.value = checkProjectionWarnings(
+      multipleCountryProjectionData.value,
+      historicalDataForSelectedCountries,
+      targetPeriod
+    );
   };
+
   return {
     multipleCountryProjectionData,
+    dataWarnings,
     runMultipleCountryProjections,
   };
 }

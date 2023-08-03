@@ -115,8 +115,10 @@ export type ProjectionResults = {
   [nodeId: string]: TimeseriesPointProjected[];
 };
 
+export type ProjectionRunInfoNode = ForecastResult<ForecastMethod> | { method: NodeProjectionType };
+
 export type ProjectionRunInfo = {
-  [nodeId: string]: ForecastResult<ForecastMethod> | { method: NodeProjectionType };
+  [nodeId: string]: ProjectionRunInfoNode;
 };
 
 /**
