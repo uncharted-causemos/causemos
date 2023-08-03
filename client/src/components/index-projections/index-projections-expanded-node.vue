@@ -42,7 +42,13 @@
         <p class="subdued un-font-small">{{ outputDescription }}</p>
         <p class="margin-top">Source: {{ props.nodeData.dataset.source }}</p>
         <p class="subdued un-font-small">{{ metadata?.description }}</p>
-        <button class="btn btn-default margin-top" disabled>Explore dataset</button>
+        <button
+          class="btn btn-default margin-top"
+          @click="navigateToDataset"
+          :disabled="metadata !== null"
+        >
+          <i class="fa fa-fw fa-cube" />Explore dataset
+        </button>
       </div>
       <IndexProjectionNodeWarning class="warning-section" :data-warnings="dataWarnings" />
     </div>
@@ -128,6 +134,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'click-chart', timestamp: number, value: number): void;
+  (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
 }>();
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
@@ -149,6 +156,15 @@ const outputVariable = computed(() => {
 });
 
 const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVariable);
+
+const navigateToDataset = () => {
+  if (metadata.value !== null) {
+    const itemId = ''; // TODO: itemId is a qualitative analysis thing that we don't have access to yet. Interface will render but some controls will fail (generate errors)
+    emit('open-drilldown', metadata.value.id, itemId);
+  } else {
+    throw new Error('Dataset metadata not assigned.  Drill-down aborted.');
+  }
+};
 </script>
 
 <style lang="scss" scoped>

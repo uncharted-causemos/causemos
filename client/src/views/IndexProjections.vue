@@ -195,6 +195,7 @@
         @select-element="selectElement"
         @deselect-node="deselectNode"
         @click-chart="onNodeChartClick"
+        @open-drilldown="handleNavigateToDataset"
       />
       <IndexLegend class="legend" :is-projection-space="true" />
     </main>
@@ -706,6 +707,23 @@ const timeseriesToDisplay = computed(() =>
     ? visibleScenarioProjectionData.value
     : multipleCountryProjectionData.value
 );
+
+const projectId = computed(() => route.params.project as string);
+const projectType = computed(() => route.params.projectType as string);
+const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => {
+  router.push({
+    name: 'projectionsDataExplorer',
+    params: {
+      projectType: projectType.value,
+      project: projectId.value,
+      analysisId: analysisId.value,
+    },
+    query: {
+      datacube_id: datacubeId,
+      item_id: datacubeItemId,
+    },
+  });
+};
 </script>
 
 <style lang="scss" scoped>
