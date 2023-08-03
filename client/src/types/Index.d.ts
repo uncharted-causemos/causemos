@@ -1,6 +1,6 @@
 import { COLOR } from '@/utils/colors-util';
 import { DataConfig } from '@/types/Datacube';
-import { DiscreteOuputScale } from '@/types/Enums';
+import { DiscreteOuputScale, ProjectionDataWarning } from '@/types/Enums';
 import type { WeightedComponent } from '@/types/WeightedComponent';
 import { ForecastMethod, ForecastResult } from '@/utils/forecast';
 import { NodeProjectionType } from '@/utils/projection-util';
@@ -159,4 +159,14 @@ export interface IndexProjectionSettings {
   selectedCountry: string;
   selectedCountries: IndexProjectionCountry[];
   showDataOutsideNorm: boolean;
+}
+
+/**
+ * Index projection node data warning object
+ */
+export interface IndexProjectionNodeDataWarning {
+  nodeId: string;
+  projectionId: string;
+  color: string;
+  warning: ProjectionDataWarning;
 }

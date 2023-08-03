@@ -211,3 +211,13 @@ export enum ProjectionPointType {
   Historical = 'historical',
   Constraint = 'constraint',
 }
+
+/**
+ * * Old data: datasets that have 5 or fewer points for the selected country after the projection start date
+ * * Insufficient data: datasets that have 5 or fewer points for the selected country
+ */
+export enum ProjectionDataWarning {
+  OldData = 'Old data',
+  InsufficientData = 'Insufficient data',
+  NoPatternDetected = 'No pattern detected',
+}

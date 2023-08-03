@@ -1,17 +1,11 @@
 <template>
-  <div
-    class="index-projections-expanded-node-container"
-    :class="{
-      'old-data-warning': oldDataWarning,
-    }"
-  >
+  <div class="index-projections-expanded-node-container">
     <p class="add-horizontal-margin">{{ props.nodeData.name ?? 'none' }}</p>
     <span v-if="props.nodeData.name.length === 0" class="subdued add-horizontal-margin"
       >(Missing name)</span
     >
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)">
       <div class="add-horizontal-margin timeseries-label">
-        <i v-if="insufficientDataWarning" class="fa fa-fw fa-exclamation-triangle warning"></i>
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
         <span class="subdued un-font-small dataset-name">{{ dataSourceText }}</span>
         <InvertedDatasetLabel class="inverted-label" v-if="isInvertedData" />
@@ -50,6 +44,7 @@
         <p class="subdued un-font-small">{{ metadata?.description }}</p>
         <button class="btn btn-default margin-top" disabled>Explore dataset</button>
       </div>
+      <IndexProjectionNodeWarning class="warning-section" :data-warnings="dataWarnings" />
     </div>
 
     <div v-else-if="isEmptyNode(props.nodeData)">
@@ -83,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ConceptNode } from '@/types/Index';
+import { ConceptNode, IndexProjectionNodeDataWarning } from '@/types/Index';
 import {
   DATASET_COLOR,
   DATASET_ICON,
@@ -94,10 +89,11 @@ import {
 import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
-import { DataWarning, ProjectionTimeseries } from '@/types/Timeseries';
+import { ProjectionTimeseries } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 import { EditMode } from '@/utils/projection-util';
+import IndexProjectionNodeWarning from './index-projection-node-warning.vue';
 
 const optionsButtonMenu = [
   {
@@ -127,7 +123,7 @@ const props = defineProps<{
   timeseries: ProjectionTimeseries[];
   showDataOutsideNorm: boolean;
   editMode?: EditMode;
-  dataWarnings: Map<string, DataWarning>;
+  dataWarnings?: IndexProjectionNodeDataWarning[];
 }>();
 
 const emit = defineEmits<{
@@ -151,11 +147,6 @@ const outputVariable = computed(() => {
   }
   return props.nodeData.dataset.config.outputVariable;
 });
-
-const insufficientDataWarning = computed(
-  () => props.dataWarnings.get(props.nodeData.id)?.insufficientData ?? false
-);
-const oldDataWarning = computed(() => props.dataWarnings.get(props.nodeData.id)?.oldData ?? false);
 
 const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVariable);
 </script>
@@ -222,20 +213,17 @@ $horizontal-margin: 30px;
   }
 }
 
-.warning {
-  color: $un-color-feedback-warning;
+.warning-section {
+  border-top: 1px solid $un-color-black-10;
 }
 
 .dataset-metadata {
   margin-top: 10px;
+  margin-bottom: 10px;
   border-top: 1px solid $un-color-black-10;
 
   .margin-top {
     margin-top: 10px;
   }
-}
-
-.old-data-warning {
-  background-color: $old-data-warning;
 }
 </style>

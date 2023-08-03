@@ -8,6 +8,9 @@ export default function useScenarios(
   updateIndexProjectionSettings: (settings: Partial<IndexProjectionSettings>) => void
 ) {
   const scenarios = computed(() => indexProjectionSettings.value.scenarios);
+  const defaultScenario = computed(
+    () => scenarios.value.find((scenario) => scenario.isDefault) as IndexProjectionScenario
+  );
   const scenarioBeingEdited = ref<IndexProjectionScenario | null>(null);
   const updateScenarios = (scenarios: IndexProjectionScenario[]) => {
     updateIndexProjectionSettings({ scenarios });
@@ -93,6 +96,7 @@ export default function useScenarios(
 
   return {
     scenarios,
+    defaultScenario,
     scenarioBeingEdited,
     createScenario,
     duplicateScenario,

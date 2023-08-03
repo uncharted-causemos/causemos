@@ -52,17 +52,6 @@
         <span class="un-font-small" :style="{ color: NEGATIVE_COLOR }">low</span> levels of B
       </p>
     </div>
-    <div v-if="props.isProjectionSpace" class="legend-column">
-      <p class="un-font-small">Data quality</p>
-      <p class="un-font-small">
-        <i class="fa fa-fw fa-square old-data"></i>
-        Old data
-      </p>
-      <p class="un-font-small">
-        <i class="fa fa-fw fa-exclamation-triangle data-warning"></i>
-        Insufficient data for accurate projection
-      </p>
-    </div>
   </div>
 </template>
 
