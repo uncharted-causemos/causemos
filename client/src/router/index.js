@@ -16,6 +16,7 @@ import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
 import DatacubeDrilldown from '@/views/DatacubeDrilldown.vue';
+import Documents from '@/views/Documents.vue';
 import CompAnalysis from '@/views/CompAnalysis.vue';
 import ModelPublisher from '@/views/ModelPublisher.vue';
 import IndicatorPublisher from '@/views/IndicatorPublisher.vue';
@@ -108,6 +109,11 @@ const routes = [
     path: '/:projectType/:project/index-projections/:analysisId/explorer',
     name: 'projectionsDataExplorer',
     component: DatacubeDrilldown,
+  },
+  {
+    path: '/:projectType/:project/documents',
+    name: 'documents',
+    component: Documents,
   },
   {
     path: '/:projectType/:project/index-results/:analysisId',

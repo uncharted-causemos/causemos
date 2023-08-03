@@ -15,61 +15,27 @@
 
   <div class="project-overview-container">
     <header>
-      <div class="metadata-column">
-        <h3>{{ projectMetadata.name }}</h3>
-        <div class="description">
-          <textarea
-            v-if="isEditingDesc"
-            v-model="projectMetadata.description"
-            type="text"
-            class="model-attribute-desc"
-          />
-          <div v-else-if="projectMetadata.description">
-            {{ projectMetadata.description }}
-          </div>
-          <div v-else class="description-hint-text">Add a description</div>
-          <small-icon-button v-if="isEditingDesc">
-            <i class="fa fa-check" @click="saveDesc" v-tooltip.top-center="'Save changes'" />
-          </small-icon-button>
-          <small-icon-button v-if="isEditingDesc">
-            <i class="fa fa-close" @click="discardDesc" v-tooltip.top-center="'Discard changes'" />
-          </small-icon-button>
-          <small-icon-button v-else>
-            <i class="fa fa-edit" @click="editDesc" v-tooltip.top-center="'Edit description'" />
-          </small-icon-button>
-        </div>
-        <div>
-          <strong>Contributors</strong>
-          <span
-            v-for="contributor in ['Analyst 1', 'Analyst 2']"
-            :key="contributor"
-            class="contributor"
-            >{{ contributor }}</span
-          >
-        </div>
-      </div>
-      <div v-if="tags.length > 0" class="tags-column">
-        <strong>Tags</strong>
-        <span v-for="tag in tags" :key="tag" class="tag">
-          {{ tag }}
-        </span>
-      </div>
-      <div class="kb-stats-column">
-        <strong>Knowledge Base</strong>
-        <div>{{ KBname }}</div>
-        <div>
-          <strong>{{ numberFormatter(numDocuments) }}</strong> documents
-        </div>
-        <div>
-          <strong>{{ numberFormatter(numStatements) }}</strong> causal relationships
-        </div>
-        <button v-if="!hideUploadDocumentButton" class="button" @click="showDocumentModal = true">
-          Add Documents
-        </button>
-        <modal-upload-document
-          v-if="showDocumentModal === true"
-          @close="showDocumentModal = false"
+      <h3>{{ projectMetadata.name }}</h3>
+      <div class="description">
+        <textarea
+          v-if="isEditingDesc"
+          v-model="projectMetadata.description"
+          type="text"
+          class="editable-description"
         />
+        <div v-else-if="projectMetadata.description">
+          {{ projectMetadata.description }}
+        </div>
+        <div v-else class="description-hint-text">Add a description</div>
+        <small-icon-button v-if="isEditingDesc">
+          <i class="fa fa-check" @click="saveDesc" v-tooltip.top-center="'Save changes'" />
+        </small-icon-button>
+        <small-icon-button v-if="isEditingDesc">
+          <i class="fa fa-close" @click="discardDesc" v-tooltip.top-center="'Discard changes'" />
+        </small-icon-button>
+        <small-icon-button v-else>
+          <i class="fa fa-edit" @click="editDesc" v-tooltip.top-center="'Edit description'" />
+        </small-icon-button>
       </div>
     </header>
     <main>
@@ -100,6 +66,19 @@
             @item-selected="sortAnalyses"
           />
           <div class="button-container">
+            <button type="button" class="btn btn-default" @click="goToDocuments">
+              <i class="fa fa-book" />
+              Explore documents
+            </button>
+            <button
+              v-tooltip.top-center="'Create a new Quantitative Analysis'"
+              type="button"
+              class="btn btn-default"
+              @click="onCreateDataAnalysis"
+            >
+              <i class="fa fa-plus" />
+              Create quantitative analysis
+            </button>
             <button
               v-tooltip.top-center="'Create a new Index'"
               type="button"
@@ -107,25 +86,7 @@
               @click="onCreateIndexAnalysis"
             >
               <i class="fa fa-plus" />
-              Create Index
-            </button>
-            <button
-              v-tooltip.top-center="'Create a new Qualitative Model'"
-              type="button"
-              class="btn btn-call-to-action"
-              @click="onCreateCAG"
-            >
-              <i class="fa fa-plus" />
-              Create CAG
-            </button>
-            <button
-              v-tooltip.top-center="'Create a new Quantitative Analysis'"
-              type="button"
-              class="btn btn-call-to-action"
-              @click="onCreateDataAnalysis"
-            >
-              <i class="fa fa-plus" />
-              Create Quantitative Analysis
+              Create index model analysis
             </button>
           </div>
         </div>
@@ -167,7 +128,6 @@ import {
 } from '@/services/analysis-service-new';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
-import ModalUploadDocument from '@/components/modals/modal-upload-document.vue';
 import { ProjectType } from '@/types/Enums';
 import { ANALYSIS, CAG } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
@@ -218,7 +178,6 @@ export default defineComponent({
   components: {
     AnalysisOverviewCard,
     ListAnalyticalQuestionsPane,
-    ModalUploadDocument,
     RenameModal,
     DuplicateModal,
     DropdownButton,
@@ -596,6 +555,15 @@ export default defineComponent({
         },
       });
     },
+    goToDocuments() {
+      this.$router.push({
+        name: 'documents',
+        params: {
+          project: this.project,
+          projectType: ProjectType.Analysis,
+        },
+      });
+    },
     toggleSortingDropdownAnalyses() {
       this.showSortingDropdownAnalyses = !this.showSortingDropdownAnalyses;
     },
@@ -632,16 +600,10 @@ export default defineComponent({
 }
 
 header {
-  height: 25vh;
-  display: flex;
+  overflow: auto;
   padding: 20px;
   padding-bottom: 0;
-}
-
-.metadata-column {
-  flex: 1;
-  min-width: 0;
-  overflow: auto;
+  height: 25vh;
 
   h3 {
     margin: 0;
@@ -653,60 +615,15 @@ header {
 
   .description {
     text-align: justify;
+    max-width: 90ch;
   }
 }
 
-.model-attribute-desc {
-  border-width: 1px;
-  border-color: rgb(216, 214, 214);
-  min-width: 100%;
-  flex-basis: 100%;
-}
-
-.tags-column {
-  width: 20vw;
-  display: flex;
-  flex-wrap: wrap;
-  align-self: flex-start;
-
-  strong {
-    align-self: center;
-    margin-right: 5px;
-  }
-}
-
-.map {
-  width: 20vw;
-
-  img {
-    width: 100%;
-    height: 100%;
-  }
-}
-
-.tag {
-  margin: 2px;
-  padding: 4px;
-  border-style: solid;
-  border-width: thin;
-  border-color: darkgrey;
-  background-color: lightgray;
-  border-radius: 4px;
-}
-
-.model-attribute-desc {
+.editable-description {
   border-width: 1px;
   border-color: rgb(216, 214, 214);
   min-width: 85%;
   flex-basis: 85%;
-}
-
-.kb-stats-column {
-  width: 20vw;
-
-  button {
-    margin-top: 5px;
-  }
 }
 
 main {
@@ -771,16 +688,6 @@ main {
 
 .analysis-overview-card:not(:first-child) {
   margin-top: 5px;
-}
-
-.contributor {
-  background-color: lightgrey;
-  border-style: solid;
-  border-width: 1px;
-  border-color: darkgrey;
-  padding-left: 5px;
-  padding-right: 5px;
-  margin: 5px;
 }
 
 .button-container {

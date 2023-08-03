@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { DojoParagraphDetails } from '@/types/IndexDocuments';
+import { DojoParagraphDetails, GetDocumentsResponse } from '@/types/IndexDocuments';
 
 const SEARCH_PATH = 'dojo/paragraphs/search';
 const GET_DOC_PATH = 'dojo/documents';
@@ -12,6 +12,31 @@ export const searchParagraphs = async (searchString: string) => {
     });
     return result.data;
   }
+};
+
+export enum DocumentSortField {
+  CreationDate = 'creation_date',
+  UploadDate = 'upload_date',
+}
+export enum DocumentSortOrderOption {
+  Ascending = 'asc',
+  Descending = 'desc',
+}
+
+export const getDocuments = async (
+  scroll_id: string,
+  size: number,
+  sort_by: DocumentSortField,
+  order: DocumentSortOrderOption
+): Promise<GetDocumentsResponse> => {
+  const params = {
+    scroll_id,
+    size,
+    sort_by,
+    order,
+  };
+  const result = await API.get(GET_DOC_PATH, { params });
+  return result.data;
 };
 
 export const getDocument = async (docId: string) => {

@@ -4,6 +4,16 @@ const router = express.Router();
 const paragraphSearchService = rootRequire('/services/external/dojo-semantic-search-service');
 
 router.get(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { scroll_id, size, sort_by, order } = req.query;
+    const result = await paragraphSearchService.getDocuments(scroll_id, size, sort_by, order);
+    res.status(200);
+    res.json(result);
+  })
+);
+
+router.get(
   '/:docId',
   asyncHandler(async (req, res) => {
     const docId = req.params.docId;
