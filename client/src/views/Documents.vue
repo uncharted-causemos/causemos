@@ -103,18 +103,17 @@ const isNextPageButtonDisabled = computed(
 watch(
   [currentPageIndex],
   async () => {
-    const currentScrollId = scrollId.value;
-    if (currentScrollId === null) {
-      // Shouldn't occur; "next page" button should be disabled if we're on the last page
-      return;
-    }
     // Make sure the current and next pages are fetched.
     // This improves the user experience by always having the next page ready to present.
     // User only sees a blank "loading" state if they click the "next" button twice rapidly.
     // If the user is navigating to a page they've already seen, no new fetch will occur.
     while (documentPages.value.length < currentPageIndex.value + 2) {
+      if (scrollId.value === null) {
+        // Shouldn't occur; "next page" button should be disabled if we're on the last page
+        return;
+      }
       const result = await getDocuments(
-        currentScrollId,
+        scrollId.value,
         DOCUMENT_COUNT_PER_PAGE,
         DocumentSortField.CreationDate,
         DocumentSortOrderOption.Descending
