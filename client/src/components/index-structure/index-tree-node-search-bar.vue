@@ -356,10 +356,6 @@ const selectDataset = (dataset: DatasetSearchResult) => {
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/common';
 
-.index-tree-node-search-bar-container {
-  max-width: 50vw;
-}
-
 .search-bar-container {
   padding: 5px 10px;
   .form-control {
@@ -372,6 +368,7 @@ const selectDataset = (dataset: DatasetSearchResult) => {
 }
 
 .search-filter-container {
+  max-width: 620px;
   padding: 3px 10px;
   gap: 5px;
   flex-wrap: wrap;
