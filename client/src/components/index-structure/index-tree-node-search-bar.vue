@@ -14,23 +14,27 @@
     <div class="search-filter-container flex">
       <p class="subdued">Filter datasets</p>
       <p
-        class="filter"
         v-for="(filter, index) in countryFilters"
         :key="index"
+        class="filter"
+        :class="{
+          'filter-active': filter.active,
+        }"
         @mouseenter="hoverCountryFilter = index"
         @mouseleave="hoverCountryFilter = null"
+        @click="toggleFilter(index)"
       >
-        {{ filter.country }}
-        <i
-          v-if="hoverCountryFilter === index"
-          class="fa fa-times subdued"
-          @click="deleteCountryFilter(filter.country)"
-        />
+        <i v-if="filter.active" class="fa fa-check subdued" />
+        <i v-if="!filter.active" class="fa fa-times subdued" />
+        {{ filter.countryName }}
+        <i v-if="hoverCountryFilter === index" class="fa fa-times subdued" @click="null" />
       </p>
       <DropdownButton
         class="un-font-small"
         :items="countryFilterChoicesRemaining"
         :inner-button-label="'Select another country'"
+        :is-dropdown-left-aligned="false"
+        :dropdown-align-right="false"
         @item-selected="handleNewFilter"
       ></DropdownButton>
     </div>
@@ -103,7 +107,6 @@
 </template>
 
 <script setup lang="ts">
-import _ from 'lodash';
 import { ref, computed, watch, onMounted } from 'vue';
 import { DatasetSearchResult } from '@/types/Index';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
@@ -117,6 +120,8 @@ import { capitalizeEachWord } from '@/utils/string-util';
 import newDatacubeService from '@/services/new-datacube-service';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { getCountryList } from '@/services/region-service';
+import { CountryFilter } from '@/types/Analysis';
+import { defaultCountryFilters } from '@/services/analysis-service-new';
 
 const convertFeatureSearchResultToDatasetSearchResult = (
   feature: DojoFeatureSearchResult
@@ -134,6 +139,7 @@ const convertFeatureSearchResultToDatasetSearchResult = (
 };
 interface Props {
   initialSearchText: string;
+  countryFilters: CountryFilter[];
 }
 const props = defineProps<Props>();
 
@@ -145,6 +151,9 @@ const emit = defineEmits<{
   (e: 'select-dataset', dataset: DatasetSearchResult, nodeNameAfterAttachingDataset: string): void;
   (e: 'set-node-name', value: string): void;
   (e: 'cancel'): void;
+  (e: 'add-country-filter', selectedCountry: CountryFilter): void;
+  (e: 'update-country-filter', updatedFilter: CountryFilter): void;
+  (e: 'delete-country-filter', filterToDelete: CountryFilter): void;
 }>();
 
 // Input box
@@ -157,44 +166,47 @@ onMounted(async () => {
   if (props.initialSearchText) {
     searchText.value = props.initialSearchText;
   }
-  const list = await getCountryList();
-  countryFilterChoices.value = list;
+  countryFilterChoices.value = await getCountryList();
 });
 
 // Search
-interface CountryFilter {
-  country: string;
-  isHighlighted: boolean;
-}
 const results = ref<DatasetSearchResult[]>([]);
 const isFetchingResults = ref(false);
 const hoverCountryFilter = ref<number | null>(null);
-const countryFilters = ref<CountryFilter[]>([
-  // default for now to these three
-  { country: 'United states', isHighlighted: false },
-  { country: 'China', isHighlighted: false },
-  { country: 'Russia', isHighlighted: false },
-]);
 
 const countryFilterChoices = ref<string[]>([]);
 const countryFilterChoicesRemaining = computed(() => {
   return countryFilterChoices.value.filter(
-    (choice) => countryFilters.value.filter((item) => item.country === choice).length === 0
+    (choice) => props.countryFilters.filter((item) => item.countryName === choice).length === 0
   );
 });
-const handleNewFilter = (item: any) => {
-  countryFilters.value = [...countryFilters.value, { country: item, isHighlighted: false }];
+const handleNewFilter = (item: string) => {
+  emit('add-country-filter', { countryName: item, active: true });
 };
 
-const deleteCountryFilter = (country: string) => {
-  countryFilters.value = countryFilters.value.filter((item) => item.country !== country);
+const toggleFilter = (index: number) => {
+  const filter = { ...props.countryFilters[index] };
+  if (defaultCountryFilters.findIndex((item) => filter.countryName === item.countryName) >= 0) {
+    filter.active = !filter.active;
+    emit('update-country-filter', filter);
+  } else {
+    deleteCountryFilter(filter);
+  }
+};
+
+const deleteCountryFilter = (filterToDelete: CountryFilter) => {
+  emit('delete-country-filter', filterToDelete);
 };
 
 const selectedCountries = computed(() => {
-  return countryFilters.value.map((item) => item.country);
+  const countryList: CountryFilter[] = props.countryFilters.filter((item) =>
+    item.active ? item.countryName : false
+  );
+  const activeCountryList = countryList.map((country) => country.countryName);
+  return activeCountryList;
 });
 
-watch([searchText, selectedCountries], async () => {
+watch([searchText, () => props.countryFilters], async () => {
   // Save a copy of the current search text value in case it changes before results are fetched
   // note: we are watching selected countries though not using them here YET.  The semantic search
   //       cannot take the filter presently.  The models are filtered after the semantic return currently.
@@ -367,7 +379,10 @@ const selectDataset = (dataset: DatasetSearchResult) => {
     &.filter {
       border: solid 1px $un-color-black-40;
       border-radius: 0.8rem;
-      padding: 0 8px;
+      padding: 0 8px 0 4px;
+      &.filter-active {
+        background-color: $un-color-black-5;
+      }
     }
     &:hover {
       background-color: $un-color-black-5;
