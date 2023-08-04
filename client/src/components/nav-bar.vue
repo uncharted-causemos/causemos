@@ -204,6 +204,10 @@ export default defineComponent({
         qualitativeAnalysisItem.value,
         { icon: 'fa-circle', route: null, text: 'Node drilldown' },
       ],
+      documents: [
+        analysisProjectItem.value,
+        { icon: 'fa-book', route: null, text: 'Explore documents' },
+      ],
       // 'nodeDataDrilldown',
       // 'nodeDataExplorer',
       // 'kbExplorer',

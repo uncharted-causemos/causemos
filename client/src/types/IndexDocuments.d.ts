@@ -45,6 +45,13 @@ export interface Document {
   id: string;
 }
 
+export interface GetDocumentsResponse {
+  hits: string;
+  items_in_page: number;
+  results: Document[];
+  scroll_id: string;
+}
+
 export interface DojoParagraphDetails {
   query: string;
   matches: string[];
