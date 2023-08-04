@@ -29,6 +29,7 @@
         :is-selected="isSelected(cell.node.id)"
         :is-connecting="isConnecting"
         :is-descendent-of-connecting-node="isDescendentOfConnectingNode(cell.node.id)"
+        :countryFilters="countryFilters"
         class="index-tree-node"
         @rename="renameNode"
         @delete="deleteNode"
@@ -40,6 +41,9 @@
         @attach-dataset="attachDatasetToNode"
         @create-edge="createEdge"
         @mouseenter="highlightClear"
+        @add-country-filter="addCountryFilter"
+        @update-country-filter="updateCountryFilter"
+        @delete-country-filter="deleteCountryFilter"
       />
       <div
         v-if="!cell.node.isOutputNode && cell.hasOutputLine"
@@ -73,7 +77,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { saveAnalysisState, getAnalysisState } from '@/services/analysis-service';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import {
   ConceptNode,
@@ -90,6 +95,10 @@ import {
   getIncomingEdgeClassObject,
   getOutgoingEdgeClassObject,
 } from '@/utils/grid-cell-util';
+import { useRoute } from 'vue-router';
+import { CountryFilter } from '@/types/Analysis';
+const route = useRoute();
+const analysisId = computed(() => route.params.analysisId as string);
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -104,6 +113,7 @@ const props = defineProps<{
 const isConnecting = ref<boolean>(false);
 const connectingId = ref<string | null>(null);
 const gridCellElements = ref([]);
+const analysisState = ref();
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
@@ -115,6 +125,40 @@ const emit = defineEmits<{
 const indexTree = useIndexTree();
 const { findNode } = indexTree;
 const workbench = useIndexWorkBench();
+
+const deleteCountryFilter = async (filterToDelete: CountryFilter) => {
+  analysisState.value.countryFilters = analysisState.value.countryFilters.filter(
+    (item: CountryFilter) => item.countryName !== filterToDelete.countryName
+  );
+  await saveAnalysisState(analysisId.value, analysisState.value);
+};
+
+const addCountryFilter = async (update: CountryFilter) => {
+  analysisState.value.countryFilters = [...analysisState.value.countryFilters, update];
+  await saveAnalysisState(analysisId.value, analysisState.value);
+};
+
+const updateCountryFilter = async (update: CountryFilter) => {
+  const state = [...analysisState.value.countryFilters];
+  const index = state.findIndex((filter) => filter.countryName === update.countryName);
+  if (index >= 0) {
+    state[index].active = update.active;
+  }
+  analysisState.value.countryFilters = state;
+  await saveAnalysisState(analysisId.value, analysisState.value);
+};
+
+onMounted(async () => {
+  analysisState.value = await getAnalysisState(analysisId.value);
+});
+
+const countryFilters = computed(() => {
+  if (analysisState.value?.countryFilters) {
+    return analysisState.value.countryFilters;
+  }
+  console.log('WARNING: could not find filters in analysis state object.');
+  return [];
+});
 const isDescendentOfConnectingNode = (targetId: string) => {
   if (connectingId.value !== null) {
     return workbench.isDescendant(targetId, connectingId.value);

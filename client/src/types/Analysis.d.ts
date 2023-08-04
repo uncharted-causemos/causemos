@@ -56,6 +56,11 @@ export interface DataAnalysisState {
   regionRankingItemStates: RegionRankingItemStates;
 }
 
+export interface CountryFilter {
+  countryName: string;
+  active: boolean;
+}
+
 export interface IndexAnalysisState {
   /** Primary index tree */
   index: ConceptNode;
@@ -65,4 +70,6 @@ export interface IndexAnalysisState {
   resultsSettings: IndexResultsSettings;
   /** Index projection page settings */
   projectionSettings: IndexProjectionSettings;
+  /** List of countries to filter datasets by */
+  countryFilters: CountryFilter[];
 }
