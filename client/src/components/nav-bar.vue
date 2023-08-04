@@ -179,6 +179,17 @@ export default defineComponent({
         quantitativeAnalysisItem.value,
         { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
       ],
+      indexResultsDataExplorer: [
+        analysisProjectItem.value,
+        indexStructureItem.value,
+        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
+      ],
+      projectionsDataExplorer: [
+        analysisProjectItem.value,
+        indexStructureItem.value,
+        indexProjectionsItem.value,
+        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
+      ],
       qualitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       quantitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       indexStructure: [analysisProjectItem.value, indexStructureItem.value],

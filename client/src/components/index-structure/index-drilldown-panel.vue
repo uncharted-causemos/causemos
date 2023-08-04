@@ -169,6 +169,9 @@
           :node="selectedNode"
           :countries="datasetMetadata?.geography.country ?? null"
         />
+        <button class="btn btn-sm" @click="navigateToDataset">
+          <i class="fa fa-fw fa-cube" />Explore dataset
+        </button>
       </section>
       <section>
         <h4>Settings</h4>
@@ -224,6 +227,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'delete-edge', value: SelectableIndexElementId): void;
+  (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
 }>();
 
 const indexTree = useIndexTree();
@@ -233,6 +237,15 @@ const workbench = useIndexWorkBench();
 const setDatasetIsInverted = (nodeId: string, newValue: boolean) => {
   workbench.setDatasetIsInverted(nodeId, newValue);
   indexTree.setDatasetIsInverted(nodeId, newValue);
+};
+
+const navigateToDataset = () => {
+  if (datasetMetadata.value !== null) {
+    const itemId = ''; // TODO: itemId is a qualitative analysis thing that we don't have access to yet. Interface will render but some controls will fail (generate errors)
+    emit('open-drilldown', datasetMetadata.value.id, itemId);
+  } else {
+    throw new Error('Dataset metadata not assigned.  Drill-down aborted.');
+  }
 };
 
 const renameNode = (newName: string) => {
