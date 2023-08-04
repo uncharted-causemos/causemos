@@ -15,10 +15,46 @@
         <input type="text" :value="searchBarText" placeholder="Search" />
       </div>
       <div class="table-row table-header">
-        <span class="first-column-width subdued">Title</span>
-        <span class="second-column-width subdued">Publisher</span>
-        <span class="default-column-width subdued">Date created</span>
-        <span class="default-column-width subdued">Date uploaded</span>
+        <div class="first-column-width">
+          <sortable-table-header-cell
+            class="header-cell"
+            :active-state="getHeaderCellSortState(DocumentSortField.Title)"
+            :label="'Title'"
+            :up-label="'Sort from A-Z'"
+            :down-label="'Sort from Z-A'"
+            @set-sort="(order) => setSortColumnAndOrder(DocumentSortField.Title, order)"
+          />
+        </div>
+        <div class="second-column-width">
+          <sortable-table-header-cell
+            class="header-cell"
+            :active-state="getHeaderCellSortState(DocumentSortField.Producer)"
+            :label="'Publisher'"
+            :up-label="'Sort from A-Z'"
+            :down-label="'Sort from Z-A'"
+            @set-sort="(order) => setSortColumnAndOrder(DocumentSortField.Producer, order)"
+          />
+        </div>
+        <div class="default-column-width">
+          <sortable-table-header-cell
+            class="header-cell"
+            :active-state="getHeaderCellSortState(DocumentSortField.CreationDate)"
+            :label="'Date created'"
+            :up-label="'Sort by oldest'"
+            :down-label="'Sort by most recent'"
+            @set-sort="(order) => setSortColumnAndOrder(DocumentSortField.CreationDate, order)"
+          />
+        </div>
+        <div class="default-column-width">
+          <sortable-table-header-cell
+            class="header-cell"
+            :active-state="getHeaderCellSortState(DocumentSortField.UploadDate)"
+            :label="'Date uploaded'"
+            :up-label="'Sort by oldest'"
+            :down-label="'Sort by most recent'"
+            @set-sort="(order) => setSortColumnAndOrder(DocumentSortField.UploadDate, order)"
+          />
+        </div>
       </div>
       <div class="table-rows">
         <div class="table-row" v-for="document of visibleDocumentPages" :key="document.id">
@@ -51,6 +87,7 @@
 
 <script setup lang="ts">
 import HeaderIcon from '@/components/widgets/header-icon.vue';
+import SortableTableHeaderCell from '@/components/widgets/sortable-table-header-cell.vue';
 import dateFormatter from '@/formatters/date-formatter';
 import numberFormatter from '@/formatters/number-formatter';
 import {
@@ -58,6 +95,7 @@ import {
   DocumentSortField,
   DocumentSortOrderOption,
 } from '@/services/paragraphs-service';
+import { SortableTableHeaderState } from '@/types/Enums';
 import { Document } from '@/types/IndexDocuments';
 import { computed, ref, watch } from 'vue';
 const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMMM DD, YYYY');
@@ -79,7 +117,24 @@ const visibleDocumentPages = computed<Document[]>(() =>
     : documentPages.value[currentPageIndex.value]
 );
 const scrollId = ref<string | null>('');
-// TODO: change sort_by and order
+
+const columnToSortBy = ref(DocumentSortField.UploadDate);
+const sortOrder = ref(DocumentSortOrderOption.Descending);
+const setSortColumnAndOrder = (column: DocumentSortField, order: SortableTableHeaderState) => {
+  columnToSortBy.value = column;
+  sortOrder.value =
+    order === SortableTableHeaderState.Up
+      ? DocumentSortOrderOption.Ascending
+      : DocumentSortOrderOption.Descending;
+};
+const getHeaderCellSortState = (cell: DocumentSortField) => {
+  if (columnToSortBy.value !== cell) {
+    return SortableTableHeaderState.None;
+  }
+  return sortOrder.value === DocumentSortOrderOption.Ascending
+    ? SortableTableHeaderState.Up
+    : SortableTableHeaderState.Down;
+};
 
 const paginationText = computed(() => {
   if (documentCount.value === null) {
@@ -100,8 +155,15 @@ const isNextPageButtonDisabled = computed(
   () => currentPageIndex.value > documentPages.value.length - 1 || scrollId.value === null
 );
 
+watch([columnToSortBy, sortOrder], () => {
+  // When sort state changes, reset pagination state.
+  documentPages.value = [];
+  currentPageIndex.value = 0;
+  scrollId.value = '';
+});
+
 watch(
-  [currentPageIndex],
+  [currentPageIndex, columnToSortBy, sortOrder],
   async () => {
     // Make sure the current and next pages are fetched.
     // This improves the user experience by always having the next page ready to present.
@@ -115,8 +177,8 @@ watch(
       const result = await getDocuments(
         scrollId.value,
         DOCUMENT_COUNT_PER_PAGE,
-        DocumentSortField.CreationDate,
-        DocumentSortOrderOption.Descending
+        columnToSortBy.value,
+        sortOrder.value
       );
       documentCount.value = parseInt(result.hits);
       documentPages.value = [...documentPages.value, result.results];
@@ -201,8 +263,12 @@ header {
   margin-top: 10px;
   border-top: none;
   border-bottom: 1px solid $un-color-black-10;
-  // HACK: hardcode the width of the table-rows scrollbar so that columns remain aligned.
-  padding-right: 15px;
+  padding-bottom: 5px;
+
+  & > * {
+    display: flex;
+    justify-content: flex-start;
+  }
 }
 
 .table-footer {
