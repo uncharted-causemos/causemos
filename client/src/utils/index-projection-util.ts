@@ -143,8 +143,6 @@ export const checkProjectionWarnings = (
           color: projection.color,
           warning: ProjectionDataWarning.NoPatternDetected,
         });
-        console.log('--- no pattern detected --- ');
-        console.log(info);
       }
     });
   });
