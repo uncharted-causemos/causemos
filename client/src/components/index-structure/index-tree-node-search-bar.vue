@@ -372,6 +372,7 @@ const selectDataset = (dataset: DatasetSearchResult) => {
   gap: 5px;
   flex-wrap: wrap;
   overflow-wrap: normal;
+  max-width: 30vw;
 
   p {
     @extend .un-font-small;
