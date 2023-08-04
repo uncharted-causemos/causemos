@@ -25,7 +25,7 @@
         @click="toggleFilter(index)"
       >
         <i v-if="filter.active" class="fa fa-check subdued" />
-        <i v-if="!filter.active" class="fa fa-times subdued" />
+        <i v-if="!filter.active" class="fa fa-plus subdued" />
         {{ filter.countryName }}
       </p>
       <DropdownButton
