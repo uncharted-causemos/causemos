@@ -27,7 +27,6 @@
         <i v-if="filter.active" class="fa fa-check subdued" />
         <i v-if="!filter.active" class="fa fa-times subdued" />
         {{ filter.countryName }}
-        <i v-if="hoverCountryFilter === index" class="fa fa-times subdued" @click="null" />
       </p>
       <DropdownButton
         class="un-font-small"
