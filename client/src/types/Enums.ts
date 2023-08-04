@@ -221,3 +221,9 @@ export enum ProjectionDataWarning {
   InsufficientData = 'Insufficient data',
   NoPatternDetected = 'No pattern detected',
 }
+
+export enum SortableTableHeaderState {
+  Up = 'UP',
+  Down = 'DOWN',
+  None = 'NONE',
+}

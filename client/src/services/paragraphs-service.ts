@@ -16,7 +16,9 @@ export const searchParagraphs = async (searchString: string) => {
 
 export enum DocumentSortField {
   CreationDate = 'creation_date',
-  UploadDate = 'upload_date',
+  UploadDate = 'uploaded_at',
+  Producer = 'producer',
+  Title = 'title',
 }
 export enum DocumentSortOrderOption {
   Ascending = 'asc',
