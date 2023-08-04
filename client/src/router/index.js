@@ -11,7 +11,6 @@ import QualitativeView from '@/views/QualitativeView.vue';
 import IndexStructure from '@/views/IndexStructure.vue';
 import IndexResults from '@/views/IndexResults.vue';
 import IndexProjections from '@/views/IndexProjections.vue';
-import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
@@ -138,11 +137,6 @@ const routes = [
     path: '/:projectType/:project/qualitative/:currentCAG',
     name: 'qualitative',
     component: QualitativeView,
-  },
-  {
-    path: '/:projectType/:project/kb-explorer',
-    name: 'kbExplorer',
-    component: KnowledgeBaseExplorer,
   },
   {
     path: '/:projectType/:project/quantitative/:currentCAG',

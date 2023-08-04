@@ -145,7 +145,6 @@ export enum ReferenceSeriesOption {
 export enum ComparativeAnalysisMode {
   List = 'list',
   Overlay = 'overlay',
-  RegionRanking = 'region ranking',
 }
 
 export enum DatacubeViewMode {
@@ -181,11 +180,6 @@ export enum EdgeDirection {
 export enum LoadStatus {
   Loading = 'Loading',
   Loaded = 'Loaded',
-}
-
-export enum EdgeSuggestionType {
-  ConceptSuggestion = 'ConceptSuggestion',
-  KBSuggestion = 'KBSuggestion',
 }
 
 export const SPLIT_BY_VARIABLE = 'variable';
