@@ -214,16 +214,17 @@
 </template>
 
 <script setup lang="ts">
+import _ from 'lodash';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { computed, onMounted, ref, watch } from 'vue';
-import { ProjectType, ProjectionDataWarning, TemporalResolutionOption } from '@/types/Enums';
+import { ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
 import useProjectionDates from '@/services/composables/useProjectionDates';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
-import { SelectableIndexElementId, IndexProjectionNodeDataWarning } from '@/types/Index';
+import { SelectableIndexElementId } from '@/types/Index';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
@@ -245,8 +246,6 @@ import useScenarios from '@/services/composables/useScenarios';
 import useScenarioProjections from '@/services/composables/useScenarioProjections';
 import useHistoricalData from '@/services/composables/useHistoricalData';
 import useMultipleCountryProjections from '@/services/composables/useMultipleCountryProjections';
-import { TimeseriesPoint } from '@/types/Timeseries';
-import { consolidateNodeWarnings } from '@/utils/projection-util';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -262,9 +261,6 @@ const MONTHS: DropdownItem[] = [
   { value: 10, displayName: 'November' },
   { value: 11, displayName: 'December' },
 ];
-
-const WARNING_INSUFFICIENT_DATA_MINCOUNT = 5;
-const WARNING_OLD_DATA_MINCOUNT = 5;
 
 const store = useStore();
 const route = useRoute();
@@ -413,7 +409,6 @@ const onDoneEditingTimeRange = () => {
 // Scenario Management
 const {
   scenarios,
-  defaultScenario,
   scenarioBeingEdited,
   duplicateScenario,
   toggleScenarioVisibility,
@@ -430,103 +425,12 @@ const onNodeChartClick = (timestamp: number, value: number) => {
 };
 
 // Scenario projections
-const { visibleScenarioProjectionData, projectionForScenarioBeingEdited, runScenarioProjections } =
-  useScenarioProjections(scenarios, scenarioBeingEdited);
-
-const dataWarnings = ref<{ [nodeId: string]: IndexProjectionNodeDataWarning[] }>({});
-const oldDataTest = (points: TimeseriesPoint[]): boolean => {
-  if (points.length === 0) return false;
-  return (
-    points.filter((point: TimeseriesPoint) => point.timestamp >= projectionStartTimestamp.value)
-      .length <= WARNING_OLD_DATA_MINCOUNT
-  );
-};
-
-const insufficientDataTest = (points: TimeseriesPoint[]): boolean => {
-  return points.length <= WARNING_INSUFFICIENT_DATA_MINCOUNT;
-};
-
-const createProjectionDataWarning = (
-  nodeId: string,
-  projectionId: string,
-  color: string,
-  type: ProjectionDataWarning
-): IndexProjectionNodeDataWarning => {
-  return {
-    projectionId,
-    nodeId,
-    color,
-    warning: type,
-  };
-};
-
-const checkHistoricalData = () => {
-  const allProjectionWarnings: IndexProjectionNodeDataWarning[] = [];
-  if (isSingleCountryModeActive.value) {
-    const projectionId = defaultScenario.value.id;
-    const projectionColor = defaultScenario.value.color;
-    historicalData.value.forEach((timeseries, nodeId) => {
-      if (oldDataTest(timeseries)) {
-        allProjectionWarnings.push(
-          createProjectionDataWarning(
-            nodeId,
-            projectionId,
-            projectionColor,
-            ProjectionDataWarning.OldData
-          )
-        );
-      }
-      if (insufficientDataTest(timeseries)) {
-        allProjectionWarnings.push(
-          createProjectionDataWarning(
-            nodeId,
-            projectionId,
-            projectionColor,
-            ProjectionDataWarning.InsufficientData
-          )
-        );
-      }
-    });
-  } else {
-    selectedCountries.value.forEach((country) => {
-      const nodeData = historicalDataForSelectedCountries.value.get(country.name);
-      if (!nodeData) return;
-      nodeData.forEach((timeseries, nodeId) => {
-        if (oldDataTest(timeseries)) {
-          allProjectionWarnings.push(
-            createProjectionDataWarning(
-              nodeId,
-              country.name,
-              country.color,
-              ProjectionDataWarning.OldData
-            )
-          );
-        }
-        if (insufficientDataTest(timeseries)) {
-          allProjectionWarnings.push(
-            createProjectionDataWarning(
-              nodeId,
-              country.name,
-              country.color,
-              ProjectionDataWarning.InsufficientData
-            )
-          );
-          /// FIXME: To generate test data, once `NoPatternDetected` check is implemented, remove this block of codes
-          allProjectionWarnings.push(
-            createProjectionDataWarning(
-              nodeId,
-              country.name,
-              country.color,
-              ProjectionDataWarning.NoPatternDetected
-            )
-          );
-          //  =====================================================================================
-        }
-      });
-    });
-  }
-  dataWarnings.value = consolidateNodeWarnings(allProjectionWarnings);
-};
+const {
+  visibleScenarioProjectionData,
+  projectionForScenarioBeingEdited,
+  visibleScenarioDataWarnings,
+  runScenarioProjections,
+} = useScenarioProjections(scenarios, scenarioBeingEdited);
 
 watch(
   [
@@ -548,10 +452,6 @@ watch(
       temporalResolutionOption.value,
       scenarios.value
     );
-    // scan data for warnings
-    // Old data: datasets that have 5 or fewer points for the selected country after the projection start date
-    // Insufficient data: datasets that have 5 or fewer points for the selected country
-    checkHistoricalData();
   }
 );
 
@@ -563,8 +463,11 @@ const { historicalData: historicalDataForSelectedCountries } = useHistoricalData
   indexTree.tree
 );
 
-const { multipleCountryProjectionData, runMultipleCountryProjections } =
-  useMultipleCountryProjections();
+const {
+  multipleCountryProjectionData,
+  dataWarnings: multiCountryProjectionDataWarnings,
+  runMultipleCountryProjections,
+} = useMultipleCountryProjections();
 
 const { setContextId, setDataState, setViewState } = useInsightStore();
 onMounted(() => {
@@ -695,10 +598,6 @@ watch(
       temporalResolutionOption.value,
       selectedCountries.value
     );
-    // scan data for warnings
-    // Old data: datasets that have 5 or fewer points for the selected country after the projection start date
-    // Insufficient data: datasets that have 5 or fewer points for the selected country
-    checkHistoricalData();
   }
 );
 
@@ -706,6 +605,12 @@ const timeseriesToDisplay = computed(() =>
   isSingleCountryModeActive.value
     ? visibleScenarioProjectionData.value
     : multipleCountryProjectionData.value
+);
+
+const dataWarnings = computed(() =>
+  isSingleCountryModeActive.value
+    ? visibleScenarioDataWarnings.value
+    : multiCountryProjectionDataWarnings.value
 );
 
 const projectId = computed(() => route.params.project as string);
