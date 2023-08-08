@@ -30,8 +30,7 @@
         class="un-font-small"
         :items="countryFilterChoicesRemaining"
         :inner-button-label="'Select another country'"
-        :is-dropdown-left-aligned="false"
-        :dropdown-align-right="false"
+        :is-dropdown-left-aligned="true"
         @item-selected="handleNewFilter"
       ></DropdownButton>
     </div>

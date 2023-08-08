@@ -22,7 +22,6 @@
       :class="{
         'left-aligned': isDropdownLeftAligned,
         above: isDropdownAbove,
-        'dropdown-align-right': dropdownAlignRight,
       }"
     >
       <template #content>
@@ -95,10 +94,6 @@ export default defineComponent({
     isWarningStateActive: {
       type: Boolean,
       default: false,
-    },
-    dropdownAlignRight: {
-      type: Boolean,
-      default: true,
     },
   },
   emits: ['item-selected', 'items-selected'],
@@ -214,9 +209,6 @@ export default defineComponent({
   top: 90%; // Overlap the button slightly
   max-height: 400px;
   overflow-y: auto;
-  &.dropdown-align-right {
-    right: 0;
-  }
 
   &.left-aligned {
     left: 0;
