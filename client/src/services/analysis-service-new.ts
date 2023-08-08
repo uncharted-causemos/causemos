@@ -40,7 +40,7 @@ export const createDataAnalysisObject = (analysisItems?: AnalysisItem[]): DataAn
 
 export const defaultCountryFilters: CountryFilter[] = [
   {
-    countryName: 'United states',
+    countryName: 'United States',
     active: false,
   },
   {

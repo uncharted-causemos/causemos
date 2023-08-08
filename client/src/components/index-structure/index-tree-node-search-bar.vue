@@ -176,7 +176,9 @@ const hoverCountryFilter = ref<number | null>(null);
 const countryFilterChoices = ref<string[]>([]);
 const countryFilterChoicesRemaining = computed(() => {
   return countryFilterChoices.value.filter(
-    (choice) => props.countryFilters.filter((item) => item.countryName === choice).length === 0
+    (choice) =>
+      props.countryFilters.filter((item) => item.countryName.toUpperCase() === choice.toUpperCase())
+        .length === 0
   );
 });
 const handleNewFilter = (item: string) => {
