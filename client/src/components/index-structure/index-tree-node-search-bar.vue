@@ -162,14 +162,18 @@ onMounted(async () => {
   if (props.initialSearchText) {
     searchText.value = props.initialSearchText;
   }
-  countryFilterChoices.value = await getCountryList();
 });
 
 // Search
 const results = ref<DatasetSearchResult[]>([]);
 const isFetchingResults = ref(false);
 
+// Country filter
 const countryFilterChoices = ref<string[]>([]);
+onMounted(async () => {
+  countryFilterChoices.value = await getCountryList();
+});
+
 const countryFilterChoicesRemaining = computed(() => {
   return countryFilterChoices.value.filter(
     (choice) =>
@@ -177,6 +181,15 @@ const countryFilterChoicesRemaining = computed(() => {
         .length === 0
   );
 });
+
+const selectedCountries = computed(() => {
+  const countryList: CountryFilter[] = props.countryFilters.filter((item) =>
+    item.active ? item.countryName : false
+  );
+  const activeCountryList = countryList.map((country) => country.countryName);
+  return activeCountryList;
+});
+
 const handleNewFilter = (item: string) => {
   emit('add-country-filter', { countryName: item, active: true });
 };
@@ -194,14 +207,6 @@ const toggleFilter = (index: number) => {
 const deleteCountryFilter = (filterToDelete: CountryFilter) => {
   emit('delete-country-filter', filterToDelete);
 };
-
-const selectedCountries = computed(() => {
-  const countryList: CountryFilter[] = props.countryFilters.filter((item) =>
-    item.active ? item.countryName : false
-  );
-  const activeCountryList = countryList.map((country) => country.countryName);
-  return activeCountryList;
-});
 
 watch([searchText, () => props.countryFilters], async () => {
   // Save a copy of the current search text value in case it changes before results are fetched
