@@ -20,8 +20,6 @@
         :class="{
           'filter-active': filter.active,
         }"
-        @mouseenter="hoverCountryFilter = index"
-        @mouseleave="hoverCountryFilter = null"
         @click="toggleFilter(index)"
       >
         <i v-if="filter.active" class="fa fa-check subdued" />
@@ -171,7 +169,6 @@ onMounted(async () => {
 // Search
 const results = ref<DatasetSearchResult[]>([]);
 const isFetchingResults = ref(false);
-const hoverCountryFilter = ref<number | null>(null);
 
 const countryFilterChoices = ref<string[]>([]);
 const countryFilterChoicesRemaining = computed(() => {
