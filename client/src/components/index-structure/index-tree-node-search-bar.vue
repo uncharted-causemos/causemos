@@ -186,8 +186,7 @@ const selectedCountries = computed(() => {
   const countryList: CountryFilter[] = props.countryFilters.filter((item) =>
     item.active ? item.countryName : false
   );
-  const activeCountryList = countryList.map((country) => country.countryName);
-  return activeCountryList;
+  return countryList.map((country) => country.countryName);
 });
 
 const handleNewFilter = (item: string) => {
@@ -212,6 +211,8 @@ watch([searchText, () => props.countryFilters], async () => {
   // Save a copy of the current search text value in case it changes before results are fetched
   // note: we are watching selected countries though not using them here YET.  The semantic search
   //       cannot take the filter presently.  The models are filtered after the semantic return currently.
+  //  Add ", () => props.countryFilters" to the source for this watch when we can use this service
+
   const queryString = searchText.value;
   if (queryString === '') {
     results.value = [];
@@ -231,7 +232,6 @@ watch([searchText, () => props.countryFilters], async () => {
       convertFeatureSearchResultToDatasetSearchResult
     );
     results.value = await verifySearchFeatures(unverifiedResults);
-
     isFetchingResults.value = false;
   } catch (e) {
     console.error('Unable to fetch search results for query', searchText.value);

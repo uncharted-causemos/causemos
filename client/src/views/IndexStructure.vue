@@ -13,8 +13,12 @@
           @select-element="selectElement"
           @highlight-edge="highlightEdge"
           @clear-highlight="clearHighlight"
+          @add-country-filter="addCountryFilter"
+          @update-country-filter="updateCountryFilter"
+          @delete-country-filter="deleteCountryFilter"
           :selected-element-id="selectedElementId"
           :highlight-edge-id="highlightEdgeId"
+          :country-filters="countryFilters"
         />
         <IndexLegend class="legend" :is-projection-space="false" />
       </div>
@@ -53,7 +57,14 @@ const route = useRoute();
 const router = useRouter();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const { analysisName, refresh } = useIndexAnalysis(analysisId);
+const {
+  analysisName,
+  refresh,
+  deleteCountryFilter,
+  addCountryFilter,
+  updateCountryFilter,
+  getCountryFilters,
+} = useIndexAnalysis(analysisId);
 
 const indexWorkBench = useIndexWorkBench();
 const indexTree = useIndexTree();
@@ -62,6 +73,15 @@ const isStateLoaded = ref(false);
 
 const selectedElementId = ref<SelectableIndexElementId | null>(null);
 const highlightEdgeId = ref<SelectableIndexElementId | null>(null);
+
+const countryFilters = computed(() => {
+  const filters = getCountryFilters();
+  if (filters) {
+    return filters;
+  }
+  console.log('WARNING: could not find filters in analysis state object.');
+  return [];
+});
 
 const selectElement = (id: SelectableIndexElementId) => {
   deselectAllElements();
