@@ -76,7 +76,7 @@
             </li>
           </ul>
           <div class="details-pane" v-if="activeResult !== null">
-            <h5>{{ activeResult?.displayName }}</h5>
+            <h5>{{ activeResult.displayName }}</h5>
             <div>
               <h5 class="de-emphasized">Coverage</h5>
               <p>{{ spatialCoverageDisplayString }}</p>
