@@ -11,13 +11,13 @@
       <h5 v-else>
         Snippets related to <strong>{{ props.selectedNodeName }}</strong>
       </h5>
-      <div v-if="snippetsForSelectedNode === null" class="loading-indicator">
+      <div v-if="isLoadingSnippets" class="loading-indicator">
         <i class="fa fa-spin fa-spinner pane-loading-icon" />
         <p>{{ SNIPPETS_LOADING }}</p>
       </div>
-      <p v-else-if="snippetsForSelectedNode.length === 0" class="subdued">No results</p>
+      <p v-else-if="snippets.length === 0" class="subdued">No results</p>
       <div v-else class="snippets">
-        <div class="snippet" v-for="(snippet, i) in snippetsForSelectedNode" :key="i">
+        <div class="snippet" v-for="(snippet, i) in snippets" :key="i">
           <span class="open-quote">"</span>
           <div class="snippet-body">
             <p class="overflow-auto"><span v-html="snippet.text" /></p>
@@ -61,41 +61,23 @@
 </template>
 
 <script setup lang="ts">
-import {
-  searchParagraphs,
-  getDocument,
-  getDocumentParagraphs,
-  getHighlights,
-} from '@/services/paragraphs-service';
-import {
-  Snippet,
-  ParagraphSearchResponse,
-  Document,
-  DojoParagraphHighlights,
-  DojoParagraphHighlight,
-  ScrollData,
-} from '@/types/IndexDocuments';
-import { toRefs, watch, ref } from 'vue';
+import { getDocument, getDocumentParagraphs } from '@/services/paragraphs-service';
+import { DojoParagraphHighlight, ScrollData } from '@/types/IndexDocuments';
+import { toRefs, ref, computed } from 'vue';
 import ModalDocument from '@/components/modals/modal-document.vue';
+import useParagraphSearchResults from '@/services/composables/useParagraphSearchResults';
 
 const props = defineProps<{
   selectedNodeName: string;
-  selectedUpstreamNodeName?: string | null;
+  selectedUpstreamNodeName: string | null;
 }>();
 const { selectedNodeName, selectedUpstreamNodeName } = toRefs(props);
 const expandedDocumentId = ref<string | null>(null);
 const fragmentParagraphLocation = ref<number>(1);
 const textFragment = ref<string | null>(null);
 const SNIPPETS_LOADING = 'Loading snippets...';
-const NO_TITLE = 'Title not available';
-const NO_AUTHOR = 'Author not available';
-const NO_SOURCE = 'Source not available';
-const NO_TEXT = 'Text not available';
 
-// `null` means snippets are loading
-const snippetsForSelectedNode = ref<Snippet[] | null>(null);
 const highlightsForSelected = ref<DojoParagraphHighlight[]>([]);
-const allHighlights = ref<DojoParagraphHighlights | null>(null);
 const handleReturnedData = (data: ScrollData, previousContent: string | null) => {
   const content: string = previousContent || '';
   return content.concat(
@@ -110,8 +92,8 @@ const handleReturnedData = (data: ScrollData, previousContent: string | null) =>
  * @param index
  */
 const prepareHighlightsForDocumentViewer = (index: number) => {
-  if (allHighlights.value !== null) {
-    const workingValue: any[] = allHighlights.value.highlights[index];
+  if (highlights.value !== null) {
+    const workingValue: any[] = highlights.value.highlights[index];
 
     highlightsForSelected.value = workingValue
       .filter((item) => item.highlight === true)
@@ -138,71 +120,23 @@ const prepareHighlightsForDocumentViewer = (index: number) => {
   }
 };
 
-watch(
-  [selectedNodeName, selectedUpstreamNodeName],
-  async () => {
-    // Clear any previously-fetched snippets
-    snippetsForSelectedNode.value = null;
-    highlightsForSelected.value = [];
-    allHighlights.value = null;
-
-    // Save a copy of the node name to watch for race conditions later
-    const fetchingSnippetsFor = selectedNodeName.value;
-
-    // ensure search string includes source and target name data.
-    const searchString =
-      props.selectedUpstreamNodeName != null
-        ? `${props.selectedNodeName} and ${props.selectedUpstreamNodeName}`
-        : props.selectedNodeName;
-
-    const queryResults: ParagraphSearchResponse = await searchParagraphs(searchString);
-    if (fetchingSnippetsFor !== selectedNodeName.value) {
-      // SelectedNodeName has changed since the results returned, so throw away the results to avoid
-      //  a race condition.
-      return;
-    }
-
-    // Fetch metadata for each document in parallel (too slow if performed one-by-one).
-    const metadataRequests: Promise<Document>[] = queryResults.results.map((result) =>
-      getDocument(result.document_id)
-    );
-    const metadataResults = await Promise.all(metadataRequests);
-
-    allHighlights.value = await getHighlights({
-      query: searchString,
-      matches: queryResults.results.map((item) => item.text),
-    });
-
-    // Form list of snippets by pulling out relevant fields from query results and document data.
-    snippetsForSelectedNode.value = queryResults.results.map((result, i) => {
-      const metadata = metadataResults[i];
-      return {
-        documentId: result.document_id,
-        fragmentParagraphLocation: parseInt(result.id.split('-')[1]),
-        text: allHighlights.value
-          ? allHighlights.value.highlights[i].reduce(
-              (paragraph, item) =>
-                item.highlight
-                  ? `${paragraph}<span class="dojo-mark">${item.text}</span>`
-                  : `${paragraph}${item.text}`,
-              ''
-            )
-          : result.text
-          ? result.text
-          : NO_TEXT,
-        documentTitle: metadata.title ?? NO_TITLE,
-        documentAuthor: metadata.author ?? NO_AUTHOR,
-        documentSource: metadata.producer ?? NO_SOURCE,
-      };
-    });
-  },
-  { immediate: true }
+const searchString = computed(() =>
+  selectedUpstreamNodeName.value != null
+    ? `${selectedNodeName.value} and ${selectedUpstreamNodeName.value}`
+    : selectedNodeName.value
 );
+
+const {
+  results: snippets,
+  isLoading: isLoadingSnippets,
+  highlights,
+} = useParagraphSearchResults(searchString, 10);
 </script>
 
 <style lang="scss" scoped>
 @import '@/styles/variables';
 @import '@/styles/uncharted-design-tokens';
+@import '@/styles/documents';
 
 .index-document-snippets-container {
   display: flex;
@@ -271,12 +205,6 @@ section {
         flex-direction: column;
         color: $un-color-black-40;
       }
-    }
-    :deep(.dojo-mark) {
-      color: $accent-medium;
-      background-color: $accent-lightest;
-      border: 1px solid $accent-light;
-      padding: 0 2px;
     }
   }
 }
