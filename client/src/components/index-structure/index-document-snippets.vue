@@ -28,7 +28,7 @@
         <div v-if="editGeoContext" class="geo-context-editor">
           <div class="geo-context-input">
             <p class="subdued">in</p>
-            <input class="form-control" v-model="geoContextStringLive" />
+            <input v-focus class="form-control" v-model="geoContextStringLive" />
           </div>
           <div class="geo-context-controls">
             <button class="btn btn-sm btn-default" @click="clearGeoContextString">Clear</button>
