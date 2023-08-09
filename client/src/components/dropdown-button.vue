@@ -205,7 +205,7 @@ export default defineComponent({
 }
 .dropdown-control {
   position: absolute;
-
+  right: 0;
   top: 90%; // Overlap the button slightly
   max-height: 400px;
   overflow-y: auto;
