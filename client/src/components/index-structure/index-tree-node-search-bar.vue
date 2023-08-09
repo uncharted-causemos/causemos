@@ -383,13 +383,13 @@ const selectDataset = (dataset: DatasetSearchResult) => {
       border: solid 1px $un-color-black-40;
       border-radius: 0.8rem;
       padding: 0 8px 0 4px;
+      &:hover {
+        background-color: $un-color-black-5;
+        cursor: pointer;
+      }
       &.filter-active {
         background-color: $un-color-black-5;
       }
-    }
-    &:hover {
-      background-color: $un-color-black-5;
-      cursor: pointer;
     }
     i {
       padding-left: 5px;
