@@ -205,7 +205,7 @@ const deleteCountryFilter = (filterToDelete: CountryFilter) => {
   emit('delete-country-filter', filterToDelete);
 };
 
-watch([searchText, () => props.countryFilters], async () => {
+watch([searchText, selectedCountries.value], async () => {
   // Save a copy of the current search text value in case it changes before results are fetched
   // note: we are watching selected countries though not using them here YET.  The semantic search
   //       cannot take the filter presently.  The models are filtered after the semantic return currently.
@@ -229,7 +229,7 @@ watch([searchText, () => props.countryFilters], async () => {
     const unverifiedResults = dojoFeatureSearchResults.map(
       convertFeatureSearchResultToDatasetSearchResult
     );
-    results.value = await verifySearchFeatures(unverifiedResults);
+    results.value = await verifySearchFeatures(unverifiedResults, selectedCountries.value);
     isFetchingResults.value = false;
   } catch (e) {
     console.error('Unable to fetch search results for query', searchText.value);
@@ -250,12 +250,15 @@ watch([searchText, () => props.countryFilters], async () => {
  *
  * @param features
  */
-const verifySearchFeatures = async (features: DatasetSearchResult[]) => {
+const verifySearchFeatures = async (
+  features: DatasetSearchResult[],
+  selectedCountries: string[]
+) => {
   const verified: any[] = features.map((feature) =>
     newDatacubeService.getDatacubeByDataIdAndOutputVariableAndCountry(
       feature.dataId,
       feature.outputName,
-      selectedCountries.value
+      selectedCountries
     )
   );
   const allVerified = await Promise.allSettled(verified);
