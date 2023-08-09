@@ -1,6 +1,13 @@
 <template>
   <div class="index-structure-recommendations-container">
-    <p v-if="parentNode !== null" class="subdued title">{{ title }}</p>
+    <p v-if="parentNode !== null" class="subdued title">
+      {{ `${title} ${geoContextString.length > 0 ? ' in' : ''} ` }}
+    </p>
+    <geographic-context
+      :display-list-in-component="false"
+      :geo-context-string="geoContextString"
+      @save-geo-context="(context: string) => emit('save-geo-context', context)"
+    />
     <div
       v-for="recommendation of recommendationsToDisplay"
       :key="recommendation"
@@ -18,12 +25,15 @@ import { getCauses } from '@/services/recommender-service';
 import { ConceptNodeWithoutDataset } from '@/types/Index';
 import { CausalRecommenderQuery } from '@/types/IndexDocuments';
 import { computed, ref, watch } from 'vue';
+import GeographicContext from '@/components/geographic-context.vue';
 
 const props = defineProps<{
   parentNode: ConceptNodeWithoutDataset | null;
+  geoContextString: string;
 }>();
 const emit = defineEmits<{
   (e: 'add-suggestion', suggestion: string): void;
+  (e: 'save-geo-context', context: string): void;
 }>();
 
 const parentNodeName = computed(() => props.parentNode?.name ?? null);
@@ -65,7 +75,7 @@ const recommendationsToDisplay = computed(() => {
 
 const title = computed(() => {
   if (isLoading.value) {
-    return `Finding drivers of ${parentNodeName.value}...`;
+    return `Add drivers of ${parentNodeName.value}`;
   }
   if (recommendationsToDisplay.value.length === 0) {
     return `No drivers of ${parentNodeName.value} were found.`;

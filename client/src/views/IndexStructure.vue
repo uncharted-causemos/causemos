@@ -15,6 +15,8 @@
           @clear-highlight="clearHighlight"
           :selected-element-id="selectedElementId"
           :highlight-edge-id="highlightEdgeId"
+          :geo-context-string="countryContextForSnippets"
+          @save-geo-context="(geoContext: string) => setCountryContextForSnippets(geoContext)"
         />
         <IndexLegend class="legend" :is-projection-space="false" />
       </div>

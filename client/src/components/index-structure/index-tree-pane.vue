@@ -29,6 +29,7 @@
         :is-selected="isSelected(cell.node.id)"
         :is-connecting="isConnecting"
         :is-descendent-of-connecting-node="isDescendentOfConnectingNode(cell.node.id)"
+        :geo-context-string="geoContextString"
         class="index-tree-node"
         @rename="renameNode"
         @delete="deleteNode"
@@ -40,6 +41,7 @@
         @attach-dataset="attachDatasetToNode"
         @create-edge="createEdge"
         @mouseenter="highlightClear"
+        @save-geo-context="(context: string) => emit('save-geo-context', context)"
       />
       <div
         v-if="!cell.node.isOutputNode && cell.hasOutputLine"
@@ -94,6 +96,7 @@ import {
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
   highlightEdgeId: SelectableIndexElementId | null;
+  geoContextString: string;
 }>();
 
 /**
@@ -110,6 +113,7 @@ const emit = defineEmits<{
   (e: 'highlight-edge', selectedElement: SelectableIndexElementId): void;
   (e: 'deselect-all'): void;
   (e: 'clear-highlight'): void;
+  (e: 'save-geo-context', context: string): void;
 }>();
 
 const indexTree = useIndexTree();
