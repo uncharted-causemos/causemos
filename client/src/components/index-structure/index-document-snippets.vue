@@ -136,6 +136,8 @@ onMounted(() => {
 });
 const clearGeoContextString = () => {
   geoContextStringLive.value = '';
+  emit('save-geo-context', geoContextStringLive.value);
+  toggleGeoContext();
 };
 const toggleGeoContext = () => {
   editGeoContext.value = !editGeoContext.value;
