@@ -39,8 +39,7 @@ import useParagraphSearchResults from '@/services/composables/useParagraphSearch
 const props = defineProps<{ searchBarText: string }>();
 const { searchBarText } = toRefs(props);
 
-// TODO: remove 5
-const { results, isLoading, highlights } = useParagraphSearchResults(searchBarText, 5);
+const { results, isLoading, highlights } = useParagraphSearchResults(searchBarText);
 
 const expandedSnippetIndex = ref<number | null>(null);
 const expandedSnippet = computed(() => {
