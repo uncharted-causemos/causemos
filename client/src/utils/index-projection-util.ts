@@ -5,9 +5,13 @@ import {
   IndexProjectionScenario,
   IndexProjectionSettings,
   ProjectionConstraint,
+  ProjectionRunInfoNode,
+  IndexProjectionNodeDataWarning,
 } from '@/types/Index';
 import { COLORS } from './colors-util';
-import { ProjectionTimeseries } from '@/types/Timeseries';
+import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
+import { ForecastMethodSelectionReason } from './forecast';
+import { ProjectionDataWarning } from '@/types/Enums';
 
 export const NO_COUNTRY_SELECTED_VALUE = '';
 
@@ -76,4 +80,72 @@ export const getProjectionsForNode = (projections: IndexProjection[], nodeId: st
     };
   });
   return projectionTimeseries;
+};
+
+/** Data quality warning utilities  */
+
+const WARNING_INSUFFICIENT_DATA_MINCOUNT = 5;
+const WARNING_OLD_DATA_MINCOUNT = 5;
+
+export const testOldData = (
+  points: TimeseriesPoint[],
+  projectionStartTimestamp: number
+): boolean => {
+  if (points.length === 0) return false;
+  return (
+    points.filter((point: TimeseriesPoint) => point.timestamp >= projectionStartTimestamp).length <=
+    WARNING_OLD_DATA_MINCOUNT
+  );
+};
+
+export const testInsufficientData = (points: TimeseriesPoint[]): boolean => {
+  return points.length <= WARNING_INSUFFICIENT_DATA_MINCOUNT;
+};
+
+export const testNoPattern = (runInfo: ProjectionRunInfoNode): boolean => {
+  return 'reason' in runInfo && runInfo.reason === ForecastMethodSelectionReason.NoPattern;
+};
+
+export const checkProjectionWarnings = (
+  projectionData: IndexProjection[],
+  historicalDataByProjectionId: Map<string, Map<string, TimeseriesPoint[]>>,
+  targetPeriod: { start: number; end: number }
+): { [nodeId: string]: IndexProjectionNodeDataWarning[] } => {
+  const allProjectionWarnings: IndexProjectionNodeDataWarning[] = [];
+  projectionData.forEach((projection) => {
+    // Check warnings from historical data
+    const historicalData = historicalDataByProjectionId.get(projection.id);
+    historicalData &&
+      historicalData.forEach((timeseries, nodeId) => {
+        if (testOldData(timeseries, targetPeriod.start)) {
+          allProjectionWarnings.push({
+            nodeId,
+            projectionId: projection.id,
+            color: projection.color,
+            warning: ProjectionDataWarning.OldData,
+          });
+        }
+        if (testInsufficientData(timeseries)) {
+          allProjectionWarnings.push({
+            nodeId,
+            projectionId: projection.id,
+            color: projection.color,
+            warning: ProjectionDataWarning.InsufficientData,
+          });
+        }
+      });
+    // Check warnings from projection
+    Object.entries(projection.runInfo).forEach(([nodeId, info]) => {
+      if (testNoPattern(info)) {
+        allProjectionWarnings.push({
+          nodeId,
+          projectionId: projection.id,
+          color: projection.color,
+          warning: ProjectionDataWarning.NoPatternDetected,
+        });
+      }
+    });
+  });
+
+  return _.groupBy(allProjectionWarnings, 'nodeId');
 };

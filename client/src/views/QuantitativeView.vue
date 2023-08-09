@@ -43,7 +43,6 @@
           :scenarios="scenarios"
           @reset-cag="resetCAGLayout()"
           @run-model="runScenariosWrapper"
-          @tab-click="tabClick"
           @open-data-analysis-for-cag="openDataAnalysis()"
         />
       </template>
@@ -484,28 +483,7 @@ export default defineComponent({
 
       this.disableOverlay();
 
-      // 2. Run experiments where necessary, run sensitivity analyses in the backround where necessary
-      // 2.1 Process sensitivity analyses, these run in the background
-      for (const scenario of scenarios) {
-        if (scenario.is_valid === true) continue;
-
-        const constraints = modelService.cleanConstraints(scenario.parameter?.constraints ?? []);
-        const sensitivityExperimentId = await modelService.runSensitivityAnalysis(
-          this.modelSummary,
-          'GLOBAL',
-          'DYNAMIC',
-          constraints
-        );
-        await modelService.createScenarioSensitivityResult(
-          this.currentCAG,
-          scenario.id,
-          this.currentEngine,
-          sensitivityExperimentId,
-          null
-        );
-      }
-
-      // 2.2 Process projection experiments
+      // 2. Run experiments where necessary, process projection experiments
       const updateList = [];
       for (const scenario of scenarios) {
         if (scenario.is_valid === true) continue;
@@ -576,14 +554,6 @@ export default defineComponent({
       const numNodes = this.modelComponents.nodes.length;
 
       return (2 * numEdges) / (numNodes * (numNodes - 1));
-    },
-    tabClick(tab: string) {
-      if (tab === 'matrix') {
-        // advance the tour if it is active
-        if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
-          this.tour.next();
-        }
-      }
     },
     resetCAGLayout() {
       this.resetLayoutToken = Date.now();

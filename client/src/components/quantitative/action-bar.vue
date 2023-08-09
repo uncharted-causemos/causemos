@@ -4,17 +4,19 @@
       Scenario
       <button class="btn btn-primary scenario-button" @click="toggleScenarioDropdownOpen">
         {{
-          selectedScenario.is_valid ? selectedScenario.name : selectedScenario.name + ' (Stale)  '
+          (selectedScenario as any).is_valid
+            ? selectedScenario.name
+            : selectedScenario.name + ' (Stale)  '
         }}
         <i class="fa fa-fw fa-angle-down" />
         <dropdown-control v-if="isScendarioDropdownOpen" class="scenario-dropdown">
           <template #content>
             <div
               v-for="scenario of scenarioOptions"
-              :key="scenario.id"
+              :key="scenario.id ?? undefined"
               class="dropdown-option"
               :class="{ selected: scenario.id === selectedScenarioId }"
-              @click.stop="onClickScenario(scenario.id)"
+              @click.stop="onClickScenario(scenario.id ?? '')"
             >
               {{ scenario.is_valid ? scenario.name : scenario.name + ' (Stale - rerun scenario) ' }}
             </div>
@@ -24,15 +26,6 @@
       <button class="btn" :class="{ 'btn-call-to-action': isDirty }" @click="runModel">Run</button>
     </div>
     <div class="group">
-      <radio-button-group
-        class="tour-matrix-tab"
-        :buttons="[
-          { label: 'Causal Flow', value: 'flow' },
-          { label: 'Matrix', value: 'matrix' },
-        ]"
-        :selected-button-value="activeTab"
-        @button-clicked="setActive"
-      />
       <button
         v-if="activeTab === 'flow'"
         v-tooltip.top-center="'reset CAG positioning'"
@@ -71,7 +64,6 @@ import { useStore } from 'vuex';
 import DropdownControl from '@/components/dropdown-control.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
-import RadioButtonGroup from '../widgets/radio-button-group.vue';
 
 import { CAGModelSummary, Scenario } from '@/types/CAG';
 
@@ -80,7 +72,6 @@ export default defineComponent({
   components: {
     DropdownControl,
     ArrowButton,
-    RadioButtonGroup,
   },
   props: {
     currentEngine: {
@@ -96,7 +87,7 @@ export default defineComponent({
       default: () => [],
     },
   },
-  emits: ['run-model', 'reset-cag', 'tab-click', 'open-data-analysis-for-cag'],
+  emits: ['run-model', 'reset-cag', 'open-data-analysis-for-cag'],
   setup() {
     const store = useStore();
     const isScendarioDropdownOpen = ref(false);
@@ -173,10 +164,6 @@ export default defineComponent({
           projectType: ProjectType.Analysis,
         },
       });
-    },
-    setActive(activeTab: string) {
-      this.$router.push({ query: { activeTab } }).catch(() => {});
-      this.$emit('tab-click', activeTab);
     },
   },
 });

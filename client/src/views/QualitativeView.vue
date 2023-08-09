@@ -2,7 +2,7 @@
   <div class="qualitative-view-container">
     <teleport to="#navbar-trailing-teleport-destination">
       <cag-analysis-options-button
-        :model-summary="modelSummary"
+        :model-summary="modelSummary ?? undefined"
         :view-after-deletion="'overview'"
       />
     </teleport>
@@ -16,7 +16,7 @@
     <main>
       <cag-side-panel class="side-panel" :model-components="modelComponents">
         <template #below-tabs>
-          <cag-comments-button :model-summary="modelSummary" />
+          <cag-comments-button :model-summary="modelSummary ?? undefined" />
         </template>
       </cag-side-panel>
       <div class="insight-capture tab-content">
@@ -60,7 +60,7 @@
           class="qualitative-drilldown"
           :is-open="isDrilldownOpen"
           :tabs="drilldownTabs"
-          :active-tab-id="activeDrilldownTab"
+          :active-tab-id="activeDrilldownTab ?? undefined"
           :overlay-pane-title="overlayPaneTitle"
           :is-overlay-open="isDrilldownOverlayOpen"
           @close="closeDrilldown"
@@ -68,27 +68,6 @@
           @overlay-back="onDrilldownOverlayBack"
         >
           <template #content>
-            <evidence-pane
-              v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
-              :selected-relationship="selectedEdge"
-              :statements="selectedStatements"
-              :project="project"
-              :is-fetching-statements="isFetchingStatements"
-              :should-confirm-curations="true"
-              :show-edge-recommendations="true"
-              @updated-relations="resolveUpdatedRelations"
-              @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
-            >
-              <edge-polarity-switcher
-                :model-summary="modelSummary"
-                :selected-relationship="selectedEdge"
-                @edge-set-user-polarity="setEdgeUserPolarity"
-                @edge-set-weights="setEdgeWeights"
-              />
-              <button style="font-weight: normal; width: 100%" class="btn" @click="openPathFind">
-                Indirect path
-              </button>
-            </evidence-pane>
             <relationships-pane
               v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
               :selected-node="selectedNode"
@@ -128,7 +107,8 @@
               v-if="
                 activeDrilldownTab === PANE_ID.FACTOR_RECOMMENDATIONS &&
                 selectedNode !== null &&
-                factorRecommendationsList.length > 0
+                factorRecommendationsList.length > 0 &&
+                correction !== null
               "
               :correction="correction"
               :recommendations="factorRecommendationsList"
@@ -186,7 +166,7 @@
     />
 
     <modal-path-find
-      v-if="showPathSuggestions"
+      v-if="showPathSuggestions && pathSuggestionSource !== null && pathSuggestionTarget !== null"
       :source="pathSuggestionSource"
       :target="pathSuggestionTarget"
       @add-paths="addSuggestedPath"
@@ -217,8 +197,6 @@ import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
 import ActionBar from '@/components/qualitative/action-bar.vue';
 import CAGGraph from '@/components/qualitative/CAG-graph.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import EvidencePane from '@/components/drilldown-panel/evidence-pane.vue';
-import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher.vue';
 import RelationshipsPane from '@/components/drilldown-panel/relationships-pane.vue';
 import QualitativeFactorsPane from '@/components/drilldown-panel/qualitative-factors-pane.vue';
 import NodeSuggestionsPane from '@/components/drilldown-panel/node-suggestions-pane.vue';
@@ -300,8 +278,6 @@ export default defineComponent({
     ActionBar,
     CAGGraph,
     DrilldownPanel,
-    EvidencePane,
-    EdgePolaritySwitcher,
     RelationshipsPane,
     QualitativeFactorsPane,
     NodeSuggestionsPane,
@@ -846,14 +822,6 @@ export default defineComponent({
       this.selectEdge(foundEdge);
       if (this.cagGraph === undefined) return;
       this.cagGraph.renderEdgeClick(foundEdge.source, foundEdge.target);
-    },
-    async setEdgeUserPolarity(edge: EdgeParameter, polarity: number) {
-      await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
-      if (this.selectedEdge !== null) {
-        this.selectedEdge.polarity = polarity;
-        this.selectedEdge.user_polarity = polarity;
-      }
-      this.refresh();
     },
     async setEdgeWeights(_edge: EdgeParameter, weights: number[]) {
       if (this.selectedEdge) {

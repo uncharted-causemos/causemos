@@ -140,9 +140,6 @@
           style="border-top: 1px solid #ddd; border-bottom: 0; margin: 2px; padding: 2px"
         >
           Showing top {{ conceptSuggestions.length }} matches&nbsp;&nbsp;
-          <button class="btn btn-primrary btn-xs" @click="openExplorer">
-            Explore Knowledge Base
-          </button>
         </div>
       </template>
     </dropdown-control>
@@ -176,7 +173,6 @@ import {
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 import { logHistoryEntry } from '@/services/model-service';
 import { getTimeseries } from '@/services/outputdata-service';
-import filtersUtil from '@/utils/filters-util';
 import { cleanConceptString } from '@/utils/concept-util';
 
 const CONCEPT_SUGGESTION_COUNT = 30;
@@ -503,14 +499,6 @@ export default defineComponent({
     },
     setActive(tab: string) {
       this.activeTab = tab;
-    },
-    openExplorer() {
-      const filters = filtersUtil.newFilters();
-      filtersUtil.setClause(filters, 'keyword', [this.userInput], 'or', false);
-      this.$router.push({
-        name: 'kbExplorer',
-        query: { cag: this.currentCAG, view: 'statements', filters: filters as any },
-      });
     },
   },
 });
