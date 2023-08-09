@@ -65,4 +65,6 @@ export interface IndexAnalysisState {
   resultsSettings: IndexResultsSettings;
   /** Index projection page settings */
   projectionSettings: IndexProjectionSettings;
+  /** Country context for snippets */
+  countryContextForSnippets: string;
 }

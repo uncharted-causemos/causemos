@@ -43,6 +43,7 @@ export const createIndexAnalysisObject = (): IndexAnalysisState => {
     workBench: [],
     resultsSettings: createNewIndexResultsSettings(),
     projectionSettings: createNewIndexProjectionSettings(),
+    countryContextForSnippets: '',
   };
 };
 

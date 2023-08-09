@@ -21,8 +21,10 @@
       <IndexDrilldownPanel
         class="index-drilldown-panel"
         :selected-element-id="selectedElementId"
+        :country-context-for-snippets="countryContextForSnippets"
         @delete-edge="deleteEdge"
         @open-drilldown="handleNavigateToDataset"
+        @save-geo-context="(geoContext: string) => setCountryContextForSnippets(geoContext)"
       />
     </div>
   </div>
@@ -57,7 +59,8 @@ const analysisId = computed(() => route.params.analysisId as string);
 const projectId = computed(() => route.params.project as string);
 const projectType = computed(() => route.params.projectType as string);
 
-const { analysisName, refresh } = useIndexAnalysis(analysisId);
+const { analysisName, refresh, setCountryContextForSnippets, countryContextForSnippets } =
+  useIndexAnalysis(analysisId);
 
 const indexWorkBench = useIndexWorkBench();
 const indexTree = useIndexTree();
