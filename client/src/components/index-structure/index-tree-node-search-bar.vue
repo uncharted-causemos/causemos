@@ -183,9 +183,7 @@ const countryFilterChoicesRemaining = computed(() => {
 });
 
 const selectedCountries = computed(() => {
-  const countryList: CountryFilter[] = props.countryFilters.filter((item) =>
-    item.active ? item.countryName : false
-  );
+  const countryList: CountryFilter[] = props.countryFilters.filter((item) => item.countryName);
   return countryList.map((country) => country.countryName);
 });
 
