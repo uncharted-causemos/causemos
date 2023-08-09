@@ -8,6 +8,13 @@ export const getMonthFromTimestamp = (timestamp: number) => {
   return new Date(timestamp).getUTCMonth();
 };
 
+export const getMonthStingFromTimestamp = (
+  timestamp: number,
+  format: '2-digit' | 'narrow' | 'short' | 'long' | 'numeric' | undefined = 'long'
+) => {
+  return new Date(timestamp).toLocaleString('default', { month: format, timeZone: 'UTC' });
+};
+
 export const getTimestampAfterMonths = (timestamp: number, monthsElapsed: number) => {
   const month = getMonthFromTimestamp(timestamp);
   const year = getYearFromTimestamp(timestamp);
