@@ -68,9 +68,6 @@
                 }}
               </span>
             </div>
-            <button type="button" class="btn" @click="openKBExplorer(relationshipGroup.key)">
-              <i class="fa fa-fw fa-search" /> Explore All ({{ relationshipGroup.count }})
-            </button>
           </div>
         </div>
       </div>
@@ -85,7 +82,6 @@
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
-import filtersUtil from '@/utils/filters-util';
 import {
   calculateNewNodesAndEdges,
   extractEdgesFromStatements,
@@ -242,24 +238,6 @@ export default {
       return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE
         ? relationship.source
         : relationship.target;
-    },
-    openKBExplorer(relationshipGroupKey) {
-      const components = this.selectedNode.components;
-      const filters = filtersUtil.newFilters();
-
-      if (relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE) {
-        filtersUtil.setClause(filters, 'objConcept', components, 'or', false);
-        this.$router.push({
-          name: 'kbExplorer',
-          query: { cag: this.currentCAG, view: 'graphs', filters: filters },
-        });
-      } else {
-        filtersUtil.setClause(filters, 'subjConcept', components, 'or', false);
-        this.$router.push({
-          name: 'kbExplorer',
-          query: { cag: this.currentCAG, view: 'graphs', filters: filters },
-        });
-      }
     },
     addToCAG() {
       if (this.numselectedRelationships < 1) {

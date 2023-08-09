@@ -80,9 +80,9 @@
                   class="fa fa-lg fa-fw"
                   :class="{
                     'fa-check-square-o':
-                      updatedParameter.additional_options.geo_acceptable_levels.includes(level),
+                      updatedParameter.additional_options.geo_acceptable_levels?.includes(level),
                     'fa-square-o':
-                      !updatedParameter.additional_options.geo_acceptable_levels.includes(level),
+                      !updatedParameter.additional_options.geo_acceptable_levels?.includes(level),
                   }"
                 />
                 {{ level }}
@@ -130,7 +130,7 @@
           <input
             v-model="updatedParameter.additional_options.geo_bbox_format"
             :style="{
-              width: updatedParameter.additional_options.geo_bbox_format.length * 0.75 + 'ch',
+              width: updatedParameter.additional_options.geo_bbox_format?.length ?? 0 * 0.75 + 'ch',
             }"
             type="text"
           />
@@ -153,20 +153,24 @@
         <label><b>Data value/Label choices:</b></label>
         <br />
         Value:
-        <input type="text" :value="newChoiceInput" @input="newChoiceInput = $event.target.value" />
+        <input
+          type="text"
+          :value="newChoiceInput"
+          @input="newChoiceInput = ($event.target as any).value"
+        />
         Label:
         <input
           type="text"
           :value="newChoiceLabelInput"
-          @input="newChoiceLabelInput = $event.target.value"
+          @input="newChoiceLabelInput = ($event.target as any).value"
         />
         <button
           type="button"
           class="btn first-button"
           style="padding: 0; margin-left: 4px"
           @click.stop="
-            updatedParameter.choices.push(newChoiceInput);
-            updatedParameter.choices_labels.push(newChoiceLabelInput);
+            updatedParameter.choices?.push(newChoiceInput);
+            updatedParameter.choices_labels?.push(newChoiceLabelInput);
           "
         >
           Add
@@ -186,7 +190,7 @@
           style="padding-bottom: 1rem; display: flex"
         >
           <label style="width: 50%">{{ choice }}</label>
-          <input v-model="updatedParameter.choices_labels[indx]" type="text" />
+          <input v-model="(updatedParameter.choices_labels ?? [])[indx]" type="text" />
           <i class="fa fa-fw fa-close delete-choice" @click="deleteChoice(choice)" />
         </div>
       </div>

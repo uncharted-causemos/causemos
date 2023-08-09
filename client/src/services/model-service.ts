@@ -156,11 +156,6 @@ const updateModelParameter = async (
   return result.data;
 };
 
-const updateEdgePolarity = async (modelId: string, edgeId: string, polarity: number) => {
-  const result = await API.put(`cags/${modelId}/edge-polarity`, { edge_id: edgeId, polarity });
-  return result.data;
-};
-
 const recalculate = async (modelId: string) => {
   await API.post(`cags/${modelId}/recalculate`);
 };
@@ -488,97 +483,6 @@ const buildNodeChartData = (
   return result;
 };
 
-/**
- * Constructs and sends a request for a new sensitivity analysis
- *
- * @param {object} modelSummary - contains the model's ID and configuration settings
- * @param {object} modelComponents - contains the nodes and edges that make up the model
- * @param {string} analysisType - one of 'IMMEDIATE', 'GLOBAL', or 'PATHWAYS'
- * @param {string} analysisMode - either 'STATIC' or 'DYNAMIC'
- * @param {array} constraints - a list of constraints that have been set in the current scenario
- * @returns {string} - the experiment ID that can be polled for the results
- */
-const runSensitivityAnalysis = async (
-  modelSummary: CAGModelSummary,
-  analysisType: string,
-  analysisMode: string,
-  constraints: ConceptProjectionConstraints[]
-) => {
-  const { id: modelId } = modelSummary;
-  const {
-    engine,
-    time_scale: timeScale,
-    projection_start: experimentStart,
-  } = modelSummary.parameter;
-
-  const numTimeSteps = getStepCountFromTimeScale(timeScale);
-  const experimentEnd = calculateProjectionEnd(experimentStart, timeScale);
-
-  const analysisParams = {
-    numPath: 0,
-    pathAtt: '', // FIXME: these should be passed in but they are only relevant when
-    source: [], // analysisType === 'PATHWAYS' (for pathAtt), and when you don't want
-    target: [], // to run the analysis on the whole graph (for source/target)
-  };
-
-  const result = await API.post(`models/${modelId}/sensitivity-analysis`, {
-    analysisMode,
-    analysisMethodology: 'HYBRID', // Either HYBRID or FUNCTION
-    analysisParams,
-    analysisType,
-    constraints,
-    engine,
-    experimentStart,
-    experimentEnd,
-    numTimeSteps,
-  });
-
-  return result.data.experimentId;
-};
-
-const runPathwaySensitivityAnalysis = async (
-  modelSummary: CAGModelSummary,
-  sources: string[],
-  targets: string[],
-  constraints: ConceptProjectionConstraints[]
-) => {
-  const { id: modelId } = modelSummary;
-  const {
-    engine,
-    time_scale: timeScale,
-    projection_start: experimentStart,
-  } = modelSummary.parameter;
-
-  const numTimeSteps = getStepCountFromTimeScale(timeScale);
-  const monthsPerTimestep = getMonthsPerTimestepFromTimeScale(timeScale);
-  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
-  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
-  // endTime should be thought of as the last timestamp that will be returned.
-  const experimentEnd = getTimestampAfterMonths(
-    experimentStart,
-    (numTimeSteps - 1) * monthsPerTimestep
-  );
-  const payload = {
-    analysisMode: 'DYNAMIC',
-    analysisType: 'PATHWAYS',
-    analysisMethodology: 'HYBRID', // Either HYBRID or FUNCTION
-    analysisParams: {
-      numPath: 10,
-      pathAtt: 'SENSITIVITY',
-      source: sources,
-      target: targets,
-    },
-    constraints,
-    engine,
-    experimentStart,
-    experimentEnd,
-    numTimeSteps,
-  };
-
-  const result = await API.post(`models/${modelId}/sensitivity-analysis`, payload);
-  return result.data.experimentId;
-};
-
 const createBaselineScenario = async (
   modelSummary: CAGModelSummary,
   poller: Poller,
@@ -609,21 +513,6 @@ const createBaselineScenario = async (
 
     // DySE uses .results.data
     const r = experiment.results.data;
-
-    // Fire  off a sensitivity request in the background
-    const sensitivityExperimentId = await runSensitivityAnalysis(
-      modelSummary,
-      'GLOBAL',
-      'DYNAMIC',
-      []
-    );
-    await createScenarioSensitivityResult(
-      modelId,
-      id,
-      modelSummary.parameter.engine,
-      sensitivityExperimentId,
-      null
-    );
 
     await createScenarioResult(modelId, id, modelSummary.parameter.engine, experimentId, r);
   } catch (error) {
@@ -916,8 +805,6 @@ export default {
 
   initializeModel,
   runProjectionExperiment,
-  runSensitivityAnalysis,
-  runPathwaySensitivityAnalysis,
   getExperimentResult,
   getExperimentResultOnce,
   createBaselineScenario,
@@ -939,7 +826,6 @@ export default {
   updateModelParameter,
   updateModelMetadata,
   updateEdgeParameter,
-  updateEdgePolarity,
   recalculate,
   addComponents,
   removeComponents,
