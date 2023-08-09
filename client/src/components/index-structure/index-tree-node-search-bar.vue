@@ -389,6 +389,7 @@ const selectDataset = (dataset: DatasetSearchResult) => {
     }
     &:hover {
       background-color: $un-color-black-5;
+      cursor: pointer;
     }
     i {
       padding-left: 5px;
