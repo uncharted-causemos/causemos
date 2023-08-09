@@ -735,7 +735,7 @@ export default defineComponent({
       default: false,
     },
     initialDataConfig: {
-      type: Object as PropType<DataSpaceDataState>,
+      type: Object as PropType<DataSpaceDataState | null>,
       default: null,
     },
     initialViewConfig: {

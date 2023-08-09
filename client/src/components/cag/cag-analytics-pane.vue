@@ -63,11 +63,6 @@
         :selected-item="currentPathTarget"
         @item-selected="changePathTarget"
       />
-      <div class="pathway-exec-summary">
-        <button class="btn btn-small btn-call-to-action" @click="runPathwayAnalysis">
-          Run pathway sensitivity
-        </button>
-      </div>
 
       <!-- paht results -->
       <div>
@@ -79,7 +74,7 @@
           <div v-for="(path, idx) of pathExperimentResult" :key="idx">
             <cag-path-item
               :path-item="path"
-              :selected="path === selectedPath"
+              :selected="path === selectedPathItem"
               @click="showPath(path)"
             />
           </div>
@@ -100,13 +95,7 @@ import modelService from '@/services/model-service';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import {
-  CAGGraph,
-  CAGModelSummary,
-  Scenario,
-  GraphPath,
-  ConceptProjectionConstraints,
-} from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, Scenario, GraphPath } from '@/types/CAG';
 
 const ANALYSES = [
   { displayName: 'Feedback Loops', value: 'cycles' },
@@ -267,29 +256,6 @@ export default defineComponent({
         reinforcing: reinforcing.sort(shortestToLongest),
         ambiguous: ambiguous.sort(shortestToLongest),
       };
-    },
-    async runPathwayAnalysis() {
-      if (_.isEmpty(this.currentPathSource) || _.isEmpty(this.currentPathTarget)) return;
-
-      let constraints: ConceptProjectionConstraints[] = [];
-      // If we're in "historical data only" mode, run pathway analysis with no
-      //  constraints.
-      if (this.selectedScenarioId !== null) {
-        // Extract constraints
-        const scenario = this.scenarios.find((s) => s.id === this.selectedScenarioId);
-        if (!scenario) return;
-        constraints = scenario.parameter.constraints;
-      }
-
-      this.pathExperimentResult = [];
-      this.noPathsFound = false;
-      this.pathExperimentId = await modelService.runPathwaySensitivityAnalysis(
-        this.modelSummary,
-        [this.currentPathSource],
-        [this.currentPathTarget],
-        modelService.cleanConstraints(constraints)
-      );
-      this.pollPathExperimentResult();
     },
     async pollPathExperimentResult() {
       const r = await modelService.getExperimentResultOnce(

@@ -15,7 +15,6 @@ import {
   ProjectionConstraint,
   ProjectionResults,
   ProjectionRunInfo,
-  IndexProjectionNodeDataWarning,
 } from '@/types/Index';
 
 export enum EditMode {
@@ -448,13 +447,14 @@ export const createProjectionRunner = (
       const constraints = (_constraints && _constraints[nodeId]) || [];
       const inputData = applyConstraints(series, constraints);
       if (inputData.length > 1) {
-        const { method, forecast, backcast, projectionData } = runProjection(
+        const { method, forecast, backcast, projectionData, reason } = runProjection(
           inputData,
           period,
           dataTempResOption
         );
         runInfo[nodeId] = {
           method,
+          reason,
           forecast,
           backcast,
         };
@@ -568,15 +568,4 @@ export const splitProjectionsIntoLineSegments = (timeseries: TimeseriesPointProj
   return [backcastSegment, historicalSegment, forecastSegment].filter(
     ({ segment }) => segment.length !== 0
   );
-};
-
-/**
- * Get all node data warnings by node id
- * @param allWarnings - summary of all warnings keyed by node id
- */
-export const consolidateNodeWarnings = (
-  allWarnings: IndexProjectionNodeDataWarning[]
-): { [nodId: string]: IndexProjectionNodeDataWarning[] } => {
-  const warningsByNode = _.groupBy(allWarnings, 'nodeId');
-  return warningsByNode;
 };

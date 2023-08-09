@@ -9,6 +9,26 @@ export enum ForecastMethod {
   HoltWinters = 'Holt-Winters',
 }
 
+/**
+ * Enum representing reasons for selecting a forecast method automatically.
+ */
+export enum ForecastMethodSelectionReason {
+  /**
+   * Represents the case where the method is selected manually or explicitly.
+   */
+  Manual = 'Manual',
+
+  /**
+   * Represents the case where the method is selected based on producing smaller error.
+   */
+  MinimalError = 'MinimalError',
+
+  /**
+   * Represents the case where there's no clear seasonal pattern detected in the input timeseries data.
+   */
+  NoPattern = 'NoPattern',
+}
+
 export interface ForecastOptions {
   forecastSteps: number;
   backcastSteps: number;
@@ -46,12 +66,13 @@ export interface ForecastOutput<FMethod> {
 
 export interface ForecastResult<Method> {
   method: Method;
+  reason: ForecastMethodSelectionReason; // The reason for choosing the method over the other options.
   forecast: ForecastOutput<Method>;
   backcast: ForecastOutput<Method>;
 }
 
 /**
- * This is the start value of the period parameter used in parameter optimization
+ * This is the start value of the period parameter used in parameter optimization.
  * Since it's not likely for a data to have a repeating seasonal pattern for every 2 or less data points, set it to 3 as minimum period.
  * Also note that Holt winter's algorithm expect > period*2 number of data points so that it can use first period # of data points as a
  * sampling points to come up with the seasonal component of the equation.
@@ -196,10 +217,16 @@ export const initialize = (data: [number, number][], options: Subset<ForecastOpt
       if (observedData.length > MIN_PERIOD * 2) {
         const holt = this.runHolt();
         const hw = this.runHoltWinters();
-        result = holt.forecast.error <= hw.forecast.error ? holt : hw;
-      } else {
-        result = this.runHolt();
+        if (hw.backcast.parameters.period === hw.forecast.parameters.period) {
+          // Case when there's clear seasonal pattern detected in the input data. Choose the method based on the error.
+          result = holt.forecast.error <= hw.forecast.error ? holt : hw;
+          result.reason = ForecastMethodSelectionReason.MinimalError;
+          return result;
+        }
       }
+      // Case where there are not enough input data points to identify the seasonal pattern or hw's detected forecast and backcast periods are different.
+      result = this.runHolt();
+      result.reason = ForecastMethodSelectionReason.NoPattern;
       return result;
     },
 
@@ -224,6 +251,7 @@ export const initialize = (data: [number, number][], options: Subset<ForecastOpt
         .reverse();
       return {
         method: ForecastMethod.Holt,
+        reason: ForecastMethodSelectionReason.Manual,
         forecast: {
           data: forecastData as [number, number][],
           parameters: forecastParams,
@@ -265,6 +293,7 @@ export const initialize = (data: [number, number][], options: Subset<ForecastOpt
       const backcastData = unShift(backcast.forecast(opt.backcastSteps).reverse(), hasZero);
       return {
         method: ForecastMethod.HoltWinters,
+        reason: ForecastMethodSelectionReason.Manual,
         forecast: {
           data: forecastData,
           parameters: forecastParams,

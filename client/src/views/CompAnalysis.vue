@@ -33,59 +33,6 @@
         @select-timestamp="setSelectedGlobalTimestamp"
         @select-timestamp-range="handleTimestampRangeSelection"
       />
-      <!-- region ranking view content -->
-      <template v-if="activeTab === ComparativeAnalysisMode.RegionRanking">
-        <div style="display: flex">
-          <h5 class="ranking-header-top">
-            Ranking Results
-            <i
-              style="cursor: pointer"
-              @click="downloadRankingResult"
-              class="fa fa-fw fa-download"
-            ></i>
-          </h5>
-          <i
-            :onClick="
-              () => (activeDrilldownTab = activeDrilldownTab === null ? 'region-settings' : null)
-            "
-            class="fa fa-gear region-ranking-settings-button"
-            :class="{
-              'region-ranking-settings-button-invalid': activeDrilldownTab === null,
-              'region-ranking-settings-button-valid': activeDrilldownTab !== null,
-            }"
-          />
-        </div>
-        <datacube-region-ranking-composite-card
-          v-if="selectedAnalysisItems.length > 0"
-          :bars-data="globalBarsData"
-          :max-number-of-chart-bars="barCountLimit"
-          :limit-number-of-chart-bars="isBarCountLimitApplied"
-          :selected-admin-level="selectedAdminLevel"
-          :selected-color-scheme="finalColorScheme"
-          :bar-chart-hover-id="highlightedRegionId"
-          :map-bounds="globalBbox"
-          @bar-chart-hover="setHighlightedRegionId"
-          @map-click-region="setHighlightedRegionId"
-        />
-        <div class="ranking-header-bottom" v-if="selectedAnalysisItems.length > 0">
-          <h5>Ranking Criteria:</h5>
-          <div>
-            Composition Type: <b>{{ regionRankingCompositionType }}</b>
-          </div>
-          <div class="checkbox">
-            <label @click="toggleRegionRankingRowsNormalized" style="cursor: pointer; color: black">
-              <i
-                class="fa fa-lg fa-fw"
-                :class="{
-                  'fa-check-square-o': areRegionRankingRowsNormalized,
-                  'fa-square-o': !areRegionRankingRowsNormalized,
-                }"
-              />
-              Normalized data
-            </label>
-          </div>
-        </div>
-      </template>
       <!--
         listing individual datacube cards
       -->
@@ -140,72 +87,9 @@
             </div>
           </div>
         </template>
-        <template v-if="activeTab === ComparativeAnalysisMode.RegionRanking">
-          <datacube-region-ranking-card
-            v-for="item in selectedAnalysisItems"
-            :key="item.itemId"
-            class="datacube-region-ranking-card"
-            :id="item.id"
-            :item-id="item.itemId"
-            :selected-admin-level="selectedAdminLevel"
-            :number-of-color-bins="colorBinCount"
-            :ranking-weight="getDatacubeRankingWeight(item)"
-            :selected-color-scheme="finalColorScheme"
-            :region-ranking-binning-type="colorBinType"
-            :bar-chart-hover-id="highlightedRegionId"
-            :show-normalized-data="areRegionRankingRowsNormalized"
-            :is-data-inverted="isDatacubeInverted(item)"
-            :max-number-of-chart-bars="barCountLimit"
-            :limit-number-of-chart-bars="isBarCountLimitApplied"
-            :analysis-item="item"
-            :analysis-id="analysisId"
-            @updated-bars-data="onUpdatedBarsData"
-            @bar-chart-hover="setHighlightedRegionId"
-            @map-click-region="setHighlightedRegionId"
-            @invert-data-updated="toggleIsItemInverted"
-            @remove-analysis-item="removeAnalysisItem"
-            @duplicate-analysis-item="duplicateAnalysisItem"
-          />
-        </template>
       </div>
       <empty-state-instructions v-else />
     </main>
-    <drilldown-panel
-      v-if="activeTab === ComparativeAnalysisMode.RegionRanking"
-      :active-tab-id="activeDrilldownTab"
-      :has-transition="false"
-      :hide-close="true"
-      :is-open="activeDrilldownTab !== null"
-      :tabs="drilldownTabs"
-      @close="
-        () => {
-          activeDrilldownTab = null;
-        }
-      "
-    >
-      <template #content>
-        <region-ranking-options-pane
-          :aggregation-level-count="availableAdminLevelTitles.length"
-          :aggregation-level="selectedAdminLevel"
-          :aggregation-level-title="availableAdminLevelTitles[selectedAdminLevel]"
-          :number-of-color-bins="colorBinCount"
-          :selected-color-scheme="finalColorScheme"
-          :region-ranking-composition-type="regionRankingCompositionType"
-          :region-ranking-binning-type="colorBinType"
-          :max-number-of-chart-bars="barCountLimit"
-          :limit-number-of-chart-bars="isBarCountLimitApplied"
-          :region-ranking-weights="regionRankingWeights"
-          @set-number-color-bins="setColorBinCount"
-          @set-selected-admin-level="setSelectedAdminLevel"
-          @set-region-ranking-composition-type="setRegionRankingCompositionType"
-          @set-region-ranking-equal-weight="setRegionRankingEqualWeight"
-          @set-max-number-of-chart-bars="setBarCountLimit"
-          @set-limit-number-of-chart-bars="toggleIsBarCountLimitApplied"
-          @set-region-ranking-binning-type="setColorBinType"
-          @region-ranking-weights-updated="onRegionRankingWeightsUpdated"
-        />
-      </template>
-    </drilldown-panel>
   </div>
 </template>
 
@@ -214,63 +98,41 @@ import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } fr
 import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/comp-analysis/datacube-comparative-card.vue';
 import DatacubeComparativeOverlayRegion from '@/components/comp-analysis/datacube-comparative-overlay-region.vue';
-import DatacubeRegionRankingCard from '@/components/region-ranking/datacube-region-ranking-card.vue';
 import ActionBar from '@/components/data/action-bar.vue';
 import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
-import DatacubeRegionRankingCompositeCard from '@/components/region-ranking/datacube-region-ranking-composite-card.vue';
 import _ from 'lodash';
 import { Insight } from '@/types/Insight';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
-import DrilldownPanel from '@/components/drilldown-panel.vue';
-import RegionRankingOptionsPane from '@/components/drilldown-panel/region-ranking-options-pane.vue';
 import { COLOR, getColors, colorFromIndex } from '@/utils/colors-util';
 import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
-import {
-  BinningOptions,
-  ComparativeAnalysisMode,
-  DatacubeGeoAttributeVariableType,
-  RegionRankingCompositionType,
-} from '@/types/Enums';
+import { ComparativeAnalysisMode, DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
 import { getInsightById } from '@/services/insight-service';
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import router from '@/router';
-import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
+import { DataAnalysisState } from '@/types/Analysis';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 import { useRoute } from 'vue-router';
 import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
 import { isDataAnalysisState } from '@/utils/insight-util';
 import { Indicator, Model } from '@/types/Datacube';
-import { saveAs } from 'file-saver';
-
-const DRILLDOWN_TABS = [
-  {
-    name: 'Region Ranking Settings',
-    id: 'region-settings',
-    icon: 'fa-gear',
-  },
-];
 
 export default defineComponent({
   name: 'CompAnalysis',
   components: {
     DatacubeComparativeCard,
     DatacubeComparativeOverlayRegion,
-    DatacubeRegionRankingCard,
     AnalysisCommentsButton,
     ActionBar,
     EmptyStateInstructions,
     AnalyticalQuestionsAndInsightsPanel,
     DatacubeComparativeTimelineSync,
-    DatacubeRegionRankingCompositeCard,
     AnalysisOptionsButton,
-    DrilldownPanel,
-    RegionRankingOptionsPane,
   },
   setup() {
     const store = useStore();
@@ -289,22 +151,15 @@ export default defineComponent({
       toggleAnalysisItemSelected,
       selectedAdminLevel,
       setSelectedAdminLevel,
-      areRegionRankingRowsNormalized,
-      toggleRegionRankingRowsNormalized,
       colorBinCount,
       setColorBinCount,
       colorBinType,
       setColorBinType,
-      regionRankingCompositionType,
-      setRegionRankingCompositionType,
       barCountLimit,
       setBarCountLimit,
       isBarCountLimitApplied,
       toggleIsBarCountLimitApplied,
-      regionRankingItemStates,
-      resetRegionRankingWeights,
       toggleIsItemInverted,
-      setRegionRankingWeights,
       highlightedRegionId,
       setHighlightedRegionId,
       setAnalysisState,
@@ -471,18 +326,6 @@ export default defineComponent({
       store.dispatch('insightPanel/setViewState', {});
     });
 
-    // A data structure that combines the weight of each datacube with a human-
-    //  readable display name for easy consumption by
-    //  region-ranking-options-pane.
-    const regionRankingWeights = computed(() => {
-      const itemStates = regionRankingItemStates.value;
-      return selectedAnalysisItems.value.map(({ itemId, cachedMetadata }) => ({
-        itemId,
-        weight: itemStates[itemId].weight,
-        name: `${cachedMetadata.featureName} - ${cachedMetadata.datacubeName}`,
-      }));
-    });
-
     return {
       analysisItems,
       selectedAnalysisItems,
@@ -501,7 +344,6 @@ export default defineComponent({
       initialSelectedTimestamp,
       initialSelectedTimestampRange,
       activeDrilldownTab,
-      drilldownTabs: DRILLDOWN_TABS,
       setColorBinCount,
       colorBinCount,
       finalColorScheme,
@@ -510,8 +352,6 @@ export default defineComponent({
       availableAdminLevelTitles,
       globalBarsData,
       allRegionalRankingMap,
-      regionRankingCompositionType,
-      setRegionRankingCompositionType,
       setBarCountLimit,
       barCountLimit,
       isBarCountLimitApplied,
@@ -522,10 +362,6 @@ export default defineComponent({
       setHighlightedRegionId,
       ComparativeAnalysisMode,
       updateStateFromInsight,
-      regionRankingWeights,
-      regionRankingItemStates,
-      areRegionRankingRowsNormalized,
-      toggleRegionRankingRowsNormalized,
       timeseriesToDatacubeMap,
       colorFromIndex,
       shownDatacubesCountLabel,
@@ -537,8 +373,6 @@ export default defineComponent({
       duplicateAnalysisItem,
       toggleAnalysisItemSelected,
       toggleIsItemInverted,
-      setRegionRankingWeights,
-      resetRegionRankingWeights,
     };
   },
   mounted() {
@@ -552,15 +386,6 @@ export default defineComponent({
     }),
   },
   watch: {
-    regionRankingCompositionType() {
-      this.updateGlobalRegionRankingData();
-    },
-    limitNumberOfChartBars() {
-      this.updateGlobalRegionRankingData();
-    },
-    barCountLimit() {
-      this.updateGlobalRegionRankingData();
-    },
     $route: {
       handler(/* newValue, oldValue */) {
         // NOTE:  this is only valid when the route is focused on the 'dataComparative' space
@@ -588,129 +413,6 @@ export default defineComponent({
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
     }),
-    getDatacubeRankingWeight(analysisItem: AnalysisItem) {
-      const datacubeKey = analysisItem.itemId;
-      if (this.regionRankingItemStates[datacubeKey]) {
-        return this.regionRankingItemStates[datacubeKey].weight.toFixed(2);
-      }
-      return '0';
-    },
-    isDatacubeInverted(analysisItem: AnalysisItem) {
-      const datacubeKey = analysisItem.itemId;
-      return this.regionRankingItemStates[datacubeKey].isInverted;
-    },
-    setRegionRankingEqualWeight() {
-      this.resetRegionRankingWeights();
-      // re-build the transform computing the region ranking data
-      this.updateGlobalRegionRankingData();
-    },
-    onRegionRankingWeightsUpdated(newWeights: { itemId: string; name: string; weight: number }[]) {
-      // if new weights are not different from current weights, do nothing
-      if (_.isEqual(this.regionRankingWeights, newWeights)) {
-        return;
-      }
-      this.setRegionRankingWeights(newWeights);
-
-      // re-build the transform computing the region ranking data
-      this.updateGlobalRegionRankingData();
-    },
-    onUpdatedBarsData(regionRankingInfo: {
-      itemId: string;
-      barsData: BarData[];
-      selectedTimestamp: number;
-    }) {
-      // clone and save the incoming regional-ranking data in the global map object
-      const datacubeKey = regionRankingInfo.itemId;
-      this.allRegionalRankingMap[datacubeKey] = _.cloneDeep(regionRankingInfo.barsData);
-
-      // re-build the transform computing the region ranking data
-      this.updateGlobalRegionRankingData();
-    },
-    updateGlobalRegionRankingData() {
-      // FIXME: confusing to use datacubeId here since itemId's are actually
-      //  being stored in this property.
-      type RegionRankingEntry = { datacubeId: string; normalizedValue: number };
-
-      // first: build a map where each key is a unique region name
-      //        with a value representing the data of this region from all datacubes
-      const globalRegionsMap: { [regionName: string]: RegionRankingEntry[] } = {};
-      Object.keys(this.allRegionalRankingMap).forEach((key) => {
-        const regionData: BarData[] = this.allRegionalRankingMap[key];
-        regionData.forEach((regionItem) => {
-          if (globalRegionsMap[regionItem.label] === undefined) {
-            globalRegionsMap[regionItem.label] = [];
-          }
-          globalRegionsMap[regionItem.label].push({
-            datacubeId: key,
-            normalizedValue: regionItem.normalizedValue,
-          });
-        });
-      });
-
-      //
-      // transform/combine data from all datacubes/regions into one composite dataset
-      //
-      const dotProduct = (a: number[], b: number[]) =>
-        a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
-      // note that each datacube can have a different list of regions
-      const compositeData: BarData[] = [];
-      const colors = this.finalColorScheme;
-      let regionIndexCounter = 0;
-      // we can have many bars than the available colors, so map indices
-      let numBars = 0;
-      // count the number of bars based on the selected composition type
-      Object.keys(globalRegionsMap).forEach((key) => {
-        // for each region, create a bar
-        const regionDatacubesList = globalRegionsMap[key];
-        const regionValues = regionDatacubesList.map((item) => item.normalizedValue);
-        const weights = this.regionRankingWeights.map(({ weight }) => weight / 100);
-        const equalWeights = Array(regionValues.length).fill(1 / regionValues.length); // sometimes not all datacubes are loaded and thus the map size may not match the regions
-        const compositeValue = dotProduct(
-          regionValues,
-          weights.length === regionValues.length ? weights : equalWeights
-        );
-        const scaledCompositeValue = compositeValue * this.colorBinCount;
-        const shouldAddRegionBar =
-          this.regionRankingCompositionType === RegionRankingCompositionType.Union ||
-          (this.regionRankingCompositionType === RegionRankingCompositionType.Intersection &&
-            regionValues.length === this.selectedAnalysisItems.length);
-        if (shouldAddRegionBar) {
-          numBars++;
-          compositeData.push({
-            name: (regionIndexCounter + 1).toString(),
-            label: key,
-            value: scaledCompositeValue,
-            normalizedValue: scaledCompositeValue,
-          });
-          regionIndexCounter++;
-        }
-      });
-      const compositeDataSorted = _.sortBy(compositeData, (item) => item.normalizedValue);
-      numBars = Math.max(numBars, 1); // should never be 0 to avoid invalid slope
-      const slope = (1.0 * colors.length) / numBars;
-      compositeDataSorted.forEach((key, indx) => {
-        let barColor = 'grey';
-        let binIndex = -1;
-        if (this.colorBinType === BinningOptions.Linear) {
-          binIndex = Math.trunc(key.normalizedValue);
-        }
-        if (this.colorBinType === BinningOptions.Quantile) {
-          binIndex = Math.trunc(slope * indx);
-        }
-        if (binIndex !== -1) {
-          const colorIndex = _.clamp(binIndex, 0, colors.length - 1);
-          barColor = colors[colorIndex];
-        }
-        // update name and color of each bar
-        key.name = (indx + 1).toString();
-        key.color = barColor;
-      });
-      // adjust the bar ranking so that the highest bar value will be ranked 1st
-      compositeDataSorted.forEach((barItem, indx) => {
-        barItem.name = (compositeDataSorted.length - indx).toString();
-      });
-      this.globalBarsData = compositeDataSorted;
-    },
     onLoadedTimeseries(itemId: string, timeseriesList: Timeseries[]) {
       // we should only set the global timeseries one time
       //  once all individual datacubes' timeseries have been loaded
@@ -795,38 +497,6 @@ export default defineComponent({
           }
         }
       }
-    },
-    downloadRankingResult() {
-      const heading = 'rank,normalized value,region';
-      const content = this.globalBarsData
-        .map((d) => {
-          return `${d.name},${d.normalizedValue},${d.label.replace(/,/g, ' ')}`;
-        })
-        .reverse()
-        .join('\r\n');
-
-      const weightContent = this.regionRankingWeights
-        .map((d) => {
-          return `${d.name.replace(/,/g, ' ')},${d.weight}`;
-        })
-        .join('\r\n');
-
-      const file = new Blob(
-        [
-          'Ranking Criteria and Relative Weight (%)' +
-            '\r\n' +
-            weightContent +
-            '\r\n\r\n\r\n' +
-            heading +
-            '\r\n' +
-            content +
-            '\r\n',
-        ],
-        {
-          type: 'text/plain',
-        }
-      );
-      saveAs(file, 'region-ranking-result.csv');
     },
   },
 });

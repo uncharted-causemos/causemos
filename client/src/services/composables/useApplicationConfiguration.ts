@@ -13,7 +13,6 @@ const RETRY_DELAY_LENGTHS_IN_SECONDS = [1, 5, 10, 30, 60, 0];
 export const DEFAULT_APPLICATION_CONFIGURATION: ApplicationConfiguration = {
   CLIENT__IS_ANALYST_WORKFLOW_VISIBLE: true,
   CLIENT__DOJO_LOG_API_URL: 'https://phantom.dojo-test.com',
-  CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE: false,
   CLIENT__HIDE_ADD_DOCUMENT_BUTTON: true,
 };
 
@@ -36,16 +35,12 @@ const parseSettings = (clientSettings: { [key: string]: string }) => {
   const CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = parseBoolean(
     clientSettings.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
   );
-  const CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE = parseBoolean(
-    clientSettings.CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE
-  );
   const CLIENT__HIDE_ADD_DOCUMENT_BUTTON = parseBoolean(
     clientSettings.CLIENT__HIDE_ADD_DOCUMENT_BUTTON
   );
   const result: Partial<ApplicationConfiguration> = {
     CLIENT__DOJO_LOG_API_URL,
     CLIENT__IS_ANALYST_WORKFLOW_VISIBLE,
-    CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE,
     CLIENT__HIDE_ADD_DOCUMENT_BUTTON,
   };
   // Filter out undefined and return

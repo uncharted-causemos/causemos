@@ -210,7 +210,6 @@ export default defineComponent({
       ],
       // 'nodeDataDrilldown',
       // 'nodeDataExplorer',
-      // 'kbExplorer',
       // 'dataExplorer',
     }));
 

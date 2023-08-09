@@ -48,7 +48,7 @@ export default defineComponent({
       required: true,
     },
     viewingExtent: {
-      type: Array as PropType<number[]>,
+      type: Array as PropType<number[] | null>,
       default: null,
     },
     constraints: {

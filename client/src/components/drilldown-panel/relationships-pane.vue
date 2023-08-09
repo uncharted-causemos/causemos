@@ -25,18 +25,11 @@
         @click="toggle(summaryData)"
       />
       <small-icon-button
-        v-tooltip.top="
-          isKbExplorer
-            ? 'Delete relationships from KB in bulk'
-            : 'Remove relationships from CAG in bulk'
-        "
+        v-tooltip.top="'Remove relationships from CAG in bulk'"
         :disabled="numselectedNodes === 0"
         @click="removeRelationships()"
       >
-        <i
-          class="fa fa-lg fa-fw"
-          :class="{ 'fa-minus-circle': !isKbExplorer, 'fa-trash': isKbExplorer }"
-        />
+        <i class="fa fa-lg fa-fw fa-minus-circle" />
       </small-icon-button>
     </collapsible-list-header>
     <div v-for="relationshipGroup in summaryData.children" :key="relationshipGroup.key">
@@ -85,15 +78,10 @@
                 }}
               </span>
               <small-icon-button
-                v-tooltip.top="
-                  isKbExplorer ? 'Delete relationship from KB' : 'Remove relationship from CAG'
-                "
+                v-tooltip.top="'Remove relationship from CAG'"
                 @click.stop="removeRelationship(relationship)"
               >
-                <i
-                  class="fa fa-lg fa-fw"
-                  :class="{ 'fa-minus-circle': !isKbExplorer, 'fa-trash': isKbExplorer }"
-                />
+                <i class="fa fa-lg fa-fw fa-minus-circle" />
               </small-icon-button>
             </div>
           </div>
@@ -187,9 +175,6 @@ export default {
     effectEdges() {
       const edges = _.get(this.modelComponents, 'edges', []);
       return edges.filter((edge) => edge.source === this.selectedNode.concept);
-    },
-    isKbExplorer() {
-      return this.currentView === 'kbExplorer';
     },
   },
   watch: {

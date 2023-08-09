@@ -67,13 +67,6 @@
         Cancel
       </button>
       <button class="btn btn-md btn-primary" @click="close()">Close</button>
-      <button
-        v-if="$route.name === 'kbExplorer'"
-        class="btn btn-md btn-primary"
-        @click="addToSearch()"
-      >
-        Add to search
-      </button>
     </template>
   </modal>
 </template>
