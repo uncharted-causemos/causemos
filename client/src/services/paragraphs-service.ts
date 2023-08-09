@@ -5,6 +5,7 @@ import {
   ParagraphSearchResponse,
   Document,
   DojoParagraphHighlights,
+  ScrollData,
 } from '@/types/IndexDocuments';
 
 const SEARCH_PATH = 'dojo/paragraphs/search';
@@ -69,15 +70,13 @@ export const getDocumentParagraphs = async (
   docId: string,
   scrollId: string | null,
   minParagraphs = 1
-) => {
-  if (docId) {
-    const result = await API.get(
-      `${GET_DOC_PATH}/${docId}/paragraphs?min_paragraphs=${minParagraphs}${
-        scrollId !== null ? '&scroll_id='.concat(scrollId) : ''
-      }`
-    );
-    return result.data;
-  }
+): Promise<ScrollData> => {
+  const result = await API.get(
+    `${GET_DOC_PATH}/${docId}/paragraphs?min_paragraphs=${minParagraphs}${
+      scrollId !== null ? '&scroll_id='.concat(scrollId) : ''
+    }`
+  );
+  return result.data;
 };
 
 export default {

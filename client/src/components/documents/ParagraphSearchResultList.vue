@@ -9,27 +9,55 @@
         class="list-item"
         v-for="(result, index) of results"
         :key="result.documentId ?? '' + index"
+        @click="expandedSnippetIndex = index"
       >
         <i class="fa fa-quote-left" />
-        <p v-html="result.text" />
+        <p v-html="result.text" class="highlight-on-hover" />
         <div class="metadata-column">
           <h5 class="subdued">{{ result.documentTitle }}</h5>
-          <p class="subdued">{{ result.documentAuthor }}</p>
+          <p class="subdued">{{ result.documentSource }}</p>
           <p class="subdued un-font-small">{{ result.documentCreationDate }}</p>
         </div>
       </div>
     </div>
+
+    <modal-document
+      v-if="expandedSnippetIndex !== null && expandedDocumentId !== null"
+      :document-id="expandedDocumentId"
+      :paragraph-to-scroll-to-on-load="paragraphToScrollToOnLoad"
+      :highlights="highlights[expandedSnippetIndex]"
+      @close="expandedSnippetIndex = null"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { toRefs } from 'vue';
+import { computed, ref, toRefs } from 'vue';
+import ModalDocument from '@/components/modals/modal-document.vue';
 import useParagraphSearchResults from '@/services/composables/useParagraphSearchResults';
 
 const props = defineProps<{ searchBarText: string }>();
 const { searchBarText } = toRefs(props);
 
-const { results, isLoading } = useParagraphSearchResults(searchBarText);
+// TODO: remove 5
+const { results, isLoading, highlights } = useParagraphSearchResults(searchBarText, 5);
+
+const expandedSnippetIndex = ref<number | null>(null);
+const expandedSnippet = computed(() => {
+  if (results.value === null || expandedSnippetIndex.value === null) {
+    return null;
+  }
+  return results.value[expandedSnippetIndex.value];
+});
+const expandedDocumentId = computed(() => expandedSnippet.value?.documentId ?? null);
+const paragraphToScrollToOnLoad = computed(() =>
+  expandedSnippet.value === null
+    ? null
+    : {
+        text: expandedSnippet.value.text,
+        paragraphIndexWithinDocument: expandedSnippet.value.fragmentParagraphLocation,
+      }
+);
 </script>
 
 <style lang="scss" scoped>
@@ -56,6 +84,7 @@ const { results, isLoading } = useParagraphSearchResults(searchBarText);
   gap: 10px;
   padding: 10px 0;
   border-top: 1px solid $un-color-black-10;
+  cursor: pointer;
 
   i {
     color: $un-color-black-30;
@@ -63,6 +92,10 @@ const { results, isLoading } = useParagraphSearchResults(searchBarText);
 
   p {
     width: 640px;
+  }
+
+  &:hover .highlight-on-hover {
+    color: $selected-dark;
   }
 }
 

@@ -43,8 +43,17 @@
       </div>
     </div>
     <div class="table-rows">
-      <div class="table-row" v-for="document of visibleDocumentPages" :key="document.id">
-        <span class="first-column-width">{{ document.title }}</span>
+      <div
+        class="table-row"
+        v-for="document of visibleDocumentPages"
+        :key="document.id"
+        @click="
+          () => {
+            expandedDocumentId = document.id;
+          }
+        "
+      >
+        <span class="first-column-width highlight-on-hover">{{ document.title }}</span>
         <span class="second-column-width subdued">{{ document.producer }}</span>
         <span class="default-column-width subdued">{{
           document.creation_date === null ? '--' : DATE_FORMATTER(document.creation_date)
@@ -67,6 +76,14 @@
         @click="goToNextPage"
       />
     </div>
+
+    <modal-document
+      v-if="expandedDocumentId !== null"
+      :document-id="expandedDocumentId"
+      :paragraph-to-scroll-to-on-load="null"
+      :highlights="[]"
+      @close="expandedDocumentId = null"
+    />
   </div>
 </template>
 
@@ -74,6 +91,7 @@
 import dateFormatter from '@/formatters/date-formatter';
 import numberFormatter from '@/formatters/number-formatter';
 import SortableTableHeaderCell from '@/components/widgets/sortable-table-header-cell.vue';
+import ModalDocument from '@/components/modals/modal-document.vue';
 import { SortableTableHeaderState } from '@/types/Enums';
 import { Document } from '@/types/IndexDocuments';
 import {
@@ -173,6 +191,8 @@ watch(
   },
   { immediate: true }
 );
+
+const expandedDocumentId = ref<string | null>(null);
 </script>
 
 <style lang="scss" scoped>
@@ -195,6 +215,14 @@ watch(
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+
+    .table-row {
+      cursor: pointer;
+
+      &:hover .highlight-on-hover {
+        color: $selected-dark;
+      }
+    }
   }
 
   .table-row {
