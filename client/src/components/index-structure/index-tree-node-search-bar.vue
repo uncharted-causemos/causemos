@@ -158,7 +158,7 @@ const searchInput = ref();
 onMounted(() => searchInput.value?.focus());
 
 const searchText = ref('');
-onMounted(async () => {
+onMounted(() => {
   if (props.initialSearchText) {
     searchText.value = props.initialSearchText;
   }
