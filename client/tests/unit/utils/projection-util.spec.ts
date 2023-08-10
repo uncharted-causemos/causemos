@@ -63,6 +63,7 @@ const yearlyTestData = [
 ];
 const DEFAULT_TEST_FORECAST_RESULT: fm.ForecastResult<fm.ForecastMethod.Holt> = {
   method: fm.ForecastMethod.Holt,
+  reason: fm.ForecastMethodSelectionReason.MinimalError,
   forecast: {
     data: [],
     error: 1,
@@ -573,6 +574,7 @@ describe('projection-util', () => {
       expect(runner.getRunInfo()).to.deep.equal({
         'data-node-1': {
           method: 'Holt',
+          reason: 'MinimalError',
           forecast: {
             data: [[126, 0.6]],
             error: 1,
@@ -738,6 +740,7 @@ describe('projection-util', () => {
       expect(runInfo).to.deep.equal({
         'data-node-1': {
           method: 'Holt',
+          reason: 'MinimalError',
           forecast: {
             data: [[126, 0.6]],
             error: 1,

@@ -84,7 +84,7 @@
           <select
             name="domains"
             id="domains"
-            @change="selectedDomain = AVAILABLE_DOMAINS[$event.target.selectedIndex]"
+            @change="selectedDomain = AVAILABLE_DOMAINS[($event.target as any).selectedIndex]"
           >
             <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
               {{ domain }}
@@ -169,7 +169,7 @@
             :datacube="indicator"
             :allow-editing="isReady"
             @apply-to-all="applyVizToAll(indicator.id)"
-            @toggle-hidden="toggleHiddenState(indicator)"
+            @toggle-hidden="toggleHiddenState"
             @update-meta="updateIndicator"
           />
           <message-display

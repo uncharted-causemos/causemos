@@ -72,4 +72,6 @@ export interface IndexAnalysisState {
   projectionSettings: IndexProjectionSettings;
   /** List of countries to filter datasets by */
   countryFilters: CountryFilter[];
+  /** Country context for snippets */
+  countryContextForSnippets: string;
 }

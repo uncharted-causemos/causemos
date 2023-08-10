@@ -39,7 +39,7 @@ describe('string-util', () => {
       expect(convertStringToBoolean('FALSE')).to.equal(false);
     });
 
-    it.only('throws an error for any other string or invalid value', () => {
+    it('throws an error for any other string or invalid value', () => {
       const invalidStrings = ['', 'truefalse', 'true ', ' false', undefined, null];
       invalidStrings.forEach((invalidString) => {
         expect(convertStringToBoolean.bind(this, invalidString as string)).to.throw(

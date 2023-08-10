@@ -25,7 +25,10 @@
       <IndexDrilldownPanel
         class="index-drilldown-panel"
         :selected-element-id="selectedElementId"
+        :country-context-for-snippets="countryContextForSnippets"
         @delete-edge="deleteEdge"
+        @open-drilldown="handleNavigateToDataset"
+        @save-geo-context="(geoContext: string) => setCountryContextForSnippets(geoContext)"
       />
     </div>
   </div>
@@ -57,6 +60,9 @@ const route = useRoute();
 const router = useRouter();
 
 const analysisId = computed(() => route.params.analysisId as string);
+const projectId = computed(() => route.params.project as string);
+const projectType = computed(() => route.params.projectType as string);
+
 const {
   analysisName,
   refresh,
@@ -64,6 +70,8 @@ const {
   addCountryFilter,
   updateCountryFilter,
   getCountryFilters,
+  setCountryContextForSnippets,
+  countryContextForSnippets,
 } = useIndexAnalysis(analysisId);
 
 const indexWorkBench = useIndexWorkBench();
@@ -106,6 +114,21 @@ const handleKey = (evt: KeyboardEvent) => {
       deleteEdge(selectedElementId.value);
     }
   }
+};
+
+const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => {
+  router.push({
+    name: 'indexResultsDataExplorer',
+    params: {
+      projectType: projectType.value,
+      project: projectId.value,
+      analysisId: analysisId.value,
+    },
+    query: {
+      datacube_id: datacubeId,
+      item_id: datacubeItemId,
+    },
+  });
 };
 
 onBeforeMount(() => {

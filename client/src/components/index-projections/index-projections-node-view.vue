@@ -12,7 +12,7 @@
           :projection-end-timestamp="projectionEndTimestamp"
           :timeseries="getProjectionsForNode(projectionData, inputComponent.componentNode.id)"
           :show-data-outside-norm="showDataOutsideNorm"
-          :data-warnings="dataWarnings"
+          :data-warnings="dataWarnings[inputComponent.componentNode.id]"
           @select="emit('select-element', inputComponent.componentNode.id)"
         />
         <div
@@ -41,8 +41,11 @@
         :timeseries="getProjectionsForNode(projectionData, selectedNode.found.id)"
         :show-data-outside-norm="showDataOutsideNorm"
         :edit-mode="projectionForScenarioBeingEdited !== null ? EditMode.Constraints : undefined"
-        :data-warnings="dataWarnings"
+        :data-warnings="dataWarnings[selectedNode.found.id]"
         @click-chart="(...params) => emit('click-chart', ...params)"
+        @open-drilldown="
+          (datacubeId, datacubeItemId) => emit('open-drilldown', datacubeId, datacubeItemId)
+        "
       />
       <div
         class="edge outgoing last-child"
@@ -64,7 +67,7 @@
           :projection-end-timestamp="projectionEndTimestamp"
           :timeseries="getProjectionsForNode(projectionData, parentNode.id)"
           :show-data-outside-norm="showDataOutsideNorm"
-          :data-warnings="dataWarnings"
+          :data-warnings="dataWarnings[parentNode.id]"
           @select="emit('select-element', parentNode.id)"
         />
       </div>
@@ -78,12 +81,14 @@ import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
 import { computed } from 'vue';
 import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import { getProjectionsForNode } from '@/utils/index-projection-util';
-import { IndexProjection, SelectableIndexElementId } from '@/types/Index';
+import {
+  IndexProjection,
+  IndexProjectionNodeDataWarning,
+  SelectableIndexElementId,
+} from '@/types/Index';
 import IndexProjectionsNode from './index-projections-node.vue';
 import IndexProjectionsExpandedNode from './index-projections-expanded-node.vue';
 import { EditMode } from '@/utils/projection-util';
-import { DataWarning } from '@/types/Timeseries';
-
 const props = defineProps<{
   selectedNodeId: string | null;
   projectionStartTimestamp: number;
@@ -91,12 +96,13 @@ const props = defineProps<{
   projections: IndexProjection[];
   projectionForScenarioBeingEdited: IndexProjection | null;
   showDataOutsideNorm: boolean;
-  dataWarnings?: Map<string, DataWarning>;
+  dataWarnings: { [nodeId: string]: IndexProjectionNodeDataWarning[] };
 }>();
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
   (e: 'click-chart', timestamp: number, value: number): void;
+  (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
 }>();
 
 const { findNode } = useIndexTree();

@@ -1,9 +1,15 @@
 import _ from 'lodash';
 import { Ref, computed, ref, watch } from 'vue';
 import { applyConstraints, createProjectionRunner } from '@/utils/projection-util';
-import { ConceptNode, IndexProjection, IndexProjectionScenario } from '@/types/Index';
+import {
+  ConceptNode,
+  IndexProjection,
+  IndexProjectionNodeDataWarning,
+  IndexProjectionScenario,
+} from '@/types/Index';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
+import { checkProjectionWarnings } from '@/utils/index-projection-util';
 
 export default function useScenarioProjections(
   scenarios: Ref<IndexProjectionScenario[]>,
@@ -28,12 +34,13 @@ export default function useScenarioProjections(
       projectionForScenarioBeingEdited.value = null;
       return;
     }
-    const { id, color, name, result } = existingProjectionData;
+    const { id, color, name, result, runInfo } = existingProjectionData;
     const updatedProjection: IndexProjection = {
       id,
       color,
       name,
       result: { ...result },
+      runInfo: { ...runInfo },
     };
     // Apply constraints
     // TODO: instead of just applying constraints to the projection data, re-run projection for the scenario
@@ -48,11 +55,24 @@ export default function useScenarioProjections(
     projectionForScenarioBeingEdited.value = updatedProjection;
   });
 
+  const visibleScenarios = computed(() => {
+    return scenarios.value.filter((scenario) => scenario.isVisible);
+  });
+
   const projectionData = ref<IndexProjection[]>([]);
   const visibleScenarioProjectionData = computed(() => {
-    const visibleScenarios = scenarios.value.filter((scenario) => scenario.isVisible);
     // Note that projection id === scenario id
-    return projectionData.value.filter((p) => !!visibleScenarios.find((s) => s.id === p.id));
+    return projectionData.value.filter((p) => !!visibleScenarios.value.find((s) => s.id === p.id));
+  });
+
+  const dataWarnings = ref<{ [nodeId: string]: IndexProjectionNodeDataWarning[] }>({});
+  const visibleScenarioDataWarnings = computed<{
+    [nodeId: string]: IndexProjectionNodeDataWarning[];
+  }>(() => {
+    const filteredWarnings = _.flatten(Object.values(dataWarnings.value)).filter(
+      (w) => !!visibleScenarios.value.find((s) => s.id === w.projectionId)
+    );
+    return _.groupBy(filteredWarnings, 'nodeId');
   });
 
   /**
@@ -71,15 +91,16 @@ export default function useScenarioProjections(
     scenarios: IndexProjectionScenario[]
   ) => {
     projectionData.value = scenarios.map((scenario) => {
-      const result = createProjectionRunner(
+      const runner = createProjectionRunner(
         conceptTree,
         Object.fromEntries(historicalData),
         targetPeriod,
         dataResOption
       )
         .setConstraints(scenario.constraints)
-        .runProjection()
-        .getResults();
+        .runProjection();
+      const result = runner.getResults();
+      const runInfo = runner.getRunInfo();
 
       return {
         // Set projection id equal to the scenario id
@@ -87,12 +108,19 @@ export default function useScenarioProjections(
         color: scenario.color,
         name: scenario.name,
         result,
+        runInfo,
       };
     });
+    dataWarnings.value = checkProjectionWarnings(
+      projectionData.value,
+      new Map(projectionData.value.map((p) => [p.id, historicalData])),
+      targetPeriod
+    );
   };
   return {
     visibleScenarioProjectionData,
     projectionForScenarioBeingEdited,
+    visibleScenarioDataWarnings,
     runScenarioProjections,
   };
 }

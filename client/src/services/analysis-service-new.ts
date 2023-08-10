@@ -60,6 +60,7 @@ export const createIndexAnalysisObject = (): IndexAnalysisState => {
     resultsSettings: createNewIndexResultsSettings(),
     projectionSettings: createNewIndexProjectionSettings(),
     countryFilters: defaultCountryFilters,
+    countryContextForSnippets: '',
   };
 };
 

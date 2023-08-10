@@ -151,6 +151,21 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     _saveState(analysisId.value, _analysisState.value);
   };
 
+  const countryContextForSnippets = computed(() => {
+    if (!_analysisState.value.countryContextForSnippets) {
+      setCountryContextForSnippets('');
+    }
+    return _analysisState.value.countryContextForSnippets;
+  });
+
+  const setCountryContextForSnippets = (countryContext: string) => {
+    _analysisState.value = {
+      ..._analysisState.value,
+      countryContextForSnippets: countryContext,
+    };
+    _saveState(analysisId.value, _analysisState.value);
+  };
+
   const updateCountryFilter = (update: CountryFilter) => {
     const filters = [..._analysisState.value.countryFilters];
     const index = filters.findIndex((filter) => filter.countryName === update.countryName);
@@ -168,6 +183,7 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
   return {
     addCountryFilter,
     analysisName,
+    countryContextForSnippets,
     deleteCountryFilter,
     getCountryFilters,
     indexResultsSettings,
@@ -176,6 +192,7 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     updateIndexResultsSettings,
     updateIndexProjectionSettings,
     refresh: fetchAnalysis,
+    setCountryContextForSnippets,
     waitForStateInSync,
   };
 }

@@ -47,6 +47,8 @@
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="selectedUpstreamNodeName"
+        :geo-context-string="countryContextForSnippets"
+        @saveGeoContext="(value) => emit('save-geo-context', value)"
       />
     </template>
     <!-- Output node is selected -->
@@ -75,7 +77,12 @@
       </header>
       <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
       <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="null"
+        :geo-context-string="countryContextForSnippets"
+        @saveGeoContext="(value) => emit('save-geo-context', value)"
+      />
     </template>
     <!-- Node without dataset is selected -->
     <template v-else-if="selectedNode && isConceptNodeWithoutDataset(selectedNode)">
@@ -117,7 +124,12 @@
         </div>
       </header>
       <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="null"
+        :geo-context-string="countryContextForSnippets"
+        @saveGeoContext="(value) => emit('save-geo-context', value)"
+      />
     </template>
     <!-- Node with dataset is selected -->
     <template v-else-if="selectedNode && isConceptNodeWithDatasetAttached(selectedNode)">
@@ -169,6 +181,9 @@
           :node="selectedNode"
           :countries="datasetMetadata?.geography.country ?? null"
         />
+        <button class="btn btn-sm" @click="navigateToDataset">
+          <i class="fa fa-fw fa-cube" />Explore dataset
+        </button>
       </section>
       <section>
         <h4>Settings</h4>
@@ -187,7 +202,12 @@
           </p>
         </div>
       </section>
-      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="null"
+        :geo-context-string="countryContextForSnippets"
+        @saveGeoContext="(value) => emit('save-geo-context', value)"
+      />
     </template>
   </div>
 </template>
@@ -220,10 +240,13 @@ import IndexTemporalCoveragePreview from './index-temporal-coverage-preview.vue'
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
+  countryContextForSnippets: string;
 }>();
 
 const emit = defineEmits<{
   (e: 'delete-edge', value: SelectableIndexElementId): void;
+  (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
+  (e: 'save-geo-context', value: string): void;
 }>();
 
 const indexTree = useIndexTree();
@@ -233,6 +256,15 @@ const workbench = useIndexWorkBench();
 const setDatasetIsInverted = (nodeId: string, newValue: boolean) => {
   workbench.setDatasetIsInverted(nodeId, newValue);
   indexTree.setDatasetIsInverted(nodeId, newValue);
+};
+
+const navigateToDataset = () => {
+  if (datasetMetadata.value !== null) {
+    const itemId = ''; // TODO: itemId is a qualitative analysis thing that we don't have access to yet. Interface will render but some controls will fail (generate errors)
+    emit('open-drilldown', datasetMetadata.value.id, itemId);
+  } else {
+    throw new Error('Dataset metadata not assigned.  Drill-down aborted.');
+  }
 };
 
 const renameNode = (newName: string) => {

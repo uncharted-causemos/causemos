@@ -4,17 +4,6 @@
       <!-- Actions -->
       <li class="nav-item">
         <button
-          v-if="applicationConfiguration.CLIENT__HIDE_SEARCH_KNOWLEDGE_BASE === false"
-          v-tooltip.top-center="'Search Knowledge Base'"
-          type="button"
-          class="btn btn-call-to-action"
-          @click="openKBExplorer"
-        >
-          <i class="fa fa-fw fa-search" />Search Knowledge Base
-        </button>
-      </li>
-      <li class="nav-item">
-        <button
           v-tooltip.top-center="'Add a new concept'"
           type="button"
           class="btn"
@@ -108,9 +97,6 @@ export default defineComponent({
       disableOverlay: 'app/disableOverlay',
       setAnalysisName: 'app/setAnalysisName',
     }),
-    openKBExplorer() {
-      this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG } });
-    },
     addConcept() {
       this.$emit('add-concept');
     },

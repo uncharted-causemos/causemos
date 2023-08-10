@@ -4,13 +4,39 @@
       <h4>Document snippets</h4>
     </header>
     <section>
-      <h5 v-if="selectedUpstreamNodeName != null">
-        Snippets related to <strong>{{ props.selectedNodeName }}</strong> and
+      <p class="subdued" v-if="selectedUpstreamNodeName != null">
+        related to <strong>{{ props.selectedNodeName }}</strong> and
         <strong>{{ props.selectedUpstreamNodeName }}</strong>
-      </h5>
-      <h5 v-else>
-        Snippets related to <strong>{{ props.selectedNodeName }}</strong>
-      </h5>
+      </p>
+      <p class="subdued" v-else>
+        related to <strong>{{ props.selectedNodeName }}</strong>
+      </p>
+      <div class="geoContext subdued">
+        <button
+          v-if="!editGeoContext && geoContextString.length === 0"
+          class="btn btn-sm btn-default"
+          @click="toggleGeoContext"
+        >
+          <i class="fa fa-globe" />&nbsp;Add geographic context
+        </button>
+        <div class="showGeoContext" v-if="!editGeoContext && geoContextString.length > 0">
+          <p class="subdued">in {{ geoContextString }}</p>
+          <button class="btn btn-sm btn-default" @click="toggleGeoContext">
+            Edit geographic context
+          </button>
+        </div>
+        <div v-if="editGeoContext" class="geo-context-editor">
+          <div class="geo-context-input">
+            <p class="subdued">in</p>
+            <input v-focus class="form-control" v-model="geoContextStringLive" />
+          </div>
+          <div class="geo-context-controls">
+            <button class="btn btn-sm btn-default" @click="clearGeoContextString">Clear</button>
+            <button class="btn btn-sm btn-primary" @click="doneSettingGeoContext">Done</button>
+          </div>
+        </div>
+      </div>
+
       <div v-if="snippetsForSelectedNode === null" class="loading-indicator">
         <i class="fa fa-spin fa-spinner pane-loading-icon" />
         <p>{{ SNIPPETS_LOADING }}</p>
@@ -75,13 +101,19 @@ import {
   DojoParagraphHighlight,
   ScrollData,
 } from '@/types/IndexDocuments';
-import { toRefs, watch, ref } from 'vue';
+import { toRefs, watch, ref, onMounted } from 'vue';
 import ModalDocument from '@/components/modals/modal-document.vue';
 
 const props = defineProps<{
   selectedNodeName: string;
   selectedUpstreamNodeName?: string | null;
+  geoContextString: string;
 }>();
+
+const emit = defineEmits<{
+  (e: 'save-geo-context', value: string): void;
+}>();
+
 const { selectedNodeName, selectedUpstreamNodeName } = toRefs(props);
 const expandedDocumentId = ref<string | null>(null);
 const fragmentParagraphLocation = ref<number>(1);
@@ -96,6 +128,25 @@ const NO_TEXT = 'Text not available';
 const snippetsForSelectedNode = ref<Snippet[] | null>(null);
 const highlightsForSelected = ref<DojoParagraphHighlight[]>([]);
 const allHighlights = ref<DojoParagraphHighlights | null>(null);
+const editGeoContext = ref<boolean>(false);
+const geoContextStringLive = ref<string>(''); // changes during editing (too many events)
+
+onMounted(() => {
+  geoContextStringLive.value = props.geoContextString;
+});
+const clearGeoContextString = () => {
+  geoContextStringLive.value = '';
+  emit('save-geo-context', geoContextStringLive.value);
+  toggleGeoContext();
+};
+const toggleGeoContext = () => {
+  editGeoContext.value = !editGeoContext.value;
+};
+const doneSettingGeoContext = () => {
+  toggleGeoContext();
+  emit('save-geo-context', geoContextStringLive.value);
+};
+
 const handleReturnedData = (data: ScrollData, previousContent: string | null) => {
   const content: string = previousContent || '';
   return content.concat(
@@ -139,7 +190,7 @@ const prepareHighlightsForDocumentViewer = (index: number) => {
 };
 
 watch(
-  [selectedNodeName, selectedUpstreamNodeName],
+  [selectedNodeName, selectedUpstreamNodeName, () => props.geoContextString],
   async () => {
     // Clear any previously-fetched snippets
     snippetsForSelectedNode.value = null;
@@ -150,10 +201,14 @@ watch(
     const fetchingSnippetsFor = selectedNodeName.value;
 
     // ensure search string includes source and target name data.
-    const searchString =
+    let searchString =
       props.selectedUpstreamNodeName != null
         ? `${props.selectedNodeName} and ${props.selectedUpstreamNodeName}`
         : props.selectedNodeName;
+
+    if (props.geoContextString.length > 0) {
+      searchString = `${searchString} in ${props.geoContextString}`;
+    }
 
     const queryResults: ParagraphSearchResponse = await searchParagraphs(searchString);
     if (fetchingSnippetsFor !== selectedNodeName.value) {
@@ -204,10 +259,47 @@ watch(
 @import '@/styles/variables';
 @import '@/styles/uncharted-design-tokens';
 
+.geoContext {
+  margin-bottom: 10px;
+
+  .geo-context-input {
+    display: flex;
+    flex-direction: row;
+    margin: 5px 0;
+
+    input {
+      margin-left: 5px;
+      width: 100%;
+      height: 1.6em;
+      background-color: white;
+    }
+  }
+  .showGeoContext {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    p {
+      padding: 4px 0;
+      width: 100%;
+    }
+  }
+
+  .geo-context-controls {
+    display: flex;
+    flex-direction: row;
+    align-items: end;
+    justify-content: end;
+    column-gap: 5px;
+    button.btn-primary {
+      background-color: $accent-main;
+    }
+  }
+}
+
 .index-document-snippets-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 2px;
 }
 
 header {

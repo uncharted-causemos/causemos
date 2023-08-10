@@ -179,6 +179,17 @@ export default defineComponent({
         quantitativeAnalysisItem.value,
         { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
       ],
+      indexResultsDataExplorer: [
+        analysisProjectItem.value,
+        indexStructureItem.value,
+        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
+      ],
+      projectionsDataExplorer: [
+        analysisProjectItem.value,
+        indexStructureItem.value,
+        indexProjectionsItem.value,
+        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
+      ],
       qualitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       quantitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       indexStructure: [analysisProjectItem.value, indexStructureItem.value],
@@ -193,9 +204,12 @@ export default defineComponent({
         qualitativeAnalysisItem.value,
         { icon: 'fa-circle', route: null, text: 'Node drilldown' },
       ],
+      documents: [
+        analysisProjectItem.value,
+        { icon: 'fa-book', route: null, text: 'Explore documents' },
+      ],
       // 'nodeDataDrilldown',
       // 'nodeDataExplorer',
-      // 'kbExplorer',
       // 'dataExplorer',
     }));
 
