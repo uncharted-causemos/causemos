@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { Ref, ref, watch, readonly, computed } from 'vue';
-import { IndexAnalysisState } from '@/types/Analysis';
+import { CountryFilter, IndexAnalysisState } from '@/types/Analysis';
 import { getAnalysis, saveAnalysisState } from '../analysis-service';
 import { createIndexAnalysisObject } from '../analysis-service-new';
 
@@ -133,6 +133,24 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     _saveState(analysisId.value, _analysisState.value);
   };
 
+  const deleteCountryFilter = (filterToDelete: CountryFilter) => {
+    _analysisState.value = {
+      ..._analysisState.value,
+      countryFilters: _analysisState.value.countryFilters.filter(
+        (item: CountryFilter) => item.countryName !== filterToDelete.countryName
+      ),
+    };
+    _saveState(analysisId.value, _analysisState.value);
+  };
+
+  const addCountryFilter = (update: CountryFilter) => {
+    _analysisState.value = {
+      ..._analysisState.value,
+      countryFilters: [..._analysisState.value.countryFilters, update],
+    };
+    _saveState(analysisId.value, _analysisState.value);
+  };
+
   const countryContextForSnippets = computed(() => {
     if (!_analysisState.value.countryContextForSnippets) {
       setCountryContextForSnippets('');
@@ -148,11 +166,29 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     _saveState(analysisId.value, _analysisState.value);
   };
 
+  const updateCountryFilter = (update: CountryFilter) => {
+    const filters = [..._analysisState.value.countryFilters];
+    const index = filters.findIndex((filter) => filter.countryName === update.countryName);
+    if (index >= 0) {
+      filters[index].active = update.active;
+    }
+    _analysisState.value.countryFilters = filters;
+    _saveState(analysisId.value, _analysisState.value);
+  };
+
+  const getCountryFilters = () => {
+    return _analysisState.value.countryFilters;
+  };
+
   return {
+    addCountryFilter,
     analysisName,
     countryContextForSnippets,
+    deleteCountryFilter,
+    getCountryFilters,
     indexResultsSettings,
     indexProjectionSettings,
+    updateCountryFilter,
     updateIndexResultsSettings,
     updateIndexProjectionSettings,
     refresh: fetchAnalysis,

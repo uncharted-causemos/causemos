@@ -5,6 +5,7 @@ import {
   DataAnalysisState,
   RegionRankingItemStates,
   IndexAnalysisState,
+  CountryFilter,
 } from '@/types/Analysis';
 import {
   BinningOptions,
@@ -37,12 +38,28 @@ export const createDataAnalysisObject = (analysisItems?: AnalysisItem[]): DataAn
   };
 };
 
+export const defaultCountryFilters: CountryFilter[] = [
+  {
+    countryName: 'United States',
+    active: false,
+  },
+  {
+    countryName: 'Russia',
+    active: false,
+  },
+  {
+    countryName: 'China',
+    active: false,
+  },
+];
+
 export const createIndexAnalysisObject = (): IndexAnalysisState => {
   return {
     index: createNewOutputIndex(),
     workBench: [],
     resultsSettings: createNewIndexResultsSettings(),
     projectionSettings: createNewIndexProjectionSettings(),
+    countryFilters: defaultCountryFilters,
     countryContextForSnippets: '',
   };
 };

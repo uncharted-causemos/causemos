@@ -1,4 +1,5 @@
 const { Project } = require('./project');
+const { Regions } = require('./regions');
 const { DocumentContext } = require('./document-context');
 const { Statement } = require('./statement');
 const { Datacube } = require('./datacube');
@@ -34,6 +35,7 @@ const RESOURCE = Object.freeze({
   DATA_MODEL_RUN: 'data-model-run',
   DATA_DATACUBE: 'data-datacube',
   GADM_NAME: 'gadm-name',
+  REGIONS: 'regions',
 
   // Misc
   AUDIT: 'audit',
@@ -61,6 +63,8 @@ class Adapter {
       return new Project(type);
     } else if (type === RESOURCE.DATA_DATACUBE) {
       return new Datacube(type);
+    } else if (type === RESOURCE.REGIONS) {
+      return new Regions(type);
     } else {
       return new Base(type);
     }

@@ -13,9 +13,13 @@
           @select-element="selectElement"
           @highlight-edge="highlightEdge"
           @clear-highlight="clearHighlight"
+          @add-country-filter="addCountryFilter"
+          @update-country-filter="updateCountryFilter"
+          @delete-country-filter="deleteCountryFilter"
           :selected-element-id="selectedElementId"
           :highlight-edge-id="highlightEdgeId"
           :geo-context-string="countryContextForSnippets"
+          :country-filters="countryFilters"
           @save-geo-context="(geoContext: string) => setCountryContextForSnippets(geoContext)"
         />
         <IndexLegend class="legend" :is-projection-space="false" />
@@ -61,8 +65,16 @@ const analysisId = computed(() => route.params.analysisId as string);
 const projectId = computed(() => route.params.project as string);
 const projectType = computed(() => route.params.projectType as string);
 
-const { analysisName, refresh, setCountryContextForSnippets, countryContextForSnippets } =
-  useIndexAnalysis(analysisId);
+const {
+  analysisName,
+  refresh,
+  deleteCountryFilter,
+  addCountryFilter,
+  updateCountryFilter,
+  getCountryFilters,
+  setCountryContextForSnippets,
+  countryContextForSnippets,
+} = useIndexAnalysis(analysisId);
 
 const indexWorkBench = useIndexWorkBench();
 const indexTree = useIndexTree();
@@ -71,6 +83,15 @@ const isStateLoaded = ref(false);
 
 const selectedElementId = ref<SelectableIndexElementId | null>(null);
 const highlightEdgeId = ref<SelectableIndexElementId | null>(null);
+
+const countryFilters = computed(() => {
+  const filters = getCountryFilters();
+  if (filters) {
+    return filters;
+  }
+  console.log('WARNING: could not find filters in analysis state object.');
+  return [];
+});
 
 const selectElement = (id: SelectableIndexElementId) => {
   deselectAllElements();

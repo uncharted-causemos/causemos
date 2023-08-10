@@ -1,17 +1,24 @@
 import API from '@/api/api';
-import { DojoParagraphDetails, GetDocumentsResponse } from '@/types/IndexDocuments';
+import {
+  DojoParagraphDetails,
+  GetDocumentsResponse,
+  ParagraphSearchResponse,
+  Document,
+  DojoParagraphHighlights,
+} from '@/types/IndexDocuments';
 
 const SEARCH_PATH = 'dojo/paragraphs/search';
 const GET_DOC_PATH = 'dojo/documents';
 const GET_HIGHLIGHTS = 'dojo/paragraphs/highlight';
 
-export const searchParagraphs = async (searchString: string) => {
-  if (searchString) {
-    const result = await API.get(SEARCH_PATH, {
-      params: { searchString: encodeURI(searchString) },
-    });
-    return result.data;
-  }
+export const searchParagraphs = async (
+  searchString: string,
+  size: number
+): Promise<ParagraphSearchResponse> => {
+  const result = await API.get(SEARCH_PATH, {
+    params: { searchString: encodeURI(searchString), size },
+  });
+  return result.data;
 };
 
 export enum DocumentSortField {
@@ -41,14 +48,14 @@ export const getDocuments = async (
   return result.data;
 };
 
-export const getDocument = async (docId: string) => {
-  if (docId) {
-    const result = await API.get(`${GET_DOC_PATH}/${docId}`);
-    return result.data;
-  }
+export const getDocument = async (docId: string): Promise<Document> => {
+  const result = await API.get(`${GET_DOC_PATH}/${docId}`);
+  return result.data;
 };
 
-export const getHighlights = async (details: DojoParagraphDetails) => {
+export const getHighlights = async (
+  details: DojoParagraphDetails
+): Promise<DojoParagraphHighlights> => {
   details.query = encodeURI(details.query);
   const result = await API.post(GET_HIGHLIGHTS, details, {
     headers: {
