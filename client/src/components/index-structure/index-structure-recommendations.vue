@@ -1,7 +1,7 @@
 <template>
   <div class="index-structure-recommendations-container">
     <p v-if="parentNode !== null" class="subdued title">
-      {{ `${title} ${geoContextString.length > 0 ? ' in' : ''} ` }}
+      {{ `${title} ${geoContextString.length > 0 ? ' in' : ''} ${geoContextString}` }}
     </p>
     <geographic-context
       :display-list-in-component="false"
@@ -40,8 +40,12 @@ const parentNodeName = computed(() => props.parentNode?.name ?? null);
 
 const recommendations = ref<string[]>([]);
 const isLoading = ref(false);
+const geoContextQuery = computed(() => {
+  return props.geoContextString.trim();
+});
+
 watch(
-  [parentNodeName],
+  [parentNodeName, geoContextQuery],
   async () => {
     recommendations.value = [];
     if (parentNodeName.value === null) {
@@ -51,8 +55,12 @@ watch(
     const savedParentName = parentNodeName.value;
     isLoading.value = true;
     const query: CausalRecommenderQuery = {
-      topic: parentNodeName.value,
+      topic:
+        geoContextQuery.value.length > 0
+          ? `${parentNodeName.value} in ${geoContextQuery.value}`
+          : parentNodeName.value,
     };
+
     const result = await getCauses(query);
     if (parentNodeName.value !== savedParentName) {
       // Query has changed since the fetch started, so ignore the results
