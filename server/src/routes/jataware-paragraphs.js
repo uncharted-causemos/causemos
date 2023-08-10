@@ -27,9 +27,9 @@ router.post(
 router.get(
   '/search',
   asyncHandler(async (req, res) => {
-    const { searchString } = req.query;
+    const { searchString, size } = req.query;
     if (searchString) {
-      const result = await paragraphSearchService.searchParagraphs(searchString, '', 10);
+      const result = await paragraphSearchService.searchParagraphs(searchString, '', size);
       res.status(200);
       res.json(result);
     } else {

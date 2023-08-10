@@ -8,6 +8,7 @@ export interface Snippet {
   documentTitle: string;
   documentAuthor: string;
   documentSource: string;
+  documentCreationDate: string;
 }
 
 export interface MatchScore {
