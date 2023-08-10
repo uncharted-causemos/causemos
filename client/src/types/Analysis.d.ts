@@ -61,6 +61,13 @@ export interface CountryFilter {
   active: boolean;
 }
 
+export interface ProjectionDateRange {
+  startMonth: number;
+  startYear: number;
+  endMonth: number;
+  endYear: number;
+}
+
 export interface IndexAnalysisState {
   /** Primary index tree */
   index: ConceptNode;
@@ -74,4 +81,6 @@ export interface IndexAnalysisState {
   countryFilters: CountryFilter[];
   /** Country context for snippets */
   countryContextForSnippets: string;
+  /** date range for projection view */
+  projectionDateRange: ProjectionDateRange;
 }

@@ -214,7 +214,6 @@
 </template>
 
 <script setup lang="ts">
-import _ from 'lodash';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -267,8 +266,14 @@ const route = useRoute();
 const router = useRouter();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const { analysisName, refresh, indexProjectionSettings, updateIndexProjectionSettings } =
-  useIndexAnalysis(analysisId);
+const {
+  analysisName,
+  refresh,
+  indexProjectionSettings,
+  updateIndexProjectionSettings,
+  updateProjectionDateRange,
+  getProjectionDateRange,
+} = useIndexAnalysis(analysisId);
 // If selectedNodeId === null, no node is selected and we're looking at the graph view
 const selectedNodeId = ref<string | null>(null);
 const selectElement = (id: SelectableIndexElementId) => {
@@ -286,6 +291,13 @@ onMounted(async () => {
   store.dispatch('app/setAnalysisName', '');
   await refresh();
   store.dispatch('app/setAnalysisName', analysisName.value);
+
+  const projectionDateRange = getProjectionDateRange();
+  projectionEndMonth.value = projectionDateRange.endMonth;
+  projectionEndYear.value = projectionDateRange.endYear;
+  projectionStartMonth.value = projectionDateRange.startMonth;
+  projectionStartYear.value = projectionDateRange.startYear;
+  saveProjectionDates();
 });
 
 const modifyStructure = () => {
@@ -404,6 +416,13 @@ const selectableYears = computed(() => {
 const onDoneEditingTimeRange = () => {
   isEditingTimeRange.value = false;
   saveProjectionDates();
+  updateProjectionDateRange({
+    // keep a copy of the selected range in the analysis object (persistent data)
+    endMonth: projectionEndMonth.value,
+    endYear: projectionEndYear.value,
+    startMonth: projectionStartMonth.value,
+    startYear: projectionStartYear.value,
+  });
 };
 
 // Scenario Management
@@ -525,7 +544,7 @@ const tryToUpdateStateFromInsight = async (insightId: string) => {
   // Prompt the user for confirmation if some scenarios will be removed.
   const scenarioIdsInInsight = dataState.scenarios.map(({ id }) => id);
   const scenariosThatWillBeRemoved = scenarios.value.filter(
-    (scenario) => scenarioIdsInInsight.includes(scenario.id) === false
+    (scenario) => !scenarioIdsInInsight.includes(scenario.id)
   );
   if (scenariosThatWillBeRemoved.length === 0) {
     confirmUpdateStateFromInsight();
@@ -755,7 +774,7 @@ main {
   z-index: 999;
   opacity: 0.4;
   background: white;
-  top: 0px;
-  left: 0px;
+  top: 0;
+  left: 0;
 }
 </style>

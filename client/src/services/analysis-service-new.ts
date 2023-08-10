@@ -6,6 +6,7 @@ import {
   RegionRankingItemStates,
   IndexAnalysisState,
   CountryFilter,
+  ProjectionDateRange,
 } from '@/types/Analysis';
 import {
   BinningOptions,
@@ -53,6 +54,13 @@ export const defaultCountryFilters: CountryFilter[] = [
   },
 ];
 
+export const defaultProjectionDateRange: ProjectionDateRange = {
+  endMonth: 0,
+  endYear: 2025,
+  startMonth: 0,
+  startYear: 1990,
+};
+
 export const createIndexAnalysisObject = (): IndexAnalysisState => {
   return {
     index: createNewOutputIndex(),
@@ -61,6 +69,7 @@ export const createIndexAnalysisObject = (): IndexAnalysisState => {
     projectionSettings: createNewIndexProjectionSettings(),
     countryFilters: defaultCountryFilters,
     countryContextForSnippets: '',
+    projectionDateRange: defaultProjectionDateRange,
   };
 };
 
