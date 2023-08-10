@@ -4,13 +4,39 @@
       <h4>Document snippets</h4>
     </header>
     <section>
-      <h5 v-if="selectedUpstreamNodeName != null">
-        Snippets related to <strong>{{ props.selectedNodeName }}</strong> and
+      <p class="subdued" v-if="selectedUpstreamNodeName != null">
+        related to <strong>{{ props.selectedNodeName }}</strong> and
         <strong>{{ props.selectedUpstreamNodeName }}</strong>
-      </h5>
-      <h5 v-else>
-        Snippets related to <strong>{{ props.selectedNodeName }}</strong>
-      </h5>
+      </p>
+      <p class="subdued" v-else>
+        related to <strong>{{ props.selectedNodeName }}</strong>
+      </p>
+      <div class="geoContext subdued">
+        <button
+          v-if="!editGeoContext && geoContextString.length === 0"
+          class="btn btn-sm btn-default"
+          @click="toggleGeoContext"
+        >
+          <i class="fa fa-globe" />&nbsp;Add geographic context
+        </button>
+        <div class="showGeoContext" v-if="!editGeoContext && geoContextString.length > 0">
+          <p class="subdued">in {{ geoContextString }}</p>
+          <button class="btn btn-sm btn-default" @click="toggleGeoContext">
+            Edit geographic context
+          </button>
+        </div>
+        <div v-if="editGeoContext" class="geo-context-editor">
+          <div class="geo-context-input">
+            <p class="subdued">in</p>
+            <input v-focus class="form-control" v-model="geoContextStringLive" />
+          </div>
+          <div class="geo-context-controls">
+            <button class="btn btn-sm btn-default" @click="clearGeoContextString">Clear</button>
+            <button class="btn btn-sm btn-primary" @click="doneSettingGeoContext">Done</button>
+          </div>
+        </div>
+      </div>
+
       <div v-if="isLoadingSnippets" class="loading-indicator">
         <i class="fa fa-spin fa-spinner pane-loading-icon" />
         <p>Loading snippets...</p>
@@ -43,14 +69,20 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, ref, computed } from 'vue';
+import { toRefs, computed, ref, onMounted } from 'vue';
 import ModalDocument from '@/components/modals/modal-document.vue';
 import useParagraphSearchResults from '@/services/composables/useParagraphSearchResults';
 
 const props = defineProps<{
   selectedNodeName: string;
   selectedUpstreamNodeName: string | null;
+  geoContextString: string;
 }>();
+
+const emit = defineEmits<{
+  (e: 'save-geo-context', value: string): void;
+}>();
+
 const { selectedNodeName, selectedUpstreamNodeName } = toRefs(props);
 const expandedSnippetIndex = ref<number | null>(null);
 const expandedSnippet = computed(() => {
@@ -69,11 +101,35 @@ const paragraphToScrollToOnLoad = computed(() =>
       }
 );
 
-const searchString = computed(() =>
-  selectedUpstreamNodeName.value != null
-    ? `${selectedNodeName.value} and ${selectedUpstreamNodeName.value}`
-    : selectedNodeName.value
-);
+const editGeoContext = ref<boolean>(false);
+const geoContextStringLive = ref<string>(''); // changes during editing (too many events)
+
+onMounted(() => {
+  geoContextStringLive.value = props.geoContextString;
+});
+const clearGeoContextString = () => {
+  geoContextStringLive.value = '';
+  emit('save-geo-context', geoContextStringLive.value);
+  toggleGeoContext();
+};
+const toggleGeoContext = () => {
+  editGeoContext.value = !editGeoContext.value;
+};
+const doneSettingGeoContext = () => {
+  toggleGeoContext();
+  emit('save-geo-context', geoContextStringLive.value);
+};
+
+const searchString = computed(() => {
+  let result =
+    selectedUpstreamNodeName.value != null
+      ? `${selectedNodeName.value} and ${selectedUpstreamNodeName.value}`
+      : selectedNodeName.value;
+  if (props.geoContextString.length > 0) {
+    result = `${result} in ${props.geoContextString}`;
+  }
+  return result;
+});
 
 const {
   results: snippets,
@@ -87,10 +143,47 @@ const {
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/documents';
 
+.geoContext {
+  margin-bottom: 10px;
+
+  .geo-context-input {
+    display: flex;
+    flex-direction: row;
+    margin: 5px 0;
+
+    input {
+      margin-left: 5px;
+      width: 100%;
+      height: 1.6em;
+      background-color: white;
+    }
+  }
+  .showGeoContext {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    p {
+      padding: 4px 0;
+      width: 100%;
+    }
+  }
+
+  .geo-context-controls {
+    display: flex;
+    flex-direction: row;
+    align-items: end;
+    justify-content: end;
+    column-gap: 5px;
+    button.btn-primary {
+      background-color: $accent-main;
+    }
+  }
+}
+
 .index-document-snippets-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 2px;
 }
 
 header {

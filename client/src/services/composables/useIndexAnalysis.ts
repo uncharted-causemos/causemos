@@ -133,13 +133,30 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     _saveState(analysisId.value, _analysisState.value);
   };
 
+  const countryContextForSnippets = computed(() => {
+    if (!_analysisState.value.countryContextForSnippets) {
+      setCountryContextForSnippets('');
+    }
+    return _analysisState.value.countryContextForSnippets;
+  });
+
+  const setCountryContextForSnippets = (countryContext: string) => {
+    _analysisState.value = {
+      ..._analysisState.value,
+      countryContextForSnippets: countryContext,
+    };
+    _saveState(analysisId.value, _analysisState.value);
+  };
+
   return {
     analysisName,
+    countryContextForSnippets,
     indexResultsSettings,
     indexProjectionSettings,
     updateIndexResultsSettings,
     updateIndexProjectionSettings,
     refresh: fetchAnalysis,
+    setCountryContextForSnippets,
     waitForStateInSync,
   };
 }

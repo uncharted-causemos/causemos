@@ -47,6 +47,8 @@
       <IndexDocumentSnippets
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="selectedUpstreamNodeName"
+        :geo-context-string="countryContextForSnippets"
+        @saveGeoContext="(value) => emit('save-geo-context', value)"
       />
     </template>
     <!-- Output node is selected -->
@@ -75,7 +77,12 @@
       </header>
       <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
       <IndexResultsPreview :analysis-id="indexTree.getAnalysisId()" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="null"
+        :geo-context-string="countryContextForSnippets"
+        @saveGeoContext="(value) => emit('save-geo-context', value)"
+      />
     </template>
     <!-- Node without dataset is selected -->
     <template v-else-if="selectedNode && isConceptNodeWithoutDataset(selectedNode)">
@@ -117,7 +124,12 @@
         </div>
       </header>
       <IndexComponentWeights :target-name="nodeName" :inputs="selectedNode.components ?? []" />
-      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="null"
+        :geo-context-string="countryContextForSnippets"
+        @saveGeoContext="(value) => emit('save-geo-context', value)"
+      />
     </template>
     <!-- Node with dataset is selected -->
     <template v-else-if="selectedNode && isConceptNodeWithDatasetAttached(selectedNode)">
@@ -190,7 +202,12 @@
           </p>
         </div>
       </section>
-      <IndexDocumentSnippets :selected-node-name="panelTitle" :selected-upstream-node-name="null" />
+      <IndexDocumentSnippets
+        :selected-node-name="panelTitle"
+        :selected-upstream-node-name="null"
+        :geo-context-string="countryContextForSnippets"
+        @saveGeoContext="(value) => emit('save-geo-context', value)"
+      />
     </template>
   </div>
 </template>
@@ -223,11 +240,13 @@ import IndexTemporalCoveragePreview from './index-temporal-coverage-preview.vue'
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
+  countryContextForSnippets: string;
 }>();
 
 const emit = defineEmits<{
   (e: 'delete-edge', value: SelectableIndexElementId): void;
   (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
+  (e: 'save-geo-context', value: string): void;
 }>();
 
 const indexTree = useIndexTree();
