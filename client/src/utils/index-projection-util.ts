@@ -12,7 +12,7 @@ import { COLORS } from './colors-util';
 import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { ForecastMethodSelectionReason } from './forecast';
 import { ProjectionDataWarning } from '@/types/Enums';
-import { getMonthStingFromTimestamp, getYearFromTimestamp } from './date-util';
+import dateFormatter from '@/formatters/date-formatter';
 
 export const NO_COUNTRY_SELECTED_VALUE = '';
 
@@ -107,13 +107,16 @@ const testNoPattern = (runInfo: ProjectionRunInfoNode): boolean => {
 const createOldDataWarningMessage = (timeseries: TimeseriesPoint[]) => {
   if (timeseries.length === 0) return '';
   const mostRecentDate = timeseries[timeseries.length - 1].timestamp;
-  const month = getMonthStingFromTimestamp(mostRecentDate);
-  const year = getYearFromTimestamp(mostRecentDate);
-  return `The most recent data point is from ${month} ${year}. The gap since that point may cause projections to be unreliable.`;
+  return `The most recent data point is from ${dateFormatter(
+    mostRecentDate,
+    'MMMM YYYY'
+  )}. The gap since that point may cause projections to be unreliable.`;
 };
 
 const createInsufficientDataWarningMessage = (timeseries: TimeseriesPoint[]) => {
-  return `The time series contains ${timeseries.length} data points. More points will make it easier to identify and extend trends.`;
+  return `The time series contains ${timeseries.length} data point${
+    timeseries.length === 1 ? '' : 's'
+  }. More points will make it easier to identify and extend trends.`;
 };
 
 const createNoPatternWarningMessage = () => {
