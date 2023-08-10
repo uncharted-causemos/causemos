@@ -205,7 +205,7 @@ const deleteCountryFilter = (filterToDelete: CountryFilter) => {
   emit('delete-country-filter', filterToDelete);
 };
 
-watch([searchText, selectedCountries.value], async () => {
+watch([searchText, selectedCountries], async () => {
   // Save a copy of the current search text value in case it changes before results are fetched
   // note: we are watching selected countries though not using them here YET.  The semantic search
   //       cannot take the filter presently.  The models are filtered after the semantic return currently.
