@@ -98,13 +98,11 @@ const loadInitialContent = async () => {
     return;
   }
 
-  console.log(props.paragraphToScrollToOnLoad.paragraphIndexWithinDocument);
   let allButLastParagraphs: ScrollDataParagraph[] = [];
   while (
     loadedParagraphCount.value < props.paragraphToScrollToOnLoad.paragraphIndexWithinDocument &&
     scrollId.value !== null
   ) {
-    console.log('currentlyLoaded', loadedParagraphCount.value);
     allButLastParagraphs = [...allButLastParagraphs, ...lastResponse.paragraphs];
     lastResponse = await getDocumentParagraphs(
       documentId.value,
