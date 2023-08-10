@@ -8,7 +8,7 @@ const props = defineProps<{
 
 const geoContextStringLive = ref<string>('');
 onMounted(() => {
-  geoContextStringLive.value = props.geoContextString;
+  geoContextStringLive.value = props.geoContextString.trim();
 });
 
 const editGeoContext = ref<boolean>(false);

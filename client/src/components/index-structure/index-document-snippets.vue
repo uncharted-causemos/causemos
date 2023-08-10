@@ -11,32 +11,11 @@
       <p class="subdued" v-else>
         related to <strong>{{ props.selectedNodeName }}</strong>
       </p>
-      <div class="geoContext subdued">
-        <button
-          v-if="!editGeoContext && geoContextString.length === 0"
-          class="btn btn-sm btn-default"
-          @click="toggleGeoContext"
-        >
-          <i class="fa fa-globe" />&nbsp;Add geographic context
-        </button>
-        <div class="showGeoContext" v-if="!editGeoContext && geoContextString.length > 0">
-          <p class="subdued">in {{ geoContextString }}</p>
-          <button class="btn btn-sm btn-default" @click="toggleGeoContext">
-            Edit geographic context
-          </button>
-        </div>
-        <div v-if="editGeoContext" class="geo-context-editor">
-          <div class="geo-context-input">
-            <p class="subdued">in</p>
-            <input v-focus class="form-control" v-model="geoContextStringLive" />
-          </div>
-          <div class="geo-context-controls">
-            <button class="btn btn-sm btn-default" @click="clearGeoContextString">Clear</button>
-            <button class="btn btn-sm btn-primary" @click="doneSettingGeoContext">Done</button>
-          </div>
-        </div>
-      </div>
-
+      <geographic-context
+        :display-list-in-component="true"
+        :geo-context-string="geoContextString"
+        @save-geo-context="(context: string) => emit('save-geo-context', context)"
+      />
       <div v-if="snippetsForSelectedNode === null" class="loading-indicator">
         <i class="fa fa-spin fa-spinner pane-loading-icon" />
         <p>{{ SNIPPETS_LOADING }}</p>
@@ -101,8 +80,9 @@ import {
   DojoParagraphHighlight,
   ScrollData,
 } from '@/types/IndexDocuments';
-import { toRefs, watch, ref, onMounted } from 'vue';
+import { toRefs, watch, ref } from 'vue';
 import ModalDocument from '@/components/modals/modal-document.vue';
+import GeographicContext from '@/components/geographic-context.vue';
 
 const props = defineProps<{
   selectedNodeName: string;
@@ -128,24 +108,6 @@ const NO_TEXT = 'Text not available';
 const snippetsForSelectedNode = ref<Snippet[] | null>(null);
 const highlightsForSelected = ref<DojoParagraphHighlight[]>([]);
 const allHighlights = ref<DojoParagraphHighlights | null>(null);
-const editGeoContext = ref<boolean>(false);
-const geoContextStringLive = ref<string>(''); // changes during editing (too many events)
-
-onMounted(() => {
-  geoContextStringLive.value = props.geoContextString;
-});
-const clearGeoContextString = () => {
-  geoContextStringLive.value = '';
-  emit('save-geo-context', geoContextStringLive.value);
-  toggleGeoContext();
-};
-const toggleGeoContext = () => {
-  editGeoContext.value = !editGeoContext.value;
-};
-const doneSettingGeoContext = () => {
-  toggleGeoContext();
-  emit('save-geo-context', geoContextStringLive.value);
-};
 
 const handleReturnedData = (data: ScrollData, previousContent: string | null) => {
   const content: string = previousContent || '';
