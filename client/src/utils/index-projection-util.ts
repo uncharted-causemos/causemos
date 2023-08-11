@@ -82,6 +82,37 @@ export const getProjectionsForNode = (projections: IndexProjection[], nodeId: st
   return projectionTimeseries;
 };
 
+/**
+ * Get the array of historical timeseries for the node with given nodeId
+ * @param historicalData historical data
+ * @param nodeId node id
+ */
+export const getHistoricalDataForNode = (
+  historicalData: { [projectionId: string]: { [nodeId: string]: TimeseriesPoint[] } },
+  nodeId: string
+) => {
+  return Object.entries(historicalData).map(([projectionId, hData]) => {
+    return {
+      id: `${projectionId}_${nodeId}`,
+      points: hData[nodeId] ?? [],
+    };
+  });
+};
+
+/**
+ * Get the array of constraints for the node with given nodeId
+ * @param scenarios projection scenarios. Note that scenario id is same as corresponding projection id
+ * @param nodeId node id
+ */
+export const getConstraintsForNode = (scenarios: IndexProjectionScenario[], nodeId: string) => {
+  return scenarios.map((scenario) => {
+    return {
+      id: `${scenario.id}_${nodeId}`,
+      constraints: scenario.constraints[nodeId] ?? [],
+    };
+  });
+};
+
 /** Data quality warning utilities  */
 
 const WARNING_INSUFFICIENT_DATA_MINCOUNT = 5;
@@ -108,32 +139,31 @@ export const testNoPattern = (runInfo: ProjectionRunInfoNode): boolean => {
 
 export const checkProjectionWarnings = (
   projectionData: IndexProjection[],
-  historicalDataByProjectionId: Map<string, Map<string, TimeseriesPoint[]>>,
+  historicalDataByProjectionId: { [projectionId: string]: { [nodeId: string]: TimeseriesPoint[] } },
   targetPeriod: { start: number; end: number }
 ): { [nodeId: string]: IndexProjectionNodeDataWarning[] } => {
   const allProjectionWarnings: IndexProjectionNodeDataWarning[] = [];
   projectionData.forEach((projection) => {
     // Check warnings from historical data
-    const historicalData = historicalDataByProjectionId.get(projection.id);
-    historicalData &&
-      historicalData.forEach((timeseries, nodeId) => {
-        if (testOldData(timeseries, targetPeriod.start)) {
-          allProjectionWarnings.push({
-            nodeId,
-            projectionId: projection.id,
-            color: projection.color,
-            warning: ProjectionDataWarning.OldData,
-          });
-        }
-        if (testInsufficientData(timeseries)) {
-          allProjectionWarnings.push({
-            nodeId,
-            projectionId: projection.id,
-            color: projection.color,
-            warning: ProjectionDataWarning.InsufficientData,
-          });
-        }
-      });
+    const historicalData = historicalDataByProjectionId[projection.id] ?? {};
+    Object.entries(historicalData).forEach(([nodeId, timeseries]) => {
+      if (testOldData(timeseries, targetPeriod.start)) {
+        allProjectionWarnings.push({
+          nodeId,
+          projectionId: projection.id,
+          color: projection.color,
+          warning: ProjectionDataWarning.OldData,
+        });
+      }
+      if (testInsufficientData(timeseries)) {
+        allProjectionWarnings.push({
+          nodeId,
+          projectionId: projection.id,
+          color: projection.color,
+          warning: ProjectionDataWarning.InsufficientData,
+        });
+      }
+    });
     // Check warnings from projection
     Object.entries(projection.runInfo).forEach(([nodeId, info]) => {
       if (testNoPattern(info)) {

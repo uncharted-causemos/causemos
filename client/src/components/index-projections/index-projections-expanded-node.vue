@@ -80,6 +80,7 @@
         :is-inverted="isInvertedData"
       />
     </div>
+    <IndexProjectionsExpandedNodeResilience />
   </div>
 </template>
 
@@ -100,6 +101,7 @@ import useModelMetadataSimple from '@/services/composables/useModelMetadataSimpl
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 import { EditMode } from '@/utils/projection-util';
 import IndexProjectionNodeWarning from './index-projection-node-warning.vue';
+import IndexProjectionsExpandedNodeResilience from './index-projections-expanded-node-resilience.vue';
 
 const optionsButtonMenu = [
   {

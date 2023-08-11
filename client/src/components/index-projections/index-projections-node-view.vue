@@ -84,13 +84,17 @@ import { getProjectionsForNode } from '@/utils/index-projection-util';
 import {
   IndexProjection,
   IndexProjectionNodeDataWarning,
+  IndexProjectionScenario,
   SelectableIndexElementId,
 } from '@/types/Index';
 import IndexProjectionsNode from './index-projections-node.vue';
 import IndexProjectionsExpandedNode from './index-projections-expanded-node.vue';
 import { EditMode } from '@/utils/projection-util';
+import { TimeseriesPoint } from '@/types/Timeseries';
 const props = defineProps<{
   selectedNodeId: string | null;
+  historicalData: { [projectionId: string]: { [nodeId: string]: TimeseriesPoint[] } };
+  scenarios: IndexProjectionScenario[];
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   projections: IndexProjection[];
