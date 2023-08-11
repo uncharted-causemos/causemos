@@ -1,7 +1,7 @@
 <template>
   <div class="index-structure-recommendations-container">
     <p v-if="parentNode !== null" class="subdued title">
-      {{ `${title} ${geoContextString.length > 0 ? ' in' : ''} ${geoContextString}` }}
+      {{ `${title}` }}
     </p>
     <geographic-context
       :display-list-in-component="false"
@@ -44,6 +44,23 @@ const geoContextQuery = computed(() => {
   return props.geoContextString.trim();
 });
 
+const geoContextEditing = computed(() => {
+  // A single space indicates the component is in "edit" mode.
+  if (props.geoContextString === ' ') return true;
+  return false;
+});
+
+const query = computed((): CausalRecommenderQuery => {
+  return {
+    topic:
+      geoContextQuery.value.length > 0
+        ? `${parentNodeName.value} in ${geoContextQuery.value}`
+        : geoContextEditing.value
+        ? `${parentNodeName.value ?? ''} in`
+        : parentNodeName.value ?? '',
+  };
+});
+
 watch(
   [parentNodeName, geoContextQuery],
   async () => {
@@ -54,14 +71,8 @@ watch(
     }
     const savedParentName = parentNodeName.value;
     isLoading.value = true;
-    const query: CausalRecommenderQuery = {
-      topic:
-        geoContextQuery.value.length > 0
-          ? `${parentNodeName.value} in ${geoContextQuery.value}`
-          : parentNodeName.value,
-    };
 
-    const result = await getCauses(query);
+    const result = await getCauses(query.value);
     if (parentNodeName.value !== savedParentName) {
       // Query has changed since the fetch started, so ignore the results
       return;
@@ -83,12 +94,12 @@ const recommendationsToDisplay = computed(() => {
 
 const title = computed(() => {
   if (isLoading.value) {
-    return `Add drivers of ${parentNodeName.value}`;
+    return `Finding drivers of ${query.value.topic}`;
   }
   if (recommendationsToDisplay.value.length === 0) {
-    return `No drivers of ${parentNodeName.value} were found.`;
+    return `No drivers of ${query.value.topic} were found.`;
   }
-  return `Drivers of ${parentNodeName.value}`;
+  return `Add drivers of ${query.value.topic}`;
 });
 </script>
 
