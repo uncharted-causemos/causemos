@@ -69,29 +69,25 @@ const isLoading = ref(false);
 const contentElement = ref<HTMLElement | null>(null);
 
 const convertParagraphsToHTMLString = (paragraphs: ScrollDataParagraph[]) =>
-  paragraphs.reduce((bodyText: string, p: any) => `${bodyText}<p>${p.text}</p>`, '');
+  paragraphs.reduce((bodyText, p) => `${bodyText}<p>${p.text}</p>`, '');
 /**
- * Serves as the initial viewer load.
- * Secondary loads (getScrollData) that are triggered by user activity in the interface.
- * If there is a search fragment to highlight, fetch data until the desired segment is
- * located, highlight and append the data, then subsequent data fetches are done in
- * getScrollData()).
+ * Fetches one chunk of `PARAGRAPH_FETCH_LIMIT` paragraphs.
+ * If there is a `paragraphToScrollToOnLoad`, continues fetching until the paragraph is found.
  * @returns {Promise<void>}
  */
 const loadInitialContent = async () => {
   isLoading.value = true;
 
-  let lastResponse = await getDocumentParagraphs(
+  const firstResponse = await getDocumentParagraphs(
     documentId.value,
     scrollId.value,
     PARAGRAPH_FETCH_LIMIT
   );
-  scrollId.value = lastResponse.scroll_id;
-  loadedParagraphCount.value += PARAGRAPH_FETCH_LIMIT;
+  scrollId.value = firstResponse.scroll_id;
 
   if (props.paragraphToScrollToOnLoad === null) {
     const highlightedParagraphs = applyHighlights(
-      convertParagraphsToHTMLString(lastResponse.paragraphs),
+      convertParagraphsToHTMLString(firstResponse.paragraphs),
       props.highlights
     );
     textViewer.appendText(highlightedParagraphs);
@@ -99,9 +95,11 @@ const loadInitialContent = async () => {
     return;
   }
 
+  let loadedParagraphCount = PARAGRAPH_FETCH_LIMIT;
+  let lastResponse = firstResponse;
   let allButLastParagraphs: ScrollDataParagraph[] = [];
   while (
-    loadedParagraphCount.value < props.paragraphToScrollToOnLoad.paragraphIndexWithinDocument &&
+    loadedParagraphCount < props.paragraphToScrollToOnLoad.paragraphIndexWithinDocument &&
     scrollId.value !== null
   ) {
     allButLastParagraphs = [...allButLastParagraphs, ...lastResponse.paragraphs];
@@ -110,20 +108,20 @@ const loadInitialContent = async () => {
       scrollId.value,
       PARAGRAPH_FETCH_LIMIT
     );
-    loadedParagraphCount.value += PARAGRAPH_FETCH_LIMIT;
+    loadedParagraphCount += PARAGRAPH_FETCH_LIMIT;
   }
-  // Append all but the last paragraphs to the textViewer.
+  // Append all but the last chunk of paragraphs to the textViewer.
   const highlightedText = applyHighlights(
     convertParagraphsToHTMLString(allButLastParagraphs),
     props.highlights
   );
   textViewer.appendText(highlightedText);
-  // Search only the last paragraphs to avoid searching large body text.
+  // Search only the last chunk of paragraphs for paragraphToScrollToOnLoad to avoid searching
+  //  large body text.
   const highlightedLastParagraphs = applyHighlights(
     convertParagraphsToHTMLString(lastResponse.paragraphs),
     props.highlights
   );
-  console.log(highlightedLastParagraphs);
   const textWithAnchorInserted = replacePhraseWithScrollAnchorHTMLElement(
     highlightedLastParagraphs,
     prepareParagraphForTextViewerSearch(props.paragraphToScrollToOnLoad.text, props.highlights)
@@ -143,14 +141,12 @@ onMounted(async () => {
 
 const scrollId = ref<string | null>(null);
 const hasScrollId = computed(() => scrollId.value !== null);
-const loadedParagraphCount = ref(0);
 
 /**
  * A compensation method to help bridge the gap between highlights provided by Jataware
  * and our highlights.  Some words may or may not be highlighted consistently in the "highlights"
  * data.  This method ensures the highlighting will match between the fragment phrase and the
  * full body document (otherwise, fragment anchor doesn't work).
- *
  * @returns {string}
  */
 const prepareParagraphForTextViewerSearch = (paragraph: string, highlights: string[]) => {
@@ -166,6 +162,29 @@ const prepareParagraphForTextViewerSearch = (paragraph: string, highlights: stri
 const scrollObserver = ref<IntersectionObserver | null>(null);
 const loadMoreTextElement = ref<Element | null>(null);
 const modalBodyElement = ref<Element | null>(null);
+
+/**
+ * When in scroll mode, this function will be triggered by the scrollObserver to fetch as required.
+ * @returns {Promise<void>}
+ */
+const getScrollData = async () => {
+  if (hasScrollId.value === false) {
+    return;
+  }
+
+  isLoading.value = true;
+  const result = await getDocumentParagraphs(documentId.value, scrollId.value);
+  isLoading.value = false;
+  const nextSetOfParagraphsAsHTML = convertParagraphsToHTMLString(result.paragraphs);
+  const highlightedText = applyHighlights(nextSetOfParagraphsAsHTML, props.highlights);
+  textViewer.appendText(highlightedText);
+
+  // Once scroll_id is null there are no more paragraphs. Clear the scrollId and the observer.
+  if (result.scroll_id === null) {
+    scrollId.value = null;
+    scrollObserver.value = null;
+  }
+};
 onMounted(() => {
   scrollObserver.value = new IntersectionObserver(getScrollData, {
     root: modalBodyElement.value,
@@ -176,28 +195,6 @@ onMounted(() => {
     scrollObserver.value.observe(loadMoreTextElement.value);
   }
 });
-
-/**
- * When in scroll mode, this function will be triggered by the scrollObserver to fetch as required.
- * @returns {Promise<void>}
- */
-const getScrollData = async () => {
-  if (hasScrollId.value) {
-    isLoading.value = true;
-    const result = await getDocumentParagraphs(documentId.value, scrollId.value);
-    isLoading.value = false;
-    loadedParagraphCount.value += PARAGRAPH_FETCH_LIMIT;
-    const nextSetOfParagraphsAsHTML = convertParagraphsToHTMLString(result.paragraphs);
-    const highlightedText = applyHighlights(nextSetOfParagraphsAsHTML, props.highlights);
-    textViewer.appendText(highlightedText);
-
-    // Once scroll_id is null there are no more paragraphs. Clear the scrollId and the observer.
-    if (result.scroll_id === null) {
-      scrollId.value = null;
-      scrollObserver.value = null;
-    }
-  }
-};
 </script>
 
 <style lang="scss" scoped>
