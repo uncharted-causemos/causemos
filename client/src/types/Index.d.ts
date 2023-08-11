@@ -176,4 +176,5 @@ export interface IndexProjectionNodeDataWarning {
   projectionId: string;
   color: string;
   warning: ProjectionDataWarning;
+  message: string;
 }

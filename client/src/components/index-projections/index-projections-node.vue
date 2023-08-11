@@ -25,7 +25,7 @@
         :is-weighted-sum-node="false"
         :is-inverted="isInvertedData"
       />
-      <IndexProjectionNodeWarning class="warning-section" :data-warnings="dataWarnings" />
+      <IndexProjectionsNodeWarning class="warning-section" :data-warnings="dataWarnings" />
     </div>
 
     <div v-else-if="isEmptyNode(props.nodeData)" class="content">
@@ -63,7 +63,7 @@ import {
 } from '@/utils/index-tree-util';
 import { computed } from 'vue';
 import IndexProjectionsNodeTimeseries from './index-projections-node-timeseries.vue';
-import IndexProjectionNodeWarning from './index-projection-node-warning.vue';
+import IndexProjectionsNodeWarning from './index-projections-node-warning.vue';
 import { ProjectionTimeseries } from '@/types/Timeseries';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 

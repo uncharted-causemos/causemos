@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { Ref, ref, watch, readonly, computed } from 'vue';
-import { CountryFilter, IndexAnalysisState } from '@/types/Analysis';
+import { CountryFilter, IndexAnalysisState, ProjectionDateRange } from '@/types/Analysis';
 import { getAnalysis, saveAnalysisState } from '../analysis-service';
 import { createIndexAnalysisObject } from '../analysis-service-new';
 
@@ -180,17 +180,31 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     return _analysisState.value.countryFilters;
   };
 
+  const updateProjectionDateRange = (dateRange: ProjectionDateRange) => {
+    _analysisState.value = {
+      ..._analysisState.value,
+      projectionDateRange: dateRange,
+    };
+    _saveState(analysisId.value, _analysisState.value);
+  };
+
+  const getProjectionDateRange = (): ProjectionDateRange => {
+    return _analysisState.value.projectionDateRange;
+  };
+
   return {
     addCountryFilter,
     analysisName,
     countryContextForSnippets,
     deleteCountryFilter,
     getCountryFilters,
+    getProjectionDateRange,
     indexResultsSettings,
     indexProjectionSettings,
     updateCountryFilter,
     updateIndexResultsSettings,
     updateIndexProjectionSettings,
+    updateProjectionDateRange,
     refresh: fetchAnalysis,
     setCountryContextForSnippets,
     waitForStateInSync,

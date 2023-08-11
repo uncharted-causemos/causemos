@@ -38,15 +38,7 @@
           @close="showNavbarInsightsPanel = false"
         />
       </div>
-      <!-- Help button -->
-      <!-- Old resources
-        Up until Mar 2022: https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing
-      -->
-      <a
-        href="https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing"
-        target="_blank"
-        class="nav-item clickable"
-      >
+      <a href="https://app.causemos.ai/docs/" target="_blank" class="nav-item clickable">
         <i class="fa fa-question" />
       </a>
     </div>
