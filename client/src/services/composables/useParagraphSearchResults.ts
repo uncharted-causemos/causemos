@@ -2,6 +2,7 @@ import { Ref, computed, ref, watch } from 'vue';
 import { getDocument, getHighlights, searchParagraphs } from '../paragraphs-service';
 import { DojoParagraphHighlight, Snippet } from '@/types/IndexDocuments';
 import dateFormatter from '@/formatters/date-formatter';
+import { HIGHLIGHTED_TEXT_CLASS } from '@/utils/text-viewer-util';
 const DATE_FORMATTER = (value: string) => dateFormatter(value, 'MMMM DD, YYYY');
 
 const NO_TITLE = 'Title not available';
@@ -82,7 +83,7 @@ export default function useParagraphSearchResults(query: Ref<string>, resultCoun
           text: highlightsResponse.highlights[i].reduce(
             (paragraph, item) =>
               item.highlight
-                ? `${paragraph}<span class="dojo-mark">${item.text}</span>`
+                ? `${paragraph}<span class="${HIGHLIGHTED_TEXT_CLASS}">${item.text}</span>`
                 : `${paragraph}${item.text}`,
             ''
           ),

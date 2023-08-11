@@ -31,6 +31,7 @@ import {
   createTextViewer,
   applyHighlights,
   replacePhraseWithScrollAnchorHTMLElement,
+  HIGHLIGHTED_TEXT_CLASS,
 } from '@/utils/text-viewer-util';
 import { computed, onMounted, ref, toRefs, watch } from 'vue';
 import { Document, ScrollDataParagraph } from '@/types/IndexDocuments';
@@ -153,7 +154,7 @@ const loadedParagraphCount = ref(0);
  * @returns {string}
  */
 const prepareParagraphForTextViewerSearch = (paragraph: string, highlights: string[]) => {
-  const regex1 = new RegExp('<span class="dojo-mark">', 'ig');
+  const regex1 = new RegExp(`<span class="${HIGHLIGHTED_TEXT_CLASS}">`, 'ig');
   const regex2 = new RegExp('</span>', 'ig');
 
   let text = paragraph.replaceAll(regex1, '');

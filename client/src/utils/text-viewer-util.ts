@@ -4,6 +4,8 @@
 
 // Should be kept in sync with the styles in modal-document.vue
 const SCROLL_ANCHOR_CLASS = 'paragraph-to-scroll-to';
+// Should be kept in sync with the styles in documents.scss
+export const HIGHLIGHTED_TEXT_CLASS = 'dojo-mark';
 // How much space to leave above the anchor when scrolling to it.
 const PIXEL_COUNT_FROM_ANCHOR_TO_TOP = 300;
 
@@ -26,7 +28,7 @@ const iterativeRegexSearch = (text: string, fragment: string) => {
     const searchIndex = text.search(searchRegEx);
 
     if (searchIndex > -1) {
-      return text.replace(searchRegEx, createScrollAnchorHTMLElement(fragment));
+      return text.replace(searchRegEx, createSpanWithClass(fragment, SCROLL_ANCHOR_CLASS));
     }
     sanitizedSearch = sanitizedSearch.replace(' ', '\\b.*?\\b');
 
@@ -50,20 +52,24 @@ const lossySearch = (text: string, textFragment: string) => {
   for (let i = 0; i < replacementElements.length; i++) {
     fragment = fragment.replaceAll(replacementElements[i][0], replacementElements[i][1]);
     if (text.indexOf(fragment) >= 0) {
-      return text.replace(fragment, createScrollAnchorHTMLElement(fragment));
+      return text.replace(fragment, createSpanWithClass(fragment, SCROLL_ANCHOR_CLASS));
     }
   }
 
   return text;
 };
 
-const createScrollAnchorHTMLElement = (text: string) =>
-  `<span class='${SCROLL_ANCHOR_CLASS}'>${text}</span>`;
-const createHighlightedSpanElement = (text: string) => `<span class="dojo-mark">${text}</span>`;
+/**
+ * Wraps a piece of text in a span element with the specified class name
+ * @param text
+ * @param className
+ * @returns HTML string
+ */
+const createSpanWithClass = (text: string, className: string) =>
+  `<span class='${className}'>${text}</span>`;
 
 const scrollToAnchor = () => {
   const anchor = document.getElementsByClassName(SCROLL_ANCHOR_CLASS)[0] as HTMLElement;
-
   if (anchor) {
     const scroller = document.getElementsByClassName('modal-body')[0];
     scroller.scrollTop = anchor.offsetTop - PIXEL_COUNT_FROM_ANCHOR_TO_TOP;
@@ -85,7 +91,7 @@ const applyHighlights = (text: string, highlights: string[]) => {
         const offsetIndex = (match.index ?? 0) + accumulatedOffset; // track change in offset due to previous sub
         const beginning = highlightContent.slice(0, offsetIndex);
         const end = highlightContent.slice(offsetIndex + match[0].length);
-        const substitutionText = createHighlightedSpanElement(match[0]);
+        const substitutionText = createSpanWithClass(match[0], HIGHLIGHTED_TEXT_CLASS);
         highlightContent = beginning.concat(substitutionText, end);
         accumulatedOffset += substitutionText.length - match[0].length;
       }
@@ -97,7 +103,7 @@ const applyHighlights = (text: string, highlights: string[]) => {
 const replacePhraseWithScrollAnchorHTMLElement = (text: string, phrase: string): string => {
   let t = text;
   if (text.indexOf(phrase) >= 0) {
-    t = t.replace(phrase, createScrollAnchorHTMLElement(phrase));
+    t = t.replace(phrase, createSpanWithClass(phrase, SCROLL_ANCHOR_CLASS));
   } else {
     t = lossySearch(t, phrase);
   }
