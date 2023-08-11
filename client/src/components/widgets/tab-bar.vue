@@ -18,13 +18,20 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { PropType, defineComponent } from 'vue';
+
+// Copied from `drilldown-panel.vue`
+interface DrilldownPanelTab {
+  id: string;
+  name: string;
+  icon?: string;
+}
 
 export default defineComponent({
   name: 'TabBar',
   props: {
     tabs: {
-      type: Array,
+      type: Array as PropType<DrilldownPanelTab[]>,
       required: true,
     },
     activeTabId: {

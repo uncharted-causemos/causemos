@@ -7,6 +7,7 @@ import {
   isEdge,
   isEmptyNode,
 } from './index-tree-util';
+import { CSSProperties } from 'vue';
 
 /**
  * This file contains helper functions to support the GridCell data structure, which is used when
@@ -232,7 +233,7 @@ export const getOutgoingEdgeClassObject = (
  * @param cell
  * @param gridCellElements
  */
-export const getHitBoxStyle = (cell: GridCell, gridCellElements: HTMLElement[]) => {
+export const getHitBoxStyle = (cell: GridCell, gridCellElements: HTMLElement[]): CSSProperties => {
   const firstOffset = 15;
   const columnCells = gridCellElements
     .filter((el) => parseInt(el.style.gridColumn.split('/')[0].trim()) === cell.startColumn)

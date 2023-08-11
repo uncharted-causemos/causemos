@@ -5,7 +5,7 @@
         <datacube-card
           class="datacube-card"
           :isPublishing="true"
-          :initial-view-config="initialViewConfig"
+          :initial-view-config="initialViewConfig ?? undefined"
           :metadata="metadata"
           :aggregation-options="aggregationOptionFiltered"
           :temporal-resolution-options="temporalResolutionOptionFiltered"

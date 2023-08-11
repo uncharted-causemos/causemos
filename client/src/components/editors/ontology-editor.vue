@@ -90,7 +90,7 @@ export default defineComponent({
       default: '',
     },
     suggestions: {
-      type: Array,
+      type: Array<{ name: string; score: number }>,
       default: () => [],
     },
   },

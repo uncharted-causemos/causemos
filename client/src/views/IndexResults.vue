@@ -166,15 +166,10 @@ const countryIntersection = ref<string[]>([]);
  * associate removed countries with their source data.
  */
 const removedCountriesData = computed(() => {
-  let countryData: any[] = [];
-  removedCountries.value.forEach((country) => {
-    countryData = [
-      ...countryData,
-      { countryName: country.countryName, removedFrom: countryMissingFrom(country.countryName) },
-    ];
-  });
-
-  return countryData;
+  return removedCountries.value.map((country) => ({
+    countryName: country.countryName,
+    removedFrom: countryMissingFrom(country.countryName),
+  }));
 });
 
 /**

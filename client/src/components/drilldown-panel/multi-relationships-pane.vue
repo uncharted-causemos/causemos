@@ -5,7 +5,7 @@
         class="fa fa-lg fa-fw"
         :class="{
           'fa-check-square-o': summaryData.meta.checked,
-          'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
+          'fa-square-o': !summaryData.meta.checked && !summaryData.meta.isSomeChildChecked,
           'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked,
         }"
         @click="toggle(summaryData)"
@@ -56,6 +56,7 @@ import { mapActions } from 'vuex';
 
 import { calcEdgeColor } from '@/utils/scales-util';
 import numberFormatter from '@/formatters/number-formatter';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 interface RelationEdge {
   source: string;
@@ -83,9 +84,11 @@ export default defineComponent({
   },
   setup() {
     const summaryData = ref<SummaryData>({ children: [], meta: { checked: false } });
+    const ontologyFormatter = useOntologyFormatter();
 
     return {
       summaryData,
+      ontologyFormatter,
     };
   },
   computed: {

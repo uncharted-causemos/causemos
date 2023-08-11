@@ -51,6 +51,7 @@
                 />
               </div>
               <td-node-chart
+                v-if="modelSummary !== null"
                 class="scenario-chart"
                 :historical-timeseries="historicalTimeseries"
                 :projections="selectedNodeScenarioData.projections"
@@ -153,12 +154,16 @@
               </div>
             </div>
             <projection-ridgelines
-              v-if="selectedScenarioId !== null && selectedNodeScenarioData !== null"
+              v-if="
+                selectedScenarioId !== null &&
+                selectedNodeScenarioData !== null &&
+                modelSummary !== null
+              "
               class="projection-ridgelines"
               :model-summary="modelSummary"
               :node-concept-name="nodeConceptName"
-              :comparison-baseline-id="comparisonBaselineIdWithFallback"
-              :baseline-scenario-id="baselineScenarioId"
+              :comparison-baseline-id="comparisonBaselineIdWithFallback ?? undefined"
+              :baseline-scenario-id="baselineScenarioId ?? undefined"
               :projections="selectedNodeScenarioData.projections"
               :indicator-min="indicatorMin"
               :indicator-max="indicatorMax"
@@ -527,7 +532,7 @@ export default defineComponent({
       return edges
         .filter((edge) => edge.source === selectedConcept)
         .map((edge) => ({
-          node: nodes.find((node) => node.concept === edge.target),
+          node: nodes.find((node) => node.concept === edge.target) ?? nodes[0],
           edge,
         }));
     });

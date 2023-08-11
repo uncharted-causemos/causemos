@@ -72,8 +72,8 @@ export default defineComponent({
     const showModal = ref(false);
 
     return {
-      modelCount: computed(() => props.project.stat.model_count),
-      dataAnalysisCount: computed(() => props.project.stat.data_analysis_count),
+      modelCount: computed(() => props.project.stat.model_count as number),
+      dataAnalysisCount: computed(() => props.project.stat.data_analysis_count as number),
       showModal,
     };
   },

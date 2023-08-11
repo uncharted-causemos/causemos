@@ -49,7 +49,7 @@
           <select
             name="selectedRegionRankingRun"
             id="selectedRegionRankingRun"
-            @change="selectedScenarioIndex = $event.target.selectedIndex"
+            @change="event => selectedScenarioIndex = (event.target as any).selectedIndex"
             :disabled="regionRunsScenarios.length === 1"
             :style="{
               color:
