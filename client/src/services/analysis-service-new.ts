@@ -17,6 +17,10 @@ import {
 import { createNewOutputIndex } from '@/utils/index-tree-util';
 import { createNewIndexResultsSettings } from '@/utils/index-results-util';
 import { createNewIndexProjectionSettings } from '@/utils/index-projection-util';
+import {
+  DEFAULT_EARLIEST_YEAR,
+  DEFAULT_LAST_YEAR,
+} from '@/services/composables/useProjectionDates';
 
 /**
  * Create a new DataAnalysisState object with each of its fields initialized to
@@ -56,9 +60,9 @@ export const defaultCountryFilters: CountryFilter[] = [
 
 export const defaultProjectionDateRange: ProjectionDateRange = {
   endMonth: 0,
-  endYear: 2025,
+  endYear: DEFAULT_LAST_YEAR,
   startMonth: 0,
-  startYear: 1990,
+  startYear: DEFAULT_EARLIEST_YEAR,
 };
 
 export const createIndexAnalysisObject = (): IndexAnalysisState => {
