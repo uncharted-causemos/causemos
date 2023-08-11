@@ -11,6 +11,29 @@
       />
       <button class="btn btn-default" @click="emit('cancel')">Cancel</button>
     </div>
+    <div class="search-filter-container flex">
+      <p class="subdued">Filter datasets</p>
+      <p
+        v-for="(filter, index) in countryFilters"
+        :key="index"
+        class="filter"
+        :class="{
+          'filter-active': filter.active,
+        }"
+        @click="toggleFilter(index)"
+      >
+        <i v-if="filter.active" class="fa fa-check subdued" />
+        <i v-if="!filter.active" class="fa fa-plus subdued" />
+        {{ filter.countryName }}
+      </p>
+      <DropdownButton
+        class="un-font-small"
+        :items="countryFilterChoicesRemaining"
+        :inner-button-label="'Select another country'"
+        :is-dropdown-left-aligned="true"
+        @item-selected="handleNewFilter"
+      ></DropdownButton>
+    </div>
     <div class="search-results-container">
       <ul class="results-list" v-if="searchText !== ''">
         <li
@@ -80,7 +103,6 @@
 </template>
 
 <script setup lang="ts">
-import _ from 'lodash';
 import { ref, computed, watch, onMounted } from 'vue';
 import { DatasetSearchResult } from '@/types/Index';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
@@ -92,6 +114,10 @@ import {
 } from '@/services/semantic-feature-search-service';
 import { capitalizeEachWord } from '@/utils/string-util';
 import newDatacubeService from '@/services/new-datacube-service';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { getCountryList } from '@/services/region-service';
+import { CountryFilter } from '@/types/Analysis';
+import { defaultCountryFilters } from '@/services/analysis-service-new';
 
 const convertFeatureSearchResultToDatasetSearchResult = (
   feature: DojoFeatureSearchResult
@@ -107,9 +133,9 @@ const convertFeatureSearchResultToDatasetSearchResult = (
     outputName: feature.name,
   };
 };
-
 interface Props {
   initialSearchText: string;
+  countryFilters: CountryFilter[];
 }
 const props = defineProps<Props>();
 
@@ -121,6 +147,9 @@ const emit = defineEmits<{
   (e: 'select-dataset', dataset: DatasetSearchResult, nodeNameAfterAttachingDataset: string): void;
   (e: 'set-node-name', value: string): void;
   (e: 'cancel'): void;
+  (e: 'add-country-filter', selectedCountry: CountryFilter): void;
+  (e: 'update-country-filter', updatedFilter: CountryFilter): void;
+  (e: 'delete-country-filter', filterToDelete: CountryFilter): void;
 }>();
 
 // Input box
@@ -136,12 +165,52 @@ onMounted(() => {
 });
 
 // Search
-
 const results = ref<DatasetSearchResult[]>([]);
 const isFetchingResults = ref(false);
 
-watch([searchText], async () => {
+// Country filter
+const countryFilterChoices = ref<string[]>([]);
+onMounted(async () => {
+  countryFilterChoices.value = await getCountryList();
+});
+
+const countryFilterChoicesRemaining = computed(() => {
+  return countryFilterChoices.value.filter(
+    (choice) =>
+      props.countryFilters.filter((item) => item.countryName.toUpperCase() === choice.toUpperCase())
+        .length === 0
+  );
+});
+
+const selectedCountries = computed(() => {
+  const countryList: CountryFilter[] = props.countryFilters.filter((item) => item.countryName);
+  return countryList.map((country) => country.countryName);
+});
+
+const handleNewFilter = (item: string) => {
+  emit('add-country-filter', { countryName: item, active: true });
+};
+
+const toggleFilter = (index: number) => {
+  const filter = { ...props.countryFilters[index] };
+  if (defaultCountryFilters.findIndex((item) => filter.countryName === item.countryName) >= 0) {
+    filter.active = !filter.active;
+    emit('update-country-filter', filter);
+  } else {
+    deleteCountryFilter(filter);
+  }
+};
+
+const deleteCountryFilter = (filterToDelete: CountryFilter) => {
+  emit('delete-country-filter', filterToDelete);
+};
+
+watch([searchText, selectedCountries], async () => {
   // Save a copy of the current search text value in case it changes before results are fetched
+  // note: we are watching selected countries though not using them here YET.  The semantic search
+  //       cannot take the filter presently.  The models are filtered after the semantic return currently.
+  //  Add ", () => props.countryFilters" to the source for this watch when we can use this service
+
   const queryString = searchText.value;
   if (queryString === '') {
     results.value = [];
@@ -160,8 +229,7 @@ watch([searchText], async () => {
     const unverifiedResults = dojoFeatureSearchResults.map(
       convertFeatureSearchResultToDatasetSearchResult
     );
-    results.value = await verifySearchFeatures(unverifiedResults);
-
+    results.value = await verifySearchFeatures(unverifiedResults, selectedCountries.value);
     isFetchingResults.value = false;
   } catch (e) {
     console.error('Unable to fetch search results for query', searchText.value);
@@ -182,9 +250,16 @@ watch([searchText], async () => {
  *
  * @param features
  */
-const verifySearchFeatures = async (features: DatasetSearchResult[]) => {
+const verifySearchFeatures = async (
+  features: DatasetSearchResult[],
+  selectedCountries: string[]
+) => {
   const verified: any[] = features.map((feature) =>
-    newDatacubeService.getDatacubeByDataIdAndOutputVariable(feature.dataId, feature.outputName)
+    newDatacubeService.getDatacubeByDataIdAndOutputVariableAndCountry(
+      feature.dataId,
+      feature.outputName,
+      selectedCountries
+    )
   );
   const allVerified = await Promise.allSettled(verified);
 
@@ -293,6 +368,45 @@ const selectDataset = (dataset: DatasetSearchResult) => {
   }
   button {
     margin-left: 5px;
+  }
+}
+
+.search-filter-container {
+  max-width: 620px;
+  padding: 3px 10px;
+  gap: 5px;
+  flex-wrap: wrap;
+  overflow-wrap: normal;
+
+  p {
+    @extend .un-font-small;
+    &.filter {
+      border: solid 1px $un-color-black-40;
+      border-radius: 0.8rem;
+      padding: 0 8px 0 4px;
+      &:hover {
+        background-color: $un-color-black-5;
+        cursor: pointer;
+      }
+      &.filter-active {
+        background-color: $un-color-black-5;
+      }
+    }
+    i {
+      padding-left: 5px;
+    }
+  }
+  ::v-deep(.dropdown-button-container) {
+    height: 1.6rem;
+  }
+  ::v-deep(.dropdown-button-container button) {
+    border: solid 1px $un-color-black-40;
+    border-radius: 0.8rem;
+    padding: 0 2px 0 8px;
+    background-color: white;
+  }
+  ::v-deep(.dropdown-button-container button span) {
+    @extend .un-font-small;
   }
 }
 
