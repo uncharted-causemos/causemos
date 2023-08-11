@@ -1,17 +1,23 @@
 <template>
   <div
     v-if="props.dataWarnings && props.dataWarnings.length > 0"
-    class="index-projection-node-warning-container"
+    class="index-projections-expanded-node-warning-container"
   >
-    <div v-for="(w, index) in nodeWarnings" :key="index">
+    <p>
       <i class="fa fa-fw fa-exclamation-triangle warning"></i>
-      {{ w.warning }}
+      Warnings
+    </p>
+    <div v-for="(w, index) in nodeWarnings" :key="index">
+      <p>{{ w.warning }}</p>
+      <p class="subdued un-font-small">{{ w.message }}</p>
     </div>
     <div v-for="(warnings, index) in Object.values(warningsPerProjection)" :key="index">
       <div v-for="(w, i) in warnings" :key="i">
-        <i class="fa fa-fw fa-minus" :style="{ color: i === 0 ? w.color : 'transparent' }"></i>
-        <i class="fa fa-fw fa-exclamation-triangle warning"></i>
-        {{ w.warning }}
+        <p>
+          <i class="fa fa-fw fa-minus" :style="{ color: w.color }"></i>
+          {{ w.warning }}
+        </p>
+        <p class="subdued un-font-small">{{ w.message }}</p>
       </div>
     </div>
   </div>
@@ -50,8 +56,8 @@ const warningsPerProjection = computed(() =>
 
 <style lang="scss" scoped>
 @import '@/styles/uncharted-design-tokens';
-.index-projection-node-warning-container {
-  padding: 5px 10px;
+.index-projections-expanded-node-warning-container {
+  padding-top: 10px;
   .warning {
     color: $un-color-feedback-warning;
   }

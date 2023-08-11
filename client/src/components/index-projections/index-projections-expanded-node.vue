@@ -37,6 +37,11 @@
         :is-inverted="isInvertedData"
       />
 
+      <IndexProjectionsExpandedNodeWarning
+        class="warning-section add-horizontal-margin"
+        :data-warnings="dataWarnings"
+      />
+
       <div class="dataset-metadata add-horizontal-margin">
         <p class="margin-top">Dataset description</p>
         <p class="subdued un-font-small">{{ outputDescription }}</p>
@@ -50,7 +55,6 @@
           <i class="fa fa-fw fa-cube" />Explore dataset
         </button>
       </div>
-      <IndexProjectionNodeWarning class="warning-section" :data-warnings="dataWarnings" />
     </div>
 
     <div v-else-if="isEmptyNode(props.nodeData)">
@@ -99,7 +103,7 @@ import { ProjectionTimeseries } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 import { EditMode } from '@/utils/projection-util';
-import IndexProjectionNodeWarning from './index-projection-node-warning.vue';
+import IndexProjectionsExpandedNodeWarning from './index-projections-expanded-node-warning.vue';
 
 const optionsButtonMenu = [
   {
@@ -230,6 +234,7 @@ $horizontal-margin: 30px;
 }
 
 .warning-section {
+  margin-top: 10px;
   border-top: 1px solid $un-color-black-10;
 }
 
