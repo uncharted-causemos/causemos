@@ -29,6 +29,8 @@
         :is-selected="isSelected(cell.node.id)"
         :is-connecting="isConnecting"
         :is-descendent-of-connecting-node="isDescendentOfConnectingNode(cell.node.id)"
+        :geo-context-string="geoContextString"
+        :countryFilters="countryFilters"
         class="index-tree-node"
         @rename="renameNode"
         @delete="deleteNode"
@@ -40,6 +42,10 @@
         @attach-dataset="attachDatasetToNode"
         @create-edge="createEdge"
         @mouseenter="highlightClear"
+        @save-geo-context="(context: string) => emit('save-geo-context', context)"
+        @add-country-filter="(countryFilter: CountryFilter) => emit('add-country-filter', countryFilter)"
+        @update-country-filter="(countryFilter: CountryFilter) => emit('update-country-filter', countryFilter)"
+        @delete-country-filter="(countryFilter: CountryFilter) => emit('delete-country-filter', countryFilter)"
       />
       <div
         v-if="!cell.node.isOutputNode && cell.hasOutputLine"
@@ -73,7 +79,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { getAnalysisState } from '@/services/analysis-service';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import {
   ConceptNode,
@@ -90,10 +97,17 @@ import {
   getIncomingEdgeClassObject,
   getOutgoingEdgeClassObject,
 } from '@/utils/grid-cell-util';
+import { useRoute } from 'vue-router';
+import { CountryFilter } from '@/types/Analysis';
+
+const route = useRoute();
+const analysisId = computed(() => route.params.analysisId as string);
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
   highlightEdgeId: SelectableIndexElementId | null;
+  geoContextString: string;
+  countryFilters: CountryFilter[];
 }>();
 
 /**
@@ -104,17 +118,27 @@ const props = defineProps<{
 const isConnecting = ref<boolean>(false);
 const connectingId = ref<string | null>(null);
 const gridCellElements = ref([]);
+const analysisState = ref();
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
   (e: 'highlight-edge', selectedElement: SelectableIndexElementId): void;
   (e: 'deselect-all'): void;
   (e: 'clear-highlight'): void;
+  (e: 'save-geo-context', context: string): void;
+  (e: 'add-country-filter', selectedCountry: CountryFilter): void;
+  (e: 'update-country-filter', updatedFilter: CountryFilter): void;
+  (e: 'delete-country-filter', filterToDelete: CountryFilter): void;
 }>();
 
 const indexTree = useIndexTree();
 const { findNode } = indexTree;
 const workbench = useIndexWorkBench();
+
+onMounted(async () => {
+  analysisState.value = await getAnalysisState(analysisId.value);
+});
+
 const isDescendentOfConnectingNode = (targetId: string) => {
   if (connectingId.value !== null) {
     return workbench.isDescendant(targetId, connectingId.value);

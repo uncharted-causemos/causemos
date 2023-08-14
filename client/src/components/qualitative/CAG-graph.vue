@@ -36,7 +36,7 @@ import projectService from '@/services/project-service';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { DEFAULT_STYLE } from '@/graphs/cag-style';
-import { EdgeDirection, TimeScale, LoadStatus, EdgeSuggestionType } from '@/types/Enums';
+import { EdgeDirection, TimeScale, LoadStatus } from '@/types/Enums';
 import {
   calculateNewNodesAndEdges,
   EdgeSuggestion,
@@ -45,7 +45,6 @@ import {
   sortSuggestionsByEvidenceCount,
 } from '@/utils/relationship-suggestion-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
-import filtersUtil from '@/utils/filters-util';
 
 type D3SelectionINode<T> = d3.Selection<d3.BaseType, INode<T>, null, any>;
 
@@ -68,7 +67,7 @@ export default defineComponent({
     },
     selectedTimeScale: {
       type: String as PropType<TimeScale>,
-      required: true,
+      default: TimeScale.Months,
     },
     visualState: {
       type: Object as PropType<CAGVisualState>,
@@ -373,14 +372,7 @@ export default defineComponent({
         this.selectedEdgeSuggestions = [];
         // Load all statements that include any of the components in the
         //  selected node-container.
-        this.renderer?.setSuggestionData(
-          [],
-          [],
-          node,
-          edgeDirection,
-          LoadStatus.Loading,
-          EdgeSuggestionType.KBSuggestion
-        );
+        this.renderer?.setSuggestionData([], [], node, edgeDirection, LoadStatus.Loading);
         const statements = await projectService.getProjectStatementsForConcepts(
           node.data.components,
           this.project
@@ -402,8 +394,7 @@ export default defineComponent({
               [],
               node,
               edgeDirection,
-              LoadStatus.Loaded,
-              EdgeSuggestionType.KBSuggestion
+              LoadStatus.Loaded
             );
           }
         }
@@ -426,11 +417,6 @@ export default defineComponent({
       //  safe to ignore.
       if (this.allEdgeSuggestions.node === null || this.allEdgeSuggestions.suggestions === null)
         return;
-      // If searchSuggestions !== null, we're displaying search results
-      const suggestionType =
-        this.searchSuggestions !== null
-          ? EdgeSuggestionType.ConceptSuggestion
-          : EdgeSuggestionType.KBSuggestion;
       const suggestionsToDisplay =
         this.searchSuggestions !== null
           ? this.searchSuggestions
@@ -440,8 +426,7 @@ export default defineComponent({
         this.selectedEdgeSuggestions,
         this.allEdgeSuggestions.node,
         this.allEdgeSuggestions.edgeDirection,
-        LoadStatus.Loaded, // Possible race condition if toggle occurs during load
-        suggestionType
+        LoadStatus.Loaded // Possible race condition if toggle occurs during load
       );
     });
 
@@ -460,8 +445,7 @@ export default defineComponent({
             this.selectedEdgeSuggestions,
             this.allEdgeSuggestions.node,
             this.allEdgeSuggestions.edgeDirection,
-            LoadStatus.Loading,
-            EdgeSuggestionType.KBSuggestion
+            LoadStatus.Loading
           );
           return;
         }
@@ -471,8 +455,7 @@ export default defineComponent({
           this.selectedEdgeSuggestions,
           this.allEdgeSuggestions.node,
           this.allEdgeSuggestions.edgeDirection,
-          LoadStatus.Loaded,
-          EdgeSuggestionType.KBSuggestion
+          LoadStatus.Loaded
         );
       } else {
         // Show loading indicator
@@ -481,8 +464,7 @@ export default defineComponent({
           this.selectedEdgeSuggestions,
           this.allEdgeSuggestions.node,
           this.allEdgeSuggestions.edgeDirection,
-          LoadStatus.Loading,
-          EdgeSuggestionType.ConceptSuggestion
+          LoadStatus.Loading
         );
         // Fetch concepts based on user input
         this.fetchSearchSuggestions(userInput, suggestionNode, this);
@@ -504,21 +486,6 @@ export default defineComponent({
       );
       this.exitSuggestionMode();
       this.$emit('add-to-CAG', newSubgraph);
-    });
-
-    this.renderer.on('open-kb-explorer', () => {
-      if (this.allEdgeSuggestions.node === null) return;
-      const components = this.allEdgeSuggestions.node.data.components;
-      const filters = filtersUtil.newFilters();
-      const clauseName =
-        this.allEdgeSuggestions.edgeDirection === EdgeDirection.Incoming
-          ? 'objConcept'
-          : 'subjConcept';
-      filtersUtil.setClause(filters, clauseName, components, 'or', false);
-      this.$router.push({
-        name: 'kbExplorer',
-        query: { cag: this.currentCAG, view: 'graphs', filters: filters as any },
-      });
     });
 
     this.refresh();
@@ -577,8 +544,7 @@ export default defineComponent({
           cagGraphThis.selectedEdgeSuggestions,
           cagGraphThis.allEdgeSuggestions.node,
           cagGraphThis.allEdgeSuggestions.edgeDirection,
-          LoadStatus.Loaded,
-          EdgeSuggestionType.ConceptSuggestion
+          LoadStatus.Loaded
         );
       },
       300

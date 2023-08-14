@@ -195,6 +195,7 @@
         @select-element="selectElement"
         @deselect-node="deselectNode"
         @click-chart="onNodeChartClick"
+        @open-drilldown="handleNavigateToDataset"
       />
       <IndexLegend class="legend" :is-projection-space="true" />
     </main>
@@ -244,8 +245,6 @@ import useScenarios from '@/services/composables/useScenarios';
 import useScenarioProjections from '@/services/composables/useScenarioProjections';
 import useHistoricalData from '@/services/composables/useHistoricalData';
 import useMultipleCountryProjections from '@/services/composables/useMultipleCountryProjections';
-import { ByCountryWarning, DataWarning, TimeseriesPoint } from '@/types/Timeseries';
-import { consolidateNodeWarnings } from '@/utils/projection-util';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -262,16 +261,19 @@ const MONTHS: DropdownItem[] = [
   { value: 11, displayName: 'December' },
 ];
 
-const WARNING_INSUFFICIENT_DATA_MINCOUNT = 5;
-const WARNING_OLD_DATA_MINCOUNT = 5;
-
 const store = useStore();
 const route = useRoute();
 const router = useRouter();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const { analysisName, refresh, indexProjectionSettings, updateIndexProjectionSettings } =
-  useIndexAnalysis(analysisId);
+const {
+  analysisName,
+  refresh,
+  indexProjectionSettings,
+  updateIndexProjectionSettings,
+  updateProjectionDateRange,
+  getProjectionDateRange,
+} = useIndexAnalysis(analysisId);
 // If selectedNodeId === null, no node is selected and we're looking at the graph view
 const selectedNodeId = ref<string | null>(null);
 const selectElement = (id: SelectableIndexElementId) => {
@@ -289,6 +291,13 @@ onMounted(async () => {
   store.dispatch('app/setAnalysisName', '');
   await refresh();
   store.dispatch('app/setAnalysisName', analysisName.value);
+
+  const projectionDateRange = getProjectionDateRange();
+  projectionEndMonth.value = projectionDateRange.endMonth;
+  projectionEndYear.value = projectionDateRange.endYear;
+  projectionStartMonth.value = projectionDateRange.startMonth;
+  projectionStartYear.value = projectionDateRange.startYear;
+  saveProjectionDates();
 });
 
 const modifyStructure = () => {
@@ -407,6 +416,13 @@ const selectableYears = computed(() => {
 const onDoneEditingTimeRange = () => {
   isEditingTimeRange.value = false;
   saveProjectionDates();
+  updateProjectionDateRange({
+    // keep a copy of the selected range in the analysis object (persistent data)
+    endMonth: projectionEndMonth.value,
+    endYear: projectionEndYear.value,
+    startMonth: projectionStartMonth.value,
+    startYear: projectionStartYear.value,
+  });
 };
 
 // Scenario Management
@@ -428,50 +444,12 @@ const onNodeChartClick = (timestamp: number, value: number) => {
 };
 
 // Scenario projections
-const { visibleScenarioProjectionData, projectionForScenarioBeingEdited, runScenarioProjections } =
-  useScenarioProjections(scenarios, scenarioBeingEdited);
-
-const dataWarnings = ref(new Map());
-const oldDataTest = (points: TimeseriesPoint[]): boolean => {
-  return (
-    points.filter((point: TimeseriesPoint) => point.timestamp >= projectionStartTimestamp.value)
-      .length <= WARNING_OLD_DATA_MINCOUNT
-  );
-};
-
-const insufficientDataTest = (points: TimeseriesPoint[]): boolean => {
-  return points.length <= WARNING_INSUFFICIENT_DATA_MINCOUNT;
-};
-
-const checkHistoricalData = () => {
-  dataWarnings.value.clear();
-  if (isSingleCountryModeActive.value) {
-    historicalData.value.forEach((item, id) => {
-      const dataWarning: DataWarning = {
-        oldData: oldDataTest(item),
-        insufficientData: insufficientDataTest(item),
-      };
-      dataWarnings.value.set(id, dataWarning);
-    });
-  } else {
-    const allCountryWarnings: ByCountryWarning[] = [];
-
-    historicalDataForSelectedCountries.value.forEach((countryItems, countryName) => {
-      countryItems.forEach((item, id) => {
-        const dataWarning: DataWarning = {
-          oldData: oldDataTest(item),
-          insufficientData: insufficientDataTest(item),
-        };
-        allCountryWarnings.push({
-          country: countryName,
-          nodeId: id,
-          warning: dataWarning,
-        });
-      });
-    });
-    dataWarnings.value = consolidateNodeWarnings(allCountryWarnings);
-  }
-};
+const {
+  visibleScenarioProjectionData,
+  projectionForScenarioBeingEdited,
+  visibleScenarioDataWarnings,
+  runScenarioProjections,
+} = useScenarioProjections(scenarios, scenarioBeingEdited);
 
 watch(
   [
@@ -483,11 +461,6 @@ watch(
     scenarios,
   ],
   () => {
-    // scan data for warnings
-    // Old data: datasets that have 5 or fewer points for the selected country after the projection start date
-    // Insufficient data: datasets that have 5 or fewer points for the selected country
-    checkHistoricalData();
-
     // TODO: For optimization, other than initial run, only run projection for the specific scenario when a new scenario is added or when the edit for a scenario is done.
     // Check diff from old and new scenarios data and only run the projection for a scenario if necessary.
     // When a scenario is deleted, just remove the projection for that scenario from the projection data.
@@ -509,8 +482,11 @@ const { historicalData: historicalDataForSelectedCountries } = useHistoricalData
   indexTree.tree
 );
 
-const { multipleCountryProjectionData, runMultipleCountryProjections } =
-  useMultipleCountryProjections();
+const {
+  multipleCountryProjectionData,
+  dataWarnings: multiCountryProjectionDataWarnings,
+  runMultipleCountryProjections,
+} = useMultipleCountryProjections();
 
 const { setContextId, setDataState, setViewState } = useInsightStore();
 onMounted(() => {
@@ -568,7 +544,7 @@ const tryToUpdateStateFromInsight = async (insightId: string) => {
   // Prompt the user for confirmation if some scenarios will be removed.
   const scenarioIdsInInsight = dataState.scenarios.map(({ id }) => id);
   const scenariosThatWillBeRemoved = scenarios.value.filter(
-    (scenario) => scenarioIdsInInsight.includes(scenario.id) === false
+    (scenario) => !scenarioIdsInInsight.includes(scenario.id)
   );
   if (scenariosThatWillBeRemoved.length === 0) {
     confirmUpdateStateFromInsight();
@@ -649,6 +625,29 @@ const timeseriesToDisplay = computed(() =>
     ? visibleScenarioProjectionData.value
     : multipleCountryProjectionData.value
 );
+
+const dataWarnings = computed(() =>
+  isSingleCountryModeActive.value
+    ? visibleScenarioDataWarnings.value
+    : multiCountryProjectionDataWarnings.value
+);
+
+const projectId = computed(() => route.params.project as string);
+const projectType = computed(() => route.params.projectType as string);
+const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => {
+  router.push({
+    name: 'projectionsDataExplorer',
+    params: {
+      projectType: projectType.value,
+      project: projectId.value,
+      analysisId: analysisId.value,
+    },
+    query: {
+      datacube_id: datacubeId,
+      item_id: datacubeItemId,
+    },
+  });
+};
 </script>
 
 <style lang="scss" scoped>
@@ -775,7 +774,7 @@ main {
   z-index: 999;
   opacity: 0.4;
   background: white;
-  top: 0px;
-  left: 0px;
+  top: 0;
+  left: 0;
 }
 </style>

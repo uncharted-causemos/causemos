@@ -38,15 +38,7 @@
           @close="showNavbarInsightsPanel = false"
         />
       </div>
-      <!-- Help button -->
-      <!-- Old resources
-        Up until Mar 2022: https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing
-      -->
-      <a
-        href="https://docs.google.com/presentation/d/19PeNAoCIxNCQxXAZNV4Gn4kMVPCAJKYlLXQCJ6V2SZM/edit?usp=sharing"
-        target="_blank"
-        class="nav-item clickable"
-      >
+      <a href="https://app.causemos.ai/docs/" target="_blank" class="nav-item clickable">
         <i class="fa fa-question" />
       </a>
       <div class="nav-item clickable" @click="logout">
@@ -182,6 +174,17 @@ export default defineComponent({
         quantitativeAnalysisItem.value,
         { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
       ],
+      indexResultsDataExplorer: [
+        analysisProjectItem.value,
+        indexStructureItem.value,
+        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
+      ],
+      projectionsDataExplorer: [
+        analysisProjectItem.value,
+        indexStructureItem.value,
+        indexProjectionsItem.value,
+        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
+      ],
       qualitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       quantitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       indexStructure: [analysisProjectItem.value, indexStructureItem.value],
@@ -196,9 +199,12 @@ export default defineComponent({
         qualitativeAnalysisItem.value,
         { icon: 'fa-circle', route: null, text: 'Node drilldown' },
       ],
+      documents: [
+        analysisProjectItem.value,
+        { icon: 'fa-book', route: null, text: 'Explore documents' },
+      ],
       // 'nodeDataDrilldown',
       // 'nodeDataExplorer',
-      // 'kbExplorer',
       // 'dataExplorer',
     }));
 

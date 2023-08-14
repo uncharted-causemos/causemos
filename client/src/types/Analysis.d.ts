@@ -56,6 +56,18 @@ export interface DataAnalysisState {
   regionRankingItemStates: RegionRankingItemStates;
 }
 
+export interface CountryFilter {
+  countryName: string;
+  active: boolean;
+}
+
+export interface ProjectionDateRange {
+  startMonth: number;
+  startYear: number;
+  endMonth: number;
+  endYear: number;
+}
+
 export interface IndexAnalysisState {
   /** Primary index tree */
   index: ConceptNode;
@@ -65,4 +77,10 @@ export interface IndexAnalysisState {
   resultsSettings: IndexResultsSettings;
   /** Index projection page settings */
   projectionSettings: IndexProjectionSettings;
+  /** List of countries to filter datasets by */
+  countryFilters: CountryFilter[];
+  /** Country context for snippets */
+  countryContextForSnippets: string;
+  /** date range for projection view */
+  projectionDateRange: ProjectionDateRange;
 }

@@ -2,8 +2,8 @@ import { Ref, computed, ref } from 'vue';
 import { getTimestampMillis, getYearFromTimestamp } from '@/utils/date-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
 
-const DEFAULT_EARLIEST_YEAR = 1990;
-const DEFAULT_LAST_YEAR = 2025;
+export const DEFAULT_EARLIEST_YEAR = 1990;
+export const DEFAULT_LAST_YEAR = 2025;
 // The number of years that should be selectable before the earliest (and after the last) year
 //  found in the data.
 // For example, if the earliest year in the data is 1985 and BUFFER_YEAR_COUNT is 10, the user

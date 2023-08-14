@@ -4,11 +4,25 @@ const _ = require('lodash');
 const router = express.Router();
 const { RESOURCE } = rootRequire('adapters/es/adapter');
 const { client, searchAndHighlight, queryStringBuilder } = rootRequire('adapters/es/client');
+const { listCountries } = rootRequire('/services/regions-service');
 
 /* Keycloak Authentication */
 // const authUtil = rootRequire('/util/auth-util.js');
 
 const MAX_REGIONS = 10000;
+const SORT_COUNTRIES_ASC = true;
+
+/**
+ * GET list of countries (unique array of string names)
+ */
+router.get(
+  '/countries',
+  asyncHandler(async (req, res) => {
+    const result = await listCountries(SORT_COUNTRIES_ASC);
+    res.status(200);
+    res.json(result);
+  })
+);
 
 /**
  * GET Search fields based on partial matches

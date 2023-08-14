@@ -8,6 +8,7 @@ export interface Snippet {
   documentTitle: string;
   documentAuthor: string;
   documentSource: string;
+  documentCreationDate: string;
 }
 
 export interface MatchScore {
@@ -43,6 +44,13 @@ export interface Document {
   pages: number;
   creator: string | null;
   id: string;
+}
+
+export interface GetDocumentsResponse {
+  hits: string;
+  items_in_page: number;
+  results: Document[];
+  scroll_id: string;
 }
 
 export interface DojoParagraphDetails {

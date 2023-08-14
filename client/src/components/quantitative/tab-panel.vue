@@ -35,7 +35,6 @@
               :visual-state="visualState"
               ref="modelGraph"
               @background-click="onBackgroundClick"
-              @node-sensitivity="onNodeSensitivity"
               @node-drilldown="openNodeDrilldownView"
               @edge-click="showRelation"
             />
@@ -53,51 +52,7 @@
               />
             </div>
           </div>
-          <sensitivity-analysis
-            v-if="activeTab === 'matrix'"
-            :model-summary="modelSummary"
-            :sensitivity-result="sensitivityResult"
-            @set-analysis-type="setSensitivityAnalysisType"
-          />
         </main>
-        <drilldown-panel
-          class="quantitative-drilldown"
-          :is-open="isDrilldownOpen"
-          :tabs="drilldownTabs"
-          :active-tab-id="activeDrilldownTab"
-          @close="closeDrilldown"
-          @tab-click="onDrilldownTabClick"
-        >
-          <template #content>
-            <evidence-pane
-              v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
-              :show-curation-actions="false"
-              :selected-relationship="selectedEdge"
-              :statements="selectedStatements"
-              :project="project"
-              :is-fetching-statements="isFetchingStatements"
-              :should-confirm-curations="true"
-            >
-              <edge-polarity-switcher
-                :model-summary="modelSummary"
-                :selected-relationship="selectedEdge"
-                @edge-set-user-polarity="setEdgeUserPolarity"
-                @edge-set-weights="setEdgeWeights"
-              />
-            </evidence-pane>
-            <!-- make this a component later-->
-            <sensitivity-pane
-              v-else-if="activeDrilldownTab === PANE_ID.SENSITIVITY && selectedNode !== null"
-              :model-summary="modelSummary"
-              :model-components="modelComponents"
-              :selected-node="selectedNode"
-              :sensitivity-result="sensitivityResult"
-              @open-drilldown="openNodeDrilldownView"
-              @highlight-node-paths="highlightNodePaths"
-            >
-            </sensitivity-pane>
-          </template>
-        </drilldown-panel>
       </div>
     </div>
   </div>
@@ -109,12 +64,7 @@ import { defineComponent, ref, PropType, Ref } from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 
 import ConfigBar from '@/components/quantitative/config-bar.vue';
-import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis.vue';
 import ModelGraph from '@/components/quantitative/model-graph.vue';
-import DrilldownPanel from '@/components/drilldown-panel.vue';
-import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher.vue';
-import EvidencePane from '@/components/drilldown-panel/evidence-pane.vue';
-import SensitivityPane from '@/components/drilldown-panel/sensitivity-pane.vue';
 import modelService, {
   calculateProjectionEnd,
   Engine,
@@ -142,25 +92,6 @@ import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { saveAs } from 'file-saver';
 import { TYPE } from 'vue-toastification';
 
-const PANE_ID = {
-  SENSITIVITY: 'sensitivity',
-  EVIDENCE: 'evidence',
-};
-
-const NODE_DRILLDOWN_TABS = [
-  {
-    name: 'Node Sensitivity',
-    id: PANE_ID.SENSITIVITY,
-  },
-];
-
-const EDGE_DRILLDOWN_TABS = [
-  {
-    name: 'Relationship',
-    id: PANE_ID.EVIDENCE,
-  },
-];
-
 const blankVisualState = (): CAGVisualState => {
   return {
     focus: { nodes: [], edges: [] },
@@ -173,11 +104,6 @@ export default defineComponent({
   components: {
     ConfigBar,
     ModelGraph,
-    SensitivityAnalysis,
-    DrilldownPanel,
-    EdgePolaritySwitcher,
-    EvidencePane,
-    SensitivityPane,
     CagSidePanel,
     CagCommentsButton,
     CagLegend,
@@ -206,7 +132,6 @@ export default defineComponent({
   },
   emits: [
     'refresh-model',
-    'set-sensitivity-analysis-type',
     'tab-click',
     'model-parameter-changed',
     'new-scenario',
@@ -227,16 +152,12 @@ export default defineComponent({
       selectedEdge,
       selectedStatements,
       visualState,
-      PANE_ID,
     };
   },
   data: () => ({
     graphData: {},
     scenarioData: null as { [concept: string]: NodeScenarioData } | null,
-    sensitivityResult: null,
 
-    drilldownTabs: NODE_DRILLDOWN_TABS,
-    activeDrilldownTab: PANE_ID.EVIDENCE,
     isDrilldownOpen: false,
     isFetchingStatements: false,
   }),
@@ -312,35 +233,6 @@ export default defineComponent({
       );
       this.scenarioData = scenarioData;
 
-      modelService
-        .getScenarioSensitivity(this.currentCAG, this.currentEngine)
-        .then((sensitivityResults) => {
-          // If historical data mode is active, use sensitivity results from
-          //  the baseline scenario
-          let scenarioId = this.selectedScenarioId;
-          if (this.selectedScenarioId === null) {
-            scenarioId = this.scenarios.find((scenario) => scenario.is_baseline === true)?.id;
-          }
-          this.sensitivityResult = sensitivityResults.find(
-            (d: any) => d.scenario_id === scenarioId
-          );
-        });
-
-      this.updateDataState();
-    },
-    onNodeSensitivity(node: NodeParameter) {
-      this.drilldownTabs = NODE_DRILLDOWN_TABS;
-      this.activeDrilldownTab = PANE_ID.SENSITIVITY;
-      this.openDrilldown();
-      this.selectedNode = node;
-      const neighborhood = calculateNeighborhood(this.modelComponents as any, node.concept);
-      this.visualState = {
-        focus: neighborhood,
-        outline: {
-          nodes: [{ concept: node.concept }],
-          edges: [],
-        },
-      };
       this.updateDataState();
     },
     openNodeDrilldownView(node: NodeParameter) {
@@ -418,8 +310,6 @@ export default defineComponent({
     },
     showRelation(edgeData: EdgeParameter) {
       this.isFetchingStatements = true;
-      this.drilldownTabs = EDGE_DRILLDOWN_TABS;
-      this.activeDrilldownTab = PANE_ID.EVIDENCE;
       this.openDrilldown();
 
       modelService
@@ -444,16 +334,6 @@ export default defineComponent({
           this.isFetchingStatements = false;
         });
     },
-    onDrilldownTabClick(tab: string) {
-      this.activeDrilldownTab = tab;
-    },
-    async setEdgeUserPolarity(edge: EdgeParameter, polarity: number) {
-      if (!this.selectedEdge) return;
-      await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
-      this.selectedEdge.user_polarity = this.selectedEdge.polarity = polarity;
-      this.closeDrilldown();
-      this.$emit('refresh-model');
-    },
     async setEdgeWeights(edgeData: EdgeParameter, weights: [number, number]) {
       const payload = {
         id: edgeData.id,
@@ -469,10 +349,6 @@ export default defineComponent({
         this.selectedEdge.parameter.weights = weights;
       }
       this.$emit('refresh-model');
-    },
-    setSensitivityAnalysisType(analysisType: string) {
-      // FIXME: can propbably remove
-      this.$emit('set-sensitivity-analysis-type', analysisType);
     },
     async resetCAGLayout() {
       const modelGraph: any = this.$refs.modelGraph;
@@ -548,7 +424,6 @@ export default defineComponent({
           (node) => node.concept === selectedNodeStr
         );
         if (nodeToSelect) {
-          this.onNodeSensitivity(nodeToSelect);
           const neighborhood = calculateNeighborhood(this.modelComponents, nodeToSelect.concept);
 
           newVisualState = {
@@ -626,8 +501,6 @@ export default defineComponent({
         console.error(`Cannot restore back to ${insightEngine}, bad state`);
         return;
       }
-
-      this.sensitivityResult = null;
 
       if (insightEngine !== currentEngine) {
         await modelService.updateModelParameter(this.currentCAG, {

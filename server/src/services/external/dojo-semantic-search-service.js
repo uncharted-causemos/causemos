@@ -51,6 +51,21 @@ const getEffects = async (details) => {
   return await requestAsPromise(requestOptions);
 };
 
+const getDocuments = async (scrollId, size, sortBy, order) => {
+  const requestOptions = {
+    method: 'GET',
+    url: DOJO_DOCUMENT_URL,
+    json: {},
+    headers: {
+      'Content-type': 'application/json',
+      Accept: 'application/json',
+      Authorization: DOJO_AUTH,
+    },
+    qs: { size: size, scroll_id: scrollId, sort_by: sortBy, order },
+  };
+  return await requestAsPromise(requestOptions);
+};
+
 const getDocument = async (docId) => {
   const requestOptions = {
     method: 'GET',
@@ -155,6 +170,7 @@ const getHighlights = async (details) => {
 };
 
 module.exports = {
+  getDocuments,
   getDocument,
   getDocumentParagraphs,
   getParagraphs,

@@ -145,7 +145,6 @@ export enum ReferenceSeriesOption {
 export enum ComparativeAnalysisMode {
   List = 'list',
   Overlay = 'overlay',
-  RegionRanking = 'region ranking',
 }
 
 export enum DatacubeViewMode {
@@ -183,11 +182,6 @@ export enum LoadStatus {
   Loaded = 'Loaded',
 }
 
-export enum EdgeSuggestionType {
-  ConceptSuggestion = 'ConceptSuggestion',
-  KBSuggestion = 'KBSuggestion',
-}
-
 export const SPLIT_BY_VARIABLE = 'variable';
 export const TIMESERIES_HEADER_SEPARATOR = ' | ';
 
@@ -210,4 +204,20 @@ export enum ProjectionPointType {
   Interpolated = 'interpolated',
   Historical = 'historical',
   Constraint = 'constraint',
+}
+
+/**
+ * * Old data: datasets that have 5 or fewer points for the selected country after the projection start date
+ * * Insufficient data: datasets that have 5 or fewer points for the selected country
+ */
+export enum ProjectionDataWarning {
+  OldData = 'Old data',
+  InsufficientData = 'Insufficient data',
+  NoPatternDetected = 'No pattern detected',
+}
+
+export enum SortableTableHeaderState {
+  Up = 'UP',
+  Down = 'DOWN',
+  None = 'NONE',
 }

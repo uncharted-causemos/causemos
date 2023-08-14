@@ -13,15 +13,24 @@
           @select-element="selectElement"
           @highlight-edge="highlightEdge"
           @clear-highlight="clearHighlight"
+          @add-country-filter="addCountryFilter"
+          @update-country-filter="updateCountryFilter"
+          @delete-country-filter="deleteCountryFilter"
           :selected-element-id="selectedElementId"
           :highlight-edge-id="highlightEdgeId"
+          :geo-context-string="countryContextForSnippets"
+          :country-filters="countryFilters"
+          @save-geo-context="(geoContext: string) => setCountryContextForSnippets(geoContext)"
         />
         <IndexLegend class="legend" :is-projection-space="false" />
       </div>
       <IndexDrilldownPanel
         class="index-drilldown-panel"
         :selected-element-id="selectedElementId"
+        :country-context-for-snippets="countryContextForSnippets"
         @delete-edge="deleteEdge"
+        @open-drilldown="handleNavigateToDataset"
+        @save-geo-context="(geoContext: string) => setCountryContextForSnippets(geoContext)"
       />
     </div>
   </div>
@@ -53,7 +62,19 @@ const route = useRoute();
 const router = useRouter();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const { analysisName, refresh } = useIndexAnalysis(analysisId);
+const projectId = computed(() => route.params.project as string);
+const projectType = computed(() => route.params.projectType as string);
+
+const {
+  analysisName,
+  refresh,
+  deleteCountryFilter,
+  addCountryFilter,
+  updateCountryFilter,
+  getCountryFilters,
+  setCountryContextForSnippets,
+  countryContextForSnippets,
+} = useIndexAnalysis(analysisId);
 
 const indexWorkBench = useIndexWorkBench();
 const indexTree = useIndexTree();
@@ -62,6 +83,15 @@ const isStateLoaded = ref(false);
 
 const selectedElementId = ref<SelectableIndexElementId | null>(null);
 const highlightEdgeId = ref<SelectableIndexElementId | null>(null);
+
+const countryFilters = computed(() => {
+  const filters = getCountryFilters();
+  if (filters) {
+    return filters;
+  }
+  console.log('WARNING: could not find filters in analysis state object.');
+  return [];
+});
 
 const selectElement = (id: SelectableIndexElementId) => {
   deselectAllElements();
@@ -86,6 +116,21 @@ const handleKey = (evt: KeyboardEvent) => {
       deleteEdge(selectedElementId.value);
     }
   }
+};
+
+const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => {
+  router.push({
+    name: 'indexResultsDataExplorer',
+    params: {
+      projectType: projectType.value,
+      project: projectId.value,
+      analysisId: analysisId.value,
+    },
+    query: {
+      datacube_id: datacubeId,
+      item_id: datacubeItemId,
+    },
+  });
 };
 
 onBeforeMount(() => {

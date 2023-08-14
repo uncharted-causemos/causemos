@@ -11,11 +11,11 @@ import QualitativeView from '@/views/QualitativeView.vue';
 import IndexStructure from '@/views/IndexStructure.vue';
 import IndexResults from '@/views/IndexResults.vue';
 import IndexProjections from '@/views/IndexProjections.vue';
-import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
 import DatacubeDrilldown from '@/views/DatacubeDrilldown.vue';
+import Documents from '@/views/Documents.vue';
 import CompAnalysis from '@/views/CompAnalysis.vue';
 import ModelPublisher from '@/views/ModelPublisher.vue';
 import IndicatorPublisher from '@/views/IndicatorPublisher.vue';
@@ -100,6 +100,21 @@ const routes = [
     component: IndexNodeDataExplorer,
   },
   {
+    path: '/:projectType/:project/index-structure/:analysisId/explorer',
+    name: 'indexResultsDataExplorer',
+    component: DatacubeDrilldown,
+  },
+  {
+    path: '/:projectType/:project/index-projections/:analysisId/explorer',
+    name: 'projectionsDataExplorer',
+    component: DatacubeDrilldown,
+  },
+  {
+    path: '/:projectType/:project/documents',
+    name: 'documents',
+    component: Documents,
+  },
+  {
     path: '/:projectType/:project/index-results/:analysisId',
     name: 'indexResults',
     component: IndexResults,
@@ -128,11 +143,6 @@ const routes = [
     path: '/:projectType/:project/qualitative/:currentCAG',
     name: 'qualitative',
     component: QualitativeView,
-  },
-  {
-    path: '/:projectType/:project/kb-explorer',
-    name: 'kbExplorer',
-    component: KnowledgeBaseExplorer,
   },
   {
     path: '/:projectType/:project/quantitative/:currentCAG',

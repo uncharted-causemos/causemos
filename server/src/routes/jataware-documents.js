@@ -7,6 +7,16 @@ const paragraphSearchService = rootRequire('/services/external/dojo-semantic-sea
 // const authUtil = rootRequire('/util/auth-util.js');
 
 router.get(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { scroll_id, size, sort_by, order } = req.query;
+    const result = await paragraphSearchService.getDocuments(scroll_id, size, sort_by, order);
+    res.status(200);
+    res.json(result);
+  })
+);
+
+router.get(
   '/:docId',
   // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {

@@ -6,9 +6,13 @@
       <template v-if="showDatasetSearch">
         <IndexTreeNodeSearchBar
           :initial-search-text="props.nodeData.name"
+          :countryFilters="countryFilters"
           @select-dataset="attachDataset"
           @set-node-name="setNodeName"
           @cancel="cancelDatasetSearch"
+          @add-country-filter="(countryFilter: CountryFilter) => emit('add-country-filter', countryFilter)"
+          @update-country-filter="(countryFilter: CountryFilter) => emit('update-country-filter', countryFilter)"
+          @delete-country-filter="(countryFilter: CountryFilter) => emit('delete-country-filter', countryFilter)"
         />
         <IndexTreeNodeAdvancedSearchButton
           class="advanced-search-button"
@@ -98,7 +102,9 @@
       v-if="props.nodeData.name === ''"
       class="recommendations"
       :parent-node="parentNode"
+      :geo-context-string="geoContextString"
       @add-suggestion="addSuggestion"
+      @save-geo-context="(context: string) => emit('save-geo-context', context)"
     />
   </div>
 </template>
@@ -127,12 +133,15 @@ import { useStore } from 'vuex';
 import { ProjectType } from '@/types/Enums';
 import IndexStructureRecommendations from './index-structure-recommendations.vue';
 import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+import { CountryFilter } from '@/types/Analysis';
 
 interface Props {
   nodeData: ConceptNode;
   isSelected: boolean;
   isConnecting: boolean;
   isDescendentOfConnectingNode: boolean;
+  geoContextString: string;
+  countryFilters: CountryFilter[];
 }
 const props = defineProps<Props>();
 
@@ -151,6 +160,10 @@ const emit = defineEmits<{
     nodeNameAfterAttachingDataset: string
   ): void;
   (e: 'create-edge', nodeId: string): void;
+  (e: 'save-geo-context', context: string): void;
+  (e: 'add-country-filter', selectedCountries: CountryFilter): void;
+  (e: 'update-country-filter', selectedCountries: CountryFilter): void;
+  (e: 'delete-country-filter', selectedCountries: CountryFilter): void;
 }>();
 
 const canSelectNode = computed(() => {
@@ -282,6 +295,7 @@ const route = useRoute();
 const store = useStore();
 const project = computed(() => store.getters['app/project']);
 const analysisId = computed(() => route.params.analysisId as string);
+
 const seeResults = () => {
   router.push({
     name: 'indexResults',

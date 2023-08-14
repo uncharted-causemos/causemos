@@ -12,7 +12,7 @@ import { DEFAULT_STYLE } from './cag-style';
 import { EdgeSuggestion } from '@/utils/relationship-suggestion-util';
 import { createOrUpdateButton, SVG_BUTTON_STYLES } from '@/utils/svg-util-new';
 import { D3Selection } from '@/types/D3';
-import { EdgeDirection, EdgeSuggestionType, LoadStatus } from '@/types/Enums';
+import { EdgeDirection, LoadStatus } from '@/types/Enums';
 
 const REMOVE_TIMER = 1000;
 
@@ -122,15 +122,13 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
    * @param node Position UI relative to this. Other nodes will be faded out.
    * @param edgeDirection Whether the suggestions are for incoming/outgoing edges.
    * @param loadStatus Whether to display a loading indicator instead of `suggestions`.
-   * @param suggestionType Used for rendering "Explore All" button.
    */
   setSuggestionData(
     suggestions: EdgeSuggestion[],
     selectedSuggestions: EdgeSuggestion[],
     node: INode<NodeParameter>,
     edgeDirection: EdgeDirection,
-    loadStatus: LoadStatus,
-    suggestionType: EdgeSuggestionType
+    loadStatus: LoadStatus
   ) {
     // Suggestion column starts to the left of the node if showing driver
     //  (incoming) edges, and starts to the right otherwise.
@@ -161,7 +159,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       addButtonStartX,
       edgeDirection
     );
-    this.renderExploreButton(suggestionType, suggestions.length, suggestionColumnX, node.y);
     this.setOtherNodesAndEdgesOpacity(node.id, 0.1);
   }
 
@@ -385,31 +382,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       });
   }
 
-  renderExploreButton(
-    suggestionType: EdgeSuggestionType,
-    count: number,
-    suggestionColumnX: number,
-    nodeY: number
-  ) {
-    this.chart.selectAll('.explore-all-button').remove();
-    if (suggestionType === EdgeSuggestionType.ConceptSuggestion || count === 0) return;
-    const { buttonSelection: exploreButton } = createOrUpdateButton(
-      `Explore all (${count})`,
-      'explore-all-button',
-      this.chart as unknown as D3Selection,
-      (event: any) => {
-        // Don't trigger background click handler
-        event.stopPropagation();
-        this.emit('open-kb-explorer');
-      },
-      SVG_BUTTON_STYLES.DEFAULT
-    );
-
-    const yPosition =
-      nodeY + (MAX_VISIBLE_SUGGESTIONS + 1) * (NODE_HEIGHT + EDGE_SUGGESTION_SPACING);
-    exploreButton.attr('transform', translate(suggestionColumnX, yPosition));
-  }
-
   createOrUpdateAddButton(selectedCount: number) {
     const text = `Add ${selectedCount} relationship${selectedCount !== 1 ? 's' : ''}`;
     const addRelationshipsButton = createOrUpdateButton(
@@ -433,7 +405,6 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
     this.chart.selectAll('.suggestion-column-label').remove();
     this.chart.selectAll('.node-suggestion').remove();
     this.chart.selectAll('.suggestion-loading-indicator').remove();
-    this.chart.selectAll('.explore-all-button').remove();
     // Clicking the right handle shows possible edges on existing nodes
     this.chart.selectAll('.edge-possibility-indicator').remove();
     // Restore all nodes to full opacity

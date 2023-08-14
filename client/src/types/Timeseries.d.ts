@@ -54,20 +54,3 @@ export interface SparklineData {
   name: string;
   color: string;
 }
-
-/**
- * Old data: datasets that have 5 or fewer points for the selected country after the projection start date
- * Insufficient data: datasets that have 5 or fewer points for the selected country
- *
- * true indicates an error
- */
-export interface DataWarning {
-  oldData: boolean;
-  insufficientData: boolean;
-}
-
-export interface ByCountryWarning {
-  country: string;
-  nodeId: string;
-  warning: DataWarning;
-}

@@ -19,28 +19,6 @@ const OPERATION = Object.freeze({
 });
 
 /**
- * POST an edge polarity
- */
-router.put(
-  '/:mid/edge-polarity',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
-  asyncHandler(async (req, res) => {
-    const editTime = Date.now();
-    const modelId = req.params.mid;
-    const { edge_id: edgeId, polarity } = req.body;
-    await cagService.updateEdgeUserPolarity(modelId, edgeId, polarity);
-    await cagService.updateCAGMetadata(modelId, {
-      status: MODEL_STATUS.NOT_REGISTERED,
-      engine_status: RESET_ALL_ENGINE_STATUS,
-    });
-
-    await scenarioService.invalidateByModel(modelId);
-
-    res.status(200).send({ polarity, updateToken: editTime });
-  })
-);
-
-/**
  * POST a new CAG from an Existing CAG
  */
 router.post(

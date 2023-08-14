@@ -5,6 +5,8 @@ import {
   DataAnalysisState,
   RegionRankingItemStates,
   IndexAnalysisState,
+  CountryFilter,
+  ProjectionDateRange,
 } from '@/types/Analysis';
 import {
   BinningOptions,
@@ -15,6 +17,10 @@ import {
 import { createNewOutputIndex } from '@/utils/index-tree-util';
 import { createNewIndexResultsSettings } from '@/utils/index-results-util';
 import { createNewIndexProjectionSettings } from '@/utils/index-projection-util';
+import {
+  DEFAULT_EARLIEST_YEAR,
+  DEFAULT_LAST_YEAR,
+} from '@/services/composables/useProjectionDates';
 
 /**
  * Create a new DataAnalysisState object with each of its fields initialized to
@@ -37,12 +43,37 @@ export const createDataAnalysisObject = (analysisItems?: AnalysisItem[]): DataAn
   };
 };
 
+export const defaultCountryFilters: CountryFilter[] = [
+  {
+    countryName: 'United States',
+    active: false,
+  },
+  {
+    countryName: 'Russia',
+    active: false,
+  },
+  {
+    countryName: 'China',
+    active: false,
+  },
+];
+
+export const defaultProjectionDateRange: ProjectionDateRange = {
+  endMonth: 0,
+  endYear: DEFAULT_LAST_YEAR,
+  startMonth: 0,
+  startYear: DEFAULT_EARLIEST_YEAR,
+};
+
 export const createIndexAnalysisObject = (): IndexAnalysisState => {
   return {
     index: createNewOutputIndex(),
     workBench: [],
     resultsSettings: createNewIndexResultsSettings(),
     projectionSettings: createNewIndexProjectionSettings(),
+    countryFilters: defaultCountryFilters,
+    countryContextForSnippets: '',
+    projectionDateRange: defaultProjectionDateRange,
   };
 };
 
