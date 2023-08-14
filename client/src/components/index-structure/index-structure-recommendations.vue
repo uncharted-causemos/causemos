@@ -7,6 +7,7 @@
       :display-list-in-component="false"
       :geo-context-string="geoContextString"
       @save-geo-context="(context: string) => emit('save-geo-context', context)"
+      class="geographic-context"
     />
     <div
       v-for="recommendation of recommendationsToDisplay"
@@ -119,9 +120,13 @@ $arrowhead-width: 5px;
 }
 
 .title {
-  // Align title with the right edges of the recommendations
-  margin-right: $line-length-before-arrowhead + $arrowhead-width;
   margin-bottom: 10px;
+}
+
+.title,
+.geographic-context {
+  // Align with the right edges of the recommendations
+  margin-right: $line-length-before-arrowhead + $arrowhead-width;
 }
 
 .recommendation {
