@@ -16,7 +16,7 @@
         :geo-context-string="geoContextString"
         @save-geo-context="(context: string) => emit('save-geo-context', context)"
       />
-      <div v-if="isLoadingSnippets === null" class="loading-indicator">
+      <div v-if="isLoadingSnippets" class="loading-indicator">
         <i class="fa fa-spin fa-spinner pane-loading-icon" />
         <p>Loading snippets...</p>
       </div>
