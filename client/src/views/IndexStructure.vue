@@ -18,7 +18,9 @@
           @delete-country-filter="deleteCountryFilter"
           :selected-element-id="selectedElementId"
           :highlight-edge-id="highlightEdgeId"
+          :geo-context-string="countryContextForSnippets"
           :country-filters="countryFilters"
+          @save-geo-context="(geoContext: string) => setCountryContextForSnippets(geoContext)"
         />
         <IndexLegend class="legend" :is-projection-space="false" />
       </div>
