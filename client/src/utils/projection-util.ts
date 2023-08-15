@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import forecast from './forecast';
+import forecast, { ForecastMethod } from './forecast';
 import {
   getYearFromTimestamp,
   getNumberOfMonthsSinceEpoch,
@@ -82,7 +82,7 @@ const sum = (...data: TimeseriesPointProjected[][]) => {
  * based on the provided data resolution option
  * @param dataResOption Data temporal resolution option
  */
-const getTimestampCovertFunctions = (
+export const getTimestampCovertFunctions = (
   dataResOption: TemporalResolutionOption.Year | TemporalResolutionOption.Month
 ) => {
   const fromTimestamp =
@@ -222,11 +222,13 @@ export const runConstantInterpolation = (
  * @param timeseries timeseries data
  * @param targetPeriod target period that final project data will cover. targetPeriod.start and targetPeriod.end expects unix timestamp milliseconds
  * @param dataResOption data resolution option
+ * @param forecastMethod forecast method. Defaults to 'auto'
  */
 export const runProjection = (
   timeseries: TimeseriesPoint[],
   targetPeriod: { start: number; end: number },
-  dataResOption: TemporalResolutionOption.Month | TemporalResolutionOption.Year
+  dataResOption: TemporalResolutionOption.Month | TemporalResolutionOption.Year,
+  forecastMethod: ForecastMethod | 'auto' = 'auto'
 ) => {
   const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(dataResOption);
 
@@ -245,7 +247,12 @@ export const runProjection = (
 
   // Run forecast
   const runner = forecast.initialize(inputData, { forecastSteps, backcastSteps });
-  const fResult = runner.runAuto();
+  const runMethod = {
+    auto: () => runner.runAuto(),
+    [ForecastMethod.Holt]: () => runner.runHolt(),
+    [ForecastMethod.HoltWinters]: () => runner.runHoltWinters(),
+  };
+  const fResult = runMethod[forecastMethod]();
 
   const backcastPoints = fResult.backcast.data.map(([x, y]) => ({
     x,
@@ -440,7 +447,7 @@ export const createProjectionRunner = (
      * @param nodeId node id
      * @param options options - options e.g forecast method
      */
-    projectDatasetNode(nodeId: string) {
+    projectDatasetNode(nodeId: string, options: { method?: ForecastMethod } = {}) {
       const series = data[nodeId];
       if (!series) return runner;
 
@@ -450,7 +457,8 @@ export const createProjectionRunner = (
         const { method, forecast, backcast, projectionData, reason } = runProjection(
           inputData,
           period,
-          dataTempResOption
+          dataTempResOption,
+          options.method
         );
         runInfo[nodeId] = {
           method,

@@ -74,7 +74,7 @@ export const createNewScenario = (
 export const getProjectionsForNode = (projections: IndexProjection[], nodeId: string) => {
   const projectionTimeseries: ProjectionTimeseries[] = projections.map((p) => {
     return {
-      id: `${p.id}_${nodeId}`,
+      projectionId: p.id,
       name: p.name,
       color: p.color,
       points: p.result[nodeId] || [],
@@ -89,12 +89,12 @@ export const getProjectionsForNode = (projections: IndexProjection[], nodeId: st
  * @param nodeId node id
  */
 export const getHistoricalDataForNode = (
-  historicalData: { [projectionId: string]: { [nodeId: string]: TimeseriesPoint[] } },
+  historicalData: { [countryName: string]: { [nodeId: string]: TimeseriesPoint[] } },
   nodeId: string
 ) => {
-  return Object.entries(historicalData).map(([projectionId, hData]) => {
+  return Object.entries(historicalData).map(([countryName, hData]) => {
     return {
-      id: `${projectionId}_${nodeId}`,
+      countryName,
       points: hData[nodeId] ?? [],
     };
   });
@@ -108,7 +108,7 @@ export const getHistoricalDataForNode = (
 export const getConstraintsForNode = (scenarios: IndexProjectionScenario[], nodeId: string) => {
   return scenarios.map((scenario) => {
     return {
-      id: `${scenario.id}_${nodeId}`,
+      scenarioId: scenario.id,
       constraints: scenario.constraints[nodeId] ?? [],
     };
   });

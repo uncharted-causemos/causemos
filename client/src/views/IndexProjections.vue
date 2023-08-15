@@ -188,6 +188,7 @@
         :selected-node-id="selectedNodeId"
         :historical-data="historicalData"
         :scenarios="scenarios"
+        :projection-temporal-resolution-option="temporalResolutionOption"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"

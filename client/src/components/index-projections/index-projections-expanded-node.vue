@@ -37,7 +37,15 @@
         :is-inverted="isInvertedData"
       />
 
-      <IndexProjectionsExpandedNodeResilience />
+      <IndexProjectionsExpandedNodeResilience
+        :node-data="nodeData"
+        :historical-data="historicalData"
+        :constraints="constraints"
+        :projection-temporal-resolution-option="projectionTemporalResolutionOption"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
+        :projection-timeseries="timeseries"
+      />
 
       <IndexProjectionsExpandedNodeWarning
         class="warning-section add-horizontal-margin"
@@ -90,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { ConceptNode, IndexProjectionNodeDataWarning } from '@/types/Index';
+import { ConceptNode, IndexProjectionNodeDataWarning, ProjectionConstraint } from '@/types/Index';
 import {
   DATASET_COLOR,
   DATASET_ICON,
@@ -101,12 +109,13 @@ import {
 import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
-import { ProjectionTimeseries } from '@/types/Timeseries';
+import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 import { EditMode } from '@/utils/projection-util';
 import IndexProjectionsExpandedNodeWarning from './index-projections-expanded-node-warning.vue';
 import IndexProjectionsExpandedNodeResilience from './index-projections-expanded-node-resilience.vue';
+import { TemporalResolutionOption } from '@/types/Enums';
 
 const optionsButtonMenu = [
   {
@@ -131,8 +140,11 @@ const optionsButtonMenu = [
 
 const props = defineProps<{
   nodeData: ConceptNode;
+  historicalData: { countryName: string; points: TimeseriesPoint[] };
+  constraints: { scenarioId: string; constraints: ProjectionConstraint[] }[];
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
+  projectionTemporalResolutionOption: TemporalResolutionOption;
   timeseries: ProjectionTimeseries[];
   showDataOutsideNorm: boolean;
   editMode?: EditMode;
