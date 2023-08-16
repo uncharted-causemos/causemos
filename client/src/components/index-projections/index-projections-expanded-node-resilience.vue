@@ -23,13 +23,15 @@ import * as d3 from 'd3';
 
 import { TemporalResolutionOption } from '@/types/Enums';
 import { ConceptNode, ProjectionConstraint } from '@/types/Index';
-import {
-  ProjectionTimeseries,
-  TimeseriesPoint,
-  TimeseriesPointProjected,
-} from '@/types/Timeseries';
+import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { ForecastMethod } from '@/utils/forecast';
-import { createProjectionRunner, getTimestampCovertFunctions } from '@/utils/projection-util';
+import {
+  createProjectionRunner,
+  calculateMinTimeInterval,
+  getTimestampCovertFunctions,
+  applyConstraints,
+  interpolateLinear,
+} from '@/utils/projection-util';
 
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
 
@@ -63,9 +65,13 @@ const getConstraints = (projectionId: string) => {
   return constraints ?? [];
 };
 
-const getNextTimestamp = (timestamp: number, steps: number, temporalResOption: TempResOption) => {
+const getNextTimestamp = (
+  timestamp: number,
+  interval: number,
+  temporalResOption: TempResOption
+) => {
   const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(temporalResOption);
-  return toTimestamp(fromTimestamp(timestamp) + steps);
+  return toTimestamp(fromTimestamp(timestamp) + interval);
 };
 
 // const calculateGreatestAbsoluteHistoricalChange = (
@@ -92,45 +98,60 @@ const getNextTimestamp = (timestamp: number, steps: number, temporalResOption: T
 //   return { minStride, greatestAbsoluteChange };
 // };
 
+// const getTimeIntervalTerm = (steps: number, temporalResolutionOption: TempResOption) => {
+//   if (temporalResolutionOption === TemporalResolutionOption.Month) {
+//     if (steps === 1) return 'monthly'
+//     if (steps === 3) return 'quarterly'
+//     if (steps === 12) return 'annual'
+//     return `${steps} months`
+//   } else if (temporalResolutionOption === TemporalResolutionOption.Year) {
+//     if (steps === 1) return 'annual'
+//     if (steps === 2) return 'biennial'
+//     return `${steps} years`
+//   }
+//   return '';
+// }
+
 const calculateGreatestAbsoluteHistoricalChange = (
   points: TimeseriesPoint[],
-  projectedPoints: TimeseriesPointProjected[],
+  constraints: ProjectionConstraint[],
   temporalResOption: TempResOption
 ) => {
-  const { fromTimestamp } = getTimestampCovertFunctions(temporalResOption);
+  if (points.length < 2)
+    return {
+      interval: 1,
+      greatestAbsoluteChange: 0,
+      lastPoint: points[points.length - 1],
+    };
+
+  // Get the number of time interval between two closest historical points in temporalResOption resolution
+  const interval = calculateMinTimeInterval(points, temporalResOption);
   let greatestAbsoluteChange = 0;
-  // Detect time step size (number of months or years between two historical points depending on the temporalResOption).
-  let minStride = Infinity;
-  const firstHistoricalDate = points[0].timestamp;
-  const lastHistoricalDate = points[points.length - 1].timestamp;
-  for (let index = 0; index < points.length - 1; index++) {
-    const pointA = points[index];
-    const pointB = points[index + 1];
-    minStride = Math.min(
-      minStride,
-      fromTimestamp(pointB.timestamp) - fromTimestamp(pointA.timestamp)
-    );
-  }
-  // projectedPoints.findIndex(p => p.timestamp === firstHistoricalDate || )
-  const projectedPointsWithinHistoricalRange = projectedPoints.filter(
-    (p) => p.timestamp >= firstHistoricalDate && p.timestamp <= lastHistoricalDate
+
+  const { fromTimestamp } = getTimestampCovertFunctions(temporalResOption);
+  const firstHistoricalPointDate = points[0].timestamp;
+  const lastHistoricalPointDate = points[points.length - 1].timestamp;
+  // Preserve constraints within the historical data points range.
+  // For the simplicity, ignore the constraints set before the first historical point.
+  const historicalPointsWithConstraints = applyConstraints(points, constraints).filter(
+    (p) => p.timestamp >= firstHistoricalPointDate && p.timestamp <= lastHistoricalPointDate
   );
-  console.log(projectedPointsWithinHistoricalRange);
-  for (
-    let index = 0;
-    index < projectedPointsWithinHistoricalRange.length - minStride;
-    index += minStride
-  ) {
-    const pointA = projectedPointsWithinHistoricalRange[index];
-    const pointB = projectedPointsWithinHistoricalRange[index + minStride];
-    const change = Math.abs(pointB.value - pointA.value);
-    console.log(pointA, pointB);
-    console.log(change);
+  // Run interpolation to fill the gaps in the data.
+  const interpolatedPoints = interpolateLinear(
+    historicalPointsWithConstraints.map((p) => ({ x: fromTimestamp(p.timestamp), y: p.value }))
+  );
+  // Find the greatest change in value in an interval
+  for (let index = 0; index < interpolatedPoints.length - interval; index += interval) {
+    const pointA = interpolatedPoints[index].dataPoint;
+    const pointB = interpolatedPoints[index + interval].dataPoint;
+    const change = Math.abs(pointB.y - pointA.y);
     greatestAbsoluteChange = Math.max(change, greatestAbsoluteChange);
   }
-  const lastPoint =
-    projectedPointsWithinHistoricalRange[projectedPointsWithinHistoricalRange.length - 1];
-  return { minStride, greatestAbsoluteChange, lastPoint };
+  return {
+    interval,
+    greatestAbsoluteChange,
+    lastPoint: historicalPointsWithConstraints[historicalPointsWithConstraints.length - 1],
+  };
 };
 
 const wrapByNodeId = (data: TimeseriesPoint[] | ProjectionConstraint[]) => {
@@ -140,30 +161,26 @@ const wrapByNodeId = (data: TimeseriesPoint[] | ProjectionConstraint[]) => {
 const chartData = computed(() => {
   const renderItems = props.projectionTimeseries.map((item) => {
     const historicalData = getHistoricalData(item.projectionId);
+    if (historicalData.length === 0) return [];
+
     const lastHistoricalPoint = historicalData[historicalData.length - 1];
     const constraintsBeforeLastHistoricalPoint = getConstraints(item.projectionId).filter(
       (c) => c.timestamp <= lastHistoricalPoint.timestamp
     );
-    // const clampedHistoricalData = applyConstraints(historicalData, constraintsBeforeLastHistoricalPoint);
-    // const lastPoint = clampedHistoricalData[clampedHistoricalData.length - 1];
-    // const { minStride, greatestAbsoluteChange } = calculateGreatestAbsoluteHistoricalChange(
-    //   clampedHistoricalData,
-    //   props.projectionTemporalResolutionOption
-    // );
-    const { minStride, greatestAbsoluteChange, lastPoint } =
+    const { interval, greatestAbsoluteChange, lastPoint } =
       calculateGreatestAbsoluteHistoricalChange(
         historicalData,
         item.points,
         props.projectionTemporalResolutionOption
       );
-    console.log(minStride, greatestAbsoluteChange);
+    console.log(interval, greatestAbsoluteChange);
 
     const topConstraints = [
       ...constraintsBeforeLastHistoricalPoint,
       {
         timestamp: getNextTimestamp(
           lastPoint.timestamp,
-          minStride,
+          interval,
           props.projectionTemporalResolutionOption
         ),
         value: lastPoint.value + greatestAbsoluteChange,
@@ -174,7 +191,7 @@ const chartData = computed(() => {
       {
         timestamp: getNextTimestamp(
           lastPoint.timestamp,
-          minStride,
+          interval,
           props.projectionTemporalResolutionOption
         ),
         value: lastPoint.value,
@@ -185,7 +202,7 @@ const chartData = computed(() => {
       {
         timestamp: getNextTimestamp(
           lastPoint.timestamp,
-          minStride,
+          interval,
           props.projectionTemporalResolutionOption
         ),
         value: lastPoint.value - greatestAbsoluteChange,

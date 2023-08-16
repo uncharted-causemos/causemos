@@ -77,6 +77,8 @@ const sum = (...data: TimeseriesPointProjected[][]) => {
   return rest.length === 0 ? first : rest.reduce((prev, cur) => _sum(prev, cur), first);
 };
 
+// TODO: May want to move `getTimestampCovertFunctions` and `calculateMinTimeInterval` to other util file or to `timeseries-util`
+
 /**
  * Return function that convert timestamp value to yearly or monthly step
  * based on the provided data resolution option
@@ -97,6 +99,31 @@ export const getTimestampCovertFunctions = (
     fromTimestamp,
     toTimestamp,
   };
+};
+
+/**
+ * Calculate the Minimum Time Interval in Series.
+ * @param data - Timeseries data points.
+ * @param resolution - Temporal resolution: 'TemporalResolutionOption.Month' or 'TemporalResolutionOption.Year'.
+ * @returns Minimum time interval in the specified resolution between any two points in the series.
+ */
+export const calculateMinTimeInterval = <T extends { timestamp: number }>(
+  data: T[],
+  resolution: TemporalResolutionOption.Year | TemporalResolutionOption.Month
+) => {
+  if (data.length < 2) return 0;
+  const { fromTimestamp } = getTimestampCovertFunctions(resolution);
+  // Detect time step size (number of months or years between two historical points depending on the temporalResOption).
+  let minInterval = Infinity;
+  for (let index = 0; index < data.length - 1; index++) {
+    const pointA = data[index];
+    const pointB = data[index + 1];
+    minInterval = Math.min(
+      minInterval,
+      fromTimestamp(pointB.timestamp) - fromTimestamp(pointA.timestamp)
+    );
+  }
+  return minInterval;
 };
 
 const calculateNumberOfForecastStepsNeeded = (
