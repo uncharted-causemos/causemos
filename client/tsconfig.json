@@ -20,9 +20,7 @@
     "sourceMap": true,
     "types": ["vite/client", "mocha", "chai"]
   },
-  "vueCompilerOptions": {
-    // "skipTemplateCodegen": true
-  },
+  "vueCompilerOptions": {},
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
