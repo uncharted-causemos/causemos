@@ -48,7 +48,7 @@
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="selectedUpstreamNodeName"
         :geo-context-string="countryContextForSnippets"
-        @saveGeoContext="(value) => emit('save-geo-context', value)"
+        @save-geo-context="(value) => emit('save-geo-context', value)"
       />
     </template>
     <!-- Output node is selected -->
@@ -81,7 +81,7 @@
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="null"
         :geo-context-string="countryContextForSnippets"
-        @saveGeoContext="(value) => emit('save-geo-context', value)"
+        @save-geo-context="(value) => emit('save-geo-context', value)"
       />
     </template>
     <!-- Node without dataset is selected -->
@@ -128,7 +128,7 @@
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="null"
         :geo-context-string="countryContextForSnippets"
-        @saveGeoContext="(value) => emit('save-geo-context', value)"
+        @save-geo-context="(value) => emit('save-geo-context', value)"
       />
     </template>
     <!-- Node with dataset is selected -->
@@ -165,17 +165,19 @@
           </div>
         </div>
       </header>
+      <!-- ASSUMPTION: Model-type datacubes cannot be attached to a concept node -->
       <IndexDatasetMetadata
         :node="selectedNode"
-        :dataset-metadata="datasetMetadata"
+        :dataset-metadata="(datasetMetadata as Indicator | null)"
         :output-description="outputDescription"
       />
       <section>
         <h4>Coverage</h4>
+        <!-- ASSUMPTION: Model-type datacubes cannot be attached to a concept node -->
         <IndexTemporalCoveragePreview
           :output-variable="selectedNode.dataset.config.outputVariable"
           :selected-timestamp="selectedNode.dataset.config.selectedTimestamp"
-          :metadata="datasetMetadata"
+          :metadata="(datasetMetadata as Indicator | null)"
         />
         <IndexSpatialCoveragePreview
           :node="selectedNode"
@@ -189,7 +191,7 @@
         <h4>Settings</h4>
         <IndexInvertData
           :selected-node="selectedNode"
-          @set-inverted="(newValue) => setDatasetIsInverted(selectedNode.id, newValue)"
+          @set-inverted="(newValue) => setDatasetIsInverted((selectedNode as ConceptNode).id, newValue)"
         />
         <div>
           <p>Selected date</p>
@@ -206,7 +208,7 @@
         :selected-node-name="panelTitle"
         :selected-upstream-node-name="null"
         :geo-context-string="countryContextForSnippets"
-        @saveGeoContext="(value) => emit('save-geo-context', value)"
+        @save-geo-context="(value) => emit('save-geo-context', value)"
       />
     </template>
   </div>
@@ -237,6 +239,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import { NEGATIVE_COLOR, POSITIVE_COLOR } from '@/utils/colors-util';
 import timestampFormatter from '@/formatters/timestamp-formatter';
 import IndexTemporalCoveragePreview from './index-temporal-coverage-preview.vue';
+import { Indicator } from '@/types/Datacube';
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;

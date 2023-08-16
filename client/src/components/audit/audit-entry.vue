@@ -23,11 +23,17 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { PropType, defineComponent } from 'vue';
 import { COMPACT_POLARITY } from '@/utils/polarity-util';
 import HighlightValue from '@/components/audit/highlight-value.vue';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 const POLARITY_CORRECTION_TYPES = ['factor_polarity'];
+
+type Factor = {
+  subj: { polarity: '-1' | '0' | '1'; concept: string };
+  obj: { polarity: '-1' | '0' | '1'; concept: string };
+};
 
 export default defineComponent({
   name: 'AuditEntry',
@@ -37,15 +43,16 @@ export default defineComponent({
   setup() {
     return {
       COMPACT_POLARITY,
+      ontologyFormatter: useOntologyFormatter(),
     };
   },
   props: {
     displayValues: {
-      type: Object,
+      type: Object as PropType<Factor>,
       default: () => ({}),
     },
     compareValues: {
-      type: Object,
+      type: Object as PropType<Factor>,
       default: () => ({}),
     },
     updateType: {

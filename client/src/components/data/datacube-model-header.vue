@@ -57,7 +57,7 @@ export default defineComponent({
       return outputs?.map((o) => o.display_name) ?? [];
     });
 
-    function updateDesc(e: InputEvent) {
+    function updateDesc(e: Event) {
       if (metadata.value) {
         const textArea = e.target as HTMLTextAreaElement;
         metadata.value.description = textArea.value;

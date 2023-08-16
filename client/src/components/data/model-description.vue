@@ -122,8 +122,8 @@
       </thead>
       <tbody v-if="metadata && metadata.outputs">
         <tr
-          v-for="param in outputVariables"
-          :key="param.id"
+          v-for="(param, index) in outputVariables"
+          :key="index"
           :class="{ 'primary-output': param.name === currentOutputFeature.name }"
         >
           <td class="model-attribute-pair">

@@ -136,7 +136,7 @@ export default defineComponent({
       default: () => ({}),
     },
     expandAll: {
-      type: Object,
+      type: Object as PropType<{ value: boolean }>,
       default: () => null,
     },
     activeItem: {

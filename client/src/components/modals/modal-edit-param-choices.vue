@@ -3,7 +3,7 @@
     <template #header>
       <h4 class="title"><i class="fa fa-fw fa-book" /> Edit Parameter Options</h4>
     </template>
-    <template #body v-if="updatedParameter">
+    <template #body>
       <label>
         <b>Parameter:</b>
         {{
@@ -111,10 +111,11 @@
           <label @click="toggleOmitGADMCodeVersion()" style="cursor: pointer; color: black">
             <i
               class="fa fa-lg fa-fw"
-              :class="{
-                'fa-check-square-o': updatedParameter.additional_options.geo_omit_gadm_code_version,
-                'fa-square-o': !updatedParameter.additional_options.geo_omit_gadm_code_version,
-              }"
+              :class="[
+                updatedParameter.additional_options.geo_omit_gadm_code_version
+                  ? 'fa-check-square-o'
+                  : 'fa-square-o',
+              ]"
             />
             Omit GADM code version
           </label>
@@ -239,18 +240,21 @@ export default defineComponent({
       required: true,
     },
   },
-  setup() {
+  setup(props) {
     const dateMinPickerElement = ref<HTMLElement | null>(null);
     const dateMaxPickerElement = ref<HTMLElement | null>(null);
 
     const newChoiceInput = ref('');
     const newChoiceLabelInput = ref('');
 
+    const updatedParameter = ref(_.cloneDeep(props.selectedParameter));
+
     return {
       dateMinPickerElement,
       dateMaxPickerElement,
       newChoiceInput,
       newChoiceLabelInput,
+      updatedParameter,
     };
   },
   computed: {
@@ -270,11 +274,7 @@ export default defineComponent({
       return Object.values(DatacubeGeoAttributeVariableType); // TODO: consider more human-readable labels
     },
     geoFormatExample(): string {
-      if (
-        !this.updatedParameter ||
-        this.updatedParameter.additional_options.geo_bbox_format === undefined
-      )
-        return '';
+      if (this.updatedParameter.additional_options.geo_bbox_format === undefined) return '';
       // show some format example
       let formatStr = this.updatedParameter.additional_options.geo_bbox_format;
       if (
@@ -306,13 +306,10 @@ export default defineComponent({
     },
   },
   data: () => ({
-    updatedParameter: undefined as ModelParameter | undefined,
     GeoAttributeFormat,
     defaultBBoxFormat: '[ [{left}, {top}], [{right}, {bottom}] ]',
   }),
   mounted() {
-    this.updatedParameter = _.cloneDeep(this.selectedParameter);
-
     const datePickerOptions: flatpickr.Options.Options = {
       allowInput: false, // should the user be able to directly enter date value?
       wrap: true, // enable the flatpickr lib to utilize toggle/clear buttons
@@ -364,48 +361,37 @@ export default defineComponent({
   },
   methods: {
     deleteChoice(choice: string) {
-      if (this.updatedParameter && this.updatedParameter.choices) {
+      if (this.updatedParameter.choices) {
         const choiceIndex = this.updatedParameter?.choices?.findIndex((c) => c === choice);
         this.updatedParameter.choices.splice(choiceIndex, 1);
         this.updatedParameter.choices_labels?.splice(choiceIndex, 1);
       }
     },
     toggleOmitGADMCodeVersion() {
-      if (this.updatedParameter) {
-        this.updatedParameter.additional_options.geo_omit_gadm_code_version =
-          !this.updatedParameter.additional_options.geo_omit_gadm_code_version;
-      }
+      this.updatedParameter.additional_options.geo_omit_gadm_code_version =
+        !this.updatedParameter.additional_options.geo_omit_gadm_code_version;
     },
     resetBBoxFormat() {
-      if (this.updatedParameter) {
-        this.updatedParameter.additional_options.geo_bbox_format = this.defaultBBoxFormat;
-      }
+      this.updatedParameter.additional_options.geo_bbox_format = this.defaultBBoxFormat;
     },
     updateAcceptableGeoFormat(val: GeoAttributeFormat) {
-      if (this.updatedParameter) {
-        this.updatedParameter.additional_options.geo_region_format = val;
-      }
+      this.updatedParameter.additional_options.geo_region_format = val;
     },
     updateAcceptableGeoLevels(val: string) {
-      if (this.updatedParameter) {
-        //
-        // toggle level
-        //
-        const acceptableLevels =
-          this.updatedParameter.additional_options.geo_acceptable_levels ?? [];
-        if (acceptableLevels.includes(val)) {
-          // only remove this level if there is at least one other acceptable level
-          if (acceptableLevels.length > 1) {
-            this.updatedParameter.additional_options.geo_acceptable_levels =
-              acceptableLevels.filter((l) => l !== val);
-          }
-        } else {
-          // add level
-          this.updatedParameter.additional_options.geo_acceptable_levels = [
-            ...acceptableLevels,
-            val,
-          ];
+      //
+      // toggle level
+      //
+      const acceptableLevels = this.updatedParameter.additional_options.geo_acceptable_levels ?? [];
+      if (acceptableLevels.includes(val)) {
+        // only remove this level if there is at least one other acceptable level
+        if (acceptableLevels.length > 1) {
+          this.updatedParameter.additional_options.geo_acceptable_levels = acceptableLevels.filter(
+            (l) => l !== val
+          );
         }
+      } else {
+        // add level
+        this.updatedParameter.additional_options.geo_acceptable_levels = [...acceptableLevels, val];
       }
     },
     saveUpdatedParamOptions() {

@@ -7,8 +7,8 @@
         type="text"
         class="form-control"
         :value="currentName"
-        @focus="$event.target.select()"
-        @input="newNameInput = $event.target.value"
+        @focus="event => (event.target as HTMLInputElement).select()"
+        @input="event => newNameInput = (event.target as HTMLInputElement).value"
         @keyup.enter="onConfirm"
       />
     </template>

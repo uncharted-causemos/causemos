@@ -17,7 +17,7 @@
       @retry="retryRun"
     />
     <modal-geo-selection
-      v-if="showGeoSelectionModal === true"
+      v-if="showGeoSelectionModal === true && isModel(metadata)"
       :model-param="geoModelParam ?? undefined"
       :metadata="metadata"
       @close="onGeoSelectionModalClose"
@@ -300,7 +300,7 @@
               <div style="padding-right: 10px">Selected Viz:</div>
               <select
                 name="pre-gen-outputs"
-                @change="selectedPreGenDataId = preGenDataIds[$event.target.selectedIndex]"
+                @change="event => selectedPreGenDataId = preGenDataIds[(event.target as HTMLSelectElement).selectedIndex]"
               >
                 <option
                   v-for="pregenId in preGenDataIds"
@@ -407,7 +407,7 @@
             class="timeseries-chart"
             :timeseries-data="timeseriesData"
             :selected-temporal-resolution="selectedTemporalResolution"
-            :selected-timestamp="selectedTimestamp"
+            :selected-timestamp="selectedTimestamp ?? undefined"
             :breakdown-option="breakdownOption"
             :unit="timeseriesUnit"
             @select-timestamp="setSelectedTimestamp"
@@ -420,7 +420,7 @@
             "
             :timeseriesData="globalTimeseries"
             :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
-            :selected-timestamp="selectedGlobalTimestamp"
+            :selected-timestamp="selectedGlobalTimestamp ?? undefined"
             :selected-timestamp-range="selectedGlobalTimestampRange"
             :breakdown-option="breakdownOption"
             @select-timestamp="setSelectedGlobalTimestamp"
@@ -1964,6 +1964,10 @@ export default defineComponent({
       );
     });
 
+    // HACK: silences warnings from pregenDataForSpec used in template.
+    //  Ideally we should not be using the hacky `:set=` attribute in the template at all.
+    const pregenDataForSpec = undefined as PreGeneratedModelRunData | undefined;
+
     return {
       addNewTag,
       renameRun,
@@ -2113,6 +2117,7 @@ export default defineComponent({
       DatacubeStatus,
       itemId,
       filteredAggregationOptions,
+      pregenDataForSpec,
     };
   },
   watch: {
