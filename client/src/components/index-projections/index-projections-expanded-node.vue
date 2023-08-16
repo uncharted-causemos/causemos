@@ -37,7 +37,13 @@
         :is-inverted="isInvertedData"
       />
 
+      <IndexProjectionsExpandedNodeWarning
+        class="warning-section add-horizontal-margin"
+        :data-warnings="dataWarnings"
+      />
+
       <IndexProjectionsExpandedNodeResilience
+        class="add-horizontal-margin"
         :node-data="nodeData"
         :historical-data="historicalData"
         :constraints="constraints"
@@ -45,11 +51,6 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projection-timeseries="timeseries"
-      />
-
-      <IndexProjectionsExpandedNodeWarning
-        class="warning-section add-horizontal-margin"
-        :data-warnings="dataWarnings"
       />
 
       <div class="dataset-metadata add-horizontal-margin">
