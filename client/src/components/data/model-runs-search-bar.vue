@@ -35,7 +35,7 @@ export default {
     },
   },
   data: () => ({
-    lexRef: new Lex(),
+    lexRef: null,
     pills: [],
   }),
   emits: ['filters-updated'],
