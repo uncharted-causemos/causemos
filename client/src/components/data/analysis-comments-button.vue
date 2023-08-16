@@ -1,5 +1,8 @@
 <template>
-  <comments-button-widget :comments="description" @update-comments="updateDescription" />
+  <comments-button-widget
+    :comments="description ?? undefined"
+    @update-comments="updateDescription"
+  />
 </template>
 
 <script lang="ts">

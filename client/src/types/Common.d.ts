@@ -104,7 +104,6 @@ export interface SidePanelTab {
   icon?: string;
   imgSrc?: string;
   isGreyscale?: string;
-  badgeCount?: string;
 }
 
 export interface KnowledgeBase {

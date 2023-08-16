@@ -57,7 +57,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { PropType, defineComponent } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import CloseButton from '@/components/widgets/close-button.vue';
 import polarityUtil from '@/utils/polarity-util';
@@ -84,7 +84,7 @@ export default defineComponent({
   },
   props: {
     item: {
-      type: Object,
+      type: Object as PropType<PolarityItem>,
       default: () => ({
         subj_polarity: 1,
         obj_polarity: 1,

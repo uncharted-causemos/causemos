@@ -67,7 +67,7 @@
       </modal>
       <datacube-card
         class="datacube-card"
-        :initial-view-config="initialViewConfig"
+        :initial-view-config="initialViewConfig ?? undefined"
         :initial-data-config="initialDataConfig"
         :metadata="metadata"
         :aggregation-options="aggregationOptionFiltered"
