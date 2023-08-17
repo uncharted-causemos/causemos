@@ -11,7 +11,7 @@ const RETRY_DELAY_LENGTHS_IN_SECONDS = [1, 5, 10, 30, 60, 0];
 
 const DEFAULT_APPLICATION_CONFIGURATION: ApplicationConfiguration = {
   CLIENT__IS_ANALYST_WORKFLOW_VISIBLE: true,
-  CLIENT__USER_DOCS_URL: '',
+  CLIENT__USER_DOCS_URL: 'https://app.causemos.ai/docs/',
   CLIENT__DOJO_LOG_API_URL: 'https://phantom.dojo-test.com',
   CLIENT__DOJO_UPLOAD_DOCUMENT_URL: 'https://causemos-analyst.dojo-modeling.com/documents/upload',
   CLIENT__HIDE_ADD_DOCUMENT_BUTTON: true,
@@ -32,7 +32,8 @@ const parseBoolean = (val: string) => {
 // Parse client settings object and return parsed results.
 // If parsing fails for a field of the object, omit the field from the result object.
 const parseSettings = (clientSettings: { [key: string]: string }) => {
-  const { CLIENT__DOJO_LOG_API_URL } = clientSettings;
+  const { CLIENT__DOJO_LOG_API_URL, CLIENT__DOJO_UPLOAD_DOCUMENT_URL, CLIENT__USER_DOCS_URL } =
+    clientSettings;
   const CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = parseBoolean(
     clientSettings.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
   );
@@ -43,6 +44,8 @@ const parseSettings = (clientSettings: { [key: string]: string }) => {
     CLIENT__DOJO_LOG_API_URL,
     CLIENT__IS_ANALYST_WORKFLOW_VISIBLE,
     CLIENT__HIDE_ADD_DOCUMENT_BUTTON,
+    CLIENT__DOJO_UPLOAD_DOCUMENT_URL,
+    CLIENT__USER_DOCS_URL,
   };
   // Filter out undefined and return
   return _.omit(result, 'undefined');

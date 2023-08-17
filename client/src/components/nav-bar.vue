@@ -38,7 +38,11 @@
           @close="showNavbarInsightsPanel = false"
         />
       </div>
-      <a href="https://app.causemos.ai/docs/" target="_blank" class="nav-item clickable">
+      <a
+        :href="applicationConfiguration.CLIENT__USER_DOCS_URL"
+        target="_blank"
+        class="nav-item clickable"
+      >
         <i class="fa fa-question" />
       </a>
     </div>
@@ -51,6 +55,7 @@ import { computed, defineComponent, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import NavbarInsightsPanel from '@/components/insight-manager/navbar-insights-panel.vue';
+import useApplicationConfiguration from '@/services/composables/useApplicationConfiguration';
 
 interface NavBarItem {
   route: { name: string; params: any } | null;
@@ -214,11 +219,14 @@ export default defineComponent({
     );
     const showNavbarInsightsPanel = ref(false);
 
+    const { applicationConfiguration } = useApplicationConfiguration();
+
     return {
       navItems,
       isNavbarVisible,
       showNavbarInsightsPanelButton,
       showNavbarInsightsPanel,
+      applicationConfiguration,
     };
   },
 });
