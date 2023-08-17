@@ -166,6 +166,7 @@ import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { updateDatacube } from '@/services/new-datacube-service';
 import useToaster from '@/services/composables/useToaster';
 import { TYPE } from 'vue-toastification';
+import useApplicationConfiguration from '@/services/composables/useApplicationConfiguration';
 /**
  * A card-styled widget to view project summary
  */
@@ -187,7 +188,6 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       projectMetadata: 'app/projectMetadata',
-      applicationConfiguration: 'app/applicationConfiguration',
     }),
     breakdownParameters(): any[] {
       if (isIndicator(this.datacube)) return [];
@@ -239,6 +239,7 @@ export default defineComponent({
     const selectedDomain = ref('');
 
     const { statusColor, statusLabel } = useDatacubeVersioning(datacube);
+    const { applicationConfiguration } = useApplicationConfiguration();
 
     return {
       showUnpublishModal,
@@ -248,6 +249,7 @@ export default defineComponent({
       statusLabel,
       selectedDomain,
       AVAILABLE_DOMAINS,
+      applicationConfiguration,
     };
   },
   methods: {

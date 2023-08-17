@@ -207,10 +207,6 @@ const expandedDocumentId = ref<string | null>(null);
     width: 300px;
   }
 
-  .default-column-width {
-    width: 150px;
-  }
-
   .table-rows {
     flex: 1;
     min-height: 0;

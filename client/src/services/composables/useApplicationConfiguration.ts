@@ -1,8 +1,7 @@
 import API from '@/api/api';
 import { ApplicationConfiguration } from '@/types/ApplicationConfiguration';
 import { convertStringToBoolean } from '@/utils/string-util';
-import { onMounted } from 'vue';
-import { useStore } from 'vuex';
+import { onMounted, ref } from 'vue';
 import _ from 'lodash';
 
 // If the attempt to fetch the application configuration fails, check again
@@ -10,9 +9,11 @@ import _ from 'lodash';
 //  delay.
 const RETRY_DELAY_LENGTHS_IN_SECONDS = [1, 5, 10, 30, 60, 0];
 
-export const DEFAULT_APPLICATION_CONFIGURATION: ApplicationConfiguration = {
+const DEFAULT_APPLICATION_CONFIGURATION: ApplicationConfiguration = {
   CLIENT__IS_ANALYST_WORKFLOW_VISIBLE: true,
+  CLIENT__USER_DOCS_URL: '',
   CLIENT__DOJO_LOG_API_URL: 'https://phantom.dojo-test.com',
+  CLIENT__DOJO_UPLOAD_DOCUMENT_URL: 'https://causemos-analyst.dojo-modeling.com/documents/upload',
   CLIENT__HIDE_ADD_DOCUMENT_BUTTON: true,
 };
 
@@ -54,16 +55,16 @@ const getConfiguration = async (): Promise<ApplicationConfiguration> => {
   return config;
 };
 
-export default function useApplicationConfiguration() {
-  const store = useStore();
+const applicationConfiguration = ref(DEFAULT_APPLICATION_CONFIGURATION);
 
+export default function useApplicationConfiguration() {
   const tryToFetchConfiguration = async () => {
     for (const delayInSeconds of RETRY_DELAY_LENGTHS_IN_SECONDS) {
       try {
         // Fetch configuration
         const configuration = await getConfiguration();
         // On success, save it to the store
-        store.dispatch('app/setApplicationConfiguration', configuration);
+        applicationConfiguration.value = configuration;
         return;
       } catch (e) {
         // On fail, retry after a progressively longer delay.
@@ -80,4 +81,6 @@ export default function useApplicationConfiguration() {
   onMounted(async () => {
     await tryToFetchConfiguration();
   });
+
+  return { applicationConfiguration };
 }
