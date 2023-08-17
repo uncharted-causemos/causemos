@@ -31,7 +31,7 @@
         :timeseries="item.timeseries"
         :show-data-outside-norm="true"
         :is-weighted-sum-node="false"
-        :is-inverted="false"
+        :is-inverted="nodeData.dataset.isInverted"
       />
     </div>
   </div>
@@ -42,7 +42,7 @@ import { computed, ref, watch } from 'vue';
 import * as d3 from 'd3';
 
 import { TemporalResolutionOption } from '@/types/Enums';
-import { ConceptNode, ProjectionConstraint } from '@/types/Index';
+import { ConceptNodeWithDatasetAttached, ProjectionConstraint } from '@/types/Index';
 import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { ForecastMethod } from '@/utils/forecast';
 import {
@@ -62,7 +62,7 @@ type ScenariosProjectionItem = {
 };
 
 const props = defineProps<{
-  nodeData: ConceptNode;
+  nodeData: ConceptNodeWithDatasetAttached;
   historicalData: { countryName: string; points: TimeseriesPoint[] }[];
   constraints: { scenarioId: string; constraints: ProjectionConstraint[] }[];
   projectionTemporalResolutionOption:
