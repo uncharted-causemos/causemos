@@ -18,7 +18,7 @@
       <p class="change-text subdued un-font-small">
         Greatest
         {{ getFormattedTimeInterval(item.interval, projectionTemporalResolutionOption) }} change:
-        {{ item.greatestChange }}
+        {{ item.greatestChange.toFixed(2) }}
       </p>
 
       <IndexProjectionsExpandedNodeTimeseries
@@ -96,7 +96,7 @@ const wrapByNodeId = (data: TimeseriesPoint[] | ProjectionConstraint[]) => {
 };
 
 /**
- * For given projection timeseries item, generate new projection results including three different scenarios
+ * For given projection timeseries, generates new projection results including three different scenarios
  * Each scenario contains one constraint after last historical data point, selected based on the greatest annual change.
  * @param projectionItem projection timeseries item
  */
@@ -117,7 +117,7 @@ const runScenariosProjection = (projectionItem: ProjectionTimeseries): Scenarios
   );
   const { interval, greatestAbsoluteChange, lastPoint } = calculateGreatestAbsoluteHistoricalChange(
     historicalData,
-    projectionItem.points,
+    constraintsBeforeLastHistoricalPoint,
     props.projectionTemporalResolutionOption
   );
 
