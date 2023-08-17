@@ -3,7 +3,7 @@
     <model-publishing-checklist
       :publishingSteps="publishingSteps"
       :currentPublishStep="currentPublishStep"
-      :metadata="metadata"
+      :metadata="(metadata as Model | null)"
       @navigate-to-publishing-step="showPublishingStep"
       @publish-model="publishModel"
     />
@@ -14,7 +14,7 @@
           class="datacube-card"
           :isPublishing="true"
           :initial-data-config="initialDataConfig"
-          :initial-view-config="initialViewConfig"
+          :initial-view-config="initialViewConfig ?? undefined"
           :metadata="metadata"
           :aggregation-options="Object.values(AggregationOption)"
           :temporal-resolution-options="Object.values(TemporalResolutionOption)"
@@ -24,13 +24,13 @@
           <template v-slot:datacube-model-header>
             <datacube-model-header
               class="scenario-header"
-              :metadata="metadata"
+              :metadata="(metadata as Model | null)"
               :item-id="selectedModelId"
             />
           </template>
           <template v-slot:datacube-description>
             <model-description
-              :metadata="metadata"
+              :metadata="(metadata as Model | null)"
               :item-id="selectedModelId"
               @refresh-metadata="refreshMetadata"
               @check-model-metadata-validity="updateModelMetadataValidity"

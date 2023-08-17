@@ -18,7 +18,7 @@
     />
     <modal-geo-selection
       v-if="showGeoSelectionModal === true"
-      :model-param="geoModelParam"
+      :model-param="geoModelParam ?? undefined"
       :metadata="metadata"
       @close="onGeoSelectionModalClose"
     />
@@ -27,6 +27,7 @@
       :modal-title="`Add new tag to ${selectedScenarioIds.length} selected run${
         selectedScenarioIds.length !== 1 ? 's' : ''
       }`"
+      :currentName="''"
       @confirm="addNewTag"
       @cancel="showTagNameModal = false"
     />
@@ -496,7 +497,7 @@
                   :style="{ borderColor: colorFromIndex(indx) }"
                   :output-source-specs="outputSpecs"
                   :output-selection="spec.id"
-                  :relative-to="relativeTo"
+                  :relative-to="relativeTo ?? undefined"
                   :show-tooltip="true"
                   :selected-layer-id="getSelectedLayer(spec.id)"
                   :map-bounds="isSplitByRegionMode ? mapBoundsForEachSpec[spec.id] : mapBounds"

@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { PropType, defineComponent } from 'vue';
 /**
  * Simple overlay for loading things
  */
@@ -27,7 +27,7 @@ export default defineComponent({
       default: '',
     },
     cancelFn: {
-      type: Function,
+      type: Function as PropType<(payload: MouseEvent) => void>,
     },
   },
 });

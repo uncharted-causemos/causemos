@@ -7,7 +7,7 @@
           class="datacube-card"
           :initial-data-config="initialDataConfig"
           :metadata="metadata"
-          :initial-view-config="initialViewConfig"
+          :initial-view-config="initialViewConfig ?? undefined"
           :aggregation-options="aggregationOptionFiltered"
           :temporal-resolution-options="temporalResolutionOptionFiltered"
           @update-model-parameter="onModelParamUpdated"

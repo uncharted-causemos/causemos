@@ -102,7 +102,9 @@
       v-if="props.nodeData.name === ''"
       class="recommendations"
       :parent-node="parentNode"
+      :geo-context-string="geoContextString"
       @add-suggestion="addSuggestion"
+      @save-geo-context="(context: string) => emit('save-geo-context', context)"
     />
   </div>
 </template>
@@ -138,6 +140,7 @@ interface Props {
   isSelected: boolean;
   isConnecting: boolean;
   isDescendentOfConnectingNode: boolean;
+  geoContextString: string;
   countryFilters: CountryFilter[];
 }
 const props = defineProps<Props>();
@@ -157,6 +160,7 @@ const emit = defineEmits<{
     nodeNameAfterAttachingDataset: string
   ): void;
   (e: 'create-edge', nodeId: string): void;
+  (e: 'save-geo-context', context: string): void;
   (e: 'add-country-filter', selectedCountries: CountryFilter): void;
   (e: 'update-country-filter', selectedCountries: CountryFilter): void;
   (e: 'delete-country-filter', selectedCountries: CountryFilter): void;

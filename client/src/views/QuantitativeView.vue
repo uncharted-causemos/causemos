@@ -2,7 +2,7 @@
   <div class="quantitative-view-container">
     <teleport to="#navbar-trailing-teleport-destination">
       <cag-analysis-options-button
-        :model-summary="modelSummary"
+        :model-summary="modelSummary ?? undefined"
         :view-after-deletion="'overview'"
       />
     </teleport>
@@ -21,11 +21,11 @@
       </template>
     </modal-confirmation>
     <tab-panel
-      v-if="ready && isTraining === false"
+      v-if="ready && isTraining === false && modelSummary !== null && modelComponents !== null"
       class="graph-container"
       :model-summary="modelSummary"
       :model-components="modelComponents"
-      :scenarios="scenarios"
+      :scenarios="scenarios ?? []"
       :current-engine="currentEngine"
       :reset-layout-token="resetLayoutToken"
       @refresh-model="refreshModelAndScenarios"
@@ -40,7 +40,7 @@
         <action-bar
           :current-engine="currentEngine"
           :model-summary="modelSummary"
-          :scenarios="scenarios"
+          :scenarios="scenarios ?? []"
           @reset-cag="resetCAGLayout()"
           @run-model="runScenariosWrapper"
           @open-data-analysis-for-cag="openDataAnalysis()"

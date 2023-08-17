@@ -21,6 +21,7 @@ export default defineComponent({
   props: {
     pathItem: {
       type: Object as PropType<GraphPath>,
+      required: true,
     },
     selected: {
       type: Boolean,

@@ -29,6 +29,7 @@
         :is-selected="isSelected(cell.node.id)"
         :is-connecting="isConnecting"
         :is-descendent-of-connecting-node="isDescendentOfConnectingNode(cell.node.id)"
+        :geo-context-string="geoContextString"
         :countryFilters="countryFilters"
         class="index-tree-node"
         @rename="renameNode"
@@ -41,6 +42,7 @@
         @attach-dataset="attachDatasetToNode"
         @create-edge="createEdge"
         @mouseenter="highlightClear"
+        @save-geo-context="(context: string) => emit('save-geo-context', context)"
         @add-country-filter="(countryFilter: CountryFilter) => emit('add-country-filter', countryFilter)"
         @update-country-filter="(countryFilter: CountryFilter) => emit('update-country-filter', countryFilter)"
         @delete-country-filter="(countryFilter: CountryFilter) => emit('delete-country-filter', countryFilter)"
@@ -104,6 +106,7 @@ const analysisId = computed(() => route.params.analysisId as string);
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
   highlightEdgeId: SelectableIndexElementId | null;
+  geoContextString: string;
   countryFilters: CountryFilter[];
 }>();
 
@@ -122,6 +125,7 @@ const emit = defineEmits<{
   (e: 'highlight-edge', selectedElement: SelectableIndexElementId): void;
   (e: 'deselect-all'): void;
   (e: 'clear-highlight'): void;
+  (e: 'save-geo-context', context: string): void;
   (e: 'add-country-filter', selectedCountry: CountryFilter): void;
   (e: 'update-country-filter', updatedFilter: CountryFilter): void;
   (e: 'delete-country-filter', filterToDelete: CountryFilter): void;

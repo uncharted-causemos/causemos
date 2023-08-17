@@ -2,6 +2,7 @@
   <div class="new-insight-modal-container">
     <rename-modal
       v-if="showNewQuestion"
+      :current-name="''"
       :modal-title="'Add a new question'"
       @confirm="addNewQuestion"
       @cancel="showNewQuestion = false"
