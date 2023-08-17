@@ -47,15 +47,12 @@ import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { ForecastMethod } from '@/utils/forecast';
 import {
   createProjectionRunner,
-  calculateMinTimeInterval,
-  getTimestampCovertFunctions,
-  applyConstraints,
-  interpolateLinear,
+  calculateGreatestAbsoluteHistoricalChange,
 } from '@/utils/projection-util';
 
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
+import { calculateNextTimestamp, getFormattedTimeInterval } from '@/utils/date-util';
 
-type TempResOption = TemporalResolutionOption.Month | TemporalResolutionOption.Year;
 type ScenariosProjectionItem = {
   name: string;
   color: string;
@@ -64,101 +61,13 @@ type ScenariosProjectionItem = {
   timeseries: ProjectionTimeseries[];
 };
 
-// ===========
-// Helper utility functions  (we may want to move these functions to one of the util files)
-
-/**
- * Calculate the timestamp that is `interval` units of time ahead of the given `timestamp`
- * based on the specified temporal resolution.
- * @param timestamp - Starting timestamp.
- * @param interval - Number of units to advance by.
- * @param temporalResolution - Temporal resolution option: 'Month' or 'Year'.
- * @returns Timestamp that is `interval` units ahead of the input `timestamp`.
- */
-const calculateNextTimestamp = (
-  timestamp: number,
-  interval: number,
-  temporalResolution: TemporalResolutionOption.Month | TemporalResolutionOption.Year
-) => {
-  const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(temporalResolution);
-  return toTimestamp(fromTimestamp(timestamp) + interval);
-};
-
-/**
- * Generates a human-readable label for a time interval based on the number of steps and temporal resolution.
- * @param steps - Number of steps in the interval.
- * @param temporalResolution - Temporal resolution option: 'Month' or 'Year'.
- * @returns String representation of the time interval, e.g., 'monthly', 'quarterly', 'annual', 'biennial', or 'X months/years'.
- */
-const getFormattedTimeInterval = (steps: number, temporalResolution: TemporalResolutionOption) => {
-  if (temporalResolution === TemporalResolutionOption.Month) {
-    if (steps === 1) return 'monthly';
-    if (steps === 3) return 'quarterly';
-    if (steps === 12) return 'annual';
-    return `${steps} months`;
-  } else if (temporalResolution === TemporalResolutionOption.Year) {
-    if (steps === 1) return 'annual';
-    if (steps === 2) return 'biennial';
-    return `${steps} years`;
-  }
-  return '';
-};
-
-/**
- * Calculates the greatest absolute change in value within specified intervals of historical data, subject to constraints.
- * @param points - Array of historical data points with timestamps and values.
- * @param constraints - Array of projection constraints.
- * @param temporalResolution - Temporal resolution option: 'Month' or 'Year'.
- * @returns Object containing information about the greatest absolute change, time interval, and the last point.
- */
-const calculateGreatestAbsoluteHistoricalChange = (
-  points: TimeseriesPoint[],
-  constraints: ProjectionConstraint[],
-  temporalResolution: TemporalResolutionOption.Month | TemporalResolutionOption.Year
-) => {
-  if (points.length < 2)
-    return {
-      interval: 1,
-      greatestAbsoluteChange: 0,
-      lastPoint: points[points.length - 1],
-    };
-
-  // Get the number of time interval between two closest historical points in temporalResOption resolution
-  const interval = calculateMinTimeInterval(points, temporalResolution);
-  let greatestAbsoluteChange = 0;
-
-  const { fromTimestamp } = getTimestampCovertFunctions(temporalResolution);
-  const firstHistoricalPointDate = points[0].timestamp;
-  const lastHistoricalPointDate = points[points.length - 1].timestamp;
-  // Preserve constraints within the historical data points range.
-  // For the simplicity, ignore the constraints set before the first historical point.
-  const historicalPointsWithConstraints = applyConstraints(points, constraints).filter(
-    (p) => p.timestamp >= firstHistoricalPointDate && p.timestamp <= lastHistoricalPointDate
-  );
-  // Run interpolation to fill the gaps in the data.
-  const interpolatedPoints = interpolateLinear(
-    historicalPointsWithConstraints.map((p) => ({ x: fromTimestamp(p.timestamp), y: p.value }))
-  );
-  // Find the greatest change in value in an interval
-  for (let index = 0; index < interpolatedPoints.length - interval; index += interval) {
-    const pointA = interpolatedPoints[index].dataPoint;
-    const pointB = interpolatedPoints[index + interval].dataPoint;
-    const change = Math.abs(pointB.y - pointA.y);
-    greatestAbsoluteChange = Math.max(change, greatestAbsoluteChange);
-  }
-  return {
-    interval,
-    greatestAbsoluteChange,
-    lastPoint: historicalPointsWithConstraints[historicalPointsWithConstraints.length - 1],
-  };
-};
-// ===========
-
 const props = defineProps<{
   nodeData: ConceptNode;
   historicalData: { countryName: string; points: TimeseriesPoint[] }[];
   constraints: { scenarioId: string; constraints: ProjectionConstraint[] }[];
-  projectionTemporalResolutionOption: TempResOption;
+  projectionTemporalResolutionOption:
+    | TemporalResolutionOption.Month
+    | TemporalResolutionOption.Year;
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   projectionTimeseries: ProjectionTimeseries[];

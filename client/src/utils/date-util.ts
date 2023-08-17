@@ -1,3 +1,5 @@
+import { TemporalResolutionOption } from '@/types/Enums';
+
 export const EPOCH_YEAR = 1970;
 
 export const getYearFromTimestamp = (timestamp: number) => {
@@ -87,4 +89,66 @@ export const snapTimestampToNearestMonth = (timestamp: number) => {
     return nextMonthTimestamp;
   }
   return thisMonthTimestamp;
+};
+
+/**
+ * Return functions to convert timestamps to yearly or monthly steps based on the provided data resolution option.
+ * @param dataTemporalResolution - Data temporal resolution option: 'TemporalResolutionOption.Year' or 'TemporalResolutionOption.Month'.
+ * @returns Conversion functions for timestamps based on the resolution.
+ */
+export const getTimestampCovertFunctions = (
+  dataTemporalResolution: TemporalResolutionOption.Year | TemporalResolutionOption.Month
+) => {
+  const fromTimestamp =
+    dataTemporalResolution === TemporalResolutionOption.Year
+      ? getYearFromTimestamp
+      : getNumberOfMonthsSinceEpoch;
+  const toTimestamp =
+    dataTemporalResolution === TemporalResolutionOption.Year
+      ? getTimestampMillisFromYear
+      : getTimestampFromNumberOfMonths;
+  return {
+    fromTimestamp,
+    toTimestamp,
+  };
+};
+
+/**
+ * Calculate the timestamp that is `interval` units of time ahead of the given `timestamp`
+ * based on the specified temporal resolution.
+ * @param timestamp - Starting timestamp.
+ * @param interval - Number of units to advance by.
+ * @param temporalResolution - Temporal resolution option: 'TemporalResolutionOption.Year' or 'TemporalResolutionOption.Month'.
+ * @returns Timestamp that is `interval` units ahead of the input `timestamp`.
+ */
+export const calculateNextTimestamp = (
+  timestamp: number,
+  interval: number,
+  temporalResolution: TemporalResolutionOption.Month | TemporalResolutionOption.Year
+) => {
+  const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(temporalResolution);
+  return toTimestamp(fromTimestamp(timestamp) + interval);
+};
+
+/**
+ * Generates a human-readable label for a time interval based on the number of steps and temporal resolution.
+ * @param steps - Number of steps in the interval.
+ * @param temporalResolution - Temporal resolution option: 'TemporalResolutionOption.Year' or 'TemporalResolutionOption.Month'.
+ * @returns String representation of the time interval, e.g., 'monthly', 'quarterly', 'annual', 'biennial', or 'X months/years'.
+ */
+export const getFormattedTimeInterval = (
+  steps: number,
+  temporalResolution: TemporalResolutionOption
+) => {
+  if (temporalResolution === TemporalResolutionOption.Month) {
+    if (steps === 1) return 'monthly';
+    if (steps === 3) return 'quarterly';
+    if (steps === 12) return 'annual';
+    return `${steps} months`;
+  } else if (temporalResolution === TemporalResolutionOption.Year) {
+    if (steps === 1) return 'annual';
+    if (steps === 2) return 'biennial';
+    return `${steps} years`;
+  }
+  return '';
 };

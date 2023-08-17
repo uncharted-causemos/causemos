@@ -1,11 +1,6 @@
 import _ from 'lodash';
 import forecast, { ForecastMethod } from './forecast';
-import {
-  getYearFromTimestamp,
-  getNumberOfMonthsSinceEpoch,
-  getTimestampMillisFromYear,
-  getTimestampFromNumberOfMonths,
-} from '@/utils/date-util';
+import { getTimestampCovertFunctions } from '@/utils/date-util';
 import { isConceptNodeWithDatasetAttached } from '@/utils/index-tree-util';
 
 import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
@@ -77,30 +72,6 @@ const sum = (...data: TimeseriesPointProjected[][]) => {
   return rest.length === 0 ? first : rest.reduce((prev, cur) => _sum(prev, cur), first);
 };
 
-// TODO: May want to move `getTimestampCovertFunctions` and `calculateMinTimeInterval` to other util file or to `timeseries-util`
-
-/**
- * Return function that convert timestamp value to yearly or monthly step
- * based on the provided data resolution option
- * @param dataResOption Data temporal resolution option
- */
-export const getTimestampCovertFunctions = (
-  dataResOption: TemporalResolutionOption.Year | TemporalResolutionOption.Month
-) => {
-  const fromTimestamp =
-    dataResOption === TemporalResolutionOption.Year
-      ? getYearFromTimestamp
-      : getNumberOfMonthsSinceEpoch;
-  const toTimestamp =
-    dataResOption === TemporalResolutionOption.Year
-      ? getTimestampMillisFromYear
-      : getTimestampFromNumberOfMonths;
-  return {
-    fromTimestamp,
-    toTimestamp,
-  };
-};
-
 /**
  * Calculate the Minimum Time Interval in Series.
  * @param data - Timeseries data points.
@@ -124,6 +95,55 @@ export const calculateMinTimeInterval = <T extends { timestamp: number }>(
     );
   }
   return minInterval;
+};
+
+/**
+ * Calculates the greatest absolute change in value within specified intervals of historical data, subject to constraints.
+ * @param points - Array of historical data points with timestamps and values.
+ * @param constraints - Array of projection constraints.
+ * @param temporalResolution - Temporal resolution option: 'Month' or 'Year'.
+ * @returns Object containing information about the greatest absolute change, time interval, and the last point.
+ */
+export const calculateGreatestAbsoluteHistoricalChange = (
+  points: TimeseriesPoint[],
+  constraints: ProjectionConstraint[],
+  temporalResolution: TemporalResolutionOption.Month | TemporalResolutionOption.Year
+) => {
+  if (points.length < 2)
+    return {
+      interval: 1,
+      greatestAbsoluteChange: 0,
+      lastPoint: points[points.length - 1],
+    };
+
+  // Get the number of time interval between two closest historical points in temporalResOption resolution
+  const interval = calculateMinTimeInterval(points, temporalResolution);
+  let greatestAbsoluteChange = 0;
+
+  const { fromTimestamp } = getTimestampCovertFunctions(temporalResolution);
+  const firstHistoricalPointDate = points[0].timestamp;
+  const lastHistoricalPointDate = points[points.length - 1].timestamp;
+  // Preserve constraints within the historical data points range.
+  // For the simplicity, ignore the constraints set before the first historical point.
+  const historicalPointsWithConstraints = applyConstraints(points, constraints).filter(
+    (p) => p.timestamp >= firstHistoricalPointDate && p.timestamp <= lastHistoricalPointDate
+  );
+  // Run interpolation to fill the gaps in the data.
+  const interpolatedPoints = interpolateLinear(
+    historicalPointsWithConstraints.map((p) => ({ x: fromTimestamp(p.timestamp), y: p.value }))
+  );
+  // Find the greatest change in value in an interval
+  for (let index = 0; index < interpolatedPoints.length - interval; index += interval) {
+    const pointA = interpolatedPoints[index].dataPoint;
+    const pointB = interpolatedPoints[index + interval].dataPoint;
+    const change = Math.abs(pointB.y - pointA.y);
+    greatestAbsoluteChange = Math.max(change, greatestAbsoluteChange);
+  }
+  return {
+    interval,
+    greatestAbsoluteChange,
+    lastPoint: historicalPointsWithConstraints[historicalPointsWithConstraints.length - 1],
+  };
 };
 
 const calculateNumberOfForecastStepsNeeded = (
