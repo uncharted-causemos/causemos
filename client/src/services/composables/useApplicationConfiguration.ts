@@ -32,30 +32,39 @@ const parseBoolean = (val: string) => {
 // Parse client settings object and return parsed results.
 // If parsing fails for a field of the object, omit the field from the result object.
 const parseSettings = (clientSettings: { [key: string]: string }) => {
+  const config = { ...DEFAULT_APPLICATION_CONFIGURATION };
   const { CLIENT__DOJO_LOG_API_URL, CLIENT__DOJO_UPLOAD_DOCUMENT_URL, CLIENT__USER_DOCS_URL } =
     clientSettings;
+  if (CLIENT__DOJO_LOG_API_URL !== undefined) {
+    config.CLIENT__DOJO_LOG_API_URL = CLIENT__DOJO_LOG_API_URL;
+  }
+  if (CLIENT__DOJO_UPLOAD_DOCUMENT_URL !== undefined) {
+    config.CLIENT__DOJO_UPLOAD_DOCUMENT_URL = CLIENT__DOJO_UPLOAD_DOCUMENT_URL;
+  }
+  if (CLIENT__USER_DOCS_URL !== undefined) {
+    config.CLIENT__USER_DOCS_URL = CLIENT__USER_DOCS_URL;
+  }
+
   const CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = parseBoolean(
     clientSettings.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
   );
+  if (CLIENT__IS_ANALYST_WORKFLOW_VISIBLE !== undefined) {
+    config.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = CLIENT__IS_ANALYST_WORKFLOW_VISIBLE;
+  }
+
   const CLIENT__HIDE_ADD_DOCUMENT_BUTTON = parseBoolean(
     clientSettings.CLIENT__HIDE_ADD_DOCUMENT_BUTTON
   );
-  const result: Partial<ApplicationConfiguration> = {
-    CLIENT__DOJO_LOG_API_URL,
-    CLIENT__IS_ANALYST_WORKFLOW_VISIBLE,
-    CLIENT__HIDE_ADD_DOCUMENT_BUTTON,
-    CLIENT__DOJO_UPLOAD_DOCUMENT_URL,
-    CLIENT__USER_DOCS_URL,
-  };
-  // Filter out undefined and return
-  return _.omit(result, 'undefined');
+  if (CLIENT__HIDE_ADD_DOCUMENT_BUTTON !== undefined) {
+    config.CLIENT__HIDE_ADD_DOCUMENT_BUTTON = CLIENT__HIDE_ADD_DOCUMENT_BUTTON;
+  }
+
+  return config;
 };
 
 const getConfiguration = async (): Promise<ApplicationConfiguration> => {
   const { data } = await API.get('client-settings', {});
-  const settings = parseSettings(data as { [key: string]: string });
-  const config = { ...DEFAULT_APPLICATION_CONFIGURATION, ...settings };
-  return config;
+  return parseSettings(data as { [key: string]: string });
 };
 
 const applicationConfiguration = ref(DEFAULT_APPLICATION_CONFIGURATION);
