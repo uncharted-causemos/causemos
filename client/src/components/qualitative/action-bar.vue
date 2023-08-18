@@ -85,7 +85,6 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG',
-      applicationConfiguration: 'app/applicationConfiguration',
     }),
     numEdges(): number {
       return _.get(this.modelComponents, 'edges', []).length;

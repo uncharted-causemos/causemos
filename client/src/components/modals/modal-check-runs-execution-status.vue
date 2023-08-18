@@ -82,7 +82,6 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
-import { mapGetters } from 'vuex';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
 import { Model } from '@/types/Datacube';
@@ -91,6 +90,7 @@ import { ModelRunStatus } from '@/types/Enums';
 import DurationFormatter from '@/formatters/duration-formatter';
 import { ModelRun } from '@/types/ModelRun';
 import SmallTextButton from '../widgets/small-text-button.vue';
+import useApplicationConfiguration from '@/services/composables/useApplicationConfiguration';
 
 const OmittedColumns = ['run_id', 'created_at', 'status', 'is_default_run', 'flow_id'];
 
@@ -115,9 +115,6 @@ export default defineComponent({
     },
   },
   computed: {
-    ...mapGetters({
-      applicationConfiguration: 'app/applicationConfiguration',
-    }),
     potentialRunsParameters(): Array<any> {
       return this.potentialRuns.length > 0
         ? this.withoutOmittedColumns(Object.keys(this.potentialRuns[0]))
@@ -139,6 +136,12 @@ export default defineComponent({
     currentTime: Date.now(),
     ModelRunStatus,
   }),
+  setup() {
+    const { applicationConfiguration } = useApplicationConfiguration();
+    return {
+      applicationConfiguration,
+    };
+  },
   methods: {
     canRetryDelete(run: any) {
       return (

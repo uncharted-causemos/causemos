@@ -1,5 +1,3 @@
-import { DEFAULT_APPLICATION_CONFIGURATION } from '@/services/composables/useApplicationConfiguration';
-import { ApplicationConfiguration } from '@/types/ApplicationConfiguration';
 import _ from 'lodash';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
@@ -14,7 +12,6 @@ interface AppState {
   projectMetadata: any; // domain project or analysis project
   analysisName: string;
   datacubeCurrentOutputsMap: {}; // map for datacubes' currently selected features; each key is the datacube-id and the value is the selected output's index
-  applicationConfiguration: ApplicationConfiguration;
 }
 
 const state: AppState = {
@@ -28,7 +25,6 @@ const state: AppState = {
   projectMetadata: {},
   analysisName: '',
   datacubeCurrentOutputsMap: {},
-  applicationConfiguration: DEFAULT_APPLICATION_CONFIGURATION,
 };
 
 const getters: GetterTree<AppState, any> = {
@@ -64,7 +60,6 @@ const getters: GetterTree<AppState, any> = {
   projectMetadata: (state) => state.projectMetadata,
   analysisName: (state) => state.analysisName,
   datacubeCurrentOutputsMap: (state) => state.datacubeCurrentOutputsMap,
-  applicationConfiguration: (state) => state.applicationConfiguration,
 };
 
 type MsgCancel = {
@@ -106,9 +101,6 @@ const actions: ActionTree<AppState, any> = {
   setDatacubeCurrentOutputsMap: ({ commit }, value) => {
     commit('setDatacubeCurrentOutputsMap', value);
   },
-  setApplicationConfiguration: ({ commit }, value) => {
-    commit('setApplicationConfiguration', value);
-  },
 };
 
 const mutations: MutationTree<AppState> = {
@@ -147,9 +139,6 @@ const mutations: MutationTree<AppState> = {
   },
   setDatacubeCurrentOutputsMap(state, value) {
     state.datacubeCurrentOutputsMap = value;
-  },
-  setApplicationConfiguration(state, value) {
-    state.applicationConfiguration = value;
   },
 };
 

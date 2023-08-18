@@ -7,10 +7,7 @@
       </div>
     </div>
     <div class="columns">
-      <div
-        v-if="applicationConfiguration.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE"
-        class="project-column"
-      >
+      <div class="project-column">
         <div class="title">
           <h3>Analysis Projects</h3>
           <message-display
@@ -131,7 +128,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent } from 'vue';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions } from 'vuex';
 import projectService from '@/services/project-service';
 import ProjectCard from '@/components/home/project-card.vue';
 import DomainDatacubeProjectCard from '@/components/home/domain-datacube-project-card.vue';
@@ -212,9 +209,6 @@ export default defineComponent({
         this.selectedDatacubeSortingOption
       ).slice(0, DISPLAYED_FAMILY_LIMIT);
     },
-    ...mapGetters({
-      applicationConfiguration: 'app/applicationConfiguration',
-    }),
   },
   mounted() {
     this.refresh();
