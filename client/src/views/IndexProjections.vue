@@ -14,7 +14,7 @@
         </button>
         <h3>Projections</h3>
       </header>
-      <section v-if="selectedNodeId !== null">
+      <section v-if="selectedNodeId !== null" class="horizontal-padding">
         <header class="flex index-structure-header">
           <h4>Index structure</h4>
         </header>
@@ -23,7 +23,7 @@
           :selected-node-id="selectedNodeId"
         />
       </section>
-      <section class="settings-section">
+      <section class="settings-section horizontal-padding">
         <header><h4>Settings</h4></header>
         <DropdownButton
           :is-dropdown-left-aligned="true"
@@ -68,9 +68,9 @@
         />
       </section>
       <footer>
-        <section class="show-outside-values">
+        <section class="show-outside-values horizontal-padding">
           <label @click="setShowDataOutsideNorm(!showDataOutsideNorm)">
-            Show values outside the <b>0</b> to <b>1</b> range
+            <span>Show values outside the <b>0</b> to <b>1</b> range</span>
             <i
               class="fa fa-lg fa-fw"
               :class="{
@@ -661,6 +661,11 @@ const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => 
   background: $background-light-2;
 }
 
+.horizontal-padding {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
 .config-column {
   background: white;
   width: 300px;
@@ -674,17 +679,13 @@ const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => 
   .settings-section {
     flex: 1;
     overflow-y: auto;
-    padding-left: 20px;
-    padding-right: 20px;
   }
 
   .show-outside-values {
-    display: flex;
-    align-items: flex-end;
-    padding-left: 20px;
-    padding-right: 20px;
-    label i {
-      color: $positive;
+    label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
   }
   footer {
