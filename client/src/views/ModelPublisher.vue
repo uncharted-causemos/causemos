@@ -52,7 +52,7 @@ import DatacubeCard from '@/components/data/datacube-card.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
-import useModelMetadata from '@/services/composables/useModelMetadata';
+import useModelMetadata from '@/composables/useModelMetadata';
 import {
   updateDatacube,
   generateSparklines,
@@ -76,7 +76,7 @@ import {
 import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
 import { getSelectedOutput, getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import { isDataSpaceDataState } from '@/utils/insight-util';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import {
   getFirstInsight,
   InsightFilterFields,
@@ -84,7 +84,7 @@ import {
 } from '@/services/insight-service';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import { TYPE } from 'vue-toastification';
 
 export default defineComponent({

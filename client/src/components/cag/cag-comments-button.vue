@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts">
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import modelService from '@/services/model-service';
 import { TYPE } from 'vue-toastification';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';

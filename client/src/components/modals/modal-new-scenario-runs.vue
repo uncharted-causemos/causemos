@@ -50,8 +50,8 @@ import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
 import { getOutputs, isGeoParameter } from '@/utils/datacube-util';
 import datacubeService from '@/services/new-datacube-service';
-import useToaster from '@/services/composables/useToaster';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useToaster from '@/composables/useToaster';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import DurationFormatter from '@/formatters/duration-formatter';
 import { TYPE } from 'vue-toastification';
 

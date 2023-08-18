@@ -90,7 +90,7 @@ import { INSIGHTS } from '@/utils/messages-util';
 import InsightUtil from '@/utils/insight-util';
 
 import router from '@/router';
-import useInsightsData from '@/services/composables/useInsightsData';
+import useInsightsData from '@/composables/useInsightsData';
 import { countPublicInsights, fetchFullInsights, removeInsight } from '@/services/insight-service';
 import { ProjectType } from '@/types/Enums';
 import MessageDisplay from '@/components/widgets/message-display.vue';

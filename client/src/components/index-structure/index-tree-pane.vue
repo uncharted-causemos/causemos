@@ -88,8 +88,8 @@ import {
   GridCell,
   SelectableIndexElementId,
 } from '@/types/Index';
-import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexWorkBench from '@/composables/useIndexWorkBench';
+import useIndexTree from '@/composables/useIndexTree';
 import { isOutputIndexNode, isEdge, isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import {
   getGridCellsFromIndexTreeAndWorkbench,

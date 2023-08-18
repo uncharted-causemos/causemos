@@ -1,4 +1,4 @@
-import { Indicator, Model, ModelParameter } from '../../types/Datacube';
+import { Indicator, Model, ModelParameter } from '../types/Datacube';
 import { computed, Ref } from 'vue';
 import { getOutputs, isModel } from '@/utils/datacube-util';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';

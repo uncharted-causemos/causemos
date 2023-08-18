@@ -27,7 +27,7 @@
 <script lang="ts">
 import { defineComponent, PropType, toRefs, ref, watch } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
 
 export default defineComponent({
   name: 'GraphSearch',

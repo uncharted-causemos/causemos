@@ -56,7 +56,7 @@ import { computed, defineComponent, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import NavbarInsightsPanel from '@/components/insight-manager/navbar-insights-panel.vue';
-import useApplicationConfiguration from '@/services/composables/useApplicationConfiguration';
+import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 
 interface NavBarItem {
   route: { name: string; params: any } | null;

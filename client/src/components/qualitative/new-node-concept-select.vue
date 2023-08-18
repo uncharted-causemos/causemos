@@ -150,7 +150,7 @@
 import _ from 'lodash';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue';
 import { useStore } from 'vuex';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
 import dateFormatter from '@/formatters/date-formatter';
 import DropdownControl from '@/components/dropdown-control.vue';
 import HighlightText from '@/components/widgets/highlight-text.vue';

@@ -10,7 +10,7 @@
 <script lang="ts">
 import { computed, defineComponent, ref, toRefs } from 'vue';
 import { useStore } from 'vuex';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import { CAG } from '@/utils/messages-util';
 import router from '@/router';

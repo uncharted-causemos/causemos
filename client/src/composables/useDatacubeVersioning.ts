@@ -1,4 +1,4 @@
-import { Indicator, Model } from '../../types/Datacube';
+import { Indicator, Model } from '../types/Datacube';
 import { computed, Ref } from 'vue';
 import { getDatacubeStatusInfo } from '@/utils/datacube-util';
 

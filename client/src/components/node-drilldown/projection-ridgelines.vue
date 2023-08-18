@@ -110,7 +110,7 @@ import { CAGModelSummary, ScenarioParameter, ScenarioProjection } from '@/types/
 import { defineComponent, nextTick, PropType } from 'vue';
 import Ridgeline from '@/components/widgets/charts/ridgeline.vue';
 import { getTimeScaleOption } from '@/utils/time-scale-util';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
 import { mapActions, mapGetters } from 'vuex';
 import CagScenarioForm from '@/components/cag/cag-scenario-form.vue';
 import {

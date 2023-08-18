@@ -73,7 +73,7 @@
 </template>
 
 <script lang="ts">
-import useModelMetadata from '@/services/composables/useModelMetadata';
+import useModelMetadata from '@/composables/useModelMetadata';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { convertRegionalDataToBarData, getSelectedOutput, isModel } from '@/utils/datacube-util';
@@ -89,7 +89,7 @@ import { useStore } from 'vuex';
 import router from '@/router';
 import _ from 'lodash';
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
-import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import {
   fromStateSelectedRegionsAtAllLevels,
   validateSelectedRegions,
@@ -100,7 +100,7 @@ import { BarData } from '@/types/BarChart';
 import { openDatacubeDrilldown } from '@/services/analysis-service-new';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import { isDataSpaceDataState } from '@/utils/insight-util';
-import useDatacube from '@/services/composables/useDatacube';
+import useDatacube from '@/composables/useDatacube';
 import { getActiveRegions, popupFormatter } from '@/utils/map-util-new';
 
 export default defineComponent({

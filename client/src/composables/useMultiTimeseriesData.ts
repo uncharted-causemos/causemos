@@ -12,7 +12,7 @@ import _ from 'lodash';
 import { Ref, ref, watch, watchEffect } from 'vue';
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 import { FeatureConfig } from '@/types/Outputdata';
-import { getTimeseries } from '../outputdata-service';
+import { getTimeseries } from '../services/outputdata-service';
 
 /**
  * Takes a list of variable names, and fetches the timeseries data for each,

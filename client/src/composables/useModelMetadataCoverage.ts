@@ -4,7 +4,7 @@ import { Indicator, Model } from '@/types/Datacube';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { SparklineData } from '@/types/Timeseries';
 import { computed, Ref, ref, watch } from 'vue';
-import { getSparkline } from '../outputdata-service';
+import { getSparkline } from '../services/outputdata-service';
 import { getOutput } from '@/utils/datacube-util';
 
 /**

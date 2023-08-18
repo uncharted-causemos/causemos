@@ -11,7 +11,7 @@
 import { computed, defineComponent, toRefs } from 'vue';
 import { deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
 import { useStore } from 'vuex';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import { ANALYSIS } from '@/utils/messages-util';
 import { ProjectType } from '@/types/Enums';

@@ -211,7 +211,7 @@ import {
   removeInsight,
 } from '@/services/insight-service';
 import { INSIGHTS, QUESTIONS } from '@/utils/messages-util';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import html2canvas from 'html2canvas';
 import _ from 'lodash';
 import { ProjectType } from '@/types/Enums';
@@ -222,7 +222,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import { updateQuestion } from '@/services/question-service';
-import useQuestionsData from '@/services/composables/useQuestionsData';
+import useQuestionsData from '@/composables/useQuestionsData';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { fetchImageAsBase64 } from '@/services/new-datacube-service';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';

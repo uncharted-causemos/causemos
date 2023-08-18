@@ -223,8 +223,8 @@ import IndexSpatialCoveragePreview from './index-spatial-coverage-preview.vue';
 import IndexDatasetMetadata from './index-dataset-metadata.vue';
 import IndexInvertData from './index-invert-data.vue';
 import { computed, watch, ref } from 'vue';
-import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexWorkBench from '@/composables/useIndexWorkBench';
+import useIndexTree from '@/composables/useIndexTree';
 import { ConceptNode, SelectableIndexElementId } from '@/types/Index';
 import {
   duplicateNode,
@@ -234,7 +234,7 @@ import {
   isEdge,
 } from '@/utils/index-tree-util';
 import { OptionButtonMenu, MENU_OPTIONS } from '@/utils/index-common-util';
-import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
+import useModelMetadataSimple from '@/composables/useModelMetadataSimple';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { NEGATIVE_COLOR, POSITIVE_COLOR } from '@/utils/colors-util';
 import timestampFormatter from '@/formatters/timestamp-formatter';

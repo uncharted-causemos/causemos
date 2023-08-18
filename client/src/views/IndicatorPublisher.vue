@@ -50,7 +50,7 @@ import { computed, ComputedRef, defineComponent, Ref, ref, watchEffect } from 'v
 import { useStore } from 'vuex';
 import router from '@/router';
 import DatacubeCard from '@/components/data/datacube-card.vue';
-import useModelMetadata from '@/services/composables/useModelMetadata';
+import useModelMetadata from '@/composables/useModelMetadata';
 import { generateSparklines, updateIndicatorsBulk } from '@/services/new-datacube-service';
 import { Datacube, DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import {
@@ -66,13 +66,13 @@ import {
   isIndicator,
   getOutputs,
 } from '@/utils/datacube-util';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import {
   aggregationOptionFiltered,
   temporalResolutionOptionFiltered,
 } from '@/utils/drilldown-util';
-import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import { TYPE } from 'vue-toastification';
 
 export default defineComponent({

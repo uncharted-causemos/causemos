@@ -1,6 +1,6 @@
-import { Indicator, Model } from '../../types/Datacube';
+import { Indicator, Model } from '../types/Datacube';
 import { computed, Ref } from 'vue';
-import { ScenarioData } from '../../types/Common';
+import { ScenarioData } from '../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import { getAggregationKey, getOutputs } from '@/utils/datacube-util';

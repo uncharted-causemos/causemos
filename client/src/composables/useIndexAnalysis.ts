@@ -1,11 +1,11 @@
 import _ from 'lodash';
 import { Ref, ref, watch, readonly, computed } from 'vue';
 import { CountryFilter, IndexAnalysisState, ProjectionDateRange } from '@/types/Analysis';
-import { getAnalysis, saveAnalysisState } from '../analysis-service';
-import { createIndexAnalysisObject } from '../analysis-service-new';
+import { getAnalysis, saveAnalysisState } from '../services/analysis-service';
+import { createIndexAnalysisObject } from '../services/analysis-service-new';
 
-import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexWorkBench from '@/composables/useIndexWorkBench';
+import useIndexTree from '@/composables/useIndexTree';
 import { IndexProjectionSettings, IndexResultsSettings } from '@/types/Index';
 
 // Whenever a change is made, wait SYNC_DELAY_MS before saving to the backend to

@@ -162,7 +162,7 @@ import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
 import Shepherd from 'shepherd.js';
 
-import useInsightsData from '@/services/composables/useInsightsData';
+import useInsightsData from '@/composables/useInsightsData';
 import { updateInsight } from '@/services/insight-service';
 import { ProjectType } from '@/types/Enums';
 import { AnalyticalQuestion, FullInsight, Insight, SectionWithInsights } from '@/types/Insight';
@@ -170,7 +170,7 @@ import { QUESTIONS } from '@/utils/messages-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 
 type PartialInsight = {

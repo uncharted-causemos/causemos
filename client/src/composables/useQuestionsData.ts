@@ -4,7 +4,12 @@ import { computed, ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { InsightFilterFields } from '@/services/insight-service';
 import _ from 'lodash';
-import { addQuestion, deleteQuestion, fetchQuestions, updateQuestion } from '../question-service';
+import {
+  addQuestion,
+  deleteQuestion,
+  fetchQuestions,
+  updateQuestion,
+} from '../services/question-service';
 import { useRoute } from 'vue-router';
 
 const getOrderValueFromSection = (section: AnalyticalQuestion) => {

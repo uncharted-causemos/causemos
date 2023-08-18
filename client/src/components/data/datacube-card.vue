@@ -653,8 +653,8 @@ import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import TemporalFacet from '@/components/facets/temporal-facet.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
-import useDatacube from '@/services/composables/useDatacube';
-import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
+import useDatacube from '@/composables/useDatacube';
+import useParallelCoordinatesData from '@/composables/useParallelCoordinatesData';
 
 import { getInsightById } from '@/services/insight-service';
 import { isDataSpaceDataState } from '@/utils/insight-util';
@@ -712,7 +712,7 @@ import {
 } from '@/services/new-datacube-service';
 
 import API from '@/api/api';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
@@ -723,7 +723,7 @@ import { capitalize } from '@/utils/string-util';
 import { getBboxForEachRegionId } from '@/services/geo-service';
 import { getWeightQualifier } from '@/utils/qualifier-util';
 import { BreakdownData } from '@/types/Datacubes';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 

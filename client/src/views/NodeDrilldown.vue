@@ -221,10 +221,10 @@ import {
 } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TimeseriesPoint } from '@/types/Timeseries';
-import useModelMetadata from '@/services/composables/useModelMetadata';
-import useQualitativeModel from '@/services/composables/useQualitativeModel';
+import useModelMetadata from '@/composables/useModelMetadata';
+import useQualitativeModel from '@/composables/useQualitativeModel';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
 import ProjectionRidgelines from '@/components/node-drilldown/projection-ridgelines.vue';
