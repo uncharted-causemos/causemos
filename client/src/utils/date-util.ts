@@ -96,7 +96,7 @@ export const snapTimestampToNearestMonth = (timestamp: number) => {
  * @param dataTemporalResolution - Data temporal resolution option: 'TemporalResolutionOption.Year' or 'TemporalResolutionOption.Month'.
  * @returns Conversion functions for timestamps based on the resolution.
  */
-export const getTimestampCovertFunctions = (
+export const getTimestampConvertFunctions = (
   dataTemporalResolution: TemporalResolutionOption.Year | TemporalResolutionOption.Month
 ) => {
   const fromTimestamp =
@@ -126,7 +126,7 @@ export const calculateNextTimestamp = (
   interval: number,
   temporalResolution: TemporalResolutionOption.Month | TemporalResolutionOption.Year
 ) => {
-  const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(temporalResolution);
+  const { fromTimestamp, toTimestamp } = getTimestampConvertFunctions(temporalResolution);
   return toTimestamp(fromTimestamp(timestamp) + interval);
 };
 

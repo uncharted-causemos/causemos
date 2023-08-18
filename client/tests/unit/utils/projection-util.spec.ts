@@ -342,6 +342,41 @@ describe('projection-util', () => {
         { timestamp: getTsY(1987), value: 4, projectionType: 'forecasted' },
       ]);
     });
+    it('should run projection with provided projection algorithm', () => {
+      sinon.stub(fm.default, 'initialize').returns({
+        runHoltWinters: () =>
+          createTestForecastResult({
+            method: fm.ForecastMethod.HoltWinters,
+          }),
+
+        runHolt: () =>
+          createTestForecastResult({
+            method: fm.ForecastMethod.Holt,
+          }),
+      } as any);
+      const targetPeriod = { start: getTsY(1985), end: getTsY(1987) };
+      const result = runProjection(
+        [
+          { timestamp: getTsY(1982), value: 3 },
+          { timestamp: getTsY(1983), value: 6 },
+        ],
+        targetPeriod,
+        TemporalResolutionOption.Year,
+        ProjectionAlgorithm.Holt
+      );
+      expect(result.method).to.equal(fm.ForecastMethod.Holt);
+
+      const resultHW = runProjection(
+        [
+          { timestamp: getTsY(1982), value: 3 },
+          { timestamp: getTsY(1983), value: 6 },
+        ],
+        targetPeriod,
+        TemporalResolutionOption.Year,
+        ProjectionAlgorithm.HoltWinters
+      );
+      expect(resultHW.method).to.equal(fm.ForecastMethod.HoltWinters);
+    });
   });
   describe('createProjectionRunner', () => {
     const testTree = {
@@ -770,6 +805,35 @@ describe('projection-util', () => {
           method: 'Weighted Sum',
         },
       });
+    });
+    it('should run projection with single node with provided projection algorithm', () => {
+      // stub runHolt and runHoltWinters functions
+      sinon.restore();
+      sinon.replace(fm.default, 'initialize', () => {
+        return {
+          runAuto: () => {},
+          runHolt: () => createTestForecastResult({ method: fm.ForecastMethod.Holt }),
+          runHoltWinters: () => createTestForecastResult({ method: fm.ForecastMethod.HoltWinters }),
+        } as any;
+      });
+
+      const runner = createProjectionRunner(
+        testTree,
+        testHistoricalData,
+        testTargetPeriod,
+        TemporalResolutionOption.Month
+      );
+      const infoH = runner
+        .projectDatasetNode('data-node-1', { method: ProjectionAlgorithm.Holt })
+        .getRunInfo();
+
+      expect(infoH['data-node-1'].method).to.equal(fm.ForecastMethod.Holt);
+
+      const infoHW = runner
+        .projectDatasetNode('data-node-1', { method: ProjectionAlgorithm.HoltWinters })
+        .getRunInfo();
+
+      expect(infoHW['data-node-1'].method).to.equal(fm.ForecastMethod.HoltWinters);
     });
   });
 });

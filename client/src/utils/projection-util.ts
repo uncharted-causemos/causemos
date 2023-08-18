@@ -1,9 +1,9 @@
 import _ from 'lodash';
-import forecast, { ForecastMethod } from './forecast';
-import { getTimestampCovertFunctions } from '@/utils/date-util';
+import forecast from './forecast';
+import { getTimestampConvertFunctions } from '@/utils/date-util';
 import { isConceptNodeWithDatasetAttached } from '@/utils/index-tree-util';
 
-import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
+import { ProjectionAlgorithm, ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
 import {
   ConceptNode,
@@ -83,7 +83,7 @@ export const calculateMinTimeInterval = <T extends { timestamp: number }>(
   resolution: TemporalResolutionOption.Year | TemporalResolutionOption.Month
 ) => {
   if (data.length < 2) return 0;
-  const { fromTimestamp } = getTimestampCovertFunctions(resolution);
+  const { fromTimestamp } = getTimestampConvertFunctions(resolution);
   // Detect time step size (number of months or years between two historical points depending on the temporalResOption).
   let minInterval = Infinity;
   for (let index = 0; index < data.length - 1; index++) {
@@ -120,7 +120,7 @@ export const calculateGreatestAbsoluteHistoricalChange = (
   const interval = calculateMinTimeInterval(points, temporalResolution);
   let greatestAbsoluteChange = 0;
 
-  const { fromTimestamp } = getTimestampCovertFunctions(temporalResolution);
+  const { fromTimestamp } = getTimestampConvertFunctions(temporalResolution);
   const firstHistoricalPointDate = points[0].timestamp;
   const lastHistoricalPointDate = points[points.length - 1].timestamp;
   // Preserve constraints within the historical data points range.
@@ -224,7 +224,7 @@ export const runConstantInterpolation = (
   targetPeriod: { start: number; end: number },
   dataResOption: TemporalResolutionOption.Month | TemporalResolutionOption.Year
 ): TimeseriesPointProjected[] => {
-  const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(dataResOption);
+  const { fromTimestamp, toTimestamp } = getTimestampConvertFunctions(dataResOption);
   const pointX = fromTimestamp(point.timestamp);
   const startX = fromTimestamp(targetPeriod.start);
   const endX = fromTimestamp(targetPeriod.end);
@@ -269,15 +269,15 @@ export const runConstantInterpolation = (
  * @param timeseries timeseries data
  * @param targetPeriod target period that final project data will cover. targetPeriod.start and targetPeriod.end expects unix timestamp milliseconds
  * @param dataResOption data resolution option
- * @param forecastMethod forecast method. Defaults to 'auto'
+ * @param projectionAlgorithm projection algorithm to be used. Defaults to 'ProjectionAlgorithm.Auto'
  */
 export const runProjection = (
   timeseries: TimeseriesPoint[],
   targetPeriod: { start: number; end: number },
   dataResOption: TemporalResolutionOption.Month | TemporalResolutionOption.Year,
-  forecastMethod: ForecastMethod | 'auto' = 'auto'
+  projectionAlgorithm: ProjectionAlgorithm = ProjectionAlgorithm.Auto
 ) => {
-  const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(dataResOption);
+  const { fromTimestamp, toTimestamp } = getTimestampConvertFunctions(dataResOption);
 
   // convert timeseries data to [x, y][] format
   const inputData = timeseries.map(
@@ -294,12 +294,15 @@ export const runProjection = (
 
   // Run forecast
   const runner = forecast.initialize(inputData, { forecastSteps, backcastSteps });
-  const runMethod = {
-    auto: () => runner.runAuto(),
-    [ForecastMethod.Holt]: () => runner.runHolt(),
-    [ForecastMethod.HoltWinters]: () => runner.runHoltWinters(),
-  };
-  const fResult = runMethod[forecastMethod]();
+  let runMethod = () => runner.runAuto();
+  if (projectionAlgorithm === ProjectionAlgorithm.Holt) {
+    runMethod = () => runner.runHolt();
+  }
+  if (projectionAlgorithm === ProjectionAlgorithm.HoltWinters) {
+    runMethod = () => runner.runHoltWinters();
+  }
+
+  const fResult = runMethod();
 
   const backcastPoints = fResult.backcast.data.map(([x, y]) => ({
     x,
@@ -494,7 +497,7 @@ export const createProjectionRunner = (
      * @param nodeId node id
      * @param options options - options e.g forecast method
      */
-    projectDatasetNode(nodeId: string, options: { method?: ForecastMethod } = {}) {
+    projectDatasetNode(nodeId: string, options: { method?: ProjectionAlgorithm } = {}) {
       const series = data[nodeId];
       if (!series) return runner;
 

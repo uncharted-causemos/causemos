@@ -41,10 +41,9 @@
 import { computed, ref, watch } from 'vue';
 import * as d3 from 'd3';
 
-import { TemporalResolutionOption } from '@/types/Enums';
+import { ProjectionAlgorithm, TemporalResolutionOption } from '@/types/Enums';
 import { ConceptNodeWithDatasetAttached, ProjectionConstraint } from '@/types/Index';
 import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
-import { ForecastMethod } from '@/utils/forecast';
 import {
   createProjectionRunner,
   calculateGreatestAbsoluteHistoricalChange,
@@ -146,7 +145,7 @@ const runScenariosProjection = (projectionItem: ProjectionTimeseries): Scenarios
       props.projectionTemporalResolutionOption
     )
       .setConstraints(wrapByNodeId(constraints))
-      .projectDatasetNode(props.nodeData.id, { method: ForecastMethod.Holt })
+      .projectDatasetNode(props.nodeData.id, { method: ProjectionAlgorithm.Holt })
       .getResults()
       [props.nodeData.id].filter((point) => point.timestamp >= lastHistoricalPoint.timestamp);
 
