@@ -212,7 +212,13 @@ import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
 import modelService from '@/services/model-service';
-import { NewScenario, ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
+import {
+  NewScenario,
+  NodeParameter,
+  ProjectionConstraint,
+  Scenario,
+  ScenarioProjection,
+} from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
@@ -519,7 +525,7 @@ export default defineComponent({
       return edges
         .filter((edge) => edge.target === selectedConcept)
         .map((edge) => ({
-          node: nodes.find((node) => node.concept === edge.source),
+          node: nodes.find((node) => node.concept === edge.source) as NodeParameter,
           edge,
         }));
     });

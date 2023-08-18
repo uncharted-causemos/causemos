@@ -150,7 +150,7 @@ import {
   aggregationOptionFiltered,
   temporalResolutionOptionFiltered,
 } from '@/utils/drilldown-util';
-import { DataSpaceDataState, DataState, ViewState } from '@/types/Insight';
+import { DataState, ViewState } from '@/types/Insight';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
@@ -183,7 +183,7 @@ export default defineComponent({
     const dataState = computed<DataState | null>(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const initialViewConfig = ref<ViewState | null>(null);
-    const initialDataConfig = ref<Partial<DataSpaceDataState> | null>(null);
+    const initialDataConfig = ref<any>(null);
 
     const isTimeseriesSelectionModalOpen = ref(false);
     const selectedTimeseriesIndex = ref(0);

@@ -34,11 +34,11 @@ export default {
       default: () => {},
     },
   },
+  data: () => ({
+    lexRef: null,
+    pills: [],
+  }),
   emits: ['filters-updated'],
-  created() {
-    this.lexRef = null;
-    this.pills = [];
-  },
   watch: {
     filters: function filterChanged(n, o) {
       if (filtersUtil.isEqual(n, o)) return;

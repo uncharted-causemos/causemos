@@ -40,7 +40,7 @@
         }}</span>
         <span
           v-if="newVersionLink"
-          @click="edit(newVersionLink)"
+          @click="() => edit(newVersionLink as string)"
           rel="noopener noreferrer"
           class="deprecated-datacube"
         >
@@ -75,7 +75,7 @@
             name="domains"
             style="margin-right: 7px"
             id="domains"
-            @change="selectedDomain = AVAILABLE_DOMAINS[$event.target.selectedIndex - 1]"
+            @change="event => selectedDomain = AVAILABLE_DOMAINS[(event.target as HTMLSelectElement).selectedIndex - 1]"
           >
             <option disabled selected value="''">Select a domain</option>
             <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
@@ -132,14 +132,9 @@
         type="button"
         class="remove-button"
         :class="{
-          disabled:
-            datacube.status === DatacubeStatus.Registered ||
-            datacube.status === DatacubeStatus.Deprecated,
+          disabled: datacube.status === DatacubeStatus.Registered,
         }"
-        :disabled="
-          datacube.status === DatacubeStatus.Registered ||
-          datacube.status === DatacubeStatus.Deprecated
-        "
+        :disabled="datacube.status === DatacubeStatus.Registered"
         @click.stop="showUnpublishModal = true"
       >
         <i class="fa fa-trash" />

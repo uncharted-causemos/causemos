@@ -23,7 +23,7 @@
       :raw-data="filteredRegionalData"
       :units="unit"
       :selected-timeseries-points="selectedTimeseriesPoints"
-      :selected-item-ids="selectedRegionIds"
+      :selected-item-ids="selectedRegionIds ?? undefined"
       :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
       :show-references="
         selectedBreakdownOption === SpatialAggregationLevel.Region && selectedAdminLevel > 0
@@ -36,7 +36,7 @@
       @aggregation-level-change="setSelectedAdminLevel"
     >
       <template #aggregation-description>
-        <p class="aggregation-description">
+        <p class="aggregation-description" v-if="selectedTimestamp !== null">
           Showing data for
           <span class="highlighted">{{ timestampFormatter(selectedTimestamp) }}</span
           >.
@@ -78,7 +78,7 @@
       @request-data="emitRequestQualifierData(qualifierVariable.id)"
     >
       <template #aggregation-description>
-        <p class="aggregation-description">
+        <p class="aggregation-description" v-if="selectedTimestamp !== null">
           Showing data for
           <span class="highlighted">{{ timestampFormatter(selectedTimestamp) }}</span
           >.
@@ -94,7 +94,7 @@
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
       ref="year_ref"
-      v-if="isTemporalBreakdownDataValid"
+      v-if="isTemporalBreakdownDataValid && temporalBreakdownData !== null"
       class="checklist-section"
       :aggregation-level-count="Object.keys(temporalBreakdownData).length"
       :aggregation-level="0"
@@ -122,7 +122,7 @@
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
       ref="variable_ref"
-      v-if="isFeatureBreakdownDataValid"
+      v-if="isFeatureBreakdownDataValid && featureBreakdownData !== null"
       class="checklist-section"
       :aggregation-level-count="Object.keys(featureBreakdownData).length"
       :aggregation-level="0"

@@ -1,7 +1,7 @@
 <template>
   <div class="datacube-description-container">
     <div class="datacube-description-column tour-datacube-desc">
-      <template v-if="metadata && metadata.parameters">
+      <template v-if="isModel(metadata) && metadata.parameters">
         <h5>Input Descriptions</h5>
         <div v-for="param in inputParameters" :key="param.id">
           <b>{{ param.display_name }} </b>
@@ -75,6 +75,9 @@ import { isBreakdownQualifier } from '@/utils/qualifier-util';
 
 export default defineComponent({
   name: 'DatacubeDescription',
+  setup() {
+    return { isModel };
+  },
   components: {
     MultilineDescription,
   },

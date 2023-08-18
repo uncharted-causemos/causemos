@@ -5,10 +5,11 @@
         <img class="logo" src="../assets/causemos-icon-white.svg" alt="CauseMos logo" />
       </a>
       <template v-for="(navItem, index) of navItems" :key="index">
+        <!-- ASSUMPTION: navItem.route is not null for all navItems except for the last one -->
         <router-link
           v-if="index !== navItems.length - 1"
           class="nav-item clickable"
-          :to="navItem.route"
+          :to="navItem.route ?? ''"
         >
           <i class="fa fa-fw" :class="[navItem.icon]" />
           <span class="nav-item-label">{{ navItem.text }}</span>
