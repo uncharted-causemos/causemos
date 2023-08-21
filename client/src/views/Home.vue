@@ -10,13 +10,6 @@
       <div class="project-column">
         <div class="title">
           <h3>Analysis Projects</h3>
-          <message-display
-            v-if="newKnowledgeBase"
-            :message="'New Knowledge Base (KB): Create a new project to check out the newly created KB.'"
-            :message-type="'primary'"
-            :dismissable="true"
-            @dismiss="onDismiss"
-          />
           <button
             v-tooltip.top-center="'Create a new analysis project'"
             type="button"
@@ -44,7 +37,6 @@
           <div class="projects-list-header">
             <div class="table-column extra-wide">Name</div>
             <div class="table-column">Analyses</div>
-            <div class="table-column extra-wide">Knowledge Base</div>
             <div class="table-column">Updated</div>
             <div class="table-column extra-small">
               <!-- no title necessary for delete button column -->
@@ -133,8 +125,7 @@ import projectService from '@/services/project-service';
 import ProjectCard from '@/components/home/project-card.vue';
 import DomainDatacubeProjectCard from '@/components/home/domain-datacube-project-card.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
-import MessageDisplay from '@/components/widgets/message-display.vue';
-import { Project, DomainProject, KnowledgeBase, DatasetInfo, DatacubeFamily } from '@/types/Common';
+import { Project, DomainProject, DatasetInfo, DatacubeFamily } from '@/types/Common';
 import domainProjectService from '@/services/domain-project-service';
 import DropdownButton from '@/components/dropdown-button.vue';
 import API from '@/api/api';
@@ -147,7 +138,6 @@ export default defineComponent({
   components: {
     ProjectCard,
     DomainDatacubeProjectCard,
-    MessageDisplay,
     DropdownButton,
     RadioButtonGroup,
   },
@@ -157,7 +147,6 @@ export default defineComponent({
     showSortingDropdown: false,
     sortingOptions: Object.values(SortOptions),
     selectedSortingOption: SortOptions.MostRecent,
-    newKnowledgeBase: false,
     searchDomainDatacubes: '',
     projectsListDomainDatacubes: [] as DomainProject[],
     datasetsList: [] as DatasetInfo[],
@@ -242,20 +231,6 @@ export default defineComponent({
           SortOptions.MostRecent
         ).slice(0, DISPLAYED_FAMILY_LIMIT);
       });
-
-      // Local Storage is where we are keeping track of all encountered KB for now
-      const storage = window.localStorage;
-
-      // Poll the knowledge-base indices for new indices
-      projectService.getKBs().then((kbs) => {
-        kbs.forEach((knowledgeBase: KnowledgeBase) => {
-          const match = JSON.parse(storage.getItem(knowledgeBase.id) as string);
-          if (!match) {
-            storage.setItem(knowledgeBase.id, JSON.stringify(knowledgeBase));
-            this.newKnowledgeBase = true;
-          }
-        });
-      });
     },
     async refreshDomainProjects() {
       this.enableOverlay('Loading projects');
@@ -275,9 +250,6 @@ export default defineComponent({
       this.datasetsList = data;
 
       this.disableOverlay();
-    },
-    onDismiss() {
-      this.newKnowledgeBase = false;
     },
     gotoNewProject() {
       this.$router.push('newProject');
@@ -416,29 +388,6 @@ $padding-size: 12.5vh;
     margin-right: 10px;
   }
 
-  .sorting {
-    position: relative;
-
-    .btn {
-      width: 180px !important;
-      text-align: left;
-
-      .lbl {
-        font-weight: normal;
-      }
-
-      .fa {
-        position: absolute;
-        right: 20px;
-      }
-    }
-
-    .dropdown {
-      position: absolute;
-      width: 100%;
-    }
-  }
-
   .form-control {
     background: #fff;
   }
@@ -454,9 +403,5 @@ $padding-size: 12.5vh;
   &:not(:first-child) {
     margin-left: 20px;
   }
-}
-
-.number-col {
-  text-align: right;
 }
 </style>

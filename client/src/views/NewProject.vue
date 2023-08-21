@@ -20,24 +20,6 @@
         <textarea v-model="projectDescription" rows="5" class="form-control" />
       </div>
     </form>
-    <label>Knowledge Base*</label>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th># Documents</th>
-          <th>Readers</th>
-          <th>Created</th>
-        </tr>
-      </thead>
-      <knowledge-base-row
-        v-for="kb in kbList"
-        :key="kb.id"
-        :kb="kb"
-        :base-kb="baseKB"
-        @select="selectKB(kb.id)"
-      />
-    </table>
     <div class="controls">
       <button type="button" class="btn" @click="cancel">Cancel</button>
       <button type="button" class="btn btn-call-to-action" @click="create">
@@ -53,8 +35,7 @@ import { mapActions } from 'vuex';
 import { defineComponent } from 'vue';
 import projectService from '@/services/project-service';
 
-import KnowledgeBaseRow from '@/components/new-project/knowledge-base-row.vue';
-import { KnowledgeBase, Project } from '@/types/Common';
+import { Project } from '@/types/Common';
 import { ProjectType } from '@/types/Enums';
 
 const MSG_EMPTY_PROJECT_NAME = 'Project name cannot be blank';
@@ -62,16 +43,11 @@ const MSG_PROJECT_NAME_ALREADY_EXIST = 'Project name already exists';
 
 export default defineComponent({
   name: 'NewProjectView',
-  components: {
-    KnowledgeBaseRow,
-  },
   data: () => ({
-    kbList: [] as KnowledgeBase[],
     existingProjectNames: [] as string[],
     projectName: '',
     projectDescription: '',
     hasError: false,
-    baseKB: '',
     isProcessing: false,
     errorMsg: '' as string | null,
   }),
@@ -87,8 +63,6 @@ export default defineComponent({
     },
   },
   async mounted() {
-    this.refresh();
-
     const existingProjects: Project[] = await projectService.getProjects();
     this.existingProjectNames = existingProjects.map((p) => p.name.toLowerCase());
   },
@@ -109,16 +83,10 @@ export default defineComponent({
       if (this.isProcessing || this.hasError) return;
 
       this.isProcessing = true;
-      this.enableOverlay('Preparing project ' + this.projectName);
 
-      const id = await projectService.createProject(
-        this.baseKB,
-        this.projectName,
-        this.projectDescription
-      );
+      const id = await projectService.createProject(this.projectName, this.projectDescription);
 
       this.isProcessing = false;
-      this.disableOverlay();
       this.$router.push({
         name: 'overview',
         params: { project: id, projectType: ProjectType.Analysis },
@@ -126,16 +94,6 @@ export default defineComponent({
     },
     cancel() {
       this.$router.push({ name: 'home' });
-    },
-    refresh() {
-      projectService.getKBs().then((kbs: KnowledgeBase[]) => {
-        // ISO-8601 dates can be sorted lexicographically
-        this.kbList = _.sortBy(kbs, 'created_at').reverse();
-        this.baseKB = this.kbList[0].id;
-      });
-    },
-    selectKB(kbId: string) {
-      this.baseKB = kbId;
     },
   },
 });

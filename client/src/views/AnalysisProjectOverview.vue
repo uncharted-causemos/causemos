@@ -127,9 +127,8 @@ import {
   createIndexAnalysisObject,
 } from '@/services/analysis-service-new';
 import dateFormatter from '@/formatters/date-formatter';
-import modelService from '@/services/model-service';
 import { ProjectType } from '@/types/Enums';
-import { ANALYSIS, CAG } from '@/utils/messages-util';
+import { ANALYSIS } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import projectService from '@/services/project-service';
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
@@ -162,16 +161,6 @@ const toAnalysisObject = (analysis) => {
   }
   return item;
 };
-
-const toQualitative = (cag) => ({
-  id: cag.id,
-  previewImageSrc: cag.thumbnail_source ?? null,
-  title: cag.name,
-  subtitle: dateFormatter(cag.modified_at, 'MMM DD, YYYY'),
-  description: cag.description || '',
-  type: 'qualitative',
-  modified_at: cag.modified_at,
-});
 
 export default defineComponent({
   name: 'AnalysisProjectOverview',
@@ -231,12 +220,8 @@ export default defineComponent({
   },
   data: () => ({
     analyses: [],
-    qualitativeAnalyses: [],
     quantitativeAnalyses: [],
     indexAnalyses: [],
-    numDocuments: '-',
-    numStatements: '-',
-    KBname: '-',
     searchText: '',
     showSortingDropdownAnalyses: false,
     analysisSortingOptions: Object.values(SortOptions),
@@ -257,19 +242,14 @@ export default defineComponent({
         return analysis.title.toLowerCase().includes(this.searchText.toLowerCase());
       });
     },
-    tags() {
-      return []; // FIXME
-    },
   },
   watch: {
     projectMetadata: function () {
       this.fetchAnalyses();
-      this.fetchKbStats();
     },
   },
   async mounted() {
     this.fetchAnalyses();
-    this.fetchKbStats();
   },
   methods: {
     ...mapActions({
@@ -321,32 +301,7 @@ export default defineComponent({
         contextIDs.push(...(analysis.analysisItemsIds || []));
       });
 
-      // knowledge and model space analyses
-      this.qualitativeAnalyses = (await modelService.getProjectModels(this.project)).models.map(
-        toQualitative
-      );
-
-      if (this.qualitativeAnalyses.length) {
-        const modelIDs = this.qualitativeAnalyses.map((model) => model.id);
-        const stats = await modelService.getModelStats(modelIDs);
-
-        this.qualitativeAnalyses.forEach((analysis) => {
-          // merge edge and node counts into analysis objects
-          analysis.nodeCount = _.get(stats[analysis.id], 'nodeCount', 0);
-          analysis.edgeCount = _.get(stats[analysis.id], 'edgeCount', 0);
-        });
-
-        // save context-id(s) for all CAG-analyses
-        this.qualitativeAnalyses.forEach((qualitativeAnalysis) => {
-          contextIDs.push(qualitativeAnalysis.id);
-        });
-      }
-
-      this.analyses = [
-        ...this.indexAnalyses,
-        ...this.quantitativeAnalyses,
-        ...this.qualitativeAnalyses,
-      ];
+      this.analyses = [...this.indexAnalyses, ...this.quantitativeAnalyses];
 
       // FIXME: setContextId would fetch insights/questions for all datacubes and CAGs in all analyses
       //
@@ -362,45 +317,12 @@ export default defineComponent({
 
       this.disableOverlay();
     },
-    async fetchKbStats() {
-      const KBlist = await projectService.getKBs(); // FIXME this is more expensive than it needs to be, we fetch the whole list of KBs then only use one
-      const projectKB_id = this.projectMetadata.kb_id;
-      const projectKB = KBlist.find((kb) => kb.id === projectKB_id);
-      if (projectKB === undefined) {
-        if (!_.isEmpty(this.projectMetadata)) {
-          // App.vue is responsible for fetching projectMetadata.
-          // If projectMetadata is equal to `{}` here, it means results haven't
-          //  been returned yet. We only need to flag the error if metadata has
-          //  been successfully fetched but a matching KB isn't found.
-          console.error('Unable to find knowledge base with ID', projectKB_id, 'in', KBlist);
-        }
-        return;
-      }
-
-      this.numDocuments = _.get(projectKB.corpus_parameter, 'num_documents', 0);
-      this.numStatements = _.get(projectKB.corpus_parameter, 'num_statements', 0);
-      this.KBname = _.get(projectKB, 'name', '-');
-    },
     onRename(analysis) {
       this.showRenameModal = true;
       this.selectedAnalysis = analysis;
     },
     async onRenameModalConfirm(newName) {
       const oldName = this.selectedAnalysis && this.selectedAnalysis.title;
-
-      // updating qualitative analysis
-      const id = this.selectedAnalysis && this.selectedAnalysis.id;
-      if (id && oldName !== newName) {
-        modelService
-          .updateModelMetadata(id, { name: newName })
-          .then(() => {
-            this.selectedAnalysis.title = newName;
-            this.toaster(CAG.SUCCESSFUL_RENAME, TYPE.SUCCESS, false);
-          })
-          .catch(() => {
-            this.toaster(CAG.ERRONEOUS_RENAME, TYPE.INFO, true);
-          });
-      }
 
       // updating data analysis
       const analysisId = this.selectedAnalysis && this.selectedAnalysis.analysisId;
@@ -435,20 +357,6 @@ export default defineComponent({
           this.toaster(ANALYSIS.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
         }
       }
-      if (analysis.id) {
-        // cag-id
-        modelService
-          .duplicateModel(analysis.id, newName)
-          .then((copy) => {
-            const duplicatedAnalysis = toQualitative(copy);
-            duplicatedAnalysis.title = newName; // FIXME @HACK since duplicateModel() does not return a full object copy
-            this.analyses.unshift(duplicatedAnalysis);
-            this.toaster(CAG.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
-          })
-          .catch(() => {
-            this.toaster(CAG.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
-          });
-      }
       this.showDuplicateModal = false;
     },
     async onDelete(analysis) {
@@ -461,18 +369,6 @@ export default defineComponent({
           this.toaster(ANALYSIS.ERRONEOUS_DELETION, TYPE.INFO, true);
         }
       }
-      if (analysis.id) {
-        // cag-id
-        modelService
-          .removeModel(analysis.id)
-          .then(() => {
-            this.analyses = this.analyses.filter((item) => item.id !== analysis.id);
-            this.toaster(CAG.SUCCESSFUL_DELETION, TYPE.SUCCESS, false);
-          })
-          .catch(() => {
-            this.toaster(CAG.ERRONEOUS_DELETION, TYPE.INFO, true);
-          });
-      }
     },
     onOpen(analysis) {
       const params = {
@@ -481,10 +377,6 @@ export default defineComponent({
       };
       let name = '';
       switch (analysis.type) {
-        case 'qualitative':
-          params.currentCAG = analysis.id;
-          name = 'qualitative';
-          break;
         case 'quantitative':
           params.analysisId = analysis.analysisId;
           name = 'dataComparative';
@@ -500,20 +392,6 @@ export default defineComponent({
         name,
         params,
       });
-    },
-    onCreateCAG() {
-      modelService
-        .newModel(this.project, `untitled at ${dateFormatter(Date.now())}`)
-        .then((result) => {
-          this.$router.push({
-            name: 'qualitative',
-            params: {
-              project: this.project,
-              currentCAG: result.id,
-              projectType: ProjectType.Analysis,
-            },
-          });
-        });
     },
     async onCreateIndexAnalysis() {
       const analysis = await createAnalysis(
