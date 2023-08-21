@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-import { expect } from 'chai';
+
 import AggregationsUtil from '@/utils/aggregations-util';
 
 describe('aggregation-util', () => {

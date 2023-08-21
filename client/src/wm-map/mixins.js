@@ -25,7 +25,7 @@ export const eventEmitter = {
      */
     $_emitMapEvent(mapboxEvent, data = {}) {
       this.$_emitEvent(mapboxEvent.type, {
-        mapboxEvent: mapboxEvent,
+        mapboxEvent,
         ...data,
       });
     },

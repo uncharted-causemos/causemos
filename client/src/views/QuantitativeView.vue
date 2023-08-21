@@ -381,7 +381,7 @@ export default defineComponent({
         };
 
         // Now we are up to date, create base scenario
-        this.enableOverlayWithCancel({ message: 'Creating baseline scenario', cancelFn: cancelFn });
+        this.enableOverlayWithCancel({ message: 'Creating baseline scenario', cancelFn });
         try {
           // FIXME: hack to get setOverlaySecondaryMessage, need to have experimentId extracted first
           await modelService.createBaselineScenario(
@@ -500,7 +500,7 @@ export default defineComponent({
           this.currentScenarioName = scenario.name;
           this.enableOverlayWithCancel({
             message: `Running ${this.currentScenarioName} on ${this.currentEngine}`,
-            cancelFn: cancelFn,
+            cancelFn,
           });
 
           const experimentId = await modelService.runProjectionExperiment(
@@ -658,7 +658,7 @@ export default defineComponent({
     },
     async switchEngine(engine: string) {
       await modelService.updateModelParameter(this.currentCAG, {
-        engine: engine,
+        engine,
       });
       this.refresh();
     },

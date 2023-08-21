@@ -1,6 +1,11 @@
-import { defineConfig } from 'vite';
+import { defineConfig, UserConfig } from 'vite';
+import type { InlineConfig } from 'vitest';
 import vue from '@vitejs/plugin-vue';
 import * as path from 'path';
+
+interface VitestConfigExport extends UserConfig {
+  test?: InlineConfig;
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -49,4 +54,8 @@ export default defineConfig({
       },
     },
   },
-});
+  test: {
+    globals: true,
+    environment: 'happy-dom', // alternative to jsdom which focuses heavily on performance
+  },
+} as VitestConfigExport);

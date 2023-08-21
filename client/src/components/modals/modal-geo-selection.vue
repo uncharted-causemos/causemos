@@ -276,7 +276,7 @@ export default defineComponent({
       this.$emit('close', { cancel: false, selectedRegions: this.selectedRegions });
     },
     close(cancel = true) {
-      this.$emit('close', { cancel: cancel });
+      this.$emit('close', { cancel });
     },
   },
 });

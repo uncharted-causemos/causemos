@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import csrUtil from '@/utils/csr-util';
 
 describe('csr-util', () => {

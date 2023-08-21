@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import CodeUtil from '@/utils/code-util';
 

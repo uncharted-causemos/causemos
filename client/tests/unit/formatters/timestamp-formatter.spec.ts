@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-import { expect } from 'chai';
+
 import TimestampFormatter from '@/formatters/timestamp-formatter';
 import { TemporalAggregationLevel, TemporalResolutionOption } from '@/types/Enums';
 

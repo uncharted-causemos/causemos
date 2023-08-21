@@ -25,7 +25,7 @@ export async function createPDFViewer({ url }) {
   const linkService = new PDFViewer.PDFLinkService({ eventBus });
 
   const findController = new PDFViewer.PDFFindController({
-    eventBus: eventBus,
+    eventBus,
     linkService,
   });
 
@@ -47,7 +47,7 @@ export async function createPDFViewer({ url }) {
   return {
     search(query) {
       findController.executeCommand('find', {
-        query: query,
+        query,
         phraseSearch: true,
       });
     },

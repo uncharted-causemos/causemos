@@ -286,7 +286,7 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
 
       this.queue.push({
         id: s.id,
-        selection: selection,
+        selection,
         layout: selection.layout(s.layout(selection, cache, cy)),
         postLayout: s.postLayout,
       });

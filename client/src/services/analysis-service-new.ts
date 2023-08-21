@@ -142,8 +142,8 @@ export const openDatacubeDrilldown = async (
     .push({
       name: 'data',
       params: {
-        project: project,
-        analysisId: analysisId,
+        project,
+        analysisId,
         projectType: ProjectType.Analysis,
       },
       query: {

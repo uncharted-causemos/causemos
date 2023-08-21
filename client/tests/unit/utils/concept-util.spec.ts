@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import ConceptUtil from '@/utils/concept-util';
 
 describe('concept-util', () => {

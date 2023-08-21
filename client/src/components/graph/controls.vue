@@ -173,9 +173,9 @@ export default {
       search: 'Add to Search',
       exclude: 'Exclude from Search',
     },
-    LAYOUTS: LAYOUTS,
-    LAYOUT_LABELS: LAYOUT_LABELS,
-    COLA_FLOWS: COLA_FLOWS,
+    LAYOUTS,
+    LAYOUT_LABELS,
+    COLA_FLOWS,
   }),
 
   computed: {

@@ -448,7 +448,7 @@ export const convertRegionalDataToBarData = (
       name: (data.length - index).toString(),
       label: dataItem.name,
       value: dataItem.value,
-      normalizedValue: normalizedValue,
+      normalizedValue,
       color: regionColor,
       opacity: Number(selectedDataLayerTransparency),
     };

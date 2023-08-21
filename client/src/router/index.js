@@ -196,5 +196,5 @@ export default createRouter({
     return result ? `${result}` : '';
   },
   history: createWebHashHistory(),
-  routes: routes,
+  routes,
 });

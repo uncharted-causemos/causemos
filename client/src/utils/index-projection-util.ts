@@ -58,10 +58,10 @@ export const createNewScenario = (
     id: uuidv4(),
     name,
     description,
-    color: color,
+    color,
     isVisible: true,
     isDefault: false,
-    constraints: constraints,
+    constraints,
   };
   return newScenario;
 };

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { FIFOCache } from '@/utils/fifo-cache';
 
 describe('fifo-cache', () => {

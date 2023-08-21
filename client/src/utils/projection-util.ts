@@ -162,7 +162,7 @@ export const interpolateLinear = <T extends { x: number; y: number }>(data: T[])
     // push interpolated points
     for (let j = 1; j < xDistance; j++) {
       const x = x1 + j;
-      result.push({ dataPoint: { x: x, y: slope * j + y1 }, isInterpolated: true });
+      result.push({ dataPoint: { x, y: slope * j + y1 }, isInterpolated: true });
     }
   }
   result.push({ dataPoint: { ...lastPoint }, isInterpolated: false });

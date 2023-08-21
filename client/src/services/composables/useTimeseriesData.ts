@@ -294,7 +294,7 @@ export default function useTimeseriesData(
                   temporalResolution: temporalRes.value,
                   temporalAggregation: temporalAgg.value,
                   spatialAggregation: spatialAgg,
-                  transform: transform,
+                  transform,
                 },
                 allRegionIds
               ),
@@ -325,8 +325,8 @@ export default function useTimeseriesData(
                 temporalResolution: temporalRes.value,
                 temporalAggregation: temporalAgg.value,
                 spatialAggregation: spatialAgg,
-                transform: transform,
-                regionId: regionId,
+                transform,
+                regionId,
               }).then((data) => ({ data }));
         });
       } else if (breakdownOption.value === SPLIT_BY_VARIABLE) {

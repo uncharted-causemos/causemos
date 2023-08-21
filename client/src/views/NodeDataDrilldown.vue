@@ -491,9 +491,9 @@ export default defineComponent({
       this.$router.push({
         name: 'nodeDataExplorer',
         params: {
-          currentCAG: currentCAG,
-          nodeId: nodeId,
-          project: project,
+          currentCAG,
+          nodeId,
+          project,
           projectType: ProjectType.Analysis,
         },
         query: { filters },

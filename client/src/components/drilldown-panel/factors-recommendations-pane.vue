@@ -238,7 +238,7 @@ export default {
           };
         });
         const payload = {
-          suggestedCurations: suggestedCurations,
+          suggestedCurations,
           acceptedCurations: statementIds,
         };
         trackCurations(this.curationTrackingId, payload);

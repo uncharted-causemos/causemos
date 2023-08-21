@@ -256,12 +256,12 @@ export default defineComponent({
           // This function is called when publishing model, which means it's safe
           //  to assert that selectedScenarioIds is defined
           runId: defaultRun?.id ?? (selectedScenarioIds.value as string[])[0],
-          feature: feature,
+          feature,
           resolution: selectedTemporalResolution.value,
           temporalAgg: selectedTemporalAggregation.value,
           spatialAgg: selectedSpatialAggregation.value,
-          rawResolution: rawResolution,
-          finalRawTimestamp: finalRawTimestamp,
+          rawResolution,
+          finalRawTimestamp,
         },
       ]);
       console.log('Sparkline requested: ' + sparklineResult);

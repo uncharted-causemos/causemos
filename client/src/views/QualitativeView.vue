@@ -1161,7 +1161,7 @@ export default defineComponent({
       const newNodesPayload = newNodes.map((concept) => {
         return {
           id: '',
-          concept: concept,
+          concept,
           label: this.ontologyFormatter(concept),
           components: [concept],
         };
@@ -1219,7 +1219,7 @@ export default defineComponent({
             if (hasNode(concept) === false) {
               nodePayload.push({
                 id: '',
-                concept: concept,
+                concept,
                 label: this.ontologyFormatter(concept),
                 components: [concept],
               });

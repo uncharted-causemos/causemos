@@ -328,7 +328,7 @@ export const updateStatementsFactorGrounding = async (
  */
 export const trackCurations = async (trackingId: string, payload: object) => {
   const result = await API.put(`/curation_recommendations/tracking/${trackingId}`, {
-    payload: payload,
+    payload,
   });
   return result;
 };

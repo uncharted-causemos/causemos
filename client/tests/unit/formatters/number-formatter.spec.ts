@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-import { expect } from 'chai';
+
 import NumberFormatter from '@/formatters/number-formatter';
 
 describe('number-formatter', () => {

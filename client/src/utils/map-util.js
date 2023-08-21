@@ -389,7 +389,7 @@ export function createPointsLayerStyle(property, dataDomain, colorOptions, filte
       'circle-opacity': colorOptions.opacity,
       'circle-stroke-width': 1,
     },
-    filter: filter,
+    filter,
   };
 }
 

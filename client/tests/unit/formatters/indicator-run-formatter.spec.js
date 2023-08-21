@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-import { expect } from 'chai';
+
 import indicatorRunFormatter from '@/formatters/indicator-run-formatter';
 
 describe('indicator-run-formatter', () => {

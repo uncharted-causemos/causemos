@@ -24,7 +24,7 @@ app.mixin({
       const toast = useToast();
       const timeout = sticky === true ? false : 3000;
       toast(message, {
-        timeout: timeout,
+        timeout,
         type: msgType,
       });
     },

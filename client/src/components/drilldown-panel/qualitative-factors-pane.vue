@@ -237,7 +237,7 @@ export default {
     documentModalData: null,
     textFragment: null,
     summaryData: { children: [], meta: { checked: false } },
-    CORRECTION_TYPES: CORRECTION_TYPES,
+    CORRECTION_TYPES,
     loadingMessage: 'Loading factors...',
     expandAll: null,
     showConfirmCurationModal: false,

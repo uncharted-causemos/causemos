@@ -5,7 +5,7 @@ import {
   offsetGridCells,
 } from '@/utils/grid-cell-util';
 import { createNewOutputIndex } from '@/utils/index-tree-util';
-import { expect } from 'chai';
+
 import { newTestTree } from './index-tree-util.spec';
 
 describe('grid-cell-util', () => {

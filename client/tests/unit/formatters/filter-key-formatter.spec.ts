@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import CodeUtil from '@/utils/code-util';
 

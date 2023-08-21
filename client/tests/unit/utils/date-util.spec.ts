@@ -1,5 +1,4 @@
 import { snapTimestampToNearestMonth } from '@/utils/date-util';
-import { expect } from 'chai';
 
 describe('date-util', () => {
   describe('snapTimestampToNearestMonth', () => {

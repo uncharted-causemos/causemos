@@ -34,23 +34,23 @@ const getProjectOntologyDefinitions = async (projectId: string) => {
 // e.g. WM_FOO_BAR => { WM_FOO, WM_BAR }
 const getProjectOntologyComposition = async (projectId: string, concept: string) => {
   const result = await API.get(`projects/${projectId}/ontology-composition`, {
-    params: { concept: concept },
+    params: { concept },
   });
   return result.data;
 };
 
 const getProjectFacetsPromise = async (projectId: string, facets: string[], filters: Filters) => {
   return API.get(`projects/${projectId}/facets?facets=${JSON.stringify(facets)}`, {
-    params: { filters: filters },
+    params: { filters },
   });
 };
 
 // Create new project based on KB specified by baseId
 const createProject = async (baseId: string, projectName: string, projectDescription: string) => {
   const result = await API.post('projects', {
-    baseId: baseId,
-    projectName: projectName,
-    projectDescription: projectDescription,
+    baseId,
+    projectName,
+    projectDescription,
   });
   const id = result.data.index;
 
@@ -84,7 +84,7 @@ const updateProjectMetadata = async (projectId: string, metadata: any) => {
 
 const getProjectStats = async (projectId: string, filters: Filters) => {
   const result = await API.get(`projects/${projectId}/count-stats`, {
-    params: { filters: filters },
+    params: { filters },
   });
   return result.data;
 };
@@ -118,7 +118,7 @@ const getProjectStatementsForConcepts = (
 };
 
 const getProjectGraph = async (projectId: string, filters: Filters) => {
-  const result = await API.get(`projects/${projectId}/graphs`, { params: { filters: filters } });
+  const result = await API.get(`projects/${projectId}/graphs`, { params: { filters } });
   return result.data;
 };
 
@@ -126,7 +126,7 @@ const getProjectGraph = async (projectId: string, filters: Filters) => {
 // TODO: Do a more performant fetch like retrieving wm.edge instead of computing aggregating and fetching  the graph as a whole
 // to better handle larger datasets - Aug 25
 const getProjectEdges = async (projectId: string, filters: Filters) => {
-  const result = await API.get(`projects/${projectId}/edges`, { params: { filters: filters } });
+  const result = await API.get(`projects/${projectId}/edges`, { params: { filters } });
   return result.data;
 };
 
@@ -136,13 +136,13 @@ const getProjectStatementIdsByEdges = async (
   edges: SourceTargetPair[],
   filters: Filters
 ) => {
-  const result = await API.post(`projects/${projectId}/edge-data`, { edges, filters: filters });
+  const result = await API.post(`projects/${projectId}/edge-data`, { edges, filters });
   return result.data;
 };
 
 const getProjectLocationsPromise = async (projectId: string, filters: Filters) => {
   const promise = API.get(`projects/${projectId}/locations`, {
-    params: { filters: filters },
+    params: { filters },
   });
   return promise;
 };

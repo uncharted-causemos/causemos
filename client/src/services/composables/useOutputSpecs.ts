@@ -78,7 +78,7 @@ export default function useOutputSpecs(
         const outputSpec: OutputSpecWithId = {
           id: timeseriesId,
           modelId: activeModelId,
-          runId: runId,
+          runId,
           outputVariable: featureName,
           timestamp,
           transform,

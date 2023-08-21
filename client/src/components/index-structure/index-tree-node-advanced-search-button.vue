@@ -29,7 +29,7 @@ const openDataExplorer = () => {
       analysisId: route.params.analysisId,
       nodeId: props.nodeId,
     },
-    query: { filters: filters } as any,
+    query: { filters } as any,
   });
 };
 </script>
