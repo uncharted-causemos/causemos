@@ -42,7 +42,7 @@ import { Datacube } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { Facets } from '@/types/Common';
 
-import useOverlay from '@/services/composables/useOverlay';
+import useOverlay from '@/composables/useOverlay';
 
 import FacetsPanel from './facets-panel.vue';
 import ModalHeader from './modal-header.vue';

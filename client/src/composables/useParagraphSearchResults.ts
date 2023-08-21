@@ -1,5 +1,5 @@
 import { Ref, computed, ref, watch } from 'vue';
-import { getDocument, getHighlights, searchParagraphs } from '../paragraphs-service';
+import { getDocument, getHighlights, searchParagraphs } from '../services/paragraphs-service';
 import { DojoParagraphHighlight, Snippet } from '@/types/IndexDocuments';
 import dateFormatter from '@/formatters/date-formatter';
 import { HIGHLIGHTED_TEXT_CLASS } from '@/utils/text-viewer-util';

@@ -7,7 +7,7 @@ import {
 } from '@/utils/insight-util';
 
 import { INSIGHTS } from '@/utils//messages-util';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { computed } from 'vue';
 import { TYPE } from 'vue-toastification';
 

@@ -76,8 +76,8 @@
 </template>
 
 <script setup lang="ts">
-import useIndexTree from '@/services/composables/useIndexTree';
-import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+import useIndexTree from '@/composables/useIndexTree';
+import useIndexWorkBench from '@/composables/useIndexWorkBench';
 import { computed } from 'vue';
 import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import { getProjectionsForNode } from '@/utils/index-projection-util';

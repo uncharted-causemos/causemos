@@ -132,8 +132,8 @@ import DatacubeCard from '@/components/data/datacube-card.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import modelService from '@/services/model-service';
-import useModelMetadata from '@/services/composables/useModelMetadata';
-import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import useModelMetadata from '@/composables/useModelMetadata';
+import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import {
   ProjectType,
@@ -153,7 +153,7 @@ import {
 import { DataState, ViewState } from '@/types/Insight';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import { Timeseries } from '@/types/Timeseries';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 

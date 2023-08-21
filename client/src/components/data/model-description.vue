@@ -222,7 +222,7 @@ import { getOutputs } from '@/utils/datacube-util';
 import { scrollToElement } from '@/utils/dom-util';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { useRoute } from 'vue-router';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 
 export default defineComponent({

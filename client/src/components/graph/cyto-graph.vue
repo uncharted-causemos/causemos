@@ -31,7 +31,7 @@ import Controls from '@/components/graph/controls.vue';
 import { createLinearScale } from '@/utils/scales-util';
 import { FADED_COLOR } from '@/utils/colors-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
 
 export const EDGE_THRESHOLD = 2000;
 export const NODE_THRESHOLD = 4000;

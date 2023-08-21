@@ -94,7 +94,7 @@ import { findCycles, classifyCycles, Vertex } from '@/utils/graphs-util';
 import modelService from '@/services/model-service';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
 import { CAGGraph, CAGModelSummary, Scenario, GraphPath } from '@/types/CAG';
 
 const ANALYSES = [

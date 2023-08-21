@@ -34,7 +34,7 @@
 <script setup lang="ts">
 import { computed, ref, toRefs } from 'vue';
 import ModalDocument from '@/components/modals/modal-document.vue';
-import useParagraphSearchResults from '@/services/composables/useParagraphSearchResults';
+import useParagraphSearchResults from '@/composables/useParagraphSearchResults';
 
 const props = defineProps<{ searchBarText: string }>();
 const { searchBarText } = toRefs(props);

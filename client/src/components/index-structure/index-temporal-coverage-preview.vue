@@ -22,7 +22,7 @@ import precisionFormatter from '@/formatters/precision-formatter';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import { computed, toRefs } from 'vue';
 import { Indicator } from '@/types/Datacube';
-import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
+import useModelMetadataCoverage from '@/composables/useModelMetadataCoverage';
 import { getYearFromTimestamp } from '@/utils/date-util';
 
 const props = defineProps<{

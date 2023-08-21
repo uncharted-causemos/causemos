@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexTree from '@/composables/useIndexTree';
 import { ConceptNode } from '@/types/Index';
 import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import { computed } from 'vue';

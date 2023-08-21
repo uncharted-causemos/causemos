@@ -222,8 +222,8 @@ import {
   SourceTargetPair,
   CAGVisualState,
 } from '@/types/CAG';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import useToaster from '@/services/composables/useToaster';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
+import useToaster from '@/composables/useToaster';
 import { QualitativeDataState } from '@/types/Insight';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';

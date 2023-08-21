@@ -3,7 +3,7 @@ import { Ref, ref } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
 import { SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Outputdata';
-import { getRegionAggregations } from '../outputdata-service';
+import { getRegionAggregations } from '../services/outputdata-service';
 import { DatacubeGeography } from '@/types/Common';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { BreakdownData } from '@/types/Datacubes';

@@ -45,8 +45,8 @@
 import _ from 'lodash';
 import { defineComponent, toRefs, computed } from 'vue';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
-import useMapRegionSelection from '@/services/composables/useMapRegionSelection';
-import useMapSyncBounds from '@/services/composables/useMapSyncBounds';
+import useMapRegionSelection from '@/composables/useMapRegionSelection';
+import useMapSyncBounds from '@/composables/useMapSyncBounds';
 import { BASE_MAP_OPTIONS, ETHIOPIA_BOUNDING_BOX, STYLE_URL_PREFIX } from '@/utils/map-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { BASE_LAYER, SOURCE_LAYERS } from '@/utils/map-util-new';

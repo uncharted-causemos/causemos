@@ -1,6 +1,6 @@
 import { Indicator, Model } from '@/types/Datacube';
 import { computed, ref, Ref, watch } from 'vue';
-import newDatacubeService from '../new-datacube-service';
+import newDatacubeService from '../services/new-datacube-service';
 
 /**
  * Fetches a Model or Indicator's metadata from ElasticSearch based on its data_id.

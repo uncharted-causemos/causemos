@@ -36,8 +36,8 @@ import {
   IndexProjectionNodeDataWarning,
 } from '@/types/Index';
 import { computed } from 'vue';
-import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexWorkBench from '@/composables/useIndexWorkBench';
+import useIndexTree from '@/composables/useIndexTree';
 import {
   getGridCellsFromIndexTreeAndWorkbench,
   getIncomingEdgeClassObject,

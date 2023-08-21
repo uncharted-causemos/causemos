@@ -176,7 +176,7 @@ import {
 import { getOutputs } from '@/utils/datacube-util';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import { capitalize } from '@/utils/string-util';
 
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [

@@ -9,7 +9,7 @@ import {
 } from '@/types/Enums';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
-import { getQualifierBreakdown, getRawQualifierBreakdown } from '../outputdata-service';
+import { getQualifierBreakdown, getRawQualifierBreakdown } from '../services/outputdata-service';
 import useQualifierFetchInfo from './useQualifierFetchInfo';
 
 const convertResponsesToBreakdownData = (

@@ -56,7 +56,7 @@ import { mapActions } from 'vuex';
 
 import { calcEdgeColor } from '@/utils/scales-util';
 import numberFormatter from '@/formatters/number-formatter';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
 
 interface RelationEdge {
   source: string;

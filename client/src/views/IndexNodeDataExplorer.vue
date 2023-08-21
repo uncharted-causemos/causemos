@@ -22,11 +22,11 @@ import router from '@/router';
 
 import DataExplorer from '../components/data-explorer/data-explorer.vue';
 
-import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
-import useIndexTree from '@/services/composables/useIndexTree';
-import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
-import useToaster from '@/services/composables/useToaster';
-import useOverlay from '@/services/composables/useOverlay';
+import useIndexWorkBench from '@/composables/useIndexWorkBench';
+import useIndexTree from '@/composables/useIndexTree';
+import useIndexAnalysis from '@/composables/useIndexAnalysis';
+import useToaster from '@/composables/useToaster';
+import useOverlay from '@/composables/useOverlay';
 
 import { getOutput, FACET_FIELDS, TYPE as FACET_FIELD_TYPE } from '@/utils/datacube-util';
 import { capitalizeEachWord } from '@/utils/string-util';

@@ -26,7 +26,7 @@
 import { PropType, defineComponent } from 'vue';
 import { COMPACT_POLARITY } from '@/utils/polarity-util';
 import HighlightValue from '@/components/audit/highlight-value.vue';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
 
 const POLARITY_CORRECTION_TYPES = ['factor_polarity'];
 

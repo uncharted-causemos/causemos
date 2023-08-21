@@ -17,10 +17,7 @@ import {
 import { createNewOutputIndex } from '@/utils/index-tree-util';
 import { createNewIndexResultsSettings } from '@/utils/index-results-util';
 import { createNewIndexProjectionSettings } from '@/utils/index-projection-util';
-import {
-  DEFAULT_EARLIEST_YEAR,
-  DEFAULT_LAST_YEAR,
-} from '@/services/composables/useProjectionDates';
+import { DEFAULT_EARLIEST_YEAR, DEFAULT_LAST_YEAR } from '@/composables/useProjectionDates';
 
 /**
  * Create a new DataAnalysisState object with each of its fields initialized to

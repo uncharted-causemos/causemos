@@ -11,7 +11,7 @@
 import _ from 'lodash';
 import { defineComponent, ref, Ref, PropType, computed } from 'vue';
 import { useStore } from 'vuex';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
 import { D3SelectionINode, D3SelectionIEdge } from '@/graphs/abstract-cag-renderer';
 import { QuantitativeRenderer } from '@/graphs/quantitative-renderer';
 import { buildInitialGraph, runELKLayout } from '@/graphs/cag-adapter';

@@ -30,7 +30,7 @@ import {
   getRawTimeseriesData,
   getRawTimeseriesDataBulk,
   getTimeseries,
-} from '../outputdata-service';
+} from '../services/outputdata-service';
 import { correctIncompleteTimeseriesLists } from '@/utils/incomplete-data-detection';
 
 const applyBreakdown = (

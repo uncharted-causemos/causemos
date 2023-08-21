@@ -21,7 +21,7 @@ import * as d3 from 'd3';
 import Mousetrap from 'mousetrap';
 import { defineComponent, computed, ref, Ref, PropType } from 'vue';
 import { useStore } from 'vuex';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select.vue';
 import GraphSearch from '@/components/graph/graph-search.vue';
 

@@ -100,7 +100,7 @@ import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
 import { ProjectionTimeseries } from '@/types/Timeseries';
-import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
+import useModelMetadataSimple from '@/composables/useModelMetadataSimple';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 import { EditMode } from '@/utils/projection-util';
 import IndexProjectionsExpandedNodeWarning from './index-projections-expanded-node-warning.vue';

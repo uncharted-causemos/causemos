@@ -90,7 +90,7 @@ import { ModelRunStatus } from '@/types/Enums';
 import DurationFormatter from '@/formatters/duration-formatter';
 import { ModelRun } from '@/types/ModelRun';
 import SmallTextButton from '../widgets/small-text-button.vue';
-import useApplicationConfiguration from '@/services/composables/useApplicationConfiguration';
+import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 
 const OmittedColumns = ['run_id', 'created_at', 'status', 'is_default_run', 'flow_id'];
 

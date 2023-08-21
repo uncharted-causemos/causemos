@@ -118,7 +118,7 @@ import router from '@/router';
 import { DataAnalysisState } from '@/types/Analysis';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 import { useRoute } from 'vue-router';
-import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
+import { useDataAnalysis } from '@/composables/useDataAnalysis';
 import { isDataAnalysisState } from '@/utils/insight-util';
 import { Indicator, Model } from '@/types/Datacube';
 
