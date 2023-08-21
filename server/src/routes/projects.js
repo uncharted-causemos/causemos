@@ -50,10 +50,9 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req, res) => {
-    const baseId = req.body.baseId;
     const projectName = req.body.projectName;
     const projectDescription = req.body.projectDescription;
-    const result = await projectService.createProject(baseId, projectName, projectDescription);
+    const result = await projectService.createProject(projectName, projectDescription);
 
     res.json(result);
   })
