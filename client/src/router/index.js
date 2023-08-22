@@ -6,12 +6,9 @@ import AnalysisProjectOverview from '@/views/AnalysisProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
 import NewDomainProject from '@/views/NewDomainProject.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
-import GraphExperiment from '@/views/GraphExperiment.vue';
-import QualitativeView from '@/views/QualitativeView.vue';
 import IndexStructure from '@/views/IndexStructure.vue';
 import IndexResults from '@/views/IndexResults.vue';
 import IndexProjections from '@/views/IndexProjections.vue';
-import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
 import DatacubeDrilldown from '@/views/DatacubeDrilldown.vue';
@@ -19,9 +16,6 @@ import Documents from '@/views/Documents.vue';
 import CompAnalysis from '@/views/CompAnalysis.vue';
 import ModelPublisher from '@/views/ModelPublisher.vue';
 import IndicatorPublisher from '@/views/IndicatorPublisher.vue';
-import NodeDataDrilldown from '@/views/NodeDataDrilldown.vue';
-import NodeDrilldown from '@/views/NodeDrilldown.vue';
-import NodeDataExplorer from '@/views/NodeDataExplorer.vue';
 import IndexNodeDataExplorer from '@/views/IndexNodeDataExplorer.vue';
 import PrefectFlowLogs from '@/views/PrefectFlowLogs.vue';
 import qs from 'qs';
@@ -133,36 +127,6 @@ const routes = [
     path: '/:projectType/:project/indicator-publishing-experiment',
     name: 'indicatorPublisher',
     component: IndicatorPublisher,
-  },
-  {
-    path: '/graph-experiment',
-    name: 'graphExperiment',
-    component: GraphExperiment,
-  },
-  {
-    path: '/:projectType/:project/qualitative/:currentCAG',
-    name: 'qualitative',
-    component: QualitativeView,
-  },
-  {
-    path: '/:projectType/:project/quantitative/:currentCAG',
-    name: 'quantitative',
-    component: QuantitativeView,
-  },
-  {
-    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/indicator/:indicatorId',
-    name: 'nodeDataDrilldown',
-    component: NodeDataDrilldown,
-  },
-  {
-    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId',
-    name: 'nodeDrilldown',
-    component: NodeDrilldown,
-  },
-  {
-    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/explorer',
-    name: 'nodeDataExplorer',
-    component: NodeDataExplorer,
   },
   {
     path: '/prefectFlowLogs/:flowId',
