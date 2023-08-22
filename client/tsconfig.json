@@ -18,7 +18,7 @@
       "@/*": ["src/*"]
     },
     "sourceMap": true,
-    "types": ["vite/client", "vitest/globals", "chai"]
+    "types": ["vite/client", "vitest/globals"]
   },
   "vueCompilerOptions": {},
   "include": [
