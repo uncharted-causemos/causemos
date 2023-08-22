@@ -3,8 +3,8 @@ import type { InlineConfig } from 'vitest';
 import vue from '@vitejs/plugin-vue';
 import * as path from 'path';
 
-interface VitestConfigExport extends UserConfig {
-  test?: InlineConfig;
+interface VitestConfig extends UserConfig {
+  test: InlineConfig;
 }
 
 // https://vitejs.dev/config/
@@ -63,4 +63,4 @@ export default defineConfig({
       exclude: [],
     },
   },
-} as VitestConfigExport);
+} as VitestConfig);
