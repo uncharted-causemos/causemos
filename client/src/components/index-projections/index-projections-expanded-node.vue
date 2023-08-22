@@ -44,10 +44,10 @@
 
       <IndexProjectionsExpandedNodeResilience
         class="add-horizontal-margin"
-        :node-data="nodeData"
+        :node-data="(nodeData as ConceptNodeWithDatasetAttached)"
         :historical-data="historicalData"
         :constraints="constraints"
-        :projection-temporal-resolution-option="projectionTemporalResolutionOption"
+        :projection-temporal-resolution-option="(projectionTemporalResolutionOption as TemporalResolutionOption.Month | TemporalResolutionOption.Year)"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projection-timeseries="timeseries"
@@ -99,7 +99,12 @@
 </template>
 
 <script setup lang="ts">
-import { ConceptNode, IndexProjectionNodeDataWarning, ProjectionConstraint } from '@/types/Index';
+import {
+  ConceptNode,
+  ConceptNodeWithDatasetAttached,
+  IndexProjectionNodeDataWarning,
+  ProjectionConstraint,
+} from '@/types/Index';
 import {
   DATASET_COLOR,
   DATASET_ICON,
@@ -141,7 +146,7 @@ const optionsButtonMenu = [
 
 const props = defineProps<{
   nodeData: ConceptNode;
-  historicalData: { countryName: string; points: TimeseriesPoint[] };
+  historicalData: { countryName: string; points: TimeseriesPoint[] }[];
   constraints: { scenarioId: string; constraints: ProjectionConstraint[] }[];
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
