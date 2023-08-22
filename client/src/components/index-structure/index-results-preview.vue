@@ -15,7 +15,7 @@ import { computed } from 'vue';
 import { useStore } from 'vuex';
 import { ProjectType } from '@/types/Enums';
 import { indexNodeTreeContainsDataset } from '@/utils/index-tree-util';
-import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexTree from '@/composables/useIndexTree';
 import { useRouter } from 'vue-router';
 
 const props = defineProps<{

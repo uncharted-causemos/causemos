@@ -29,7 +29,7 @@
         v-if="globalTimeseries.length > 0 && activeTab === ComparativeAnalysisMode.Overlay"
         :timeseriesData="globalTimeseries"
         :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
-        :selected-timestamp="globalTimestamp"
+        :selected-timestamp="globalTimestamp ?? undefined"
         @select-timestamp="setSelectedGlobalTimestamp"
         @select-timestamp-range="handleTimestampRangeSelection"
       />
@@ -45,7 +45,7 @@
             :id="item.id"
             :item-id="item.itemId"
             :datacube-index="indx"
-            :selected-timestamp="selectedTimestamp"
+            :selected-timestamp="selectedTimestamp ?? undefined"
             :selected-timestamp-range="selectedTimestampRange"
             :analysis-item="item"
             :analysis-id="analysisId"
@@ -76,7 +76,7 @@
                 :id="item.id"
                 :item-id="item.itemId"
                 :datacube-index="indx"
-                :global-timestamp="globalTimestamp"
+                :global-timestamp="globalTimestamp ?? undefined"
                 :analysis-item="item"
                 :analysis-id="analysisId"
                 @loaded-timeseries="onLoadedTimeseries"
@@ -118,7 +118,7 @@ import router from '@/router';
 import { DataAnalysisState } from '@/types/Analysis';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 import { useRoute } from 'vue-router';
-import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
+import { useDataAnalysis } from '@/composables/useDataAnalysis';
 import { isDataAnalysisState } from '@/utils/insight-util';
 import { Indicator, Model } from '@/types/Datacube';
 

@@ -87,7 +87,7 @@ import {
 import { Statement } from '@/types/Statement';
 import { getInsightById } from '@/services/insight-service';
 import { ModelsSpaceDataState } from '@/types/Insight';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { saveAs } from 'file-saver';
 import { TYPE } from 'vue-toastification';

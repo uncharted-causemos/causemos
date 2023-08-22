@@ -1,7 +1,7 @@
 import { ConceptNode } from '@/types/Index';
 import { findAllDatasets } from '@/utils/index-tree-util';
 import { Ref, ref, watch } from 'vue';
-import { getTimeseries, TRANSFORM_NORM } from '../outputdata-service';
+import { getTimeseries, TRANSFORM_NORM } from '../services/outputdata-service';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { NO_COUNTRY_SELECTED_VALUE } from '@/utils/index-projection-util';
 

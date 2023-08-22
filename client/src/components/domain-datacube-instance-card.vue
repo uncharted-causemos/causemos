@@ -40,7 +40,7 @@
         }}</span>
         <span
           v-if="newVersionLink"
-          @click="edit(newVersionLink)"
+          @click="() => edit(newVersionLink as string)"
           rel="noopener noreferrer"
           class="deprecated-datacube"
         >
@@ -75,7 +75,7 @@
             name="domains"
             style="margin-right: 7px"
             id="domains"
-            @change="selectedDomain = AVAILABLE_DOMAINS[$event.target.selectedIndex - 1]"
+            @change="event => selectedDomain = AVAILABLE_DOMAINS[(event.target as HTMLSelectElement).selectedIndex - 1]"
           >
             <option disabled selected value="''">Select a domain</option>
             <option v-for="domain in AVAILABLE_DOMAINS" :key="domain">
@@ -132,14 +132,9 @@
         type="button"
         class="remove-button"
         :class="{
-          disabled:
-            datacube.status === DatacubeStatus.Registered ||
-            datacube.status === DatacubeStatus.Deprecated,
+          disabled: datacube.status === DatacubeStatus.Registered,
         }"
-        :disabled="
-          datacube.status === DatacubeStatus.Registered ||
-          datacube.status === DatacubeStatus.Deprecated
-        "
+        :disabled="datacube.status === DatacubeStatus.Registered"
         @click.stop="showUnpublishModal = true"
       >
         <i class="fa fa-trash" />
@@ -161,11 +156,12 @@ import dateFormatter from '@/formatters/date-formatter';
 import { FeatureQualifier, Indicator, Model } from '@/types/Datacube';
 import { DatacubeStatus } from '@/types/Enums';
 import { AVAILABLE_DOMAINS, getValidatedOutputs, isIndicator } from '@/utils/datacube-util';
-import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { updateDatacube } from '@/services/new-datacube-service';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
+import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 /**
  * A card-styled widget to view project summary
  */
@@ -187,7 +183,6 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       projectMetadata: 'app/projectMetadata',
-      applicationConfiguration: 'app/applicationConfiguration',
     }),
     breakdownParameters(): any[] {
       if (isIndicator(this.datacube)) return [];
@@ -239,6 +234,7 @@ export default defineComponent({
     const selectedDomain = ref('');
 
     const { statusColor, statusLabel } = useDatacubeVersioning(datacube);
+    const { applicationConfiguration } = useApplicationConfiguration();
 
     return {
       showUnpublishModal,
@@ -248,6 +244,7 @@ export default defineComponent({
       statusLabel,
       selectedDomain,
       AVAILABLE_DOMAINS,
+      applicationConfiguration,
     };
   },
   methods: {

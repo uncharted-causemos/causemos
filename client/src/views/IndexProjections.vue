@@ -14,7 +14,7 @@
         </button>
         <h3>Projections</h3>
       </header>
-      <section v-if="selectedNodeId !== null">
+      <section v-if="selectedNodeId !== null" class="horizontal-padding">
         <header class="flex index-structure-header">
           <h4>Index structure</h4>
         </header>
@@ -23,7 +23,7 @@
           :selected-node-id="selectedNodeId"
         />
       </section>
-      <section class="settings-section">
+      <section class="settings-section horizontal-padding">
         <header><h4>Settings</h4></header>
         <DropdownButton
           :is-dropdown-left-aligned="true"
@@ -68,9 +68,9 @@
         />
       </section>
       <footer>
-        <section class="show-outside-values">
+        <section class="show-outside-values horizontal-padding">
           <label @click="setShowDataOutsideNorm(!showDataOutsideNorm)">
-            Show values outside the <b>0</b> to <b>1</b> range
+            <span>Show values outside the <b>0</b> to <b>1</b> range</span>
             <i
               class="fa fa-lg fa-fw"
               :class="{
@@ -222,8 +222,8 @@ import { useStore } from 'vuex';
 import { computed, onMounted, ref, watch } from 'vue';
 import { ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
-import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
-import useProjectionDates from '@/services/composables/useProjectionDates';
+import useIndexAnalysis from '@/composables/useIndexAnalysis';
+import useProjectionDates from '@/composables/useProjectionDates';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
 import { SelectableIndexElementId } from '@/types/Index';
@@ -231,23 +231,23 @@ import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import timestampFormatter from '@/formatters/timestamp-formatter';
-import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexTree from '@/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
 import { MAX_NUM_TIMESERIES, NO_COUNTRY_SELECTED_VALUE } from '@/utils/index-projection-util';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
 import IndexProjectionsSettingsScenarios from '@/components/index-projections/index-projections-settings-scenarios.vue';
-import useInsightStore from '@/services/composables/useInsightStore';
-import useToaster from '@/services/composables/useToaster';
+import useInsightStore from '@/composables/useInsightStore';
+import useToaster from '@/composables/useToaster';
 import { getInsightById } from '@/services/insight-service';
 import { Insight, IndexProjectionsDataState } from '@/types/Insight';
 import { INSIGHT_CAPTURE_CLASS, isIndexProjectionsDataState } from '@/utils/insight-util';
 import { TYPE } from 'vue-toastification';
 import IndexProjectionsSettingsCountries from '@/components/index-projections/index-projections-settings-countries.vue';
-import useSelectedCountries from '@/services/composables/useSelectedCountries';
-import useScenarios from '@/services/composables/useScenarios';
-import useScenarioProjections from '@/services/composables/useScenarioProjections';
-import useHistoricalData from '@/services/composables/useHistoricalData';
-import useMultipleCountryProjections from '@/services/composables/useMultipleCountryProjections';
+import useSelectedCountries from '@/composables/useSelectedCountries';
+import useScenarios from '@/composables/useScenarios';
+import useScenarioProjections from '@/composables/useScenarioProjections';
+import useHistoricalData from '@/composables/useHistoricalData';
+import useMultipleCountryProjections from '@/composables/useMultipleCountryProjections';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -672,6 +672,11 @@ const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => 
   background: $background-light-2;
 }
 
+.horizontal-padding {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
 .config-column {
   background: white;
   width: 300px;
@@ -685,17 +690,13 @@ const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => 
   .settings-section {
     flex: 1;
     overflow-y: auto;
-    padding-left: 20px;
-    padding-right: 20px;
   }
 
   .show-outside-values {
-    display: flex;
-    align-items: flex-end;
-    padding-left: 20px;
-    padding-right: 20px;
-    label i {
-      color: $positive;
+    label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
   }
   footer {

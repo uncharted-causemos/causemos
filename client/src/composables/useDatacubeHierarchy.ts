@@ -3,7 +3,7 @@ import { Indicator, Model } from '@/types/Datacube';
 import { AdminRegionSets } from '@/types/Datacubes';
 import _ from 'lodash';
 import { computed, ref, Ref, watch, watchEffect } from 'vue';
-import { getRegionLists } from '../outputdata-service';
+import { getRegionLists } from '../services/outputdata-service';
 import {
   ADMIN_LEVEL_KEYS,
   REGION_ID_DELIMETER,

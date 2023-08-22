@@ -17,7 +17,7 @@
       @retry="retryRun"
     />
     <modal-geo-selection
-      v-if="showGeoSelectionModal === true"
+      v-if="showGeoSelectionModal === true && isModel(metadata)"
       :model-param="geoModelParam ?? undefined"
       :metadata="metadata"
       @close="onGeoSelectionModalClose"
@@ -300,7 +300,7 @@
               <div style="padding-right: 10px">Selected Viz:</div>
               <select
                 name="pre-gen-outputs"
-                @change="selectedPreGenDataId = preGenDataIds[$event.target.selectedIndex]"
+                @change="event => selectedPreGenDataId = preGenDataIds[(event.target as HTMLSelectElement).selectedIndex]"
               >
                 <option
                   v-for="pregenId in preGenDataIds"
@@ -407,7 +407,7 @@
             class="timeseries-chart"
             :timeseries-data="timeseriesData"
             :selected-temporal-resolution="selectedTemporalResolution"
-            :selected-timestamp="selectedTimestamp"
+            :selected-timestamp="selectedTimestamp ?? undefined"
             :breakdown-option="breakdownOption"
             :unit="timeseriesUnit"
             @select-timestamp="setSelectedTimestamp"
@@ -420,7 +420,7 @@
             "
             :timeseriesData="globalTimeseries"
             :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
-            :selected-timestamp="selectedGlobalTimestamp"
+            :selected-timestamp="selectedGlobalTimestamp ?? undefined"
             :selected-timestamp-range="selectedGlobalTimestampRange"
             :breakdown-option="breakdownOption"
             @select-timestamp="setSelectedGlobalTimestamp"
@@ -653,8 +653,8 @@ import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import TemporalFacet from '@/components/facets/temporal-facet.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
-import useDatacube from '@/services/composables/useDatacube';
-import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
+import useDatacube from '@/composables/useDatacube';
+import useParallelCoordinatesData from '@/composables/useParallelCoordinatesData';
 
 import { getInsightById } from '@/services/insight-service';
 import { isDataSpaceDataState } from '@/utils/insight-util';
@@ -712,7 +712,7 @@ import {
 } from '@/services/new-datacube-service';
 
 import API from '@/api/api';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
@@ -723,7 +723,7 @@ import { capitalize } from '@/utils/string-util';
 import { getBboxForEachRegionId } from '@/services/geo-service';
 import { getWeightQualifier } from '@/utils/qualifier-util';
 import { BreakdownData } from '@/types/Datacubes';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -1964,6 +1964,10 @@ export default defineComponent({
       );
     });
 
+    // HACK: silences warnings from pregenDataForSpec used in template.
+    //  Ideally we should not be using the hacky `:set=` attribute in the template at all.
+    const pregenDataForSpec = undefined as PreGeneratedModelRunData | undefined;
+
     return {
       addNewTag,
       renameRun,
@@ -2113,6 +2117,7 @@ export default defineComponent({
       DatacubeStatus,
       itemId,
       filteredAggregationOptions,
+      pregenDataForSpec,
     };
   },
   watch: {

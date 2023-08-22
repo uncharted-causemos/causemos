@@ -89,15 +89,15 @@ import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header
 import { computed, defineComponent } from 'vue';
 
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
-import useInsightsData from '@/services/composables/useInsightsData';
-import useToaster from '@/services/composables/useToaster';
+import useInsightsData from '@/composables/useInsightsData';
+import useToaster from '@/composables/useToaster';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
 import { countPublicInsights, fetchFullInsights, removeInsight } from '@/services/insight-service';
 import { AnalyticalQuestion, Insight, SectionWithInsights } from '@/types/Insight';
-import useQuestionsData from '@/services/composables/useQuestionsData';
+import useQuestionsData from '@/composables/useQuestionsData';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 
 const EXPORT_OPTIONS = {

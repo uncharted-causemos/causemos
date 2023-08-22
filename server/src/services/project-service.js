@@ -46,40 +46,16 @@ const findProject = async (projectId) => {
 };
 
 /**
- * Creates the metadata and invokes cloning.
- * Note this will return immedately with the new index identifier, but
- * it does not the index is ready yet. We need to "checkIndexStatus" to
- * ensure the index is green, before proceeding to use the index data.
+ * Creates a new project metadata entry.
+ * Returns immedately with the new index identifier.
  *
- * @param {string} kbId - the index to clone from
  * @param {string} name - the human-friendly new index name
  * @param {string} description - description of the project
  */
-const createProject = async (kbId, name, description) => {
+const createProject = async (name, description) => {
   const projectAdapter = Adapter.get(RESOURCE.PROJECT);
-  const result = await projectAdapter.clone(kbId, name, description);
-  const projectId = result.index;
-
-  // Create an extension entry to house new project specific documents
-  const projectExtension = Adapter.get(RESOURCE.PROJECT_EXTENSION);
-  await projectExtension.insert(
-    [
-      {
-        project_id: projectId,
-        document: [],
-      },
-    ],
-    () => projectId
-  );
-
-  const projectData = await projectAdapter.findOne([{ field: 'id', value: projectId }], {});
-
-  Logger.info(`Caching Project data for ${projectId}`);
-  setCache(projectId, {
-    ...projectData,
-    ontologyMap: {},
-  });
-  return result;
+  const projectId = await projectAdapter.create(name, description);
+  return projectId;
 };
 
 /**
@@ -203,13 +179,6 @@ const deleteProject = async (projectId) => {
   Logger.info(`Deleting ${projectId} extensions`);
   const projectExtension = Adapter.get(RESOURCE.PROJECT_EXTENSION);
   response = await projectExtension.remove([{ field: 'project_id', value: projectId }]);
-  Logger.info(JSON.stringify(response));
-
-  // Delete project data
-  Logger.info(`Deleting ${projectId} index data`);
-  response = await projectAdapter.client.indices.delete({
-    index: projectId,
-  });
   Logger.info(JSON.stringify(response));
 
   // Remove deleted project from cache

@@ -122,8 +122,8 @@
       </thead>
       <tbody v-if="metadata && metadata.outputs">
         <tr
-          v-for="param in outputVariables"
-          :key="param.id"
+          v-for="(param, index) in outputVariables"
+          :key="index"
           :class="{ 'primary-output': param.name === currentOutputFeature.name }"
         >
           <td class="model-attribute-pair">
@@ -222,7 +222,7 @@ import { getOutputs } from '@/utils/datacube-util';
 import { scrollToElement } from '@/utils/dom-util';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { useRoute } from 'vue-router';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 
 export default defineComponent({

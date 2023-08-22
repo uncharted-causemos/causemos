@@ -7,7 +7,7 @@ import {
   deleteEdgeFromIndexTree,
   findAndUpdateIsOppositePolarity,
 } from '@/utils/index-tree-util';
-import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+import useIndexWorkBench from '@/composables/useIndexWorkBench';
 import { ConceptNode } from '@/types/Index';
 
 // States

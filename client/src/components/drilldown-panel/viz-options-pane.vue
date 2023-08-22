@@ -164,7 +164,7 @@ import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { AggregationOption, TemporalResolutionOption, DataTransform } from '@/types/Enums';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
-import { DatacubeFeature, Model } from '@/types/Datacube';
+import { Datacube, DatacubeFeature } from '@/types/Datacube';
 import { useStore } from 'vuex';
 import {
   COLOR_SCHEME,
@@ -176,7 +176,7 @@ import {
 import { getOutputs } from '@/utils/datacube-util';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import { capitalize } from '@/utils/string-util';
 
 const COLOR_SCHEMES = _.pick(COLOR_SCHEME, [
@@ -257,7 +257,7 @@ export default defineComponent({
       default: COLOR_SCHEMES.DEFAULT,
     },
     metadata: {
-      type: Object as PropType<Model | null>,
+      type: Object as PropType<Datacube | null>,
       default: null,
     },
     itemId: {

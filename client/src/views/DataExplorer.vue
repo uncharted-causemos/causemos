@@ -21,8 +21,8 @@ import { DataAnalysisState } from '@/types/Analysis';
 
 import DataExplorer from '../components/data-explorer/data-explorer.vue';
 
-import useToaster from '@/services/composables/useToaster';
-import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
+import useToaster from '@/composables/useToaster';
+import { useDataAnalysis } from '@/composables/useDataAnalysis';
 
 import { ANALYSIS } from '@/utils/messages-util';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';

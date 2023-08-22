@@ -69,8 +69,8 @@ import ActionBar from '@/components/quantitative/action-bar.vue';
 import TabPanel from '@/components/quantitative/tab-panel.vue';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 import modelService from '@/services/model-service';
-import useToaster from '@/services/composables/useToaster';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import useToaster from '@/composables/useToaster';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
 import {
   CAGGraph,
   CAGModelSummary,

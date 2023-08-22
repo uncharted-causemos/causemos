@@ -47,7 +47,7 @@
 import { DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
 import { Model, ModelPublishingStep } from '@/types/Datacube';
 import { defineComponent, PropType, toRefs } from 'vue';
-import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 
 export default defineComponent({
   name: 'ModelPublishingChecklist',

@@ -204,7 +204,7 @@ import { Datacube, DatacubeFeature, Dataset, DatasetEditable, Indicator } from '
 import { defineComponent } from 'vue';
 import router from '@/router';
 import moment from 'moment';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { runtimeFormatter } from '@/utils/string-util';
 import { ViewState } from '@/types/Insight';
 import { sortItem, createdAtSorter, SortOptions } from '@/utils/sort/sort-items';

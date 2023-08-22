@@ -71,7 +71,7 @@
           :timeseries="getProjectionsForNode(projectionData, parentNode.id)"
           :show-data-outside-norm="showDataOutsideNorm"
           :data-warnings="dataWarnings[parentNode.id]"
-          @select="emit('select-element', parentNode.id)"
+          @select="() => emit('select-element', (parentNode as ConceptNodeWithoutDataset).id)"
         />
       </div>
     </div>
@@ -79,8 +79,8 @@
 </template>
 
 <script setup lang="ts">
-import useIndexTree from '@/services/composables/useIndexTree';
-import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+import useIndexTree from '@/composables/useIndexTree';
+import useIndexWorkBench from '@/composables/useIndexWorkBench';
 import { computed } from 'vue';
 import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
 import {
@@ -89,6 +89,7 @@ import {
   getConstraintsForNode,
 } from '@/utils/index-projection-util';
 import {
+  ConceptNodeWithoutDataset,
   IndexProjection,
   IndexProjectionNodeDataWarning,
   IndexProjectionScenario,

@@ -10,9 +10,14 @@
           </p>
         </div>
       </header>
-      <div class="search-bar first-column-width">
-        <i class="fa fa-search subdued" />
-        <input type="text" v-model="searchBarText" placeholder="Search" />
+      <div class="search-bar-row">
+        <div class="search-bar first-column-width">
+          <i class="fa fa-search subdued" />
+          <input type="text" v-model="searchBarText" placeholder="Search" />
+        </div>
+        <a :href="applicationConfiguration.CLIENT__DOJO_UPLOAD_DOCUMENT_URL" target="_blank">
+          <button class="btn btn-call-to-action default-column-width">Upload documents</button>
+        </a>
       </div>
       <document-list
         v-if="searchBarText.length === 0"
@@ -34,12 +39,15 @@ import DocumentList from '@/components/documents/DocumentList.vue';
 import ParagraphSearchResultList from '@/components/documents/ParagraphSearchResultList.vue';
 import HeaderIcon from '@/components/widgets/header-icon.vue';
 import numberFormatter from '@/formatters/number-formatter';
+import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 
 import { ref } from 'vue';
 
 const searchBarText = ref('');
 
 const documentCount = ref<number | null>(null);
+
+const { applicationConfiguration } = useApplicationConfiguration();
 </script>
 
 <style lang="scss" scoped>
@@ -71,8 +79,6 @@ header {
   display: flex;
   position: relative;
   align-items: center;
-  margin-top: 20px;
-  margin-bottom: 10px;
 
   input {
     flex: 1;
@@ -92,5 +98,12 @@ header {
 .take-remaining-height {
   flex: 1;
   min-height: 0;
+}
+
+.search-bar-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  margin-bottom: 10px;
 }
 </style>

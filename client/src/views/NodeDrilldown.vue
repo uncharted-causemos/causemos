@@ -212,13 +212,19 @@ import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
 import modelService from '@/services/model-service';
-import { NewScenario, ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
+import {
+  NewScenario,
+  NodeParameter,
+  ProjectionConstraint,
+  Scenario,
+  ScenarioProjection,
+} from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TimeseriesPoint } from '@/types/Timeseries';
-import useModelMetadata from '@/services/composables/useModelMetadata';
-import useQualitativeModel from '@/services/composables/useQualitativeModel';
+import useModelMetadata from '@/composables/useModelMetadata';
+import useQualitativeModel from '@/composables/useQualitativeModel';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
 import ProjectionRidgelines from '@/components/node-drilldown/projection-ridgelines.vue';
@@ -519,7 +525,7 @@ export default defineComponent({
       return edges
         .filter((edge) => edge.target === selectedConcept)
         .map((edge) => ({
-          node: nodes.find((node) => node.concept === edge.source),
+          node: nodes.find((node) => node.concept === edge.source) as NodeParameter,
           edge,
         }));
     });

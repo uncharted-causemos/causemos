@@ -51,7 +51,7 @@ import _ from 'lodash';
 import { defineComponent, PropType, ref } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import modelService from '@/services/model-service';
 import { CAG } from '@/utils/messages-util';
 import ArrowButton from '@/components/widgets/arrow-button.vue';
@@ -85,7 +85,6 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG',
-      applicationConfiguration: 'app/applicationConfiguration',
     }),
     numEdges(): number {
       return _.get(this.modelComponents, 'edges', []).length;

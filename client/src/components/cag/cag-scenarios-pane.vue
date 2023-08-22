@@ -112,7 +112,7 @@ import OptionsButton from '@/components/widgets/options-button.vue';
 import CagScenarioForm from '@/components/cag/cag-scenario-form.vue';
 import { ConceptProjectionConstraints, Scenario } from '@/types/CAG';
 import { mapActions, mapGetters } from 'vuex';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import useOntologyFormatter from '@/composables/useOntologyFormatter';
 
 interface HistoricalOnlyScenario {
   id: null;

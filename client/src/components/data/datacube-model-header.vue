@@ -30,7 +30,7 @@ import { useStore } from 'vuex';
 import { getOutputs } from '@/utils/datacube-util';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import _ from 'lodash';
 
 export default defineComponent({
@@ -57,7 +57,7 @@ export default defineComponent({
       return outputs?.map((o) => o.display_name) ?? [];
     });
 
-    function updateDesc(e: InputEvent) {
+    function updateDesc(e: Event) {
       if (metadata.value) {
         const textArea = e.target as HTMLTextAreaElement;
         metadata.value.description = textArea.value;

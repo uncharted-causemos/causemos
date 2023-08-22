@@ -1,14 +1,14 @@
 import { AnalysisItem, CachedDatacubeMetadata, DataAnalysisState } from '@/types/Analysis';
 import _ from 'lodash';
 import { computed, Ref, ref, watch } from 'vue';
-import { getAnalysis, saveAnalysisState } from '../analysis-service';
+import { getAnalysis, saveAnalysisState } from '../services/analysis-service';
 import { v4 as uuidv4 } from 'uuid';
 import { DataSpaceDataState } from '@/types/Insight';
 import {
   calculateResetRegionRankingWeights,
   createDataAnalysisObject,
   didSelectedItemsChange,
-} from '../analysis-service-new';
+} from '../services/analysis-service-new';
 import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
 import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 

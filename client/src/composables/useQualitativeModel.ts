@@ -1,7 +1,7 @@
 import { CAGGraph, CAGModelSummary } from '@/types/CAG';
 import { computed, ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
-import modelService from '../model-service';
+import modelService from '../services/model-service';
 
 export default function useQualitativeModel() {
   const modelSummary = ref<CAGModelSummary | null>(null);

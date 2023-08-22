@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { onMounted, watch, ref } from 'vue';
-import useVisibleElementDetector from '@/services/composables/useVisibleElementDetector';
+import useVisibleElementDetector from '@/composables/useVisibleElementDetector';
 
 const props = defineProps<{ src: string }>();
 const image = ref<Element>();
