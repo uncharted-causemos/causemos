@@ -57,5 +57,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'happy-dom', // alternative to jsdom which focuses heavily on performance
+    coverage: {
+      all: true,
+      provider: 'v8',
+      exclude: [],
+    },
   },
 } as VitestConfigExport);

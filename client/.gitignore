@@ -10,4 +10,7 @@
 # excludes files created by Jetbrains code editors
 /.idea
 
+coverage
+html
+
 .vscode
