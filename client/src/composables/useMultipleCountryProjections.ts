@@ -20,13 +20,15 @@ export default function useMultipleCountryProjections() {
    */
   const runMultipleCountryProjections = (
     conceptTree: ConceptNode,
-    historicalDataForSelectedCountries: Map<string, Map<string, TimeseriesPoint[]>>,
+    historicalDataForSelectedCountries: {
+      [countryName: string]: { [nodeId: string]: TimeseriesPoint[] };
+    },
     targetPeriod: { start: number; end: number },
     dataResOption: TemporalResolutionOption,
     countries: IndexProjectionCountry[]
   ) => {
     multipleCountryProjectionData.value = countries.map((country) => {
-      const historicalData = historicalDataForSelectedCountries.get(country.name);
+      const historicalData = historicalDataForSelectedCountries[country.name];
       const retVal = {
         id: country.name,
         color: country.color,
@@ -37,7 +39,7 @@ export default function useMultipleCountryProjections() {
       if (historicalData === undefined) return retVal;
       const runner = createProjectionRunner(
         conceptTree,
-        Object.fromEntries(historicalData),
+        historicalData,
         targetPeriod,
         dataResOption
       ).runProjection();

@@ -7,7 +7,12 @@ import {
   getTimestampMillisFromYear as getTsY,
   getNumberOfMonthsSinceEpoch,
 } from '@/utils/date-util';
-import { runProjection, createProjectionRunner } from '@/utils/projection-util';
+import {
+  runProjection,
+  createProjectionRunner,
+  calculateMinTimeInterval,
+  calculateGreatestAbsoluteHistoricalChange,
+} from '@/utils/projection-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { TemporalResolutionOption, AggregationOption, ProjectionAlgorithm } from '@/types/Enums';
 import { Subset } from '@/types/Common';
@@ -341,6 +346,41 @@ describe('projection-util', () => {
         { timestamp: getTsY(1986), value: 3, projectionType: 'forecasted' },
         { timestamp: getTsY(1987), value: 4, projectionType: 'forecasted' },
       ]);
+    });
+    it('should run projection with provided projection algorithm', () => {
+      sinon.stub(fm.default, 'initialize').returns({
+        runHoltWinters: () =>
+          createTestForecastResult({
+            method: fm.ForecastMethod.HoltWinters,
+          }),
+
+        runHolt: () =>
+          createTestForecastResult({
+            method: fm.ForecastMethod.Holt,
+          }),
+      } as any);
+      const targetPeriod = { start: getTsY(1985), end: getTsY(1987) };
+      const result = runProjection(
+        [
+          { timestamp: getTsY(1982), value: 3 },
+          { timestamp: getTsY(1983), value: 6 },
+        ],
+        targetPeriod,
+        TemporalResolutionOption.Year,
+        ProjectionAlgorithm.Holt
+      );
+      expect(result.method).to.equal(fm.ForecastMethod.Holt);
+
+      const resultHW = runProjection(
+        [
+          { timestamp: getTsY(1982), value: 3 },
+          { timestamp: getTsY(1983), value: 6 },
+        ],
+        targetPeriod,
+        TemporalResolutionOption.Year,
+        ProjectionAlgorithm.HoltWinters
+      );
+      expect(resultHW.method).to.equal(fm.ForecastMethod.HoltWinters);
     });
   });
   describe('createProjectionRunner', () => {
@@ -770,6 +810,121 @@ describe('projection-util', () => {
           method: 'Weighted Sum',
         },
       });
+    });
+    it('should run projection with single node with provided projection algorithm', () => {
+      // stub runHolt and runHoltWinters functions
+      sinon.restore();
+      sinon.replace(fm.default, 'initialize', () => {
+        return {
+          runAuto: () => {},
+          runHolt: () => createTestForecastResult({ method: fm.ForecastMethod.Holt }),
+          runHoltWinters: () => createTestForecastResult({ method: fm.ForecastMethod.HoltWinters }),
+        } as any;
+      });
+
+      const runner = createProjectionRunner(
+        testTree,
+        testHistoricalData,
+        testTargetPeriod,
+        TemporalResolutionOption.Month
+      );
+      const infoH = runner
+        .projectDatasetNode('data-node-1', { method: ProjectionAlgorithm.Holt })
+        .getRunInfo();
+
+      expect(infoH['data-node-1'].method).to.equal(fm.ForecastMethod.Holt);
+
+      const infoHW = runner
+        .projectDatasetNode('data-node-1', { method: ProjectionAlgorithm.HoltWinters })
+        .getRunInfo();
+
+      expect(infoHW['data-node-1'].method).to.equal(fm.ForecastMethod.HoltWinters);
+    });
+  });
+  describe('calculateMinTimeInterval', () => {
+    it('should return 0 if there are less than 2 data points', () => {
+      const data = [{ timestamp: 0, value: 1 }];
+      const interval = calculateMinTimeInterval(data, TemporalResolutionOption.Month);
+
+      expect(interval).to.equal(0);
+    });
+    it('should calculate correct minimum time interval for monthly resolution', () => {
+      const data = [
+        { timestamp: 1684776016000 }, // 2023/05/21
+        { timestamp: 1692638416000 }, // 2023/08/21
+        { timestamp: 1697390416000 }, // 2023/10/15
+      ];
+      const interval = calculateMinTimeInterval(data, TemporalResolutionOption.Month);
+
+      expect(interval).to.equal(2);
+    });
+    it('should calculate correct minimum time interval for yearly resolution', () => {
+      const data = [
+        { timestamp: 1432315216000 }, // 2015/05/22
+        { timestamp: 1463937616000 }, // 2016/05/22
+        { timestamp: 1527009616000 }, // 2018/05/22
+      ];
+      const interval = calculateMinTimeInterval(data, TemporalResolutionOption.Year);
+
+      expect(interval).to.equal(1);
+    });
+  });
+  describe('calculateGreatestAbsoluteHistoricalChange', () => {
+    it('should handle the case gracefully when there are less than 2 data points', () => {
+      const data = [{ timestamp: 0, value: 1 }];
+      const result = calculateGreatestAbsoluteHistoricalChange(
+        data,
+        [],
+        TemporalResolutionOption.Year
+      );
+
+      expect(result).to.deep.equal({
+        interval: 1,
+        greatestAbsoluteChange: 0,
+        lastPoint: { timestamp: 0, value: 1 },
+      });
+    });
+    it('should return correct results with absolute historical change with year resolution', () => {
+      const data = [
+        { timestamp: 1432315216000, value: 3 }, // 2015/05/22
+        { timestamp: 1463937616000, value: 6 }, // 2016/05/22
+        { timestamp: 1527009616000, value: 11 }, // 2018/05/22
+        { timestamp: 1558545616000, value: 9 }, // 2019/05/22
+      ];
+      const result = calculateGreatestAbsoluteHistoricalChange(
+        data,
+        [],
+        TemporalResolutionOption.Year
+      );
+
+      expect(result).to.deep.equal({
+        interval: 1,
+        greatestAbsoluteChange: 3,
+        lastPoint: { timestamp: 1558545616000, value: 9 },
+      });
+    });
+    it('should return correct results when constraints are applied with month resolution', () => {
+      const data = [
+        { timestamp: 1432315216000, value: 3 }, // 2015/05/22
+        { timestamp: 1463937616000, value: 6 }, // 2016/05/22
+        { timestamp: 1527009616000, value: 11 }, // 2018/05/22
+        { timestamp: 1558545616000, value: 9 }, // 2019/05/22
+      ];
+      const constraints = [
+        { timestamp: 1463937616000, value: 7 }, // 2016/05/22
+        { timestamp: 1548177616000, value: 10 }, // 2019/01/22
+        { timestamp: 1558545616000, value: 5 }, // 2019/05/22
+      ];
+      const result = calculateGreatestAbsoluteHistoricalChange(
+        data,
+        constraints,
+        TemporalResolutionOption.Month
+      );
+
+      expect(result.interval).to.equal(12);
+      expect(result.greatestAbsoluteChange).to.equal(6);
+      expect(result.lastPoint.timestamp).to.equal(1558545616000);
+      expect(result.lastPoint.value).to.equal(5);
     });
   });
 });

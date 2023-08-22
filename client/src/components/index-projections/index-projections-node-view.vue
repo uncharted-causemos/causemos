@@ -36,8 +36,11 @@
       <IndexProjectionsExpandedNode
         v-if="selectedNode !== null"
         :node-data="selectedNode.found"
+        :historical-data="getHistoricalDataForNode(historicalData, selectedNode.found.id)"
+        :constraints="getConstraintsForNode(scenarios, selectedNode.found.id)"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
+        :projection-temporal-resolution-option="projectionTemporalResolutionOption"
         :timeseries="getProjectionsForNode(projectionData, selectedNode.found.id)"
         :show-data-outside-norm="showDataOutsideNorm"
         :edit-mode="projectionForScenarioBeingEdited !== null ? EditMode.Constraints : undefined"
@@ -80,20 +83,30 @@ import useIndexTree from '@/composables/useIndexTree';
 import useIndexWorkBench from '@/composables/useIndexWorkBench';
 import { computed } from 'vue';
 import { isConceptNodeWithoutDataset } from '@/utils/index-tree-util';
-import { getProjectionsForNode } from '@/utils/index-projection-util';
+import {
+  getProjectionsForNode,
+  getHistoricalDataForNode,
+  getConstraintsForNode,
+} from '@/utils/index-projection-util';
 import {
   ConceptNodeWithoutDataset,
   IndexProjection,
   IndexProjectionNodeDataWarning,
+  IndexProjectionScenario,
   SelectableIndexElementId,
 } from '@/types/Index';
 import IndexProjectionsNode from './index-projections-node.vue';
 import IndexProjectionsExpandedNode from './index-projections-expanded-node.vue';
 import { EditMode } from '@/utils/projection-util';
+import { TimeseriesPoint } from '@/types/Timeseries';
+import { TemporalResolutionOption } from '@/types/Enums';
 const props = defineProps<{
   selectedNodeId: string | null;
+  historicalData: { [countryName: string]: { [nodeId: string]: TimeseriesPoint[] } };
+  scenarios: IndexProjectionScenario[];
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
+  projectionTemporalResolutionOption: TemporalResolutionOption;
   projections: IndexProjection[];
   projectionForScenarioBeingEdited: IndexProjection | null;
   showDataOutsideNorm: boolean;

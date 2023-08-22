@@ -186,6 +186,9 @@
         v-else
         class="fill-space"
         :selected-node-id="selectedNodeId"
+        :historical-data="historicalData"
+        :scenarios="scenarios"
+        :projection-temporal-resolution-option="temporalResolutionOption"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
@@ -382,18 +385,20 @@ watch([selectableCountries], () => {
   }
 });
 
-const { historicalData: historicalDataForSelectedCountry } = useHistoricalData(
+const { historicalData: historicalDataForSingleCountry } = useHistoricalData(
   computed(() => [selectedCountry.value]),
   indexTree.tree
 );
 // Contains data for each node with a dataset attached. The node's ID is used as the map key.
-const historicalData = computed(
-  () => historicalDataForSelectedCountry.value.get(selectedCountry.value) ?? new Map()
+const historicalDataForSelectedCountry = computed(
+  () => historicalDataForSingleCountry.value[selectedCountry.value] ?? {}
 );
 
 // Projection dates
 const isEditingTimeRange = ref(false);
-const historicalTimeseries = computed(() => Array.from(historicalData.value.values()));
+const historicalTimeseriesForSelectedCountry = computed(() =>
+  Object.values(historicalDataForSelectedCountry.value)
+);
 const {
   projectionStartYear,
   projectionStartMonth,
@@ -405,7 +410,7 @@ const {
   earliestSelectableYear,
   areProjectionDatesValid,
   saveProjectionDates,
-} = useProjectionDates(historicalTimeseries);
+} = useProjectionDates(historicalTimeseriesForSelectedCountry);
 const selectableYears = computed(() => {
   const result: DropdownItem[] = [];
   for (let year = earliestSelectableYear.value; year <= lastSelectableYear.value; year++) {
@@ -453,7 +458,7 @@ const {
 
 watch(
   [
-    historicalData,
+    historicalDataForSelectedCountry,
     indexTree.tree,
     projectionStartTimestamp,
     projectionEndTimestamp,
@@ -466,7 +471,7 @@ watch(
     // When a scenario is deleted, just remove the projection for that scenario from the projection data.
     runScenarioProjections(
       indexTree.tree.value,
-      historicalData.value,
+      historicalDataForSelectedCountry.value,
       { start: projectionStartTimestamp.value, end: projectionEndTimestamp.value },
       temporalResolutionOption.value,
       scenarios.value
@@ -618,6 +623,12 @@ watch(
       selectedCountries.value
     );
   }
+);
+
+const historicalData = computed(() =>
+  isSingleCountryModeActive.value
+    ? historicalDataForSingleCountry.value
+    : historicalDataForSelectedCountries.value
 );
 
 const timeseriesToDisplay = computed(() =>

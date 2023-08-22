@@ -85,7 +85,7 @@ export default function useScenarioProjections(
    */
   const runScenarioProjections = (
     conceptTree: ConceptNode,
-    historicalData: Map<string, TimeseriesPoint[]>,
+    historicalData: { [nodeId: string]: TimeseriesPoint[] },
     targetPeriod: { start: number; end: number },
     dataResOption: TemporalResolutionOption,
     scenarios: IndexProjectionScenario[]
@@ -93,7 +93,7 @@ export default function useScenarioProjections(
     projectionData.value = scenarios.map((scenario) => {
       const runner = createProjectionRunner(
         conceptTree,
-        Object.fromEntries(historicalData),
+        historicalData,
         targetPeriod,
         dataResOption
       )
@@ -113,7 +113,7 @@ export default function useScenarioProjections(
     });
     dataWarnings.value = checkProjectionWarnings(
       projectionData.value,
-      new Map(projectionData.value.map((p) => [p.id, historicalData])),
+      Object.fromEntries(projectionData.value.map((p) => [p.id, historicalData])),
       targetPeriod
     );
   };

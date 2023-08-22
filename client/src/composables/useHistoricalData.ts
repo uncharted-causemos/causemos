@@ -9,7 +9,9 @@ export default function useHistoricalData(countries: Ref<string[]>, indexTree: R
   // Contains data for each country, for each node with a dataset attached.
   //  A country name can be used as a map key to access another map.
   //  The result contains data for each node, with the node's ID as the key.
-  const historicalData = ref(new Map<string, Map<string, TimeseriesPoint[]>>());
+  const historicalData = ref<{ [countryName: string]: { [nodeId: string]: TimeseriesPoint[] } }>(
+    {}
+  );
   // Whenever the tree or list of countries changes, fetch timeseries for all datasets in the tree.
   watch([indexTree, countries], async () => {
     // Save a reference to the current version of the tree and the current list of countries so
@@ -18,7 +20,8 @@ export default function useHistoricalData(countries: Ref<string[]>, indexTree: R
     const frozenCountryList = countries.value;
     // Go through tree and pull out all the nodes with datasets.
     const nodesWithDatasets = findAllDatasets(indexTree.value);
-    const mapForAllCountries = new Map<string, Map<string, TimeseriesPoint[]>>();
+    const mapForAllCountries: { [countryName: string]: { [nodeId: string]: TimeseriesPoint[] } } =
+      {};
     const promises = countries.value.map(async (country) => {
       // Don't fetch data unless an actual country is selected.
       if (country === NO_COUNTRY_SELECTED_VALUE) {
@@ -46,12 +49,12 @@ export default function useHistoricalData(countries: Ref<string[]>, indexTree: R
         return;
       }
       // Convert to map structure
-      const mapForThisCountry = new Map<string, TimeseriesPoint[]>();
+      const mapForThisCountry: { [nodeId: string]: TimeseriesPoint[] } = {};
       timeseriesForEachDataset.forEach((timeseries, i) => {
         const nodeId = nodesWithDatasets[i].id;
-        mapForThisCountry.set(nodeId, timeseries);
+        mapForThisCountry[nodeId] = timeseries;
       });
-      mapForAllCountries.set(country, mapForThisCountry);
+      mapForAllCountries[country] = mapForThisCountry;
     });
     await Promise.all(promises);
     historicalData.value = mapForAllCountries;
