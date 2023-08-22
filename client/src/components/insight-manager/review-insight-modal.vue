@@ -153,18 +153,11 @@
                   "
                 />
               </div>
-              <drilldown-panel
-                v-if="showMetadataPanel"
-                is-open
-                :tabs="drilldownTabs"
-                :activeTabId="drilldownTabs[0].id"
-                only-display-icons
-                @close="showMetadataPanel = false"
-              >
-                <template #content>
-                  <insight-summary v-if="metadataDetails" :metadata-details="metadataDetails" />
-                </template>
-              </drilldown-panel>
+              <insight-summary
+                v-if="metadataDetails"
+                :metadata-details="metadataDetails"
+                class="insight-summary"
+              />
             </div>
           </template>
           <template v-else>
@@ -202,7 +195,6 @@ import {
   ReviewPosition,
 } from '@/types/Insight';
 import router from '@/router';
-import DrilldownPanel from '@/components/drilldown-panel.vue';
 import {
   addInsight,
   updateInsight,
@@ -245,7 +237,6 @@ export default defineComponent({
   components: {
     FullScreenModalHeader,
     Disclaimer,
-    DrilldownPanel,
     InsightSummary,
     DropdownButton,
     SmallTextButton,
@@ -614,14 +605,7 @@ export default defineComponent({
       //  or as a context specific insight when opening the page of the corresponding model family instance
       return this.projectType === ProjectType.Analysis
         ? [this.currentView, 'overview', 'dataComparative']
-        : [
-            'data',
-            'nodeDrilldown',
-            'dataComparative',
-            'overview',
-            'domainDatacubeOverview',
-            'modelPublisher',
-          ];
+        : ['data', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher'];
     },
     /*,
     annotation(): any {
@@ -1226,5 +1210,11 @@ h6 {
   :deep(.dropdown-container) {
     width: 100%;
   }
+}
+
+.insight-summary {
+  background: white;
+  width: 400px;
+  padding: 20px;
 }
 </style>

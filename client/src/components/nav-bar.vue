@@ -76,7 +76,6 @@ export default defineComponent({
     const route = useRoute();
     const analysisId = computed(() => route.params.analysisId as string);
     const analysisName = computed(() => store.getters['app/analysisName']);
-    const currentCAG = computed(() => store.getters['app/currentCAG']);
 
     const analysisProjectItem = computed<NavBarItem>(() => ({
       text: projectMetadata.value.name,
@@ -108,18 +107,7 @@ export default defineComponent({
         },
       },
     }));
-    const qualitativeAnalysisItem = computed(() => ({
-      text: analysisName.value,
-      icon: 'fa-book',
-      route: {
-        name: 'quantitative',
-        params: {
-          project: project.value,
-          currentCAG: currentCAG.value,
-          projectType: ProjectType.Analysis,
-        },
-      },
-    }));
+
     const indexStructureItem = computed(() => ({
       text: analysisName.value,
       icon: 'fa-book',
@@ -188,8 +176,6 @@ export default defineComponent({
         indexProjectionsItem.value,
         { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
       ],
-      qualitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
-      quantitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       indexStructure: [analysisProjectItem.value, indexStructureItem.value],
       indexResults: [analysisProjectItem.value, indexStructureItem.value, indexResultsItem.value],
       indexProjections: [
@@ -197,17 +183,10 @@ export default defineComponent({
         indexStructureItem.value,
         indexProjectionsItem.value,
       ],
-      nodeDrilldown: [
-        analysisProjectItem.value,
-        qualitativeAnalysisItem.value,
-        { icon: 'fa-circle', route: null, text: 'Node drilldown' },
-      ],
       documents: [
         analysisProjectItem.value,
         { icon: 'fa-book', route: null, text: 'Explore documents' },
       ],
-      // 'nodeDataDrilldown',
-      // 'nodeDataExplorer',
       // 'dataExplorer',
     }));
 

@@ -139,14 +139,7 @@ export default function useQuestionsData() {
     const target_view: string[] =
       projectType === ProjectType.Analysis
         ? [currentView, 'overview', 'dataComparative']
-        : [
-            'data',
-            'nodeDrilldown',
-            'dataComparative',
-            'overview',
-            'domainDatacubeOverview',
-            'modelPublisher',
-          ];
+        : ['data', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher'];
     const newSection: AnalyticalQuestion = {
       question: title,
       description: '',
