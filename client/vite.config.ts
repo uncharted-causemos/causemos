@@ -59,7 +59,7 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom', // alternative to jsdom which focuses heavily on performance
     coverage: {
-      all: true,
+      all: false, // Set to true to see the coverage for all files including the files without any tests.
       provider: 'v8',
       exclude: [],
     },
