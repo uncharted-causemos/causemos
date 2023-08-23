@@ -6,7 +6,6 @@ import QueryStore from '@/store/modules/query-store';
 import StatementsStore from '@/store/modules/statements-store';
 import AppStore from '@/store/modules/app-store';
 import PanelStore from '@/store/modules/panel-store';
-import KnowledgebaseStore from '@/store/modules/knowledgebase-store';
 
 /**
  * Provide the very basic plumbings to test components
@@ -18,7 +17,6 @@ const defaultStoreConfig = {
     statements: StatementsStore,
     app: AppStore,
     panel: PanelStore,
-    kb: KnowledgebaseStore,
   },
 };
 

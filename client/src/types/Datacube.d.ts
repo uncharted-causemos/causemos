@@ -19,11 +19,6 @@ export interface DatacubeMaintainer {
   website: string;
 }
 
-export interface OntologyMatch {
-  name: string;
-  score: number;
-}
-
 export interface DatacubeAttribute {
   name: string;
   display_name: string;
@@ -31,11 +26,6 @@ export interface DatacubeAttribute {
   type: DatacubeAttributeVariableType;
   unit: string;
   unit_description: string;
-  ontologies: {
-    concepts: OntologyMatch[];
-    processes: OntologyMatch[];
-    properties: OntologyMatch[];
-  };
   additional_options: {
     geo_acceptable_levels?: string[]; // specific geo type flag
     geo_region_format?: GeoAttributeFormat; // specific geo type flag
@@ -104,7 +94,6 @@ export interface Datacube extends DatasetEditable {
   data_id: string; // this is the actual one to be used to fetch data
   created_at: number;
   type: DatacubeType;
-  ontology_matches: OntologyMatch[];
   geography: DatacubeGeography;
   period: DatacubePeriod;
   outputs: DatacubeFeature[];

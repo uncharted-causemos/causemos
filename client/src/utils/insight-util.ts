@@ -1,13 +1,11 @@
 import _ from 'lodash';
-import { Bibliography } from '@/services/bibliography-service';
+// import { Bibliography } from '@/services/bibliography-service';
 
 import {
   AnalyticalQuestion,
   Insight,
   FullInsight,
-  QualitativeDataState,
   DataState,
-  ModelsSpaceDataState,
   DataSpaceDataState,
   ReviewPosition,
   SectionWithInsights,
@@ -29,7 +27,7 @@ import {
   ExternalHyperlink,
   UnderlineType,
   ISectionOptions,
-  convertInchesToTwip,
+  // convertInchesToTwip,
 } from 'docx';
 import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
@@ -91,18 +89,6 @@ export const createDataSpaceDataState = (datacubeId: string): DataSpaceDataState
 
 export function isDataSpaceDataState(dataState: DataState): dataState is DataSpaceDataState {
   return (dataState as DataSpaceDataState).selectedModelId !== undefined;
-}
-
-export function isQualitativeViewDataState(
-  dataState: DataState
-): dataState is QualitativeDataState {
-  return (dataState as QualitativeDataState).modelName !== undefined;
-}
-
-export function isModelsSpaceDataState(
-  dataState: QualitativeDataState
-): dataState is ModelsSpaceDataState {
-  return (dataState as ModelsSpaceDataState).selectedScenarioId !== undefined;
 }
 
 export function isDataAnalysisState(dataState: DataState): dataState is DataAnalysisState {
@@ -387,92 +373,94 @@ function generateQuestionDOCX(
   };
 }
 
-function targetViewsContainCAG(targetViews: string[]): boolean {
-  const validBibiographyTypes = ['quantitative', 'qualitative'];
-  return targetViews.some((v) => validBibiographyTypes.includes(v));
-}
+// function targetViewsContainCAG(targetViews: string[]): boolean {
+//   const validBibiographyTypes = ['quantitative', 'qualitative'];
+//   return targetViews.some((v) => validBibiographyTypes.includes(v));
+// }
 
-function generateAPACiteDOCX(b: Bibliography): TextRun[] {
-  const cite = <TextRun[]>[];
-  // line break, author
-  cite.push(
-    new TextRun({
-      break: 1,
-      size: 24,
-      text: (b.author && b.author.length) > 0 ? `${b.author}. ` : '',
-    })
-  );
+// function generateAPACiteDOCX(b: Bibliography): TextRun[] {
+//   const cite = <TextRun[]>[];
+//   // line break, author
+//   cite.push(
+//     new TextRun({
+//       break: 1,
+//       size: 24,
+//       text: (b.author && b.author.length) > 0 ? `${b.author}. ` : '',
+//     })
+//   );
 
-  // date
-  cite.push(
-    new TextRun({
-      size: 24,
-      text: `(${b.publication_date ? b.publication_date.year : 'n/a'}). `,
-    })
-  );
+//   // date
+//   cite.push(
+//     new TextRun({
+//       size: 24,
+//       text: `(${b.publication_date ? b.publication_date.year : 'n/a'}). `,
+//     })
+//   );
 
-  // title
-  const title = b.title && b.title.length > 0 ? b.title : `Document: ${b.doc_id}`;
-  cite.push(
-    new TextRun({
-      size: 24,
-      text: `${title}. `,
-    })
-  );
+//   // title
+//   const title = b.title && b.title.length > 0 ? b.title : `Document: ${b.doc_id}`;
+//   cite.push(
+//     new TextRun({
+//       size: 24,
+//       text: `${title}. `,
+//     })
+//   );
 
-  // publisher name
-  if (b.publisher_name && b.publisher_name.length > 0) {
-    cite.push(
-      new TextRun({
-        italics: true,
-        size: 24,
-        text: `${b.publisher_name}.`,
-      })
-    );
-  }
+//   // publisher name
+//   if (b.publisher_name && b.publisher_name.length > 0) {
+//     cite.push(
+//       new TextRun({
+//         italics: true,
+//         size: 24,
+//         text: `${b.publisher_name}.`,
+//       })
+//     );
+//   }
 
-  return cite;
-}
+//   return cite;
+// }
 
 async function generateAppendixDOCX(
   insights: Insight[],
   metadataSummary: string,
   bibliography: any
 ) {
-  const cags = getCagMapFromInsights(insights);
-  const cagIds = Array.from(cags.keys());
   // FIXME: Not an ideal place to make this call, but generally need consider overhauling this with insights
   // const result = await getBibiographyFromCagIds(cagIds);
   const children = <Paragraph[]>[];
 
-  cagIds.forEach((id) => {
-    const cagInfo = cags.get(id);
+  // TODO: Keeping this `bibliography` parameter around for the possible future case where we want
+  //  to add bibliography features back into the export process.
+  console.log(bibliography);
 
-    children.push(
-      new Paragraph({
-        alignment: AlignmentType.LEFT,
-        heading: HeadingLevel.HEADING_2,
-        children: [
-          new TextRun({
-            break: 1,
-            text: cagInfo?.modelName,
-          }),
-        ],
-      })
-    );
+  // cagIds.forEach((id) => {
+  //   const cagInfo = cags.get(id);
 
-    bibliography.data[id].forEach((b: Bibliography) => {
-      children.push(
-        new Paragraph({
-          indent: {
-            start: convertInchesToTwip(0.5),
-          },
-          alignment: AlignmentType.LEFT,
-          children: generateAPACiteDOCX(b),
-        })
-      );
-    });
-  });
+  //   children.push(
+  //     new Paragraph({
+  //       alignment: AlignmentType.LEFT,
+  //       heading: HeadingLevel.HEADING_2,
+  //       children: [
+  //         new TextRun({
+  //           break: 1,
+  //           text: cagInfo?.modelName,
+  //         }),
+  //       ],
+  //     })
+  //   );
+
+  //   bibliography.data[id].forEach((b: Bibliography) => {
+  //     children.push(
+  //       new Paragraph({
+  //         indent: {
+  //           start: convertInchesToTwip(0.5),
+  //         },
+  //         alignment: AlignmentType.LEFT,
+  //         children: generateAPACiteDOCX(b),
+  //       })
+  //     );
+  //   });
+  // });
 
   const bibliographyHeader = new Paragraph({
     alignment: AlignmentType.LEFT,
@@ -490,22 +478,6 @@ async function generateAppendixDOCX(
     properties,
     footers,
   };
-}
-
-export function getCagMapFromInsights(insights: Insight[]) {
-  const cags = insights.reduce((acc, item) => {
-    if (item.context_id && item.context_id.length > 0 && targetViewsContainCAG(item.target_view)) {
-      if (
-        !acc.has(item.context_id[0]) &&
-        item.data_state &&
-        isQualitativeViewDataState(item.data_state)
-      ) {
-        acc.set(item.context_id[0], item.data_state);
-      }
-    }
-    return acc;
-  }, new Map<string, QualitativeDataState>());
-  return cags;
 }
 
 async function exportDOCX(
@@ -682,7 +654,6 @@ export default {
   getSlideFromPosition,
   getSourceUrlForExport,
   jumpToInsightContext,
-  getCagMapFromInsights,
   exportDOCX,
   exportPPTX,
 };

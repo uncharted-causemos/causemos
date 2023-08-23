@@ -25,12 +25,7 @@
           :class="{ 'is-active': i === selectedIndex || selectedFn(suggestion) }"
           @click.stop.prevent="setSearchTerm(suggestion)"
         >
-          <component
-            v-if="displayType && displayType !== ''"
-            :is="displayType"
-            :item="suggestion"
-          />
-          <div v-else>
+          <div>
             {{ suggestion }}
           </div>
         </li>
@@ -41,21 +36,14 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import ConceptDisplay from '@/components/widgets/autocomplete/concept-display.vue';
 
 export default defineComponent({
   name: 'AutoComplete',
-  components: {
-    ConceptDisplay,
-  },
   props: {
     placeholderMessage: {
       type: String,
       required: false,
       default: () => '',
-    },
-    displayType: {
-      type: String,
     },
     focusInput: {
       type: Boolean,

@@ -7,8 +7,6 @@ interface AppState {
   overlayMessageSecondary: string;
   overlayCancelFn: Function | null;
   updateToken: string;
-  ontologyConcepts: Array<string>;
-  ontologySet: Set<string>;
   projectMetadata: any; // domain project or analysis project
   analysisName: string;
   datacubeCurrentOutputsMap: {}; // map for datacubes' currently selected features; each key is the datacube-id and the value is the selected output's index
@@ -20,8 +18,6 @@ const state: AppState = {
   overlayMessageSecondary: 'Loading...',
   overlayCancelFn: null,
   updateToken: '',
-  ontologyConcepts: [],
-  ontologySet: new Set<string>(),
   projectMetadata: {},
   analysisName: '',
   datacubeCurrentOutputsMap: {},
@@ -55,8 +51,6 @@ const getters: GetterTree<AppState, any> = {
   overlayMessageSecondary: (state) => state.overlayMessageSecondary,
   overlayCancelFn: (state) => state.overlayCancelFn,
   updateToken: (state) => state.updateToken,
-  ontologyConcepts: (state) => state.ontologyConcepts,
-  ontologySet: (state) => state.ontologySet,
   projectMetadata: (state) => state.projectMetadata,
   analysisName: (state) => state.analysisName,
   datacubeCurrentOutputsMap: (state) => state.datacubeCurrentOutputsMap,
@@ -86,17 +80,11 @@ const actions: ActionTree<AppState, any> = {
   setUpdateToken({ commit }, updateToken) {
     commit('setUpdateToken', updateToken);
   },
-  setOntologyConcepts({ commit }, concepts) {
-    commit('setOntologyConcepts', concepts);
-  },
   setProjectMetadata({ commit }, metadata) {
     commit('setProjectMetadata', metadata);
   },
   setAnalysisName({ commit }, newName) {
     commit('setAnalysisName', newName);
-  },
-  updateOntologyCache: ({ commit }, v) => {
-    commit('updateOntologyCache', v);
   },
   setDatacubeCurrentOutputsMap: ({ commit }, value) => {
     commit('setDatacubeCurrentOutputsMap', value);
@@ -121,21 +109,11 @@ const mutations: MutationTree<AppState> = {
   setUpdateToken(state, updateToken) {
     state.updateToken = updateToken;
   },
-  setOntologyConcepts(state, concepts: string[]) {
-    state.ontologyConcepts = concepts;
-
-    const shortform = concepts.map((d) => _.last(d.split('/')) || '');
-    state.ontologySet = new Set<string>(shortform);
-  },
   setProjectMetadata(state, metadata) {
     state.projectMetadata = metadata;
   },
   setAnalysisName(state, newName) {
     state.analysisName = newName;
-  },
-  updateOntologyCache(state, v) {
-    state.ontologyConcepts.push(v);
-    state.ontologySet.add(v);
   },
   setDatacubeCurrentOutputsMap(state, value) {
     state.datacubeCurrentOutputsMap = value;

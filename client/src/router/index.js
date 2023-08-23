@@ -9,7 +9,6 @@ import DataExplorer from '@/views/DataExplorer.vue';
 import IndexStructure from '@/views/IndexStructure.vue';
 import IndexResults from '@/views/IndexResults.vue';
 import IndexProjections from '@/views/IndexProjections.vue';
-import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
 import DatacubeDrilldown from '@/views/DatacubeDrilldown.vue';
 import Documents from '@/views/Documents.vue';
@@ -132,11 +131,6 @@ const routes = [
     path: '/prefectFlowLogs/:flowId',
     name: 'prefectFlowLogs',
     component: PrefectFlowLogs,
-  },
-  {
-    path: '/:projectType/:project/audit-trail',
-    name: 'auditTrail',
-    component: AuditTrail,
   },
   /* 404, this has to go last */
   {
