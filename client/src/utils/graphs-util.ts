@@ -434,9 +434,9 @@ export function classifyCycles(cyclePaths: Vertex[][], graphEdges: Edge[]) {
   }
 
   return {
-    balancing: balancing,
-    reinforcing: reinforcing,
-    ambiguous: ambiguous,
+    balancing,
+    reinforcing,
+    ambiguous,
   };
 }
 

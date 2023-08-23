@@ -113,9 +113,9 @@ function addSearchTerm(
     existingClause.values.push(term);
   } else {
     filters.clauses.push({
-      field: field,
-      operand: operand,
-      isNot: isNot,
+      field,
+      operand,
+      isNot,
       values: [term],
     });
   }
@@ -174,10 +174,10 @@ function setClause(
 
   if (!_.isEmpty(values)) {
     filters.clauses.push({
-      field: field,
-      operand: operand,
-      isNot: isNot,
-      values: values,
+      field,
+      operand,
+      isNot,
+      values,
     });
   }
 }

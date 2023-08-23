@@ -97,9 +97,9 @@ const build = (root) => {
       id: node.concept || '',
       concept: node.concept, // FIXME ... should just rely on id
       label: node.label,
-      depth: depth,
+      depth,
       type: 'normal',
-      parent: parent,
+      parent,
       data: node,
     };
 
@@ -112,8 +112,8 @@ const build = (root) => {
         const target = edge.target;
         nodeSpec.edges.push({
           id: source + ':' + target,
-          source: source,
-          target: target,
+          source,
+          target,
           data: edge,
         });
       }

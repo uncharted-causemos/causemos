@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { expect } from 'chai';
+
 import { EvidenceContext, DocumentContext } from '@/types/Statement';
 import evidenceMetadataUtil from '@/utils/evidence-metadata-util';
 

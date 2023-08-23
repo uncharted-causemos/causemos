@@ -61,7 +61,7 @@ const getComponents = async (modelId: string) => {
  */
 const checkAndUpdateRegisteredStatus = async (modelId: string, engine: string) => {
   const result = await API.get(`models/${modelId}/registered-status`, {
-    params: { engine: engine },
+    params: { engine },
   });
   return result.data;
 };
@@ -80,13 +80,13 @@ const syncModelWithEngine = async (modelId: string, engine: string) => {
 const getScenarios = async (modelId: string, engine: string) => {
   const scenarios = (
     await API.get('scenarios', {
-      params: { model_id: modelId, engine: engine },
+      params: { model_id: modelId, engine },
     })
   ).data;
 
   const scenarioResults = (
     await API.get('scenario-results', {
-      params: { model_id: modelId, engine: engine },
+      params: { model_id: modelId, engine },
     })
   ).data;
 
@@ -112,7 +112,7 @@ const getScenarios = async (modelId: string, engine: string) => {
 const getScenarioSensitivity = async (modelId: string, engine: string) => {
   const sensitivityResults = (
     await API.get('scenario-results/sensitivity', {
-      params: { model_id: modelId, engine: engine },
+      params: { model_id: modelId, engine },
     })
   ).data;
   return sensitivityResults;
@@ -204,7 +204,7 @@ const duplicateModel = async (modelId: string, name: string) => {
 const newModel = async (projectId: string, name = 'untitled') => {
   const result = await API.post('models', {
     project_id: projectId,
-    name: name,
+    name,
     nodes: [],
     edges: [],
   });
@@ -228,8 +228,8 @@ const quantifyModelNodes = async (modelId: string, temporalResolution: string) =
 const getEdgeStatements = async (modelId: string, source: string, target: string) => {
   const result = await API.get(`cags/${modelId}/edge-statements`, {
     params: {
-      source: source,
-      target: target,
+      source,
+      target,
     },
   });
   return result.data;
@@ -238,7 +238,7 @@ const getEdgeStatements = async (modelId: string, source: string, target: string
 const getNodeStatements = async (modelId: string, concept: string) => {
   const result = await API.get(`cags/${modelId}/node-statements`, {
     params: {
-      concept: concept,
+      concept,
     },
   });
   return result.data;
@@ -385,7 +385,7 @@ const getExperimentResult = async (
 };
 const getExperimentResultOnce = async (modelId: string, engine: string, experimentId: string) => {
   const { data } = await API.get(`models/${modelId}/experiments`, {
-    params: { engine: engine, experiment_id: experimentId },
+    params: { engine, experiment_id: experimentId },
   });
   return data;
 };
@@ -703,9 +703,9 @@ const createScenarioResult = async (
   await API.post('/scenario-results', {
     model_id: modelId,
     scenario_id: scenarioId,
-    engine: engine,
+    engine,
     experiment_id: experimentId,
-    result: result,
+    result,
   });
 };
 
@@ -719,9 +719,9 @@ const createScenarioSensitivityResult = async (
   await API.put('/scenario-results/sensitivity', {
     model_id: modelId,
     scenario_id: scenarioId,
-    engine: engine,
+    engine,
     experiment_id: experimentId,
-    result: result,
+    result,
   });
 };
 const updateScenarioSensitivityResult = async (
@@ -730,9 +730,9 @@ const updateScenarioSensitivityResult = async (
   result: any
 ): Promise<void> => {
   await API.post('/scenario-results/sensitivity', {
-    id: id,
+    id,
     experiment_id: experimentId,
-    result: result,
+    result,
   });
 };
 

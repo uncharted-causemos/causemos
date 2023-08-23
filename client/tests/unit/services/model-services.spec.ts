@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { expect } from 'chai';
+
 import modelService from '@/services/model-service';
 import { CAGGraph } from '@/types/CAG';
 

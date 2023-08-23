@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import forecast, { ForecastMethod, ForecastMethodSelectionReason } from '@/utils/forecast';
-import { expect } from 'chai';
 
 describe('forecast', () => {
   describe('initialize', () => {

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { sortItem } from '@/utils/sort/sort-items';
 
 describe('sort-items by Most Recent', () => {

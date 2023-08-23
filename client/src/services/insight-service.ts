@@ -122,7 +122,7 @@ const _fetchInsights = async (fetchParams: InsightFilterFields, options: any) =>
   // Don't send long requests as a GET
   if (filters && JSON.stringify(filters).length > 1000) {
     const { data } = await API.post('insights/search', {
-      filters: filters,
+      filters,
       options,
     });
     return data;
@@ -139,7 +139,7 @@ const _fetchInsights = async (fetchParams: InsightFilterFields, options: any) =>
 
 const _fetchParamsToFilters = (fetchParams: InsightFilterFields) => {
   return Object.keys(fetchParams)
-    .map((field) => ({ field: field, value: (fetchParams as any)[field] }))
+    .map((field) => ({ field, value: (fetchParams as any)[field] }))
     .filter((f) => f.value !== undefined && f.value !== null);
 };
 

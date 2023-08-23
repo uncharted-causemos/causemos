@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import CodeUtil from '@/utils/code-util';
 
 describe('code-util', () => {

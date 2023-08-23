@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import ValuePill from '@/search/pills/value-pill';
 import FiltersUtil from '@/utils/filters-util';
 

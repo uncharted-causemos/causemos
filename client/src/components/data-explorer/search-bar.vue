@@ -114,7 +114,7 @@ export default {
     }).branch(...this.pills.map((pill) => pill.makeBranch()));
 
     this.lexRef = new Lex({
-      language: language,
+      language,
       placeholder: 'Search items...',
       tokenXIcon: '<i class="fa fa-remove"></i>',
     });

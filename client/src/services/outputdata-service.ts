@@ -355,12 +355,12 @@ export const getQualifierTimeseries = async (
     params: {
       data_id: dataId,
       run_id: runId,
-      feature: feature,
+      feature,
       resolution: temporalResolution,
       temporal_agg: temporalAggregation,
       spatial_agg: spatialAggregation,
       region_id: regionId,
-      transform: transform,
+      transform,
       qualifier: qualifierVariableId,
       q_opt: qualifierOptions,
     },
@@ -436,7 +436,7 @@ export const getGlobalQualifierBreakdown = async (
     params: {
       data_id: dataId,
       run_id: runId,
-      feature: feature,
+      feature,
       resolution: temporalResolution,
       temporal_agg: temporalAggregation,
       spatial_agg: spatialAggregation,

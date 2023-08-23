@@ -279,7 +279,7 @@ export class QualitativeRenderer extends AbstractCAGRenderer<NodeParameter, Edge
       if (selectedSuggestionWithSameConcept === undefined) {
         // Suggestion is not already displayed in the selected column
         otherSuggestionsToDisplay.push({
-          suggestion: suggestion,
+          suggestion,
           x: suggestionColumnX,
           y:
             suggestionStartY +

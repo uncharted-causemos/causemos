@@ -1,10 +1,9 @@
 import { TemporalResolutionOption } from '@/types/Enums';
 import {
+  snapTimestampToNearestMonth,
   calculateNextTimestamp,
   getFormattedTimeInterval,
-  snapTimestampToNearestMonth,
 } from '@/utils/date-util';
-import { expect } from 'chai';
 
 describe('date-util', () => {
   describe('snapTimestampToNearestMonth', () => {

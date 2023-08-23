@@ -49,8 +49,8 @@ const fixIncorrectData = (datacube: Datacube) => {
 export const getDatacubes = async (filters: Filters, options = {}): Promise<Datacube[]> => {
   const { data } = await API.get('maas/datacubes', {
     params: {
-      filters: filters,
-      options: options,
+      filters,
+      options,
     },
   });
   return data.map(fixIncorrectData);
@@ -111,7 +111,7 @@ export const getDatacubeByDataIdAndOutputVariableAndCountry = async (
 
   const result = await getDatacubes(
     {
-      clauses: clauses,
+      clauses,
     },
     { from: 0, size: 1 }
   );
@@ -127,7 +127,7 @@ export const getDatacubeFacets = async (facets: string[], filters: Filters): Pro
   const { data } = await API.get('maas/datacubes/facets', {
     params: {
       facets: JSON.stringify(facets),
-      filters: filters,
+      filters,
     },
   });
   return data;
@@ -162,7 +162,7 @@ export const getDatacubesByIds = async (datacubeIds: string[]) => {
  */
 export const getDatacubesCount = async (filters: Filters) => {
   const { data } = await API.get('maas/datacubes/count', {
-    params: { filters: filters },
+    params: { filters },
   });
   return data || 0;
 };

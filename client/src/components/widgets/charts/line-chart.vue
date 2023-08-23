@@ -335,7 +335,7 @@ export default {
         yscale: this.yscale,
         seriesData: this.seriesData,
         valueFormatter: this.valueFormatter,
-        dateFormatter: dateFormatter,
+        dateFormatter,
       });
     },
     renderAxis() {

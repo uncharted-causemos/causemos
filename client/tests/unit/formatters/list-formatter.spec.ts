@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-expressions */
-import { expect } from 'chai';
 import ListFormatter from '@/formatters/list-formatter';
 
 describe('list-formatter', () => {

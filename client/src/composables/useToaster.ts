@@ -6,7 +6,7 @@ export default function useToaster() {
   return (message: string, msgType: TYPE, sticky = false) => {
     const timeout = sticky === true ? false : 3000;
     toast(message, {
-      timeout: timeout,
+      timeout,
       type: msgType,
     });
   };

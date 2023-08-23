@@ -541,7 +541,7 @@ export default defineComponent({
       //  section.
       if (insightIndex !== 0 && insightIndex !== -1) {
         return {
-          sectionId: sectionId,
+          sectionId,
           insightId: sectionWithInsights.insights[insightIndex - 1].id as string,
         };
       }
