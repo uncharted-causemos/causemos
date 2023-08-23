@@ -11,7 +11,7 @@
           {{ flowLogs.agent.id.toLocaleString() }}
         </h3>
         <ul style="list-style-type: none">
-          <li v-for="{ timestamp, message } in flowLogs.logs" :key="timestamp">
+          <li v-for="({ timestamp, message }, i) in flowLogs.logs" :key="timestamp.toString() + i">
             <span style="font-size: small">{{ timestamp.toLocaleString() }}</span>
             <multiline-description :text="message" />
           </li>

@@ -40,12 +40,12 @@
 
 <script setup lang="ts">
 import _ from 'lodash';
-import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
+import useIndexAnalysis from '@/composables/useIndexAnalysis';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
-import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexTree from '@/composables/useIndexTree';
 import {
   calculateOverallWeight,
   findAllDatasets,
@@ -61,10 +61,10 @@ import IndexResultsMap from '@/components/index-results/index-results-map.vue';
 import IndexResultsComponentList from '@/components/index-results/index-results-component-list.vue';
 import IndexResultsDatasetWeights from '@/components/index-results/index-results-dataset-weights.vue';
 import { AdminLevel, ProjectType } from '@/types/Enums';
-import useInsightStore from '@/services/composables/useInsightStore';
+import useInsightStore from '@/composables/useInsightStore';
 import { IndexResultsDataState, Insight } from '@/types/Insight';
 import { getInsightById } from '@/services/insight-service';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import { INSIGHT_CAPTURE_CLASS, isIndexResultsDataState } from '@/utils/insight-util';
 import { RegionalAggregation } from '@/types/Outputdata';
@@ -166,15 +166,10 @@ const countryIntersection = ref<string[]>([]);
  * associate removed countries with their source data.
  */
 const removedCountriesData = computed(() => {
-  let countryData: any[] = [];
-  removedCountries.value.forEach((country) => {
-    countryData = [
-      ...countryData,
-      { countryName: country.countryName, removedFrom: countryMissingFrom(country.countryName) },
-    ];
-  });
-
-  return countryData;
+  return removedCountries.value.map((country) => ({
+    countryName: country.countryName,
+    removedFrom: countryMissingFrom(country.countryName),
+  }));
 });
 
 /**

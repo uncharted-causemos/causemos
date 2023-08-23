@@ -1,7 +1,7 @@
 <template>
   <modal-edit-param-choices
     v-if="showEditParamOptionsModal === true"
-    :selected-parameter="selectedParameter"
+    :selected-parameter="(selectedParameter as ModelParameter)"
     @close="onEditParamOptionsModalClose"
   />
   <div class="desc-header">
@@ -122,8 +122,8 @@
       </thead>
       <tbody v-if="metadata && metadata.outputs">
         <tr
-          v-for="param in outputVariables"
-          :key="param.id"
+          v-for="(param, index) in outputVariables"
+          :key="index"
           :class="{ 'primary-output': param.name === currentOutputFeature.name }"
         >
           <td class="model-attribute-pair">
@@ -220,9 +220,9 @@ import ModalEditParamChoices from '@/components/modals/modal-edit-param-choices.
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { getOutputs } from '@/utils/datacube-util';
 import { scrollToElement } from '@/utils/dom-util';
-import DropdownButton from '@/components/dropdown-button.vue';
+import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { useRoute } from 'vue-router';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 
 export default defineComponent({
@@ -347,9 +347,10 @@ export default defineComponent({
         return 'Date range';
       }
     };
-    const paramTypeGroupButtons = ref(
-      validParamType.map((val) => ({ displayName: getTypeDisplayName(val), value: val }))
-    );
+    const paramTypeGroupButtons: DropdownItem[] = validParamType.map((val) => ({
+      displayName: getTypeDisplayName(val) ?? '',
+      value: val,
+    }));
 
     const setParamType = (newType: DatacubeGenericAttributeVariableType, param: ModelParameter) => {
       param.type = newType;

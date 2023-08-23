@@ -52,7 +52,7 @@
                   <select
                     name="selectedRegionRankingRun"
                     id="selectedRegionRankingRun"
-                    @change="selectedScenarioIndex = $event.target.selectedIndex"
+                    @change="event => selectedScenarioIndex = (event.target as any).selectedIndex"
                     :disabled="regionRunsScenarios.length === 1"
                     :style="{
                       color:
@@ -90,7 +90,7 @@
 </template>
 
 <script lang="ts">
-import useModelMetadata from '@/services/composables/useModelMetadata';
+import useModelMetadata from '@/composables/useModelMetadata';
 import { AnalysisItem } from '@/types/Analysis';
 import { convertRegionalDataToBarData, getSelectedOutput, isModel } from '@/utils/datacube-util';
 import {
@@ -106,7 +106,7 @@ import { useStore } from 'vuex';
 import router from '@/router';
 import _ from 'lodash';
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
-import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import {
@@ -117,7 +117,7 @@ import { getActiveRegions, popupFormatter } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
 import { openDatacubeDrilldown } from '@/services/analysis-service-new';
 import { isDataSpaceDataState } from '@/utils/insight-util';
-import useDatacube from '@/services/composables/useDatacube';
+import useDatacube from '@/composables/useDatacube';
 import { DatacubeFeature } from '@/types/Datacube';
 
 export default defineComponent({

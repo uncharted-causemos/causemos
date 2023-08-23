@@ -51,7 +51,7 @@
 import { toRefs, computed, ref, onMounted } from 'vue';
 import ModalDocument from '@/components/modals/modal-document.vue';
 import GeographicContext from '@/components/geographic-context.vue';
-import useParagraphSearchResults from '@/services/composables/useParagraphSearchResults';
+import useParagraphSearchResults from '@/composables/useParagraphSearchResults';
 
 const props = defineProps<{
   selectedNodeName: string;

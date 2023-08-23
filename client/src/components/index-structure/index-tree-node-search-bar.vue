@@ -105,8 +105,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { DatasetSearchResult } from '@/types/Index';
-import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
-import useModelMetadataCoverage from '@/services/composables/useModelMetadataCoverage';
+import useModelMetadataSimple from '@/composables/useModelMetadataSimple';
+import useModelMetadataCoverage from '@/composables/useModelMetadataCoverage';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
 import {
   searchFeatures,

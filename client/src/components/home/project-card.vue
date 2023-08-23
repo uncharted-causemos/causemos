@@ -10,7 +10,7 @@
       <template #message>
         <p>
           Are you sure you want to delete
-          <strong>{{ project.name }}</strong> and all associated CAGs/Models/Scenarios?
+          <strong>{{ project.name }}</strong> and all associated artifacts?
         </p>
         <message-display
           :message="'Warning: This action cannot be undone.'"
@@ -23,10 +23,7 @@
         {{ project.name }}
       </span>
       <div class="table-column">
-        {{ dataAnalysisCount + modelCount }}
-      </div>
-      <div class="table-column extra-wide">
-        {{ project.corpus_id }}
+        {{ dataAnalysisCount }}
       </div>
       <div class="table-column">
         {{ dateFormatter(project.modified_at, 'MMM DD, YYYY') }}
@@ -72,8 +69,7 @@ export default defineComponent({
     const showModal = ref(false);
 
     return {
-      modelCount: computed(() => props.project.stat.model_count),
-      dataAnalysisCount: computed(() => props.project.stat.data_analysis_count),
+      dataAnalysisCount: computed(() => props.project.stat.data_analysis_count as number),
       showModal,
     };
   },

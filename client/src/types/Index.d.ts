@@ -4,6 +4,7 @@ import { DiscreteOuputScale, ProjectionDataWarning } from '@/types/Enums';
 import type { WeightedComponent } from '@/types/WeightedComponent';
 import { ForecastMethod, ForecastResult } from '@/utils/forecast';
 import { NodeProjectionType } from '@/utils/projection-util';
+import { TimeseriesPointProjected } from './Timeseries';
 
 export interface DatasetSearchResult {
   displayName: string;
@@ -122,7 +123,8 @@ export type ProjectionRunInfo = {
 };
 
 /**
- * An object representing a projection result
+ * An object representing a projection result.
+ * id is either scenario id or country name
  */
 export interface IndexProjection {
   id: string; // An unique identifier, it can be scenario id or country name
@@ -134,6 +136,7 @@ export interface IndexProjection {
 
 /**
  * An object representing an index projection scenario
+ * Note that scenario id is used as projection id for IndexProjection on single country mode projection
  */
 export interface IndexProjectionScenario {
   id: string;
@@ -146,7 +149,8 @@ export interface IndexProjectionScenario {
 }
 
 /**
- * An object representing a country that has been selected for display in the projeciton space
+ * An object representing a country that has been selected for display in the projection space
+ * Note that country name is used as projection id for IndexProjection on multi country mode projection
  */
 export interface IndexProjectionCountry {
   name: string;

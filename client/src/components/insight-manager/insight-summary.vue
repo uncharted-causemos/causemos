@@ -11,18 +11,6 @@
       </div>
     </template>
 
-    <div v-if="metadataDetails.cagName !== undefined">
-      <b>CAG</b>: {{ metadataDetails.cagName }}
-    </div>
-    <div v-if="metadataDetails.corpus_id !== undefined">
-      <b>Knowledge base</b>: {{ metadataDetails.corpus_id }}
-    </div>
-    <div v-if="metadataDetails.currentEngine !== undefined">
-      <b>Engine</b>: {{ metadataDetails.currentEngine }}
-    </div>
-    <div v-if="metadataDetails.selectedCAGScenario !== undefined">
-      <b>CAG Scenario</b>: {{ metadataDetails.selectedCAGScenario }}
-    </div>
     <div v-if="metadataDetails.filters !== undefined">
       <b>Filters</b>: {{ metadataDetails.filters }}
     </div>

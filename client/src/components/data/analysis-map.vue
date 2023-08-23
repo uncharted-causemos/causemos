@@ -65,8 +65,8 @@ import _ from 'lodash';
 import * as d3 from 'd3';
 import { defineComponent, toRefs } from 'vue';
 import { WmMap, WmMapVector, WmMapImage, WmMapPopup, WmMapGeojson } from '@/wm-map';
-import useMapRegionSelection from '@/services/composables/useMapRegionSelection';
-import useMapSyncBounds from '@/services/composables/useMapSyncBounds';
+import useMapRegionSelection from '@/composables/useMapRegionSelection';
+import useMapSyncBounds from '@/composables/useMapSyncBounds';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,

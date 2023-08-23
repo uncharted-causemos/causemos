@@ -7,8 +7,8 @@
         type="text"
         class="form-control"
         :value="currentName"
-        @focus="$event.target.select()"
-        @input="newNameInput = $event.target.value"
+        @focus="focusEvent => (focusEvent.target as any | null)?.select()"
+        @input="event => newNameInput = (event.target as any | null)?.value "
         @keyup.enter="onConfirm"
       />
     </template>
@@ -27,7 +27,7 @@ export default defineComponent({
   props: {
     modalTitle: {
       type: String,
-      default: 'Duplicate CAG',
+      default: 'Duplicate Analysis',
     },
     currentName: {
       type: String,

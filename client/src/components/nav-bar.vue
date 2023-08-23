@@ -5,10 +5,11 @@
         <img class="logo" src="../assets/causemos-icon-white.svg" alt="CauseMos logo" />
       </a>
       <template v-for="(navItem, index) of navItems" :key="index">
+        <!-- ASSUMPTION: navItem.route is not null for all navItems except for the last one -->
         <router-link
           v-if="index !== navItems.length - 1"
           class="nav-item clickable"
-          :to="navItem.route"
+          :to="navItem.route ?? ''"
         >
           <i class="fa fa-fw" :class="[navItem.icon]" />
           <span class="nav-item-label">{{ navItem.text }}</span>
@@ -38,7 +39,11 @@
           @close="showNavbarInsightsPanel = false"
         />
       </div>
-      <a href="https://app.causemos.ai/docs/" target="_blank" class="nav-item clickable">
+      <a
+        :href="applicationConfiguration.CLIENT__USER_DOCS_URL"
+        target="_blank"
+        class="nav-item clickable"
+      >
         <i class="fa fa-question" />
       </a>
       <div class="nav-item clickable" @click="logout">
@@ -54,6 +59,7 @@ import { computed, defineComponent, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { mapActions, useStore } from 'vuex';
 import NavbarInsightsPanel from '@/components/insight-manager/navbar-insights-panel.vue';
+import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 
 interface NavBarItem {
   route: { name: string; params: any } | null;
@@ -73,7 +79,6 @@ export default defineComponent({
     const route = useRoute();
     const analysisId = computed(() => route.params.analysisId as string);
     const analysisName = computed(() => store.getters['app/analysisName']);
-    const currentCAG = computed(() => store.getters['app/currentCAG']);
 
     const analysisProjectItem = computed<NavBarItem>(() => ({
       text: projectMetadata.value.name,
@@ -105,18 +110,7 @@ export default defineComponent({
         },
       },
     }));
-    const qualitativeAnalysisItem = computed(() => ({
-      text: analysisName.value,
-      icon: 'fa-book',
-      route: {
-        name: 'quantitative',
-        params: {
-          project: project.value,
-          currentCAG: currentCAG.value,
-          projectType: ProjectType.Analysis,
-        },
-      },
-    }));
+
     const indexStructureItem = computed(() => ({
       text: analysisName.value,
       icon: 'fa-book',
@@ -185,8 +179,6 @@ export default defineComponent({
         indexProjectionsItem.value,
         { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
       ],
-      qualitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
-      quantitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       indexStructure: [analysisProjectItem.value, indexStructureItem.value],
       indexResults: [analysisProjectItem.value, indexStructureItem.value, indexResultsItem.value],
       indexProjections: [
@@ -194,17 +186,10 @@ export default defineComponent({
         indexStructureItem.value,
         indexProjectionsItem.value,
       ],
-      nodeDrilldown: [
-        analysisProjectItem.value,
-        qualitativeAnalysisItem.value,
-        { icon: 'fa-circle', route: null, text: 'Node drilldown' },
-      ],
       documents: [
         analysisProjectItem.value,
         { icon: 'fa-book', route: null, text: 'Explore documents' },
       ],
-      // 'nodeDataDrilldown',
-      // 'nodeDataExplorer',
       // 'dataExplorer',
     }));
 
@@ -217,11 +202,14 @@ export default defineComponent({
     );
     const showNavbarInsightsPanel = ref(false);
 
+    const { applicationConfiguration } = useApplicationConfiguration();
+
     return {
       navItems,
       isNavbarVisible,
       showNavbarInsightsPanelButton,
       showNavbarInsightsPanel,
+      applicationConfiguration,
     };
   },
   methods: {

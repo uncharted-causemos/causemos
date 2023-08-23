@@ -101,7 +101,9 @@ export default defineComponent({
   },
   setup() {
     const auditsCount = ref(0);
-    const auditTrailData = ref([]);
+    const auditTrailData = ref<
+      { update_type: string; before?: any; after?: any; modified_at: string | number }[]
+    >([]);
     const store = useStore();
     const project = computed(() => store.getters['app/project']);
     const auditsQuery = computed(() => store.getters['query/audits']);

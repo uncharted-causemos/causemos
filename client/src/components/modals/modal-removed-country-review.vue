@@ -42,7 +42,7 @@ export default defineComponent({
     Modal,
   },
   props: {
-    removedCountries: Array,
+    removedCountries: Array<{ countryName: string; removedFrom: string[] }>,
   },
   emits: ['close'],
   mounted() {

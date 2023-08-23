@@ -66,7 +66,7 @@ const props = defineProps<{
   indexResultsData: IndexResultsData[];
   indexResultsSettings: IndexResultsSettings;
   selectedNodeName: string;
-  removedCountries: IndexResultsData[];
+  removedCountries: { countryName: string; removedFrom: string[] }[];
 }>();
 
 const showReview = ref<boolean>(false);

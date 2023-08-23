@@ -4,6 +4,10 @@
   width: 330px;
 }
 
+.default-column-width {
+  width: 150px;
+}
+
 :deep(.dojo-mark) {
   color: $accent-medium;
   background-color: $accent-lightest;

@@ -20,14 +20,14 @@
     <rename-modal
       v-if="isRenameModalOpen"
       :modal-title="'Rename Analysis'"
-      :current-name="initialName"
+      :current-name="initialName ?? ''"
       @confirm="onRenameModalConfirm"
       @cancel="isRenameModalOpen = false"
     />
 
     <duplicate-modal
       v-if="isDuplicateModalOpen"
-      :current-name="initialName"
+      :current-name="initialName ?? ''"
       @confirm="onDuplicate"
       @cancel="isDuplicateModalOpen = false"
     />
