@@ -12,7 +12,7 @@ const SUGGESTIONS_LIMIT = 15;
  */
 function mappedSuggestionBuilder(message, isMultiValue, map) {
   const states = Object.keys(map).map((key) => {
-    return new ValueStateValue(key, { key: key, searchKey: map[key] });
+    return new ValueStateValue(key, { key, searchKey: map[key] });
   });
 
   return {
@@ -25,7 +25,7 @@ function mappedSuggestionBuilder(message, isMultiValue, map) {
     },
     multivalue: isMultiValue,
     allowUnknown: false,
-    map: map,
+    map,
   };
 }
 
@@ -39,7 +39,7 @@ function mappedSuggestionBuilder(message, isMultiValue, map) {
 function dynamicMappedSuggestionBuilder(message, isMultiValue, mapFn) {
   const createStates = (map) => {
     const list = Object.keys(map).map((key) => {
-      return new ValueStateValue(key, { key: key, searchKey: map[key] });
+      return new ValueStateValue(key, { key, searchKey: map[key] });
     });
     return list;
   };

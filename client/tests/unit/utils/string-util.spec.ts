@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import StringUtil, { convertStringToBoolean } from '@/utils/string-util';
 
 describe('string-util', () => {

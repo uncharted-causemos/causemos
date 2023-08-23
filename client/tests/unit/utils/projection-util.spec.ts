@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import sinon from 'sinon';
 import * as fm from '@/utils/forecast';
-import { expect } from 'chai';
+
 import {
   getTimestampMillis as getTsM,
   getTimestampMillisFromYear as getTsY,

@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-import { expect } from 'chai';
+
 import PrecisionFormatter from '@/formatters/precision-formatter';
 
 describe('precision-formatter', () => {

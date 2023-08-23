@@ -1,3 +1,14 @@
+const vitestGlobals = {
+  vi: true,
+  describe: true,
+  it: true,
+  expect: true,
+  beforeEach: true,
+  afterEach: true,
+  beforeAll: true,
+  afterAll: true,
+};
+
 module.exports = {
   root: true,
 
@@ -37,6 +48,7 @@ module.exports = {
 
   globals: {
     d3: true,
+    ...vitestGlobals,
   },
 
   parser: 'vue-eslint-parser',

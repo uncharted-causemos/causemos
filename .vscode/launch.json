@@ -24,6 +24,18 @@
       "cwd": "${workspaceFolder}/server",
       "runtimeArgs": ["dev"],
       "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Current Test File",
+      "autoAttachChildProcesses": true,
+      "cwd": "${workspaceFolder}/client",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": ["run", "../${relativeFile}"],
+      "smartStep": true,
+      "console": "integratedTerminal"
     }
   ],
   "compounds": [

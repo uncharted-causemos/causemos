@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import DateFormatter from '@/formatters/date-formatter';
 
 const dateMillis = Date.UTC(2019, 7, 20);

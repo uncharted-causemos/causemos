@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { correctIncompleteTimeseries } from '@/utils/incomplete-data-detection';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import {

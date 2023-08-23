@@ -66,11 +66,11 @@ export default defineComponent({
 
       if (newName) {
         if (!_.isEmpty(this.restrictedNames) && this.restrictedNames.includes(newName)) {
-          this.$emit('reject', { currentName: currName, newName: newName });
+          this.$emit('reject', { currentName: currName, newName });
           return;
         }
         if (this.restrictAlphanumeric === true && regex.test(this.newNameInput) === false) {
-          this.$emit('reject-alphanumeric', { currentName: currName, newName: newName });
+          this.$emit('reject-alphanumeric', { currentName: currName, newName });
           return;
         }
         this.$emit('confirm', this.newNameInput);

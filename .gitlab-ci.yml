@@ -27,7 +27,7 @@ lint:
 test:
   extends: .test_common
   script:
-    - yarn workspace client run test:unit
+    - yarn workspace client run test:ci
     - yarn workspace server run test
 
 # Jobs don't share their local env variables. So Setup up variables you want to share and save it to a file.

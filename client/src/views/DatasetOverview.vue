@@ -441,12 +441,12 @@ export default defineComponent({
         id: meta.id,
         dataId: meta.data_id,
         runId: 'indicator',
-        feature: feature,
+        feature,
         resolution: selections?.temporalResolution ?? 'month',
         temporalAgg: selections?.temporalAggregation ?? 'mean',
         spatialAgg: selections?.spatialAggregation ?? 'mean',
-        rawResolution: rawResolution,
-        finalRawTimestamp: finalRawTimestamp,
+        rawResolution,
+        finalRawTimestamp,
       } as SparklineParams;
     },
     closeApplyVizModal() {
@@ -464,7 +464,7 @@ export default defineComponent({
       try {
         await updateIndicatorsBulk([
           {
-            id: id,
+            id,
             outputs: [meta],
           },
         ]);

@@ -1,6 +1,11 @@
-import { defineConfig } from 'vite';
+import { defineConfig, UserConfig } from 'vite';
+import type { InlineConfig } from 'vitest';
 import vue from '@vitejs/plugin-vue';
 import * as path from 'path';
+
+interface VitestConfig extends UserConfig {
+  test: InlineConfig;
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -50,4 +55,13 @@ export default defineConfig({
       },
     },
   },
-});
+  test: {
+    globals: true,
+    environment: 'happy-dom', // alternative to jsdom which focuses heavily on performance
+    coverage: {
+      all: false, // Set to true to see the coverage for all files including the files without any tests.
+      provider: 'v8',
+      exclude: [],
+    },
+  },
+} as VitestConfig);

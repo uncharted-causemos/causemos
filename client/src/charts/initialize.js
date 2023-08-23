@@ -36,7 +36,7 @@ const initialize = (selection, options) => {
       .attr('transform', translate(options.margin.left, options.margin.top));
 
     return {
-      g: g,
+      g,
       x1: options.margin.left,
       y1: options.margin.top,
       x2: options.width - options.margin.right,
@@ -59,7 +59,7 @@ const initialize = (selection, options) => {
       .attr('transform', translate(options.margin.left, options.margin.top));
 
     return {
-      g: g,
+      g,
       x1: options.viewport.x1 + options.margin.left,
       y1: options.viewport.y1 + options.margin.top,
       x2: options.viewport.x2 - options.margin.right,

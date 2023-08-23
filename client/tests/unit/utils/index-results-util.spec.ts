@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { calculateCoverage, getIndexResultsColorConfig } from '@/utils/index-results-util';
 import { COLOR } from '@/utils/colors-util';
 import { DiscreteOuputScale } from '@/types/Enums';

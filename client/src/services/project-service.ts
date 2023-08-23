@@ -16,7 +16,7 @@ const getProject = async (projectId: string) => {
 
 const getProjectFacetsPromise = async (projectId: string, facets: string[], filters: Filters) => {
   return API.get(`projects/${projectId}/facets?facets=${JSON.stringify(facets)}`, {
-    params: { filters: filters },
+    params: { filters },
   });
 };
 
@@ -25,8 +25,8 @@ const getProjectFacetsPromise = async (projectId: string, facets: string[], filt
  */
 const createProject = async (projectName: string, projectDescription: string): Promise<string> => {
   const response = await API.post('projects', {
-    projectName: projectName,
-    projectDescription: projectDescription,
+    projectName,
+    projectDescription,
   });
 
   return response.data;
