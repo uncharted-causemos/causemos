@@ -57,6 +57,7 @@ const jatawareRecommenderRouter = rootRequire('/routes/jataware-recommender');
 
 const compression = require('compression');
 const requestAsPromise = require('./util/request-as-promise');
+
 const app = express();
 
 // This code block is for handling issues with setting up the .env file for environment variables.

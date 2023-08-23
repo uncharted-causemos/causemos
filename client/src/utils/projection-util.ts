@@ -1,14 +1,9 @@
 import _ from 'lodash';
 import forecast from './forecast';
-import {
-  getYearFromTimestamp,
-  getNumberOfMonthsSinceEpoch,
-  getTimestampMillisFromYear,
-  getTimestampFromNumberOfMonths,
-} from '@/utils/date-util';
+import { getTimestampConvertFunctions } from '@/utils/date-util';
 import { isConceptNodeWithDatasetAttached } from '@/utils/index-tree-util';
 
-import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
+import { ProjectionAlgorithm, ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
 import {
   ConceptNode,
@@ -78,24 +73,76 @@ const sum = (...data: TimeseriesPointProjected[][]) => {
 };
 
 /**
- * Return function that convert timestamp value to yearly or monthly step
- * based on the provided data resolution option
- * @param dataResOption Data temporal resolution option
+ * Calculate the Minimum Time Interval in Series.
+ * @param data - Timeseries data points.
+ * @param resolution - Temporal resolution: 'TemporalResolutionOption.Month' or 'TemporalResolutionOption.Year'.
+ * @returns Minimum time interval in the specified resolution between any two points in the series.
  */
-const getTimestampCovertFunctions = (
-  dataResOption: TemporalResolutionOption.Year | TemporalResolutionOption.Month
+export const calculateMinTimeInterval = <T extends { timestamp: number }>(
+  data: T[],
+  resolution: TemporalResolutionOption.Year | TemporalResolutionOption.Month
 ) => {
-  const fromTimestamp =
-    dataResOption === TemporalResolutionOption.Year
-      ? getYearFromTimestamp
-      : getNumberOfMonthsSinceEpoch;
-  const toTimestamp =
-    dataResOption === TemporalResolutionOption.Year
-      ? getTimestampMillisFromYear
-      : getTimestampFromNumberOfMonths;
+  if (data.length < 2) return 0;
+  const { fromTimestamp } = getTimestampConvertFunctions(resolution);
+  // Detect time step size (number of months or years between two historical points depending on the temporalResOption).
+  let minInterval = Infinity;
+  for (let index = 0; index < data.length - 1; index++) {
+    const pointA = data[index];
+    const pointB = data[index + 1];
+    minInterval = Math.min(
+      minInterval,
+      fromTimestamp(pointB.timestamp) - fromTimestamp(pointA.timestamp)
+    );
+  }
+  return minInterval;
+};
+
+/**
+ * Calculates the greatest absolute change in value within specified intervals of historical data, subject to constraints.
+ * @param points - Array of historical data points with timestamps and values.
+ * @param constraints - Array of projection constraints.
+ * @param temporalResolution - Temporal resolution option: 'Month' or 'Year'.
+ * @returns Object containing information about the greatest absolute change, time interval, and the last point.
+ */
+export const calculateGreatestAbsoluteHistoricalChange = (
+  points: TimeseriesPoint[],
+  constraints: ProjectionConstraint[],
+  temporalResolution: TemporalResolutionOption.Month | TemporalResolutionOption.Year
+) => {
+  if (points.length < 2)
+    return {
+      interval: 1,
+      greatestAbsoluteChange: 0,
+      lastPoint: points[points.length - 1],
+    };
+
+  // Get the number of time interval between two closest historical points in temporalResOption resolution
+  const interval = calculateMinTimeInterval(points, temporalResolution);
+  let greatestAbsoluteChange = 0;
+
+  const { fromTimestamp } = getTimestampConvertFunctions(temporalResolution);
+  const firstHistoricalPointDate = points[0].timestamp;
+  const lastHistoricalPointDate = points[points.length - 1].timestamp;
+  // Preserve constraints within the historical data points range.
+  // For the simplicity, ignore the constraints set before the first historical point.
+  const historicalPointsWithConstraints = applyConstraints(points, constraints).filter(
+    (p) => p.timestamp >= firstHistoricalPointDate && p.timestamp <= lastHistoricalPointDate
+  );
+  // Run interpolation to fill the gaps in the data.
+  const interpolatedPoints = interpolateLinear(
+    historicalPointsWithConstraints.map((p) => ({ x: fromTimestamp(p.timestamp), y: p.value }))
+  );
+  // Find the greatest change in value in an interval
+  for (let index = 0; index < interpolatedPoints.length - interval; index += interval) {
+    const pointA = interpolatedPoints[index].dataPoint;
+    const pointB = interpolatedPoints[index + interval].dataPoint;
+    const change = Math.abs(pointB.y - pointA.y);
+    greatestAbsoluteChange = Math.max(change, greatestAbsoluteChange);
+  }
   return {
-    fromTimestamp,
-    toTimestamp,
+    interval,
+    greatestAbsoluteChange,
+    lastPoint: historicalPointsWithConstraints[historicalPointsWithConstraints.length - 1],
   };
 };
 
@@ -177,7 +224,7 @@ export const runConstantInterpolation = (
   targetPeriod: { start: number; end: number },
   dataResOption: TemporalResolutionOption.Month | TemporalResolutionOption.Year
 ): TimeseriesPointProjected[] => {
-  const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(dataResOption);
+  const { fromTimestamp, toTimestamp } = getTimestampConvertFunctions(dataResOption);
   const pointX = fromTimestamp(point.timestamp);
   const startX = fromTimestamp(targetPeriod.start);
   const endX = fromTimestamp(targetPeriod.end);
@@ -222,13 +269,15 @@ export const runConstantInterpolation = (
  * @param timeseries timeseries data
  * @param targetPeriod target period that final project data will cover. targetPeriod.start and targetPeriod.end expects unix timestamp milliseconds
  * @param dataResOption data resolution option
+ * @param projectionAlgorithm projection algorithm to be used. Defaults to 'ProjectionAlgorithm.Auto'
  */
 export const runProjection = (
   timeseries: TimeseriesPoint[],
   targetPeriod: { start: number; end: number },
-  dataResOption: TemporalResolutionOption.Month | TemporalResolutionOption.Year
+  dataResOption: TemporalResolutionOption.Month | TemporalResolutionOption.Year,
+  projectionAlgorithm: ProjectionAlgorithm = ProjectionAlgorithm.Auto
 ) => {
-  const { fromTimestamp, toTimestamp } = getTimestampCovertFunctions(dataResOption);
+  const { fromTimestamp, toTimestamp } = getTimestampConvertFunctions(dataResOption);
 
   // convert timeseries data to [x, y][] format
   const inputData = timeseries.map(
@@ -245,7 +294,15 @@ export const runProjection = (
 
   // Run forecast
   const runner = forecast.initialize(inputData, { forecastSteps, backcastSteps });
-  const fResult = runner.runAuto();
+  let runMethod = () => runner.runAuto();
+  if (projectionAlgorithm === ProjectionAlgorithm.Holt) {
+    runMethod = () => runner.runHolt();
+  }
+  if (projectionAlgorithm === ProjectionAlgorithm.HoltWinters) {
+    runMethod = () => runner.runHoltWinters();
+  }
+
+  const fResult = runMethod();
 
   const backcastPoints = fResult.backcast.data.map(([x, y]) => ({
     x,
@@ -440,7 +497,7 @@ export const createProjectionRunner = (
      * @param nodeId node id
      * @param options options - options e.g forecast method
      */
-    projectDatasetNode(nodeId: string) {
+    projectDatasetNode(nodeId: string, options: { method?: ProjectionAlgorithm } = {}) {
       const series = data[nodeId];
       if (!series) return runner;
 
@@ -450,7 +507,8 @@ export const createProjectionRunner = (
         const { method, forecast, backcast, projectionData, reason } = runProjection(
           inputData,
           period,
-          dataTempResOption
+          dataTempResOption,
+          options.method
         );
         runInfo[nodeId] = {
           method,

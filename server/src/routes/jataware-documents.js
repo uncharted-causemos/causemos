@@ -3,6 +3,9 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const paragraphSearchService = rootRequire('/services/external/dojo-semantic-search-service');
 
+/* Keycloak Authentication */
+// const authUtil = rootRequire('/util/auth-util.js');
+
 router.get(
   '/',
   asyncHandler(async (req, res) => {
@@ -15,6 +18,7 @@ router.get(
 
 router.get(
   '/:docId',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const docId = req.params.docId;
     if (docId) {
@@ -29,6 +33,7 @@ router.get(
 
 router.get(
   '/:docId/paragraphs',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const docId = req.params.docId;
     const scrollId = req.query.scroll_id;

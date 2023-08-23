@@ -1,19 +1,12 @@
 import API from '@/api/api';
-import { startPolling, Poller } from '@/api/poller';
 import { Filters, FiltersOptions } from '@/types/Filters';
 import { ReaderOutputRecord } from '@/types/Dart';
 import { SourceTargetPair } from '@/types/CAG';
 import { Statement } from '@/types/Statement';
 import filtersUtil from '@/utils/filters-util';
 
-const KB_LIMIT = 200;
 const PROJECT_LIMIT = 500;
 const STATEMENT_LIMIT = 10000;
-
-const getKBs = async () => {
-  const result = await API.get('kbs', { params: { size: KB_LIMIT } });
-  return result.data;
-};
 
 const getProjects = async () => {
   const result = await API.get('projects', { params: { size: PROJECT_LIMIT } });
@@ -45,24 +38,16 @@ const getProjectFacetsPromise = async (projectId: string, facets: string[], filt
   });
 };
 
-// Create new project based on KB specified by baseId
-const createProject = async (baseId: string, projectName: string, projectDescription: string) => {
-  const result = await API.post('projects', {
-    baseId,
+/**
+ * @returns the new project's unique identifier
+ */
+const createProject = async (projectName: string, projectDescription: string): Promise<string> => {
+  const response = await API.post('projects', {
     projectName,
     projectDescription,
   });
-  const id = result.data.index;
 
-  // Copying KB data is not instataneous, need to poll for ready state
-  const taskFn = async () => {
-    const status = await API.get(`projects/${id}/health`);
-    return status.data.indexStatus === 'green' ? [true, status] : [false, null];
-  };
-
-  const poller = new Poller(3000, 20);
-  await startPolling(poller, taskFn, null);
-  return id;
+  return response.data;
 };
 
 const deleteProject = async (projectId: string) => {
@@ -196,7 +181,6 @@ const getSuggestions = async (projectId: string, field: string, queryString: str
 };
 
 export default {
-  getKBs,
   getProjects,
   getProject,
   getProjectOntologyDefinitions,

@@ -79,7 +79,7 @@ import DatacubeCard from '@/components/data/datacube-card.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 
 import { getAnalysis } from '@/services/analysis-service';
-import useModelMetadata from '@/services/composables/useModelMetadata';
+import useModelMetadata from '@/composables/useModelMetadata';
 
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { DatacubeStatus, ProjectType, SPLIT_BY_VARIABLE } from '@/types/Enums';
@@ -97,11 +97,11 @@ import {
   temporalResolutionOptionFiltered,
 } from '@/utils/drilldown-util';
 import filtersUtil from '@/utils/filters-util';
-import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
-import useActiveDatacubeFeature from '@/services/composables/useActiveDatacubeFeature';
+import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import { isDataSpaceDataState } from '@/utils/insight-util';
-import { useDataAnalysis } from '@/services/composables/useDataAnalysis';
+import { useDataAnalysis } from '@/composables/useDataAnalysis';
 
 export default defineComponent({
   name: 'DatacubeDrilldown',

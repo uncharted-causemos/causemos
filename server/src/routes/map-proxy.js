@@ -7,6 +7,9 @@ const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
 const baseMapStyle = rootRequire('/basemap-style.json');
 
+/* Keycloak Authentication */
+// const authUtil = rootRequire('/util/auth-util.js');
+
 const CARTO_API_KEY = process.env.CARTO_MAP_API_KEY;
 const API_KEY_PARAM = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : '';
 
@@ -14,27 +17,31 @@ const API_KEY_PARAM = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : '';
  * Proxy map raster tile requests for leaflet map.
  * Leaflet map cannot handle vector tile maps without extension
  */
-router.get('/tiles', (req, res) => {
-  const { s, x, y, z } = req.query;
+router.get(
+  '/tiles',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
+  (req, res) => {
+    const { s, x, y, z } = req.query;
 
-  // Enterprise and Public Domains for CARTO MAPS
-  const enterpriseDomain = `https://enterprise-${s}.basemaps.cartocdn.com`;
-  const publicDomain = `https://cartodb-basemaps-${s}.global.ssl.fastly.net`;
+    // Enterprise and Public Domains for CARTO MAPS
+    const enterpriseDomain = `https://enterprise-${s}.basemaps.cartocdn.com`;
+    const publicDomain = `https://cartodb-basemaps-${s}.global.ssl.fastly.net`;
 
-  const domain = CARTO_API_KEY ? enterpriseDomain : publicDomain;
+    const domain = CARTO_API_KEY ? enterpriseDomain : publicDomain;
 
-  // Construct the URL based on the presence of an ENTERPRISE API KEY
-  const url = `${domain}/rastertiles/light_all/${z}/${x}/${y}.png${API_KEY_PARAM}`;
-  request
-    .get(url, (error) => {
-      if (error && error.code) {
-        Logger.info('Error ' + error.code);
-        res.statusCode = 500;
-        res.json({ error: error });
-      }
-    })
-    .pipe(res);
-});
+    // Construct the URL based on the presence of an ENTERPRISE API KEY
+    const url = `${domain}/rastertiles/light_all/${z}/${x}/${y}.png${API_KEY_PARAM}`;
+    request
+      .get(url, (error) => {
+        if (error && error.code) {
+          Logger.info('Error ' + error.code);
+          res.statusCode = 500;
+          res.json({ error: error });
+        }
+      })
+      .pipe(res);
+  }
+);
 
 const getBaseTiles = async (res, url) => {
   request
@@ -65,27 +72,36 @@ const getBaseTiles = async (res, url) => {
  * Proxy map vector tile requests for mapbox-gl-js
  * Use Carto API Key if provided
  */
-router.get('/vector-tiles/:z/:x/:y', (req, res) => {
-  const { x, y, z } = req.params;
-  const url = `https://tiles.basemaps.cartocdn.com/vectortiles/carto.streets/v1/${z}/${x}/${y}.mvt${API_KEY_PARAM}`;
-  return getBaseTiles(res, url);
-});
+router.get(
+  '/vector-tiles/:z/:x/:y',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
+  (req, res) => {
+    const { x, y, z } = req.params;
+    const url = `https://tiles.basemaps.cartocdn.com/vectortiles/carto.streets/v1/${z}/${x}/${y}.mvt${API_KEY_PARAM}`;
+    return getBaseTiles(res, url);
+  }
+);
 
 /**
  * Proxy map raster tile requests for mapbox-gl-js
  * Use Carto API Key if provided
  */
-router.get('/satellite-tiles/:z/:x/:y', (req, res) => {
-  const { x, y, z } = req.params;
-  const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}.png`;
-  return getBaseTiles(res, url);
-});
+router.get(
+  '/satellite-tiles/:z/:x/:y',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
+  (req, res) => {
+    const { x, y, z } = req.params;
+    const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}.png`;
+    return getBaseTiles(res, url);
+  }
+);
 
 /**
  * Retrieve enterprise carto stylesheet for mapbox-gl-js
  */
 router.get(
   '/styles/default',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const stylesheet = JSON.parse(JSON.stringify(baseMapStyle)); // Deep clone json file to prevent from mutation
     /**
@@ -115,6 +131,7 @@ router.get(
  */
 router.get(
   '/styles/satellite',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     res.json({
       version: 8,

@@ -15,6 +15,7 @@ export default defineConfig({
       '~styles': path.resolve(__dirname, './src/styles'),
     },
   },
+  base: '/app/',
   server: {
     host: '127.0.0.1',
     port: 8080,

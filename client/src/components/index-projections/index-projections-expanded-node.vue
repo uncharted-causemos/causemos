@@ -42,6 +42,17 @@
         :data-warnings="dataWarnings"
       />
 
+      <IndexProjectionsExpandedNodeResilience
+        class="add-horizontal-margin"
+        :node-data="(nodeData as ConceptNodeWithDatasetAttached)"
+        :historical-data="historicalData"
+        :constraints="constraints"
+        :projection-temporal-resolution-option="(projectionTemporalResolutionOption as TemporalResolutionOption.Month | TemporalResolutionOption.Year)"
+        :projection-start-timestamp="projectionStartTimestamp"
+        :projection-end-timestamp="projectionEndTimestamp"
+        :projection-timeseries="timeseries"
+      />
+
       <div class="dataset-metadata add-horizontal-margin">
         <p class="margin-top">Dataset description</p>
         <p class="subdued un-font-small">{{ outputDescription }}</p>
@@ -88,7 +99,12 @@
 </template>
 
 <script setup lang="ts">
-import { ConceptNode, IndexProjectionNodeDataWarning } from '@/types/Index';
+import {
+  ConceptNode,
+  ConceptNodeWithDatasetAttached,
+  IndexProjectionNodeDataWarning,
+  ProjectionConstraint,
+} from '@/types/Index';
 import {
   DATASET_COLOR,
   DATASET_ICON,
@@ -99,11 +115,13 @@ import {
 import OptionsButton from '../widgets/options-button.vue';
 import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
-import { ProjectionTimeseries } from '@/types/Timeseries';
-import useModelMetadataSimple from '@/services/composables/useModelMetadataSimple';
+import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
+import useModelMetadataSimple from '@/composables/useModelMetadataSimple';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
 import { EditMode } from '@/utils/projection-util';
 import IndexProjectionsExpandedNodeWarning from './index-projections-expanded-node-warning.vue';
+import IndexProjectionsExpandedNodeResilience from './index-projections-expanded-node-resilience.vue';
+import { TemporalResolutionOption } from '@/types/Enums';
 
 const optionsButtonMenu = [
   {
@@ -128,8 +146,11 @@ const optionsButtonMenu = [
 
 const props = defineProps<{
   nodeData: ConceptNode;
+  historicalData: { countryName: string; points: TimeseriesPoint[] }[];
+  constraints: { scenarioId: string; constraints: ProjectionConstraint[] }[];
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
+  projectionTemporalResolutionOption: TemporalResolutionOption;
   timeseries: ProjectionTimeseries[];
   showDataOutsideNorm: boolean;
   editMode?: EditMode;

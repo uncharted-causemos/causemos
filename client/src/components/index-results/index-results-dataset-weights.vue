@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import _ from 'lodash';
-import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexTree from '@/composables/useIndexTree';
 import {
   calculateOverallWeight,
   findAllDatasets,

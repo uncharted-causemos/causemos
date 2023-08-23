@@ -156,12 +156,12 @@ import dateFormatter from '@/formatters/date-formatter';
 import { FeatureQualifier, Indicator, Model } from '@/types/Datacube';
 import { DatacubeStatus } from '@/types/Enums';
 import { AVAILABLE_DOMAINS, getValidatedOutputs, isIndicator } from '@/utils/datacube-util';
-import useDatacubeVersioning from '@/services/composables/useDatacubeVersioning';
+import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { updateDatacube } from '@/services/new-datacube-service';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
-import useApplicationConfiguration from '@/services/composables/useApplicationConfiguration';
+import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 /**
  * A card-styled widget to view project summary
  */

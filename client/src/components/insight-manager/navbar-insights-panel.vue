@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import useInsightsData from '@/services/composables/useInsightsData';
+import useInsightsData from '@/composables/useInsightsData';
 import { ProjectType } from '@/types/Enums';
 import { Insight } from '@/types/Insight';
 import { unpublishDatacube } from '@/utils/datacube-util';
@@ -73,7 +73,7 @@ import { countPublicInsights, removeInsight } from '@/services/insight-service';
 import MessageDisplay from '../widgets/message-display.vue';
 import ImgLazy from '../widgets/img-lazy.vue';
 import OptionsButton from '../widgets/options-button.vue';
-import useInsightStore from '@/services/composables/useInsightStore';
+import useInsightStore from '@/composables/useInsightStore';
 
 const emit = defineEmits(['close']);
 

@@ -15,7 +15,7 @@ export interface TimeseriesDistributionPoint {
 }
 
 export interface ProjectionTimeseries {
-  id: string;
+  projectionId: string;
   name: string;
   color: string;
   points: TimeseriesPointProjected[];

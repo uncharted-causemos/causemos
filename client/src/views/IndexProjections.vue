@@ -186,6 +186,9 @@
         v-else
         class="fill-space"
         :selected-node-id="selectedNodeId"
+        :historical-data="historicalData"
+        :scenarios="scenarios"
+        :projection-temporal-resolution-option="temporalResolutionOption"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
@@ -219,8 +222,8 @@ import { useStore } from 'vuex';
 import { computed, onMounted, ref, watch } from 'vue';
 import { ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
-import useIndexAnalysis from '@/services/composables/useIndexAnalysis';
-import useProjectionDates from '@/services/composables/useProjectionDates';
+import useIndexAnalysis from '@/composables/useIndexAnalysis';
+import useProjectionDates from '@/composables/useProjectionDates';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
 import { SelectableIndexElementId } from '@/types/Index';
@@ -228,23 +231,23 @@ import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import timestampFormatter from '@/formatters/timestamp-formatter';
-import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexTree from '@/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
 import { MAX_NUM_TIMESERIES, NO_COUNTRY_SELECTED_VALUE } from '@/utils/index-projection-util';
 import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
 import IndexProjectionsSettingsScenarios from '@/components/index-projections/index-projections-settings-scenarios.vue';
-import useInsightStore from '@/services/composables/useInsightStore';
-import useToaster from '@/services/composables/useToaster';
+import useInsightStore from '@/composables/useInsightStore';
+import useToaster from '@/composables/useToaster';
 import { getInsightById } from '@/services/insight-service';
 import { Insight, IndexProjectionsDataState } from '@/types/Insight';
 import { INSIGHT_CAPTURE_CLASS, isIndexProjectionsDataState } from '@/utils/insight-util';
 import { TYPE } from 'vue-toastification';
 import IndexProjectionsSettingsCountries from '@/components/index-projections/index-projections-settings-countries.vue';
-import useSelectedCountries from '@/services/composables/useSelectedCountries';
-import useScenarios from '@/services/composables/useScenarios';
-import useScenarioProjections from '@/services/composables/useScenarioProjections';
-import useHistoricalData from '@/services/composables/useHistoricalData';
-import useMultipleCountryProjections from '@/services/composables/useMultipleCountryProjections';
+import useSelectedCountries from '@/composables/useSelectedCountries';
+import useScenarios from '@/composables/useScenarios';
+import useScenarioProjections from '@/composables/useScenarioProjections';
+import useHistoricalData from '@/composables/useHistoricalData';
+import useMultipleCountryProjections from '@/composables/useMultipleCountryProjections';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -382,18 +385,20 @@ watch([selectableCountries], () => {
   }
 });
 
-const { historicalData: historicalDataForSelectedCountry } = useHistoricalData(
+const { historicalData: historicalDataForSingleCountry } = useHistoricalData(
   computed(() => [selectedCountry.value]),
   indexTree.tree
 );
 // Contains data for each node with a dataset attached. The node's ID is used as the map key.
-const historicalData = computed(
-  () => historicalDataForSelectedCountry.value.get(selectedCountry.value) ?? new Map()
+const historicalDataForSelectedCountry = computed(
+  () => historicalDataForSingleCountry.value[selectedCountry.value] ?? {}
 );
 
 // Projection dates
 const isEditingTimeRange = ref(false);
-const historicalTimeseries = computed(() => Array.from(historicalData.value.values()));
+const historicalTimeseriesForSelectedCountry = computed(() =>
+  Object.values(historicalDataForSelectedCountry.value)
+);
 const {
   projectionStartYear,
   projectionStartMonth,
@@ -405,7 +410,7 @@ const {
   earliestSelectableYear,
   areProjectionDatesValid,
   saveProjectionDates,
-} = useProjectionDates(historicalTimeseries);
+} = useProjectionDates(historicalTimeseriesForSelectedCountry);
 const selectableYears = computed(() => {
   const result: DropdownItem[] = [];
   for (let year = earliestSelectableYear.value; year <= lastSelectableYear.value; year++) {
@@ -453,7 +458,7 @@ const {
 
 watch(
   [
-    historicalData,
+    historicalDataForSelectedCountry,
     indexTree.tree,
     projectionStartTimestamp,
     projectionEndTimestamp,
@@ -466,7 +471,7 @@ watch(
     // When a scenario is deleted, just remove the projection for that scenario from the projection data.
     runScenarioProjections(
       indexTree.tree.value,
-      historicalData.value,
+      historicalDataForSelectedCountry.value,
       { start: projectionStartTimestamp.value, end: projectionEndTimestamp.value },
       temporalResolutionOption.value,
       scenarios.value
@@ -618,6 +623,12 @@ watch(
       selectedCountries.value
     );
   }
+);
+
+const historicalData = computed(() =>
+  isSingleCountryModeActive.value
+    ? historicalDataForSingleCountry.value
+    : historicalDataForSelectedCountries.value
 );
 
 const timeseriesToDisplay = computed(() =>

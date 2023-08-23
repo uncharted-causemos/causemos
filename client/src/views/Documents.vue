@@ -39,7 +39,7 @@ import DocumentList from '@/components/documents/DocumentList.vue';
 import ParagraphSearchResultList from '@/components/documents/ParagraphSearchResultList.vue';
 import HeaderIcon from '@/components/widgets/header-icon.vue';
 import numberFormatter from '@/formatters/number-formatter';
-import useApplicationConfiguration from '@/services/composables/useApplicationConfiguration';
+import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 
 import { ref } from 'vue';
 

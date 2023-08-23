@@ -153,18 +153,11 @@
                   "
                 />
               </div>
-              <drilldown-panel
-                v-if="showMetadataPanel"
-                is-open
-                :tabs="drilldownTabs"
-                :activeTabId="drilldownTabs[0].id"
-                only-display-icons
-                @close="showMetadataPanel = false"
-              >
-                <template #content>
-                  <insight-summary v-if="metadataDetails" :metadata-details="metadataDetails" />
-                </template>
-              </drilldown-panel>
+              <insight-summary
+                v-if="metadataDetails"
+                :metadata-details="metadataDetails"
+                class="insight-summary"
+              />
             </div>
           </template>
           <template v-else>
@@ -202,7 +195,6 @@ import {
   ReviewPosition,
 } from '@/types/Insight';
 import router from '@/router';
-import DrilldownPanel from '@/components/drilldown-panel.vue';
 import {
   addInsight,
   updateInsight,
@@ -211,7 +203,7 @@ import {
   removeInsight,
 } from '@/services/insight-service';
 import { INSIGHTS, QUESTIONS } from '@/utils/messages-util';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import html2canvas from 'html2canvas';
 import _ from 'lodash';
 import { ProjectType } from '@/types/Enums';
@@ -222,7 +214,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import { updateQuestion } from '@/services/question-service';
-import useQuestionsData from '@/services/composables/useQuestionsData';
+import useQuestionsData from '@/composables/useQuestionsData';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { fetchImageAsBase64 } from '@/services/new-datacube-service';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
@@ -245,7 +237,6 @@ export default defineComponent({
   components: {
     FullScreenModalHeader,
     Disclaimer,
-    DrilldownPanel,
     InsightSummary,
     DropdownButton,
     SmallTextButton,
@@ -614,14 +605,7 @@ export default defineComponent({
       //  or as a context specific insight when opening the page of the corresponding model family instance
       return this.projectType === ProjectType.Analysis
         ? [this.currentView, 'overview', 'dataComparative']
-        : [
-            'data',
-            'nodeDrilldown',
-            'dataComparative',
-            'overview',
-            'domainDatacubeOverview',
-            'modelPublisher',
-          ];
+        : ['data', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher'];
     },
     /*,
     annotation(): any {
@@ -1226,5 +1210,11 @@ h6 {
   :deep(.dropdown-container) {
     width: 100%;
   }
+}
+
+.insight-summary {
+  background: white;
+  width: 400px;
+  padding: 20px;
 }
 </style>

@@ -8,7 +8,7 @@ stages:
   only:
     - main
     - merge_requests
-  image: docker-hub.uncharted.software/mhart/alpine-node:16
+  image: docker-hub.uncharted.software/node:18-alpine
   cache:
     paths:
       - node_modules/
@@ -30,8 +30,8 @@ test:
     - yarn workspace client run test:ci
     - yarn workspace server run test
 
-# Jobs don't share it's local env variables. So Setup up variables you want to share and save it to a file.
-# The file can be passed to other jobs as an artifacts
+# Jobs don't share their local env variables. So Setup up variables you want to share and save it to a file.
+# The file can be passed to other jobs as an artifact
 environment:
   stage: prepare
   only:
@@ -50,7 +50,10 @@ environment:
 
         "${CI_COMMIT_TAG}") export DOCKER_TAG="${CI_COMMIT_TAG}" ;;
 
-        *) export DOCKER_TAG="latest" ;;
+        main) export DOCKER_TAG="latest" ;;
+
+        *) echo "Defaulting to $CI_COMMIT_REF_NAME";
+           export DOCKER_TAG="$CI_COMMIT_REF_NAME" ;;
 
       esac
     - 'echo "DOCKER_TAG: ${DOCKER_TAG}"'
@@ -66,21 +69,25 @@ build:
     - tags
   dependencies:
     - environment
-  image: docker-hub.uncharted.software/docker:latest
-  services:
-    - name: docker-hub.uncharted.software/docker:dind
-      alias: docker
+  image: docker.uncharted.software/worldmodeler/causemos-ci:1.0.0
   variables:
+    DOCKER_HOST: tcp://docker:2375/
     DOCKER_DRIVER: overlay2
   before_script:
     - docker info
     # Set env vars passed from prepare stage
     - export $(grep -v '^#' ci.env | xargs)
   script:
-    - echo "--- Building wm-server docker image ---"
+    - echo "--- Building Causemos docker image ---"
     - echo VERSION=${DOCKER_TAG}
 
     # Build and push the docker image
-    - docker build -t docker.uncharted.software/worldmodeler/wm-server:${DOCKER_TAG} .
-    # Push docker image on main branch or when a tag is created, i.e., do not push on merge request events.
-    - if [ ${CI_PIPELINE_SOURCE} != "merge_request_event" ]; then docker push docker.uncharted.software/worldmodeler/wm-server:${DOCKER_TAG}; fi
+    - >
+      if [ ${CI_PIPELINE_SOURCE} != "merge_request_event" ]; then
+        DOCKER_PARAMS="--push --provenance=false"
+      else
+        DOCKER_PARAMS=""
+      fi
+    - docker buildx create --use
+    - docker buildx inspect --bootstrap
+    - VERSION=${DOCKER_TAG} docker buildx bake causemos ${DOCKER_PARAMS}

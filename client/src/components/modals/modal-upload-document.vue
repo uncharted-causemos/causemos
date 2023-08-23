@@ -55,7 +55,7 @@ import { useStore } from 'vuex';
 import { defineComponent, ref, computed } from 'vue';
 import dartService from '@/services/dart-service';
 import Modal from '@/components/modals/modal.vue';
-import useToaster from '@/services/composables/useToaster';
+import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 
 const MB = 1024 * 1024;

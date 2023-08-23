@@ -127,12 +127,12 @@ import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node
 import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/index-tree-node-advanced-search-button.vue';
 import { OptionButtonMenu, MENU_OPTIONS } from '@/utils/index-common-util';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
-import useIndexTree from '@/services/composables/useIndexTree';
+import useIndexTree from '@/composables/useIndexTree';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { ProjectType } from '@/types/Enums';
 import IndexStructureRecommendations from './index-structure-recommendations.vue';
-import useIndexWorkBench from '@/services/composables/useIndexWorkBench';
+import useIndexWorkBench from '@/composables/useIndexWorkBench';
 import { CountryFilter } from '@/types/Analysis';
 
 interface Props {

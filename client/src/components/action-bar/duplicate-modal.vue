@@ -27,7 +27,7 @@ export default defineComponent({
   props: {
     modalTitle: {
       type: String,
-      default: 'Duplicate CAG',
+      default: 'Duplicate Analysis',
     },
     currentName: {
       type: String,
