@@ -6,6 +6,9 @@ const moment = require('moment');
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 const Logger = rootRequire('/config/logger');
 
+/* Keycloak Authentication */
+// const authUtil = rootRequire('/util/auth-util.js');
+
 const spawnUpdateProcess = (documentId) => {
   const child = spawn('node', ['./src/scripts/document-indexer.js', documentId]);
   child.stdout.on('data', (data) => {
@@ -30,6 +33,7 @@ const spawnUpdateProcess = (documentId) => {
  */
 router.get(
   '/:docId',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const docId = req.params.docId;
     const documentAdapter = Adapter.get(RESOURCE.DOCUMENT);
@@ -44,6 +48,7 @@ router.get(
  */
 router.post(
   '/:docId',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const documentAdapter = Adapter.get(RESOURCE.DOCUMENT);
     const r = await documentAdapter.update([req.body], (d) => d.id);

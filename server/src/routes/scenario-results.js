@@ -3,8 +3,12 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const scenarioService = rootRequire('/services/scenario-service');
 
+/* Keycloak Authentication */
+// const authUtil = rootRequire('/util/auth-util.js');
+
 router.get(
   '/',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const engine = req.query.engine;
     const modelId = req.query.model_id;
@@ -15,6 +19,7 @@ router.get(
 
 router.post(
   '/',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { result, scenario_id, model_id, experiment_id, engine } = req.body;
     await scenarioService.createScenarioResult(
@@ -30,6 +35,7 @@ router.post(
 
 router.get(
   '/sensitivity',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const engine = req.query.engine;
     const modelId = req.query.model_id;
@@ -40,6 +46,7 @@ router.get(
 
 router.put(
   '/sensitivity',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { result, scenario_id, model_id, experiment_id, engine } = req.body;
     await scenarioService.createSensitivityResult(
@@ -55,6 +62,7 @@ router.put(
 
 router.post(
   '/sensitivity',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { id, experiment_id, result } = req.body;
 

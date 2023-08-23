@@ -42,4 +42,9 @@ app.directive('focus', {
   },
 });
 
+// fetchSSO remains unused for now, but will become useful in the following non-exhaustive cases
+// 1. The httpd gateway is removed, which handles authentication
+// 2. Authorization becomes relevant within the app (e.g. admin vs user)
+// 3. Additional features need to be introduced (user icons, for example)
+// await store.dispatch('auth/fetchSSO');
 app.mount('#app');

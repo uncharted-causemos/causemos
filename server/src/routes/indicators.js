@@ -5,11 +5,15 @@ const maasService = rootRequire('/services/external/maas-service');
 const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
 const { getSelectedOutputTasks } = rootRequire('/util/query-param-util.js');
 
+/* Keycloak Authentication */
+// const authUtil = rootRequire('/util/auth-util.js');
+
 /**
  * Start a indicator data post processing job
  */
 router.post(
   '/post-process',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, maasService.startIndicatorPostProcessing, [
       req.body,

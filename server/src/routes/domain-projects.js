@@ -4,11 +4,15 @@ const router = express.Router();
 
 const domainProjectService = rootRequire('/services/domain-project-service');
 
+/* Keycloak Authentication */
+// const authUtil = rootRequire('/util/auth-util.js');
+
 /**
  * POST commit for an a new domain project
  */
 router.post(
   '/',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { name, description, website, maintainer, type } = req.body;
     const result = await domainProjectService.createProject(
@@ -28,6 +32,7 @@ router.post(
  */
 router.put(
   '/:id',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.id;
     await domainProjectService.updateProject(projectId, req.body);
@@ -40,6 +45,7 @@ router.put(
  */
 router.get(
   '/',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const filterParams = req.query;
     const result = await domainProjectService.getAllProjects(filterParams);
@@ -52,6 +58,7 @@ router.get(
  */
 router.get(
   '/stats',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const result = await domainProjectService.getDomainProjectStatistics();
     res.json(result);
@@ -63,6 +70,7 @@ router.get(
  */
 router.get(
   '/:id',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.id;
     const result = await domainProjectService.getProject(projectId);
@@ -76,6 +84,7 @@ router.get(
  */
 router.delete(
   '/:id',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.id;
     const result = await domainProjectService.remove(projectId);

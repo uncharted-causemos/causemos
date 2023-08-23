@@ -9,6 +9,9 @@ const projectService = rootRequire('/services/project-service');
 
 const dartService = rootRequire('/services/external/dart-service');
 
+/* Keycloak Authentication */
+// const authUtil = rootRequire('/util/auth-util.js');
+
 /**
  * GET DART document from the docker service used for managing dart documents
  *
@@ -17,6 +20,7 @@ const dartService = rootRequire('/services/external/dart-service');
  */
 router.get(
   '/:docId/raw',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res, next) => {
     const docId = req.params.docId;
     const docStream = await dartService.getRawDoc(docId);
@@ -33,6 +37,7 @@ router.get(
  */
 router.post(
   '/corpus',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   upload.array('file'),
   [],
   asyncHandler(async (req, res) => {
@@ -89,6 +94,7 @@ router.post(
 
 router.get(
   '/readers-status',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res, next) => {
     const timestamp = req.query.timestamp || 0;
 

@@ -46,6 +46,9 @@
       >
         <i class="fa fa-question" />
       </a>
+      <div class="nav-item clickable" @click="logout">
+        <i class="fa fa-sign-out" />
+      </div>
     </div>
   </nav>
 </template>
@@ -54,7 +57,7 @@
 import { ProjectType } from '@/types/Enums';
 import { computed, defineComponent, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { useStore } from 'vuex';
+import { mapActions, useStore } from 'vuex';
 import NavbarInsightsPanel from '@/components/insight-manager/navbar-insights-panel.vue';
 import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 
@@ -208,6 +211,11 @@ export default defineComponent({
       showNavbarInsightsPanel,
       applicationConfiguration,
     };
+  },
+  methods: {
+    ...mapActions({
+      logout: 'auth/logout',
+    }),
   },
 });
 </script>

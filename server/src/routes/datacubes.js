@@ -6,11 +6,15 @@ const searchService = rootRequire('/services/search-service');
 const filtersUtil = rootRequire('/util/filters-util');
 const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
 
+/* Keycloak Authentication */
+// const authUtil = rootRequire('/util/auth-util.js');
+
 /**
  * Insert a new model or indicator metadata doc
  */
 router.post(
   '/',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, datacubeService.insertDatacube, [req.body]);
   })
@@ -21,6 +25,7 @@ router.post(
  */
 router.put(
   '/:datacubeId',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const datacubeId = req.params.datacubeId;
     const metadata = req.body;
@@ -35,6 +40,7 @@ router.put(
  */
 router.put(
   '/:datacubeId/deprecate',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const oldDatacubeId = req.params.datacubeId;
     const newVersionId = req.body.new_version_id;
@@ -48,6 +54,7 @@ router.put(
  */
 router.get(
   '/:indicatorId/status',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const indicatorId = req.params.indicatorId;
     const flowId = req.query.flow_id;
@@ -67,6 +74,7 @@ router.get(
  */
 router.get(
   '/:indicatorId/logs',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const indicatorId = req.params.indicatorId;
     const flowId = req.query.flow_id;
@@ -88,6 +96,7 @@ router.get(
  */
 router.post(
   '/bulk-update-indicator',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const deltas = req.body.deltas;
     const result = await datacubeService.updateDatacubes(deltas, false);
@@ -100,6 +109,7 @@ router.post(
  */
 router.post(
   '/add-sparklines',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const datacubes = req.body.datacubes;
     const result = await datacubeService.generateSparklines(datacubes);
@@ -112,6 +122,7 @@ router.post(
  */
 router.get(
   '/',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const filters = filtersUtil.parse(req.query.filters);
     const options = JSON.parse(req.query.options) || {};
@@ -125,6 +136,7 @@ router.get(
  */
 router.get(
   '/count',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const filters = filtersUtil.parse(req.query.filters);
     const result = await datacubeService.countDatacubes(filters);
@@ -137,6 +149,7 @@ router.get(
  */
 router.get(
   '/facets',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     let facetList = [];
     if (typeof req.query.facets === 'string') {
@@ -154,6 +167,7 @@ router.get(
  **/
 router.get(
   '/suggestions',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const field = req.query.field;
     const queryString = req.query.q;
@@ -167,6 +181,7 @@ router.get(
  */
 router.get(
   '/datacube-suggestions',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const q = req.query.q;
     const result = await searchService.rawDatacubeSearch(q);
@@ -179,6 +194,7 @@ router.get(
  */
 router.get(
   '/datasets',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const type = req.query.type || 'indicator';
     const limit = req.query.limit || 0;
@@ -194,6 +210,7 @@ router.get(
  */
 router.get(
   '/coverage',
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const dataIds = req.query.data_ids || [];
     // Get metadata for each datacube with a dataId in the array
