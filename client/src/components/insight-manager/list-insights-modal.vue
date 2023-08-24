@@ -307,8 +307,7 @@ export default defineComponent({
       const insights = await fetchFullInsights({ id: insightIds as string[] });
       this.disableOverlay();
 
-      const cagMap = InsightUtil.getCagMapFromInsights(insights);
-      const bibliographyMap = await getBibiographyFromCagIds([...cagMap.keys()]);
+      const bibliographyMap = await getBibiographyFromCagIds([]);
 
       switch (outputFormat) {
         case 'Word':

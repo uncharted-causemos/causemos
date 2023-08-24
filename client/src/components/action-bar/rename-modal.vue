@@ -18,7 +18,6 @@
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent, ref, PropType } from 'vue';
-import { cleanConceptString } from '@/utils/concept-util';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
 const regex = RegExp('^[A-Za-z0-9/_ ]+$');
@@ -74,7 +73,7 @@ export default defineComponent({
           this.$emit('reject-alphanumeric', { currentName: currName, newName });
           return;
         }
-        this.$emit('confirm', cleanConceptString(this.newNameInput));
+        this.$emit('confirm', this.newNameInput);
       }
     },
     onCancel() {

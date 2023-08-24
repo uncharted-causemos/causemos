@@ -57,10 +57,6 @@ export const CODE_TABLE: FieldMap = {
     ...field('id', 'Id'),
     ...searchable('Id', false),
   },
-  ONTOLOGY_MATCH: {
-    ...field('conceptName', 'Concept'),
-    ...searchable('Concept', false),
-  },
   PERIOD: {
     ...field('period', 'Period'),
     ...searchable('Included Years', true),

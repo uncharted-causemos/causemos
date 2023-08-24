@@ -155,8 +155,7 @@ export enum DatacubeViewMode {
 
 export enum RegionRankingCompositionType {
   Union = 'union',
-  Intersection = 'intersection', // ,
-  // specific-region-selection // a potential 3rd option to only consider bars for selection regions
+  Intersection = 'intersection',
 }
 
 export enum BinningOptions {
@@ -170,11 +169,6 @@ export enum IncompleteDataCorrectiveAction {
   CompleteData = 'Complete Data (No Change)',
   DataRemoved = ' Final data point was removed',
   DataExtrapolated = 'Final data point contains extrapolated data',
-}
-
-export enum EdgeDirection {
-  Incoming = 'Incoming',
-  Outgoing = 'Outgoing',
 }
 
 export enum LoadStatus {

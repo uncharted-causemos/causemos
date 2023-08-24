@@ -169,10 +169,8 @@ export default {
       this.setCurrentPane('list-insights');
     },
     async exportContextInsight(item) {
-      const cagMap = InsightUtil.getCagMapFromInsights(this.listContextInsights);
-
       this.enableOverlay('Preparing to export insights');
-      const bibliographyMap = await getBibiographyFromCagIds([...cagMap.keys()]);
+      const bibliographyMap = await getBibiographyFromCagIds([]);
       const insights = await fetchFullInsights({ id: this.listContextInsights.map((d) => d.id) });
       this.disableOverlay();
 

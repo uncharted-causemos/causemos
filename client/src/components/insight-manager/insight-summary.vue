@@ -11,10 +11,6 @@
       </div>
     </template>
 
-    <div v-if="metadataDetails.filters !== undefined">
-      <b>Filters</b>: {{ metadataDetails.filters }}
-    </div>
-
     <div v-if="insightLastUpdate !== null">
       <b>Insight last updated at</b>: {{ insightLastUpdate }}
     </div>

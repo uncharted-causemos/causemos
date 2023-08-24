@@ -26,11 +26,6 @@ export interface ViewState {
 
   analyticalQuestionOrder?: number; // a numeric index to save and restore each question order
 
-  // knowledge/model space specific
-  sensitivityToggle?: any;
-  graphLayout?: any;
-  cameraOrientation?: any;
-
   // others
   // ...
   [propName: string]: any; // allow other properties to be added
@@ -60,17 +55,6 @@ export interface DataSpaceDataState {
   searchFilters: Filters; // lex-bar search queries
 }
 
-export interface QualitativeDataState {
-  modelName: string;
-}
-
-export interface ModelsSpaceDataState extends QualitativeDataState {
-  // FIXME: should this be in the Visual State rather than the Data State?
-  cagVisualState: any | null;
-  currentEngine: string;
-  selectedScenarioId: string;
-}
-
 export interface IndexStructureDataState {
   selectedElementId: SelectableIndexElementId | null;
 }
@@ -95,8 +79,6 @@ export interface IndexProjectionsDataState {
 export type DataState =
   | DataSpaceDataState
   | DataAnalysisState
-  | QualitativeDataState
-  | ModelsSpaceDataState
   | IndexStructureDataState
   | IndexStructureResultsState
   | IndexProjectionsDataState;
@@ -180,14 +162,4 @@ export interface InsightMetadata {
 
   // Data space specific
   datacubes?: { datasetName: string; outputName: string; source: string }[];
-
-  // CAG specific
-  ontology?: string;
-  corpus_id?: string;
-  filters?: string;
-  cagName?: string;
-  selectedNode?: string;
-  selectedEdge?: string;
-  currentEngine?: string;
-  selectedCAGScenario?: string;
 }

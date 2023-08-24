@@ -883,8 +883,7 @@ export default defineComponent({
       this.hideInsightPanel();
     },
     async exportInsight(exportType: string) {
-      const cagMap = InsightUtil.getCagMapFromInsights([this.updatedInsight]);
-      const bibliographyMap = await getBibiographyFromCagIds([...cagMap.keys()]);
+      const bibliographyMap = await getBibiographyFromCagIds([]);
 
       switch (exportType) {
         case 'Word':

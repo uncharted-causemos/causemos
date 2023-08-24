@@ -1,10 +1,6 @@
 import API from '@/api/api';
 import { FullInsight, Insight, InsightMetadata, DataState } from '@/types/Insight';
-import {
-  isDataAnalysisState,
-  isModelsSpaceDataState,
-  isQualitativeViewDataState,
-} from '@/utils/insight-util';
+import { isDataAnalysisState } from '@/utils/insight-util';
 
 import { INSIGHTS } from '@/utils//messages-util';
 import useToaster from '@/composables/useToaster';
@@ -161,21 +157,7 @@ export const extractMetadataDetails = (
   //   }
   // }
 
-  if (isQualitativeViewDataState(dataState)) {
-    // Only show the project's ontology and corpus for CAG analysis insights
-    if (projectMetadata?.ontology) {
-      summary.ontology = projectMetadata.ontology;
-    }
-    if (projectMetadata?.corpus_id) {
-      summary.corpus_id = projectMetadata.corpus_id;
-    }
-
-    summary.cagName = dataState.modelName;
-    if (isModelsSpaceDataState(dataState)) {
-      summary.selectedCAGScenario = dataState.selectedScenarioId ?? undefined;
-      summary.currentEngine = dataState.currentEngine ?? undefined;
-    }
-  } else if (isDataAnalysisState(dataState)) {
+  if (isDataAnalysisState(dataState)) {
     const datacubes: {
       datasetName: string;
       outputName: string;
