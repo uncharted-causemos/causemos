@@ -130,6 +130,7 @@ import domainProjectService from '@/services/domain-project-service';
 import DropdownButton from '@/components/dropdown-button.vue';
 import API from '@/api/api';
 import { modifiedAtSorter, nameSorter, sortItem, SortOptions } from '@/utils/sort/sort-items';
+import { ProjectType } from '@/types/Enums';
 
 const DISPLAYED_FAMILY_LIMIT = 100;
 
@@ -251,8 +252,12 @@ export default defineComponent({
 
       this.disableOverlay();
     },
-    gotoNewProject() {
-      this.$router.push('newProject');
+    async gotoNewProject() {
+      const id = await projectService.createProject('Untitled project', 'Project description');
+      this.$router.push({
+        name: 'overview',
+        params: { project: id, projectType: ProjectType.Analysis },
+      });
     },
     gotoNewFamilyProject() {
       this.$router.push('newDomainProject');
