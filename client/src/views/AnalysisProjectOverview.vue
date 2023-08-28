@@ -15,7 +15,21 @@
 
   <div class="project-overview-container">
     <header>
-      <h3>{{ projectMetadata.name }}</h3>
+      <div class="title">
+        <input
+          v-if="isEditingTitle"
+          v-model="projectMetadata.name"
+          type="text"
+          class="editable-title"
+        />
+        <h3 v-else @click="editTitle">{{ projectMetadata.name }}</h3>
+        <small-icon-button v-if="isEditingTitle">
+          <i class="fa fa-check" @click="saveTitle" v-tooltip.top-center="'Save changes'" />
+        </small-icon-button>
+        <small-icon-button v-if="isEditingTitle">
+          <i class="fa fa-close" @click="discardTitle" v-tooltip.top-center="'Discard changes'" />
+        </small-icon-button>
+      </div>
       <div class="description">
         <textarea
           v-if="isEditingDesc"
@@ -226,6 +240,7 @@ export default defineComponent({
     showSortingDropdownAnalyses: false,
     analysisSortingOptions: Object.values(SortOptions),
     selectedAnalysisSortingOption: SortOptions.MostRecent,
+    isEditingTitle: false,
     isEditingDesc: false,
     showDocumentModal: false,
     showRenameModal: false,
@@ -278,6 +293,20 @@ export default defineComponent({
         description: this.projectMetadata.description,
       });
       this.isEditingDesc = false;
+    },
+    editTitle() {
+      this.projectTitle = this.projectMetadata.name;
+      this.isEditingTitle = true;
+    },
+    saveTitle() {
+      projectService.updateProjectMetadata(this.project, {
+        name: this.projectMetadata.name,
+      });
+      this.isEditingTitle = false;
+    },
+    discardTitle() {
+      this.projectMetadata.name = this.projectTitle;
+      this.isEditingTitle = false;
     },
     async fetchAnalyses() {
       if (_.isEmpty(this.projectMetadata)) {
@@ -487,6 +516,12 @@ header {
     text-align: justify;
     max-width: 90ch;
   }
+}
+
+.editable-title {
+  border-width: 1px;
+  border-color: rgb(216, 214, 214);
+  font-size: x-large;
 }
 
 .editable-description {
