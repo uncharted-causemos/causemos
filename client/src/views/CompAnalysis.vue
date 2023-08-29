@@ -88,7 +88,7 @@
           </div>
         </template>
       </div>
-      <empty-state-instructions v-else />
+      <p v-else>Models and datasets you select will appear here.</p>
     </main>
   </div>
 </template>
@@ -99,7 +99,6 @@ import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/comp-analysis/datacube-comparative-card.vue';
 import DatacubeComparativeOverlayRegion from '@/components/comp-analysis/datacube-comparative-overlay-region.vue';
 import ActionBar from '@/components/data/action-bar.vue';
-import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
@@ -129,7 +128,6 @@ export default defineComponent({
     DatacubeComparativeOverlayRegion,
     AnalysisCommentsButton,
     ActionBar,
-    EmptyStateInstructions,
     AnalyticalQuestionsAndInsightsPanel,
     DatacubeComparativeTimelineSync,
     AnalysisOptionsButton,
