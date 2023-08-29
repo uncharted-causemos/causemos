@@ -49,11 +49,23 @@
         :key="document.id"
         @click="
           () => {
-            expandedDocumentId = document.id;
+            if (!(isLoading(document) || isProcessing(document))) {
+              expandedDocumentId = document.id;
+            }
           }
         "
       >
-        <span class="first-column-width highlight-on-hover">{{ document.title }}</span>
+        <div class="first-column-width title-field">
+          <span
+            :class="{ 'highlight-on-hover': !(isLoading(document) || isProcessing(document)) }"
+            >{{ document.title }}</span
+          >
+          <span v-if="isLoading(document)"><i class="fa fa-spinner fa-spin" /> Uploading...</span>
+          <span v-if="isProcessing(document)"
+            >Upload completed {{ processingTime(document) }}. Processing...</span
+          >
+        </div>
+
         <span class="second-column-width subdued">{{ document.producer }}</span>
         <span class="default-column-width subdued">{{
           document.creation_date === null ? '--' : DATE_FORMATTER(document.creation_date)
@@ -100,6 +112,7 @@ import {
   DocumentSortOrderOption,
 } from '@/services/paragraphs-service';
 import { computed, ref, watch } from 'vue';
+import DurationFormatter from '@/formatters/duration-formatter';
 
 const props = defineProps<{ documentCount: number | null }>();
 const emit = defineEmits<{ (e: 'set-document-count', newCount: number): void }>();
@@ -124,6 +137,21 @@ const scrollId = ref<string | null>('');
 
 const columnToSortBy = ref(DocumentSortField.UploadDate);
 const sortOrder = ref(DocumentSortOrderOption.Descending);
+
+const isLoading = (document: Document) => {
+  return document.uploaded_at === null;
+};
+
+const isProcessing = (document: Document) => {
+  return !isLoading(document) && document.processed_at === null;
+};
+
+const processingTime = (document: Document) => {
+  if (document.uploaded_at !== null) {
+    console.log(JSON.stringify(document));
+    return `${DurationFormatter(Date.now() - parseInt(document.uploaded_at), false)} ago`;
+  }
+};
 const setSortColumnAndOrder = (column: DocumentSortField, order: SortableTableHeaderState) => {
   columnToSortBy.value = column;
   sortOrder.value =
@@ -211,6 +239,11 @@ const expandedDocumentId = ref<string | null>(null);
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+
+    .title-field {
+      display: flex;
+      flex-direction: column;
+    }
 
     .table-row {
       cursor: pointer;
