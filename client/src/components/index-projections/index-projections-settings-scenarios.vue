@@ -182,9 +182,7 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
   }
   .node-constraint-list {
     margin-left: 10px;
-    p {
-      padding: 2px 0;
-    }
+    margin-top: 5px;
   }
 }
 </style>
