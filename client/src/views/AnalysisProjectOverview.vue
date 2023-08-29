@@ -117,7 +117,7 @@
           />
         </div>
         <div v-if="analyses.length === 0" class="empty-state-container">
-          <empty-state-instructions class="empty-state-instructions" />
+          Analyses you create will appear here.
         </div>
       </div>
     </main>
@@ -149,7 +149,6 @@ import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-
 import DuplicateModal from '@/components/action-bar/duplicate-modal.vue';
 import numberFormatter from '@/formatters/number-formatter';
 import DropdownButton from '@/components/dropdown-button.vue';
-import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
 import useQuestionsData from '@/composables/useQuestionsData';
 import useInsightsData from '@/composables/useInsightsData';
 import { computed } from '@vue/reactivity';
@@ -184,7 +183,6 @@ export default defineComponent({
     RenameModal,
     DuplicateModal,
     DropdownButton,
-    EmptyStateInstructions,
     SmallIconButton,
   },
   setup() {
@@ -585,10 +583,7 @@ main {
   flex: 1;
   min-height: 0;
   position: relative;
-}
-
-.empty-state-instructions {
-  width: 100%;
+  padding: 10px 0;
 }
 
 .analysis-overview-card:not(:first-child) {
