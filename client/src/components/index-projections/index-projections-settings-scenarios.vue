@@ -45,6 +45,10 @@
         <p class="un-font-small subdued">
           {{ scenario.description }}
         </p>
+        <div v-if="scenarioHasConstraints(scenario)" class="node-constraint-list">
+          <p class="un-font-small"><i class="fa fa-square-o" /> Constraints</p>
+          <p class="un-font-small subdued">{{ constrainedNodeListString(scenario) }}</p>
+        </div>
       </li>
     </ul>
     <button
@@ -59,7 +63,11 @@
 <script setup lang="ts">
 import OptionsButton from '@/components/widgets/options-button.vue';
 import { IndexProjectionScenario } from '@/types/Index';
+import useIndexTree from '@/composables/useIndexTree';
+import useIndexWorkBench from '@/composables/useIndexWorkBench';
 
+const indexTree = useIndexTree();
+const indexWorkBench = useIndexWorkBench();
 enum ScenarioOptionButtonMenu {
   Edit = 'Edit',
   Duplicate = 'Duplicate',
@@ -90,6 +98,31 @@ defineProps<{
   scenarios: IndexProjectionScenario[];
   maxScenarios: number;
 }>();
+
+const constrainedNodeListString = (scenario: IndexProjectionScenario) => {
+  const nodeList = constrainedNodeNames(Object.keys(scenario.constraints));
+  return nodeList.toString().replace(',', ', ');
+};
+const scenarioHasConstraints = (scenario: IndexProjectionScenario) => {
+  if (Object.keys(scenario.constraints).length > 0) {
+    return true;
+  }
+  return false;
+};
+const constrainedNodeNames = (nodeIds: string[]) => {
+  const names: string[] = [];
+  nodeIds.forEach((nodeId: string) => {
+    let results = indexTree.findNode(nodeId);
+    if (!results) {
+      results = indexWorkBench.findNode(nodeId);
+    }
+
+    if (results && results.found) {
+      names.push(results.found.name);
+    }
+  });
+  return [...names.sort()];
+};
 
 const emit = defineEmits<{
   (e: 'create'): void;
@@ -146,6 +179,12 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
   .scenario-item .color-box div {
     width: 100%;
     height: 100%;
+  }
+  .node-constraint-list {
+    margin-left: 10px;
+    p {
+      padding: 2px 0;
+    }
   }
 }
 </style>
