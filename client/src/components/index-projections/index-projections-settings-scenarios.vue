@@ -101,7 +101,7 @@ defineProps<{
 
 const constrainedNodeListString = (scenario: IndexProjectionScenario) => {
   const nodeList = constrainedNodeNames(Object.keys(scenario.constraints));
-  return nodeList.toString().replace(',', ', ');
+  return nodeList.toString().replaceAll(',', ', ');
 };
 const scenarioHasConstraints = (scenario: IndexProjectionScenario) => {
   if (Object.keys(scenario.constraints).length > 0) {
