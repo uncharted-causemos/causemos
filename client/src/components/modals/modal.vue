@@ -132,11 +132,6 @@ export default defineComponent({
 
 :deep(.modal-header) {
   position: relative;
-  h3,
-  h4 {
-    color: #5a5a5a;
-    @include header-secondary;
-  }
 }
 
 :deep(.modal-body) {

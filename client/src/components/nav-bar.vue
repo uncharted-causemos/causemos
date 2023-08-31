@@ -190,13 +190,21 @@ export default defineComponent({
         analysisProjectItem.value,
         { icon: 'fa-book', route: null, text: 'Explore documents' },
       ],
-      // 'dataExplorer',
+      modelDrilldown: [
+        analysisProjectItem.value,
+        { route: null, text: 'Flee: Agent Based Refugee Model' }, // TODO: get the model name
+      ],
     }));
 
     const currentView = computed(() => store.getters['app/currentView']);
     const navItems = computed(() => siteMap.value[currentView.value] ?? null);
     const isNavbarVisible = computed(() => navItems.value !== null);
-    const VIEWS_WITH_NAVBAR_INSIGHTS_PANEL = ['indexStructure', 'indexResults', 'indexProjections'];
+    const VIEWS_WITH_NAVBAR_INSIGHTS_PANEL = [
+      'indexStructure',
+      'indexResults',
+      'indexProjections',
+      'modelDrilldown',
+    ];
     const showNavbarInsightsPanelButton = computed(() =>
       VIEWS_WITH_NAVBAR_INSIGHTS_PANEL.includes(currentView.value)
     );
