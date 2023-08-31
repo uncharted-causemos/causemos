@@ -47,9 +47,12 @@
         class="table-row"
         v-for="document of visibleDocumentPages"
         :key="document.id"
+        :class="{
+          processing: inProgress(document),
+        }"
         @click="
           () => {
-            if (!(isLoading(document) || isProcessing(document))) {
+            if (!inProgress(document)) {
               expandedDocumentId = document.id;
             }
           }
@@ -57,12 +60,18 @@
       >
         <div class="first-column-width title-field">
           <span
-            :class="{ 'highlight-on-hover': !(isLoading(document) || isProcessing(document)) }"
+            :class="{
+              'highlight-on-hover': !inProgress(document),
+              subdued: inProgress(document),
+            }"
             >{{ document.title }}</span
           >
-          <span v-if="isLoading(document)"><i class="fa fa-spinner fa-spin" /> Uploading...</span>
-          <span v-if="isProcessing(document)"
-            >Upload completed {{ processingTime(document) }}. Processing...</span
+          <span v-if="isLoading(document)" class="subdued"
+            ><i class="fa fa-spinner fa-spin" /> Uploading...</span
+          >
+          <span v-if="isProcessing(document)" class="subdued"
+            ><i class="fa fa-spinner fa-spin" /> Upload completed {{ processingTime(document) }}.
+            Processing...</span
           >
         </div>
 
@@ -144,6 +153,10 @@ const isLoading = (document: Document) => {
 
 const isProcessing = (document: Document) => {
   return !isLoading(document) && document.processed_at === null;
+};
+
+const inProgress = (document: Document) => {
+  return isLoading(document) || isProcessing(document);
 };
 
 const processingTime = (document: Document) => {
@@ -246,7 +259,9 @@ const expandedDocumentId = ref<string | null>(null);
 
     .table-row {
       cursor: pointer;
-
+      &.processing {
+        cursor: default;
+      }
       &:hover .highlight-on-hover {
         color: $selected-dark;
       }
