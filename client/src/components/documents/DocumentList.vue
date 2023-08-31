@@ -148,7 +148,6 @@ const isProcessing = (document: Document) => {
 
 const processingTime = (document: Document) => {
   if (document.uploaded_at !== null) {
-    console.log(JSON.stringify(document));
     return `${DurationFormatter(Date.now() - parseInt(document.uploaded_at), false)} ago`;
   }
 };
