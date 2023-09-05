@@ -16,8 +16,27 @@
             :new-runs-mode="isNewRunsModeActive"
             @select-scenario="setSelectedModelRuns"
             @generated-scenarios="updateGeneratedScenarios"
-            @geo-selection="openGeoSelectionModal"
           />
+
+          <h5
+            @click="isModelRunsInProgressSectionExpanded = !isModelRunsInProgressSectionExpanded"
+            style="cursor: pointer"
+          >
+            <i
+              class="fa fa-fw"
+              :class="[isModelRunsInProgressSectionExpanded ? 'fa-caret-down' : 'fa-caret-right']"
+            />Model runs in progress ({{ modelRunsInProgress.length }})
+          </h5>
+          <div v-if="isModelRunsInProgressSectionExpanded">
+            <model-run-in-progress
+              v-for="run of modelRunsInProgress"
+              :key="run.id"
+              :metadata="metadata"
+              :run="run"
+              @retry-run="retryModelRun"
+              @delete-run="deleteModelRun"
+            />
+          </div>
         </div>
         <div class="column">
           <h5 class="selected-model-run-header">Selected model runs</h5>
@@ -52,7 +71,7 @@ import { computed, ref, toRefs, watch } from 'vue';
 import Modal from './modal.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import useDatacubeDimensions from '@/composables/useDatacubeDimensions';
-import { Model, ModelParameter } from '@/types/Datacube';
+import { Model } from '@/types/Datacube';
 import useParallelCoordinatesData from '@/composables/useParallelCoordinatesData';
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import useScenarioData from '@/composables/useScenarioData';
@@ -60,6 +79,11 @@ import { Filters } from '@/types/Filters';
 import { ScenarioData } from '@/types/Common';
 import { getFilteredScenariosFromIds } from '@/utils/datacube-util';
 import ModelRunSummaryList from '@/components/model-drilldown/model-run-summary-list.vue';
+import _ from 'lodash';
+import ModelRunInProgress from '../model-drilldown/model-run-in-progress.vue';
+import { createModelRun, updateModelRun } from '@/services/new-datacube-service';
+import { TYPE } from 'vue-toastification';
+import useToaster from '@/composables/useToaster';
 
 const props = defineProps<{
   metadata: Model;
@@ -85,7 +109,7 @@ const selectedModelId = computed(() => metadata.value?.id ?? null);
 const modelRunSearchFilters = ref<Filters>({ clauses: [] });
 const { dimensions } = useDatacubeDimensions(metadata, currentOutputIndex);
 const isNewRunsModeActive = ref(false);
-const { filteredRunData } = useScenarioData(
+const { fetchModelRuns, allModelRunData, filteredRunData } = useScenarioData(
   selectedModelId,
   modelRunSearchFilters,
   dimensions,
@@ -115,48 +139,69 @@ watch([isNewRunsModeActive], () => {
 });
 const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
   potentialScenarios.value = e.scenarios;
-  // TODO:
-  // updatePotentialScenarioDates();
 };
 
-// const updatePotentialScenarioDates = () => {
-//   // since any date or datarange params are not automatically considered,
-//   //  we need to ensure they are added as part of potential scenarios data
-//   if (dateModelParam.value !== null) {
-//     // FIXME: handle the case of multiple date and/or daterange params
-//     const delimiter =
-//       dateModelParam.value.additional_options?.date_range_delimiter ?? DEFAULT_DATE_RANGE_DELIMETER;
-//     let dateValue = '';
-//     if (dateParamPickerValue.value === null || dateParamPickerValue.value === '') {
-//       dateValue = dateModelParam.value.default;
-//     } else {
-//       dateValue =
-//         dateModelParam.value.type === DatacubeGenericAttributeVariableType.Date
-//           ? dateParamPickerValue.value
-//           : dateParamPickerValue.value.replace(' to ', delimiter);
-//     }
-//     potentialScenarios.value.forEach((run) => {
-//       if (dateModelParam.value !== null) {
-//         run[dateModelParam.value.name] = dateValue;
-//       }
-//     });
-//   }
-// };
+const modelRunsInProgress = computed(() => {
+  // Remove runs that have completed successfully
+  const runs = runParameterValues.value.filter((r) => r.status !== ModelRunStatus.Ready);
+  // Remove "drilldown parameters" from each run
+  const drilldownParamNames = metadata.value.parameters
+    .filter((parameter) => parameter.is_drilldown)
+    .map((parameter) => parameter.name);
+  const runsWithoutDrilldownParameters = _.map(runs, (run) =>
+    _.omit(run, [...drilldownParamNames])
+  ) as ScenarioData[];
+  // Sort by status and return
+  return _.sortBy(runsWithoutDrilldownParameters, (run) => run.status);
+});
 
-// watch(
-//   () => [dateParamPickerValue.value],
-//   () => {
-//     updatePotentialScenarioDates();
-//   }
-// );
-
-// TODO:
-const showGeoSelectionModal = ref<boolean>(false);
-const geoModelParam = ref<ModelParameter | null>(null);
-const openGeoSelectionModal = (modelParam: ModelParameter) => {
-  showGeoSelectionModal.value = true;
-  geoModelParam.value = modelParam;
+const getModelRunById = (runId: string) =>
+  allModelRunData.value.find((runData) => runData.id === runId);
+const deleteModelRun = async (runId: string) => {
+  const modelRun = getModelRunById(runId);
+  if (modelRun) {
+    const modelRunDeleted = _.cloneDeep(modelRun);
+    modelRunDeleted.status = ModelRunStatus.Deleted;
+    await updateModelRun(modelRunDeleted);
+    // This is done for responsiveness so that the user immediately knows when a run is deleted
+    fetchModelRuns();
+  }
 };
+const toaster = useToaster();
+const retryModelRun = async (runId: string) => {
+  const modelRun = getModelRunById(runId);
+  if (modelRun === undefined) {
+    toaster('An error occured while retrying this model run.', TYPE.INFO);
+    return;
+  }
+  try {
+    const response = await createModelRun(
+      modelRun.model_id,
+      modelRun.model_name,
+      modelRun.parameters,
+      modelRun.is_default_run
+    );
+    if (response.data && response.data.run_id && response.data.run_id.length > 0) {
+      toaster('Retrying model run.', TYPE.SUCCESS);
+    } else {
+      toaster('An error occured while retrying this model run.', TYPE.INFO);
+    }
+  } catch (error) {
+    console.warn(error);
+    toaster('An error occured while retrying this model run.', TYPE.INFO);
+  }
+  await deleteModelRun(runId);
+};
+
+const isModelRunsInProgressSectionExpanded = ref(false);
+
+// Note about geographic-type and date-type model parameters.
+//  (geoModelParam, modal-geo-selection, dateModelParam, date-range)
+//  At time of writing (September 2023), no deployment of Causemos contains models with parameters
+//  of type "geo", "date", or "date-range". It is not clear whether these features were ever fully
+//  completed and integrated into the tool, and they have been omitted from the 2023 revision of
+//  the Causemos "data space". Review the `datacube-card.vue` component at this point in the
+//  repository history if you intend to reintroduce UI for these types of model parameters.
 </script>
 
 <style lang="scss" scoped>

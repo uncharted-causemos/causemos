@@ -47,11 +47,11 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/uncharted-design-tokens';
 .options-button-container {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  cursor: pointer;
   position: relative;
 
   i {
@@ -61,7 +61,8 @@ export default defineComponent({
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    color: #9d9e9e;
+    color: $un-color-black-40;
+    cursor: pointer;
   }
 
   .dropdown-container {
@@ -90,10 +91,10 @@ export default defineComponent({
 
   &.active,
   &:hover {
-    background: #eaebec;
+    background: $un-color-black-5;
 
     i {
-      color: #000000;
+      color: black;
     }
   }
 }
