@@ -44,7 +44,9 @@
       <section v-if="metadata !== null" class="model-run-parameters-section">
         <div class="section-header">
           <h4>Model run parameters</h4>
-          <button @click="isSelectModelRunsModalOpen = true">Select model runs</button>
+          <button @click="isSelectModelRunsModalOpen = true" class="btn btn-default">
+            Select model runs
+          </button>
         </div>
 
         <model-run-summary-list :metadata="metadata" :model-runs="selectedModelRuns" />
@@ -65,25 +67,25 @@
         <div class="labelled-dropdowns">
           <div class="labelled-dropdown">
             <p class="subdued">Aggregated by</p>
-            <button>sum</button>
+            <button class="btn btn-default">sum</button>
           </div>
 
           <div class="labelled-dropdown">
             <p class="subdued">Temporal resolution</p>
-            <button>monthly</button>
+            <button class="btn btn-default">monthly</button>
           </div>
 
           <div class="labelled-dropdown">
             <p class="subdued">Spatial resolution</p>
-            <button>country</button>
+            <button class="btn btn-default">country</button>
           </div>
         </div>
 
-        <button>Filter and compare</button>
+        <button class="btn btn-default">Filter and compare</button>
 
         <div class="media-files">
           <span class="subdued un-font-small">This model produces media files.</span>
-          <button>View supporting media</button>
+          <button class="btn btn-default">View supporting media</button>
         </div>
       </section>
     </div>
@@ -118,7 +120,7 @@
       <div class="date-dependent-data">
         <div class="maps">
           <!-- TODO: map components -->
-          <button><i class="fa fa-fw fa-gear" />Map options</button>
+          <button class="btn btn-default"><i class="fa fa-fw fa-gear" />Map options</button>
         </div>
         <div class="breakdown-column">
           <!-- TODO: breakdown column-->
@@ -175,8 +177,9 @@ const setSelectedTimestamp = () => console.log('TODO:');
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/common';
 @import '@/styles/uncharted-design-tokens';
-@import '~styles/variables';
+@import '@/styles/variables';
 
 .model-drilldown-container {
   height: $content-full-height;
@@ -208,6 +211,14 @@ const setSelectedTimestamp = () => console.log('TODO:');
     display: flex;
     flex-direction: column;
     gap: 20px;
+  }
+
+  .btn-default {
+    background: white;
+
+    &:hover {
+      background: $un-color-black-5;
+    }
   }
 }
 

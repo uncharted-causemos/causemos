@@ -12,11 +12,36 @@
             class="parallel-coordinates-chart"
             :dimensions-data="runParameterValues"
             :selected-dimensions="dimensions"
-            :initial-data-selection="selectedModelRunIds"
+            :initial-data-selection="isNewRunsModeActive ? [] : selectedModelRunIds"
             :new-runs-mode="isNewRunsModeActive"
             @select-scenario="setSelectedModelRuns"
             @generated-scenarios="updateGeneratedScenarios"
           />
+
+          <div class="execute-new-runs-buttons">
+            <button
+              class="btn btn-default"
+              v-if="!isNewRunsModeActive"
+              @click="isNewRunsModeActive = true"
+            >
+              <i class="fa fa-fw fa-plus" /> Execute new model runs
+            </button>
+            <button
+              class="btn btn-default"
+              v-if="isNewRunsModeActive"
+              @click="isNewRunsModeActive = false"
+            >
+              Cancel
+            </button>
+            <button
+              class="btn btn-default btn-call-to-action"
+              v-if="isNewRunsModeActive"
+              :disabled="potentialRuns.length === 0"
+              @click="executeNewRuns"
+            >
+              Execute {{ potentialRuns.length }} run{{ potentialRuns.length !== 1 ? 's' : '' }}
+            </button>
+          </div>
 
           <h5
             @click="isModelRunsInProgressSectionExpanded = !isModelRunsInProgressSectionExpanded"
@@ -49,10 +74,10 @@
     </template>
     <template #footer>
       <ul class="unstyled-list">
-        <button type="button" class="btn" @click.stop="close">Cancel</button>
+        <button type="button" class="btn btn-default" @click.stop="close">Cancel</button>
         <button
           type="button"
-          class="btn btn-call-to-action"
+          class="btn btn-default btn-call-to-action"
           @click.stop="updateSelectedModelRuns"
           :disabled="selectedModelRunIds.length === 0"
           v-tooltip="
@@ -77,11 +102,14 @@ import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import useScenarioData from '@/composables/useScenarioData';
 import { Filters } from '@/types/Filters';
 import { ScenarioData } from '@/types/Common';
-import { getFilteredScenariosFromIds } from '@/utils/datacube-util';
+import { getFilteredScenariosFromIds, getOutputs, isGeoParameter } from '@/utils/datacube-util';
 import ModelRunSummaryList from '@/components/model-drilldown/model-run-summary-list.vue';
 import _ from 'lodash';
 import ModelRunInProgress from '../model-drilldown/model-run-in-progress.vue';
-import { createModelRun, updateModelRun } from '@/services/new-datacube-service';
+import newDatacubeService, {
+  createModelRun,
+  updateModelRun,
+} from '@/services/new-datacube-service';
 import { TYPE } from 'vue-toastification';
 import useToaster from '@/composables/useToaster';
 
@@ -133,12 +161,84 @@ const selectedModelRuns = computed(() =>
   getFilteredScenariosFromIds(selectedModelRunIds.value, filteredRunData.value)
 );
 
-const potentialScenarios = ref<ScenarioData[]>([]);
+const potentialRuns = ref<ScenarioData[]>([]);
 watch([isNewRunsModeActive], () => {
-  potentialScenarios.value = [];
+  potentialRuns.value = [];
 });
 const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
-  potentialScenarios.value = e.scenarios;
+  potentialRuns.value = e.scenarios;
+};
+const executeNewRuns = async () => {
+  isNewRunsModeActive.value = false;
+
+  // Note from refactoring, September 2023:
+  //  It seems that "choices" and "choices_labels" are used when model parameters or their possible
+  //  values have been renamed within Causemos after the model was registered in Dojo.
+  //  The code below seems to map renamed values back to their original value so that when they're
+  //  sent back to Dojo to parameterize the new model run, the model knows how to interpret them.
+  // The code also seems to make sure that geographic parameters with the default value selected are
+  //  reset to the default value again, though it's not clear why.
+  dimensions.value.forEach((dimension) => {
+    if (dimension.is_visible) {
+      potentialRuns.value.forEach((newRun) => {
+        const displayNameOfSelectedValue = newRun[dimension.name].toString();
+        if (dimension.choices_labels !== undefined && dimension.choices !== undefined) {
+          const labelIndex =
+            dimension.choices_labels.findIndex((l) => l === displayNameOfSelectedValue) ?? 0;
+          if (dimension.choices !== undefined) {
+            newRun[dimension.name] = dimension.choices[labelIndex] ?? displayNameOfSelectedValue;
+          }
+        }
+        if (
+          isGeoParameter(dimension.type) &&
+          displayNameOfSelectedValue === dimension.additional_options.default_value_label
+        ) {
+          newRun[dimension.name] = dimension.default;
+        }
+      });
+    }
+  });
+
+  // Create a final array of parameter name/value pairs for each potential run and send it to the
+  //  server.
+  const outputs = getOutputs(metadata.value);
+  const currentOutputName = outputs[currentOutputIndex.value].name;
+  const drilldownParams = metadata.value.parameters.filter((d) => d.is_drilldown);
+  const promises = potentialRuns.value.map(async (modelRun) => {
+    // Exclude output variable values since they will be undefined for potential runs and exclude
+    //  the "status" field since it will be populated by the server.
+    const parameterArray = Object.keys(modelRun)
+      .filter((key) => key !== currentOutputName && key !== 'status')
+      .map((key) => ({ name: key, value: modelRun[key] }));
+    // Add drilldown/freeform params since they are still inputs, although they are hidden in the
+    //  parallel coordinates chart.
+    drilldownParams.forEach((p) => {
+      parameterArray.push({
+        name: p.name,
+        value: p.default,
+      });
+    });
+    return newDatacubeService.createModelRun(
+      metadata.value.data_id,
+      metadata.value.name,
+      parameterArray
+    );
+  });
+
+  // Wait until all promises are resolved
+  const pluralizedRun = potentialRuns.value.length === 1 ? 'run' : 'runs';
+  try {
+    const allResponses = await Promise.all(promises);
+    const allResults = allResponses.flatMap((res: any) => res.data.run_id);
+    if (allResults.length > 0 && potentialRuns.value.length === allResults.length) {
+      toaster(`New ${pluralizedRun} requested\nPlease check back later!`, TYPE.SUCCESS);
+    } else {
+      toaster(`An error occured while requesting new model ${pluralizedRun}`, TYPE.INFO);
+    }
+  } catch (error) {
+    console.warn(error);
+    toaster(`An error occured while requesting new model ${pluralizedRun}`, TYPE.INFO);
+  }
 };
 
 const modelRunsInProgress = computed(() => {
@@ -205,6 +305,7 @@ const isModelRunsInProgressSectionExpanded = ref(false);
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/common';
 @import '@/styles/uncharted-design-tokens';
 
 :deep(.modal-container) {
@@ -230,6 +331,16 @@ const isModelRunsInProgressSectionExpanded = ref(false);
 }
 
 .parallel-coordinates-chart {
-  height: 800px;
+  height: 600px;
+}
+
+.execute-new-runs-buttons {
+  display: flex;
+  gap: 3px;
+
+  & > * {
+    flex: 1;
+    min-width: 0;
+  }
 }
 </style>

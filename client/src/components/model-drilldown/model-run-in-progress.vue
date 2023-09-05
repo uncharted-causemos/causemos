@@ -8,7 +8,11 @@
         <p v-else>Running</p>
         <span class="subdued un-font-small">Requested {{ timeSinceExecutionFormatted }}</span>
       </div>
-      <button :disabled="!canRetryOrDelete" @click="emit('retry-run', run.run_id.toString())">
+      <button
+        :disabled="!canRetryOrDelete"
+        @click="emit('retry-run', run.run_id.toString())"
+        class="btn btn-default"
+      >
         <i class="fa fa-fw fa-refresh" /> Retry
       </button>
       <options-button :dropdown-below="true" :wider-dropdown-options="true">
@@ -98,6 +102,7 @@ const viewCausemosLogs = () => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/common';
 @import '@/styles/uncharted-design-tokens';
 .run-header {
   display: flex;
