@@ -1,6 +1,6 @@
 <template>
   <div class="datacube-description-container">
-    <div class="datacube-description-column tour-datacube-desc">
+    <div class="datacube-description-column">
       <template v-if="isModel(metadata) && metadata.parameters">
         <h5>Input Descriptions</h5>
         <div v-for="param in inputParameters" :key="param.id">
