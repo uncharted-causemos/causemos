@@ -22,6 +22,13 @@
           </template>
         </OptionsButton>
       </div>
+      <min-max-info
+        v-if="extrema !== null"
+        class="add-horizontal-margin"
+        :message="'What do 0 and 1 represent?'"
+        :extrema="extrema"
+        :isInverted="isInverted"
+      ></min-max-info>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
         :class="{
@@ -106,6 +113,7 @@ import {
   ProjectionConstraint,
 } from '@/types/Index';
 import {
+  convertDataConfigToOutputSpec,
   DATASET_COLOR,
   DATASET_ICON,
   getNodeDataSourceText,
@@ -113,7 +121,7 @@ import {
   isEmptyNode,
 } from '@/utils/index-tree-util';
 import OptionsButton from '../widgets/options-button.vue';
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
 import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/composables/useModelMetadataSimple';
@@ -122,6 +130,9 @@ import { EditMode } from '@/utils/projection-util';
 import IndexProjectionsExpandedNodeWarning from './index-projections-expanded-node-warning.vue';
 import IndexProjectionsExpandedNodeResilience from './index-projections-expanded-node-resilience.vue';
 import { TemporalResolutionOption } from '@/types/Enums';
+import MinMaxInfo from '@/components/min-max-info.vue';
+import { getOutputExtrema } from '@/services/outputdata-service';
+import { Extrema } from '@/types/Outputdata';
 
 const optionsButtonMenu = [
   {
@@ -156,6 +167,18 @@ const props = defineProps<{
   editMode?: EditMode;
   dataWarnings?: IndexProjectionNodeDataWarning[];
 }>();
+
+const extrema = ref<Extrema | null>(null);
+const isInverted = ref<boolean>(false);
+
+onMounted(async () => {
+  if (isConceptNodeWithDatasetAttached(props.nodeData)) {
+    isInverted.value = props.nodeData.dataset.isInverted;
+    extrema.value = await getOutputExtrema(
+      convertDataConfigToOutputSpec(props.nodeData.dataset.config)
+    );
+  }
+});
 
 const emit = defineEmits<{
   (e: 'click-chart', timestamp: number, value: number): void;
