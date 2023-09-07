@@ -1,5 +1,5 @@
 const { v4: uuid } = require('uuid');
-const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
 
 const _description = (nodes, edges) => {
   const nodeNames = nodes.map((n) => (n.concept ? n.concept : n.id)).join(', ');

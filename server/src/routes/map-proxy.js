@@ -2,13 +2,13 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const request = require('request');
-const requestAsPromise = rootRequire('/util/request-as-promise');
+const requestAsPromise = require('#@/util/request-as-promise.js');
 
-const Logger = rootRequire('/config/logger');
-const baseMapStyle = rootRequire('/basemap-style.json');
+const Logger = require('#@/config/logger.js');
+const baseMapStyle = require('../basemap-style.json');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = require('#@/util/auth-util.js);
 
 const CARTO_API_KEY = process.env.CARTO_MAP_API_KEY;
 const API_KEY_PARAM = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : '';

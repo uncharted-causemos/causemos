@@ -1,8 +1,8 @@
 const _ = require('lodash');
 const { v4: uuid } = require('uuid');
-const Logger = rootRequire('/config/logger');
+const Logger = require('#@/config/logger.js');
 
-const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
 
 /**
  *  Find scenarios by model and engine

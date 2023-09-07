@@ -1,6 +1,6 @@
-const Logger = rootRequire('/config/logger');
-const requestAsPromise = rootRequire('/util/request-as-promise');
-const auth = rootRequire('/util/auth-util');
+const Logger = require('#@/config/logger.js');
+const requestAsPromise = require('#@/util/request-as-promise.js');
+const auth = require('#@/util/auth-util.js');
 
 const basicAuthToken = auth.getBasicAuthToken(process.env.DYSE_USERNAME, process.env.DYSE_PASSWORD);
 

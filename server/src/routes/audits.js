@@ -2,10 +2,10 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 
-const { Adapter, RESOURCE } = rootRequire('adapters/es/adapter');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = require('#@/util/auth-util.js);
 
 const DEFAULT_SIZE = 50;
 const MAX_SIZE = 10000;

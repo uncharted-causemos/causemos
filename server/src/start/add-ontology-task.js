@@ -1,6 +1,6 @@
-const Logger = rootRequire('/config/logger');
-const requestAsPromise = rootRequire('/util/request-as-promise');
-const projectService = rootRequire('/services/project-service');
+const Logger = require('#@/config/logger.js');
+const requestAsPromise = require('#@/util/request-as-promise.js');
+const projectService = require('#@/services/project-service.js');
 
 const addUAzOntology = async () => {
   Logger.info("Calling UAz's addOntology");

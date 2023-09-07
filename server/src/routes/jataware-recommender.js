@@ -1,10 +1,10 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
-const dojoSearchService = rootRequire('/services/external/dojo-semantic-search-service');
+const dojoSearchService = require('#@/services/external/dojo-semantic-search-service.js');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = require('#@/util/auth-util.js);
 
 /**
  * get both causes and effects

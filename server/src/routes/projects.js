@@ -3,19 +3,19 @@ const _ = require('lodash');
 const { v4: uuid } = require('uuid');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
-const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
 
-// const { getCache } = rootRequire('/cache/node-lru-cache');
-const Logger = rootRequire('/config/logger');
-// const indraService = rootRequire('/services/external/indra-service');
-const filtersUtil = rootRequire('/util/filters-util');
-const projectService = rootRequire('/services/project-service');
-const updateService = rootRequire('/services/update-service');
-const cagService = rootRequire('/services/cag-service');
-const searchService = rootRequire('/services/search-service');
+// const { getCache } = require('#@/cache/node-lru-cache.js');
+const Logger = require('#@/config/logger.js');
+// const indraService = require('#@/services/external/indra-service.js');
+const filtersUtil = require('#@/util/filters-util.js');
+const projectService = require('#@/services/project-service.js');
+const updateService = require('#@/services/update-service.js');
+const cagService = require('#@/services/cag-service.js');
+const searchService = require('#@/services/search-service.js');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = require('#@/util/auth-util.js);
 
 /* GET Retrieve projects */
 router.get(

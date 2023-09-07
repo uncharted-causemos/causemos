@@ -4,22 +4,22 @@ const asyncHandler = require('express-async-handler');
 const moment = require('moment');
 const { v4: uuid } = require('uuid');
 const router = express.Router();
-const Logger = rootRequire('/config/logger');
-const { setLock, releaseLock, LOCK_TIMEOUT } = rootRequire('/cache/node-lru-cache');
+const Logger = require('#@/config/logger.js');
+const { setLock, releaseLock, LOCK_TIMEOUT } = require('#@/cache/node-lru-cache.js');
 
-const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
-const cagService = rootRequire('/services/cag-service');
-const scenarioService = rootRequire('/services/scenario-service');
-const indicatorService = rootRequire('/services/indicator-service');
-const modelService = rootRequire('/services/model-service');
-const historyService = rootRequire('/services/history-service');
-const dyseService = rootRequire('/services/external/dyse-service');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
+const cagService = require('#@/services/cag-service.js');
+const scenarioService = require('#@/services/scenario-service.js');
+const indicatorService = require('#@/services/indicator-service.js');
+const modelService = require('#@/services/model-service.js');
+const historyService = require('#@/services/history-service.js');
+const dyseService = require('#@/services/external/dyse-service.js');
 
-const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
-const modelUtil = rootRequire('util/model-util');
+const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = require('#@/util/model-util.js');
+const modelUtil = require('#@/util/model-util.js');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = require('#@/util/auth-util.js);
 
 const TRANSACTION_LOCK_MSG = `Another transaction is running on model, please try again in ${
   LOCK_TIMEOUT / 1000

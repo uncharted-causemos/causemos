@@ -2,10 +2,10 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 
-const insightService = rootRequire('/services/insight-service');
+const insightService = require('#@/services/insight-service.js');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = require('#@/util/auth-util.js);
 
 /**
  * POST commit for an insight

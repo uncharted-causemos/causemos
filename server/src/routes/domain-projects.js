@@ -2,10 +2,10 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 
-const domainProjectService = rootRequire('/services/domain-project-service');
+const domainProjectService = require('#@/services/domain-project-service.js');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = require('#@/util/auth-util.js);
 
 /**
  * POST commit for an a new domain project

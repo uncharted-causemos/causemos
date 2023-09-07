@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const graphUtil = rootRequire('util/graph-util');
+const graphUtil = require('#@/util/graph-util.js');
 
 const edges = [
   { source: 'a', target: 'b' },

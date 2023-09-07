@@ -1,8 +1,8 @@
 const moment = require('moment');
 const request = require('request');
-const requestAsPromise = rootRequire('/util/request-as-promise');
-const auth = rootRequire('/util/auth-util');
-const Logger = rootRequire('/config/logger');
+const requestAsPromise = require('#@/util/request-as-promise.js');
+const auth = require('#@/util/auth-util.js');
+const Logger = require('#@/config/logger.js');
 
 const basicAuthToken = auth.getBasicAuthToken(
   process.env.DART_SERVICE_USERNAME,

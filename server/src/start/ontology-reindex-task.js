@@ -1,5 +1,5 @@
-const Logger = rootRequire('/config/logger');
-const concepAlignerService = rootRequire('/services/external/concept-aligner-service');
+const Logger = require('#@/config/logger.js');
+const concepAlignerService = require('#@/services/external/concept-aligner-service.js');
 
 const startReindex = (interval) => {
   setInterval(async () => {

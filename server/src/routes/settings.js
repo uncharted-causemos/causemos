@@ -5,7 +5,7 @@ const config = require('../config/yargs-wrapper');
 const schedules = _.isEmpty(config.schedules) ? [] : config.schedules.split(',');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = require('#@/util/auth-util.js);
 
 const CLIENT_VAR_PREFIX = 'CLIENT__';
 

@@ -4,11 +4,10 @@
  * Module dependencies.
  */
 
-const app = require('../app');
 const http = require('http');
-const Logger = rootRequire('/config/logger');
-const { runStartup } = rootRequire('/start/start');
-
+const app = require('#@/app.js');
+const Logger = require('#@/config/logger.js');
+const { runStartup } = require('#@/start/start.js');
 
 /**
  * Get port from environment and store in Express.
@@ -60,9 +59,7 @@ function onError(error) {
     throw error;
   }
 
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+  var bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
@@ -83,9 +80,7 @@ function onError(error) {
 
 function onListening() {
   const addr = server.address();
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
+  const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
   Logger.info('Starting Causemos');
   Logger.info('Listening on ' + bind);
   runStartup();

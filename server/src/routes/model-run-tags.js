@@ -1,11 +1,11 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
-const Logger = rootRequire('/config/logger');
-const maasService = rootRequire('/services/external/maas-service');
+const Logger = require('#@/config/logger.js');
+const maasService = require('#@/services/external/maas-service.js');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = require('#@/util/auth-util.js);
 
 /**
  * Add a tag to all the model runs that match the specified filter

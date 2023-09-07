@@ -1,5 +1,5 @@
-const Logger = rootRequire('/config/logger');
-const requestAsPromise = rootRequire('/util/request-as-promise');
+const Logger = require('#@/config/logger.js');
+const requestAsPromise = require('#@/util/request-as-promise.js');
 
 const URL = 'http://linking.cs.arizona.edu';
 const SECRET = process.env.CONCEPT_ALIGNER_SECRET;

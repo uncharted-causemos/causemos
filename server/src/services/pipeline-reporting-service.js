@@ -1,7 +1,7 @@
-const maasService = rootRequire('/services/external/maas-service');
-const datacubeService = rootRequire('/services/datacube-service');
-const requestAsPromise = rootRequire('/util/request-as-promise');
-const Logger = rootRequire('/config/logger');
+const maasService = require('#@/services/external/maas-service.js');
+const datacubeService = require('#@/services/datacube-service.js');
+const requestAsPromise = require('#@/util/request-as-promise.js');
+const Logger = require('#@/config/logger.js');
 
 /**
  * Update a set of documents after the data has successfully finished.

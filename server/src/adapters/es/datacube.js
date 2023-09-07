@@ -4,7 +4,7 @@ const ES = require('./client');
 const { DatacubeQueryUtil } = require('./datacube-query-util');
 const { AggUtil } = require('./agg-util');
 const { FIELDS, FIELD_TYPES, FIELD_LEVELS, NESTED_FIELD_PATHS } = require('./datacube-config');
-const Logger = rootRequire('/config/logger');
+const Logger = require('#@/config/logger.js');
 
 const MAX_ES_SUGGESTION_BUCKET_SIZE = 20;
 

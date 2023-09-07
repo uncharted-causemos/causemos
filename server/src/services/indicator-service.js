@@ -1,11 +1,11 @@
 const _ = require('lodash');
-const Logger = rootRequire('/config/logger');
-const modelUtil = rootRequire('/util/model-util');
-const searchService = rootRequire('/services/search-service');
-const { getTimeseries } = rootRequire('/services/datacube-service');
-const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
-const { client } = rootRequire('/adapters/es/client');
-const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
+const Logger = require('#@/config/logger.js');
+const modelUtil = require('#@/util/model-util.js');
+const searchService = require('#@/services/search-service.js');
+const { getTimeseries } = require('#@/services/datacube-service.js');
+const { correctIncompleteTimeseries } = require('#@/util/incomplete-data-detection.js');
+const { client } = require('#@/adapters/es/client.js');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = require('#@/adapters/es/adapter.js');
 
 const _buildQueryStringFilter = (text) => {
   let cleanedStr = _.last(text.split('/'));

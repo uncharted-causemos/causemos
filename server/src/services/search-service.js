@@ -1,11 +1,11 @@
 const _ = require('lodash');
-const Logger = rootRequire('/config/logger');
-const requestAsPromise = rootRequire('/util/request-as-promise');
-const { client, searchAndHighlight, queryStringBuilder } = rootRequire('/adapters/es/client');
-const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
-const { getCache } = rootRequire('/cache/node-lru-cache');
+const Logger = require('#@/config/logger.js');
+const requestAsPromise = require('#@/util/request-as-promise.js');
+const { client, searchAndHighlight, queryStringBuilder } = require('#@/adapters/es/client.js');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
+const { getCache } = require('#@/cache/node-lru-cache.js');
 
-const conceptAlignerService = rootRequire('/services/external/concept-aligner-service');
+const conceptAlignerService = require('#@/services/external/concept-aligner-service.js');
 
 // Remove unneeded fields from compositional ontology
 const formatOntologyDoc = (d) => {

@@ -2,16 +2,16 @@ const _ = require('lodash');
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
-const cagService = rootRequire('/services/cag-service');
-const historyService = rootRequire('/services/history-service');
-const scenarioService = rootRequire('/services/scenario-service');
-const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
-const modelUtil = rootRequire('util/model-util');
+const cagService = require('#@/services/cag-service.js');
+const historyService = require('#@/services/history-service.js');
+const scenarioService = require('#@/services/scenario-service.js');
+const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = require('#@/util/model-util.js');
+const modelUtil = require('#@/util/model-util.js');
 
-const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = require('#@/util/auth-util.js);
 
 const OPERATION = Object.freeze({
   REMOVE: 'remove',

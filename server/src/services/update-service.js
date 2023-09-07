@@ -1,8 +1,8 @@
 const _ = require('lodash');
 const { v4: uuid } = require('uuid');
 
-const Logger = rootRequire('/config/logger');
-const { Adapter, RESOURCE } = rootRequire('adapters/es/adapter');
+const Logger = require('#@/config/logger.js');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
 const {
   updateFactorPolarity,
   updateFactorGrounding,
@@ -11,9 +11,9 @@ const {
   reverseRelation,
 } = require('./update-service-helper');
 
-const indraService = rootRequire('/services/external/indra-service');
-const projectService = rootRequire('/services/project-service');
-// const cache = rootRequire('/cache/node-lru-cache');
+const indraService = require('#@/services/external/indra-service.js');
+const projectService = require('#@/services/project-service.js');
+// const cache = require('#@/cache/node-lru-cache.js');
 
 /**
  * Add additional fields to logs to pass as feedback to INDRA

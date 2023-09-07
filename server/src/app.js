@@ -2,61 +2,58 @@ const path = require('path');
 
 const dotenvConfigResult = require('dotenv').config(); // This line of code reads the contents of the .env file in root into the process.env variable.
 
-global.rootRequire = function (name) {
-  return require(path.join(__dirname, name));
-};
-
 const createError = require('http-errors');
 const proxy = require('express-http-proxy');
 const express = require('express');
 const session = require('express-session');
 // const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
-const Logger = rootRequire('/config/logger');
-const argv = rootRequire('/config/yargs-wrapper');
 
 const nocache = require('nocache');
+const compression = require('compression');
 
-const indexRouter = rootRequire('/routes/index');
-const auditsRouter = rootRequire('/routes/audits');
-const modelsRouter = rootRequire('/routes/models');
-const analysesRouter = rootRequire('/routes/analyses');
-const documentsRouter = rootRequire('/routes/documents');
-const scenariosRouter = rootRequire('/routes/scenario');
-const scenarioResultsRouter = rootRequire('/routes/scenario-results');
-const settingsRouter = rootRequire('/routes/settings');
-const dartRouter = rootRequire('/routes/dart');
-const insightsRouter = rootRequire('/routes/insights');
-const questionsRouter = rootRequire('/routes/questions');
-const cagsRouter = rootRequire('/routes/cags');
-const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
-const modelRunsRouter = rootRequire('/routes/model-runs');
-const modelRunTagsRouter = rootRequire('/routes/model-run-tags');
-const indicatorsRouter = rootRequire('/routes/indicators');
-const datacubeRouter = rootRequire('/routes/datacubes');
-const gadmRouter = rootRequire('/routes/gadm');
-const pipelineReportingRouter = rootRequire('/routes/pipeline-reporting');
-const bibliographyRouter = rootRequire('/routes/bibliography');
-const sessionLogRouter = rootRequire('/routes/session-log');
+const Logger = require('#@/config/logger.js');
+const argv = require('#@/config/yargs-wrapper.js');
+
+const indexRouter = require('#@/routes/index.js');
+const auditsRouter = require('#@/routes/audits.js');
+const modelsRouter = require('#@/routes/models.js');
+const analysesRouter = require('#@/routes/analyses.js');
+const documentsRouter = require('#@/routes/documents.js');
+const scenariosRouter = require('#@/routes/scenario.js');
+const scenarioResultsRouter = require('#@/routes/scenario-results.js');
+const settingsRouter = require('#@/routes/settings.js');
+const dartRouter = require('#@/routes/dart.js');
+const insightsRouter = require('#@/routes/insights.js');
+const questionsRouter = require('#@/routes/questions.js');
+const cagsRouter = require('#@/routes/cags.js');
+const curationRecommendationsRouter = require('#@/routes/curation-recommendations.js');
+const modelRunsRouter = require('#@/routes/model-runs.js');
+const modelRunTagsRouter = require('#@/routes/model-run-tags.js');
+const indicatorsRouter = require('#@/routes/indicators.js');
+const datacubeRouter = require('#@/routes/datacubes.js');
+const gadmRouter = require('#@/routes/gadm.js');
+const pipelineReportingRouter = require('#@/routes/pipeline-reporting.js');
+const bibliographyRouter = require('#@/routes/bibliography.js');
+const sessionLogRouter = require('#@/routes/session-log.js');
 const asyncHandler = require('express-async-handler');
 
-const kbsRouter = rootRequire('/routes/knowledge-bases');
-const projectsRouter = rootRequire('/routes/projects');
-const DomainProjectsRouter = rootRequire('/routes/domain-projects');
+const kbsRouter = require('#@/routes/knowledge-bases.js');
+const projectsRouter = require('#@/routes/projects.js');
+const DomainProjectsRouter = require('#@/routes/domain-projects.js');
 
-const sessionLogService = rootRequire('/services/session-log-service');
-const { getFlowLogs } = rootRequire('services/external/prefect-queue-service');
+const sessionLogService = require('#@/services/session-log-service.js');
+const { getFlowLogs } = require('#@/services/external/prefect-queue-service.js');
 
 // Proxy to serve carto tiles with Uncharted license key
-const mapProxyRouter = rootRequire('/routes/map-proxy');
+const mapProxyRouter = require('#@/routes/map-proxy.js');
 
-const jatawareParagraphsRouter = rootRequire('/routes/jataware-paragraphs');
-const jatawareDocumentsRouter = rootRequire('/routes/jataware-documents');
-const jatawareFeaturesRouter = rootRequire('/routes/jataware-features');
-const jatawareRecommenderRouter = rootRequire('/routes/jataware-recommender');
+const jatawareParagraphsRouter = require('#@/routes/jataware-paragraphs.js');
+const jatawareDocumentsRouter = require('#@/routes/jataware-documents.js');
+const jatawareFeaturesRouter = require('#@/routes/jataware-features.js');
+const jatawareRecommenderRouter = require('#@/routes/jataware-recommender.js');
 
-const compression = require('compression');
-const requestAsPromise = require('./util/request-as-promise');
+const requestAsPromise = require('#@/util/request-as-promise.js');
 
 const app = express();
 

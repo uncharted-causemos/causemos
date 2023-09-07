@@ -1,12 +1,12 @@
 const _ = require('lodash');
 const { v4: uuid } = require('uuid');
 const moment = require('moment');
-const Logger = rootRequire('/config/logger');
+const Logger = require('#@/config/logger.js');
 
-const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
-const { client } = rootRequire('/adapters/es/client');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = require('#@/adapters/es/adapter.js');
+const { client } = require('#@/adapters/es/client.js');
 
-const modelUtil = rootRequire('/util/model-util');
+const modelUtil = require('#@/util/model-util.js');
 
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
 const RESET_ALL_ENGINE_STATUS = modelUtil.RESET_ALL_ENGINE_STATUS;

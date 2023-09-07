@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const request = require('request');
 
-const Logger = rootRequire('/config/logger');
+const Logger = require('#@/config/logger.js');
 
 /**
  * Execute request in a promise style

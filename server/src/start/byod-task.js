@@ -1,7 +1,7 @@
-const Logger = rootRequire('/config/logger');
-const dartService = rootRequire('/services/external/dart-service');
-const projectService = rootRequire('/services/project-service');
-const { Adapter, RESOURCE } = rootRequire('adapters/es/adapter');
+const Logger = require('#@/config/logger.js');
+const dartService = require('#@/services/external/dart-service.js');
+const projectService = require('#@/services/project-service.js');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
 
 /**
  * Periodically check for new documents loaded at projects' level

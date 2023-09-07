@@ -1,10 +1,10 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
-const paragraphSearchService = rootRequire('/services/external/dojo-semantic-search-service');
+const paragraphSearchService = require('#@/services/external/dojo-semantic-search-service.js');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+// const authUtil = require('#@/util/auth-util.js);
 
 /**
  * get highlights for semantic search
