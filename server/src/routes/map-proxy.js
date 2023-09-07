@@ -5,7 +5,7 @@ const request = require('request');
 const requestAsPromise = require('#@/util/request-as-promise.js');
 
 const Logger = require('#@/config/logger.js');
-const baseMapStyle = require('../basemap-style.json');
+const baseMapStyle = require('#@/basemap-style.json');
 
 /* Keycloak Authentication */
 // const authUtil = require('#@/util/auth-util.js);

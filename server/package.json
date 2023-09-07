@@ -7,7 +7,7 @@
   },
   "main": "src/app.js",
   "imports": {
-    "#@/*.js": "./src/*.js"
+    "#@/*": "./src/*"
   },
   "scripts": {
     "postinstall": "check-node-version --package",
