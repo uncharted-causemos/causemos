@@ -169,6 +169,8 @@ const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
   potentialRuns.value = e.scenarios;
 };
 const executeNewRuns = async () => {
+  // Save a copy of the potential runs since leaving "new runs mode" will reset the array to empty.
+  const _potentialRuns = potentialRuns.value;
   isNewRunsModeActive.value = false;
 
   // Note from refactoring, September 2023:
@@ -178,22 +180,23 @@ const executeNewRuns = async () => {
   //  sent back to Dojo to parameterize the new model run, the model knows how to interpret them.
   // The code also seems to make sure that geographic parameters with the default value selected are
   //  reset to the default value again, though it's not clear why.
+
   dimensions.value.forEach((dimension) => {
     if (dimension.is_visible) {
-      potentialRuns.value.forEach((newRun) => {
-        const displayNameOfSelectedValue = newRun[dimension.name].toString();
+      _potentialRuns.forEach((newRun) => {
         if (dimension.choices_labels !== undefined && dimension.choices !== undefined) {
+          const displayNameOfSelectedValue = newRun[dimension.name].toString();
           const labelIndex =
             dimension.choices_labels.findIndex((l) => l === displayNameOfSelectedValue) ?? 0;
           if (dimension.choices !== undefined) {
             newRun[dimension.name] = dimension.choices[labelIndex] ?? displayNameOfSelectedValue;
           }
         }
-        if (
-          isGeoParameter(dimension.type) &&
-          displayNameOfSelectedValue === dimension.additional_options.default_value_label
-        ) {
-          newRun[dimension.name] = dimension.default;
+        if (isGeoParameter(dimension.type)) {
+          const displayNameOfSelectedValue = newRun[dimension.name].toString();
+          if (displayNameOfSelectedValue === dimension.additional_options.default_value_label) {
+            newRun[dimension.name] = dimension.default;
+          }
         }
       });
     }
@@ -204,7 +207,7 @@ const executeNewRuns = async () => {
   const outputs = getOutputs(metadata.value);
   const currentOutputName = outputs[currentOutputIndex.value].name;
   const drilldownParams = metadata.value.parameters.filter((d) => d.is_drilldown);
-  const promises = potentialRuns.value.map(async (modelRun) => {
+  const promises = _potentialRuns.map(async (modelRun) => {
     // Exclude output variable values since they will be undefined for potential runs and exclude
     //  the "status" field since it will be populated by the server.
     const parameterArray = Object.keys(modelRun)
@@ -226,11 +229,11 @@ const executeNewRuns = async () => {
   });
 
   // Wait until all promises are resolved
-  const pluralizedRun = potentialRuns.value.length === 1 ? 'run' : 'runs';
+  const pluralizedRun = _potentialRuns.length === 1 ? 'run' : 'runs';
   try {
     const allResponses = await Promise.all(promises);
     const allResults = allResponses.flatMap((res: any) => res.data.run_id);
-    if (allResults.length > 0 && potentialRuns.value.length === allResults.length) {
+    if (allResults.length > 0 && _potentialRuns.length === allResults.length) {
       toaster(`New ${pluralizedRun} requested\nPlease check back later!`, TYPE.SUCCESS);
     } else {
       toaster(`An error occured while requesting new model ${pluralizedRun}`, TYPE.INFO);
