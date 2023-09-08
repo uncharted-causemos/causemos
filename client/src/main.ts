@@ -26,7 +26,6 @@ app.use(FloatingVue, {
     },
   },
 });
-// app.component('FVTooltip', Tooltip);
 
 app.mixin({
   methods: {
