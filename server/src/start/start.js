@@ -1,13 +1,6 @@
 const _ = require('lodash');
 const Logger = require('#@/config/logger.js');
 const serverConfiguration = require('#@/config/yargs-wrapper.js');
-const { startProjectCache, refreshProjectCache } = require('#@/start/project-cache-task.js');
-const { startBYOD } = require('#@/start/byod-task.js');
-const { startReindex } = require('#@/start/ontology-reindex-task.js');
-
-const READER_OUTPUT_POLL_INTERVAL = 20 * 60 * 1000; // in milliseconds
-const PROJECT_CACHE_UPDATE_INTERVAL = 10 * 60 * 1000;
-const ONTOLOGY_REINDEX_INTERVAL = 6 * 60 * 60 * 1000;
 
 /**
  * Runs start up jobs, e.g. any type of prefetching of sanity checks
@@ -34,20 +27,5 @@ async function runStartup() {
   Logger.info(`\tSyncing changes to Dojo: ${serverConfiguration.dojoSync}`);
   Logger.info(`\tExecute model runs: ${serverConfiguration.allowModelRuns}`);
   Logger.info(`\tScheduled jobs: [${schedules}]`);
-
-  // Force project cache to refresh the first time around
-  await refreshProjectCache();
-
-  // Periodic jobs
-  startProjectCache(PROJECT_CACHE_UPDATE_INTERVAL);
-
-  if (schedules.includes('aligner')) {
-    Logger.info('Scheduling cocnept-aligner updates');
-    startReindex(ONTOLOGY_REINDEX_INTERVAL);
-  }
-  if (schedules.includes('dart')) {
-    Logger.info('Scheduling DART BYOD updates');
-    startBYOD(READER_OUTPUT_POLL_INTERVAL);
-  }
 }
 module.exports = { runStartup };
