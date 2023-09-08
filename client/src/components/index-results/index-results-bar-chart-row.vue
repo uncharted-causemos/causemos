@@ -31,10 +31,8 @@
         </div>
         <min-max-info
           :placement="'left'"
-          extrema=""
-          message=""
-          :is-inverted="dataset.dataset.dataset.isInverted"
           :dataset="dataset.dataset.dataset"
+          :oppositeEdgeCount="indexTree.oppositeEdgeCountToRoot(dataset.dataset)"
         />
       </div>
       <button
@@ -53,6 +51,7 @@ import precisionFormatter from '@/formatters/precision-formatter';
 import { IndexResultsData } from '@/types/Index';
 import { ref, computed } from 'vue';
 import MinMaxInfo from '@/components/min-max-info.vue';
+import useIndexTree from '@/composables/useIndexTree';
 
 const SHOW_TOP_N_DATASETS_BY_DEFAULT = 3;
 
@@ -63,6 +62,7 @@ const props = defineProps<{
   isExpanded: boolean;
 }>();
 
+const indexTree = useIndexTree();
 const isShowingAllDatasets = ref(false);
 
 const visibleKeyDatasets = computed(() => {

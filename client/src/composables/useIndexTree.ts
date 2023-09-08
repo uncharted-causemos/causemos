@@ -6,9 +6,10 @@ import {
   createIndexTreeActions,
   deleteEdgeFromIndexTree,
   findAndUpdateIsOppositePolarity,
+  countOppositeEdgesBetweenNodes,
 } from '@/utils/index-tree-util';
 import useIndexWorkBench from '@/composables/useIndexWorkBench';
-import { ConceptNode } from '@/types/Index';
+import { ConceptNode, OppositeEdgeCount } from '@/types/Index';
 
 // States
 
@@ -70,6 +71,42 @@ export default function useIndexTree() {
     return false;
   };
 
+  const oppositeEdgeCountToRoot = (startNode: ConceptNode | null) => {
+    const oppositeEdgeCount: OppositeEdgeCount = {
+      count: 0,
+      endNode: null,
+      startNode: null,
+    };
+
+    if (startNode !== null) {
+      oppositeEdgeCount.startNode = startNode.name;
+      let rootNode = null;
+      let results = findNode(startNode.id) ?? null;
+
+      if (results !== null && results.parent !== null) {
+        if (results.parent.isOutputNode) {
+          rootNode = results.parent;
+        } else {
+          while (results !== null && results.parent !== null && !results.parent.isOutputNode) {
+            if (!results.parent.isOutputNode) {
+              results = findNode(results.parent.id) ?? null;
+            } else {
+              rootNode = results.parent;
+            }
+          }
+        }
+      }
+
+      if (rootNode !== null) {
+        oppositeEdgeCount.endNode = rootNode.name;
+        oppositeEdgeCount.count = countOppositeEdgesBetweenNodes(startNode, rootNode);
+
+        return oppositeEdgeCount;
+      }
+    }
+    return oppositeEdgeCount;
+  };
+
   const {
     findAndRenameNode,
     findAndAddNewChild,
@@ -97,5 +134,6 @@ export default function useIndexTree() {
     updateIsOppositePolarity,
     setDatasetIsInverted,
     containsElement,
+    oppositeEdgeCountToRoot,
   };
 }

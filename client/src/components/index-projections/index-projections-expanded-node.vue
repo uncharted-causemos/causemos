@@ -23,11 +23,10 @@
         </OptionsButton>
       </div>
       <min-max-info
-        v-if="extrema !== null"
         class="add-horizontal-margin"
         :message="'What do 0 and 1 represent?'"
-        :extrema="extrema"
-        :isInverted="isInverted"
+        :dataset="props.nodeData.dataset"
+        :oppositeEdgeCount="oppositeEdgeCountToRoot"
       ></min-max-info>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
@@ -63,7 +62,12 @@
       <div class="dataset-metadata add-horizontal-margin">
         <p class="margin-top">Dataset description</p>
         <p class="subdued un-font-small">{{ outputDescription }}</p>
-        <p class="margin-top">Source: {{ props.nodeData.dataset.source }}</p>
+        <p class="margin-top">
+          Source:
+          {{
+            isConceptNodeWithDatasetAttached(props.nodeData) ? props.nodeData.dataset.source : ''
+          }}
+        </p>
         <p class="subdued un-font-small">{{ metadata?.description }}</p>
         <button
           class="btn btn-default margin-top"
@@ -113,7 +117,6 @@ import {
   ProjectionConstraint,
 } from '@/types/Index';
 import {
-  convertDataConfigToOutputSpec,
   DATASET_COLOR,
   DATASET_ICON,
   getNodeDataSourceText,
@@ -121,7 +124,7 @@ import {
   isEmptyNode,
 } from '@/utils/index-tree-util';
 import OptionsButton from '../widgets/options-button.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
 import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/composables/useModelMetadataSimple';
@@ -131,9 +134,9 @@ import IndexProjectionsExpandedNodeWarning from './index-projections-expanded-no
 import IndexProjectionsExpandedNodeResilience from './index-projections-expanded-node-resilience.vue';
 import { TemporalResolutionOption } from '@/types/Enums';
 import MinMaxInfo from '@/components/min-max-info.vue';
-import { getOutputExtrema } from '@/services/outputdata-service';
-import { Extrema } from '@/types/Outputdata';
+import useIndexTree from '@/composables/useIndexTree';
 
+const indexTree = useIndexTree();
 const optionsButtonMenu = [
   {
     text: 'Edit data points',
@@ -168,22 +171,14 @@ const props = defineProps<{
   dataWarnings?: IndexProjectionNodeDataWarning[];
 }>();
 
-const extrema = ref<Extrema | null>(null);
-const isInverted = ref<boolean>(false);
-
-onMounted(async () => {
-  if (isConceptNodeWithDatasetAttached(props.nodeData)) {
-    isInverted.value = props.nodeData.dataset.isInverted;
-    extrema.value = await getOutputExtrema(
-      convertDataConfigToOutputSpec(props.nodeData.dataset.config)
-    );
-  }
-});
-
 const emit = defineEmits<{
   (e: 'click-chart', timestamp: number, value: number): void;
   (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
 }>();
+
+const oppositeEdgeCountToRoot = computed(() => {
+  return indexTree.oppositeEdgeCountToRoot(props.nodeData);
+});
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 const isInvertedData = computed(() =>

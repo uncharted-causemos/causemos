@@ -2,44 +2,58 @@
 import VMinMaxTooltip from '@/components/min-max-tooltip.vue';
 import { Extrema } from '@/types/Outputdata';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { getMonthFromTimestamp, getYearFromTimestamp, MONTHS_FULL } from '@/utils/date-util';
 import * as d3 from 'd3';
-import { AttachedDataset } from '@/types';
+import { AttachedDataset, OppositeEdgeCount } from '@/types';
 import { getOutputExtrema } from '@/services/outputdata-service';
 import { convertDataConfigToOutputSpec } from '@/utils/index-tree-util';
 
 const props = withDefaults(
   defineProps<{
     message?: string | null;
-    extrema?: Extrema | null;
-    isInverted: boolean;
-    dataset?: AttachedDataset | null;
+    dataset: AttachedDataset | null;
+    oppositeEdgeCount: OppositeEdgeCount;
   }>(),
   {
     message: null,
-    extrema: null,
-    isInverted: false,
     dataset: null,
+    oppositeEdgeCount: () => {
+      return {
+        count: 0,
+        startNode: null,
+        endNode: null,
+      };
+    },
   }
 );
 
-const localExtrema = ref<Extrema | null>(null);
+const extrema = ref<Extrema | null>(null);
 
-onMounted(async () => {
-  if (!props.extrema) {
-    localExtrema.value = await getOutputExtrema(
-      convertDataConfigToOutputSpec(props.dataset.config)
-    );
-  } else {
-    localExtrema.value = props.extrema;
+const isInverted = computed(() => {
+  if (props.dataset) {
+    return props.dataset.isInverted;
   }
+  return false;
 });
 
-const countSummary = (data) => {
-  let counts = [];
-  data.forEach((item) => {
-    const index = counts.findIndex((r) => r.region_id === item.region_id);
+const isEdgeInverted = computed(() => {
+  if (props.oppositeEdgeCount) {
+    return props.oppositeEdgeCount.count % 2 === 1;
+  }
+  return false;
+});
+
+const getExtrema = async () => {
+  if (props.dataset) {
+    extrema.value = await getOutputExtrema(convertDataConfigToOutputSpec(props.dataset.config));
+  }
+};
+
+const countSummary = (data: any) => {
+  let counts: any = [];
+  data.forEach((item: any) => {
+    const index = counts.findIndex((r: any) => r.region_id === item.region_id);
     if (index < 0) {
       counts = [...counts, { region_id: item.region_id, count: 1 }];
     } else {
@@ -47,7 +61,7 @@ const countSummary = (data) => {
     }
   });
   return [
-    ...counts.sort((a, b) => {
+    ...counts.sort((a: any, b: any) => {
       if (a.count < b.count) {
         return -1;
       } else if (a.count > b.count) {
@@ -58,7 +72,7 @@ const countSummary = (data) => {
   ];
 };
 
-const summaryMessage = (values) => {
+const summaryMessage = (values: any) => {
   if (!values || values.length === 0) {
     return 'No observations';
   } else if (values.length === 1) {
@@ -73,30 +87,31 @@ const summaryMessage = (values) => {
     } and ${values.length - 1} other ${values.length - 1 > 1 ? 'countries' : 'country'}`;
   }
 };
+
 const maxSummary = computed<string>(() => {
-  if (localExtrema.value !== null) {
-    return summaryMessage(localExtrema.value.max);
+  if (extrema.value !== null) {
+    return summaryMessage(extrema.value.max);
   }
   return '';
 });
 
 const minSummary = computed<string>(() => {
-  if (localExtrema.value !== null) {
-    return summaryMessage(localExtrema.value.min);
+  if (extrema.value !== null) {
+    return summaryMessage(extrema.value.min);
   }
   return '';
 });
 
 const maxValue = computed<string>(() => {
-  if (localExtrema.value !== null && localExtrema.value.max.length > 0) {
-    return `${d3.format(',.2f')(localExtrema.value.max[0].value)}`;
+  if (extrema.value !== null && extrema.value.max.length > 0) {
+    return `${d3.format(',.2f')(extrema.value.max[0].value)}`;
   }
   return '';
 });
 
-const minValue = computed<number>(() => {
-  if (localExtrema.value !== null && localExtrema.value.min.length > 0) {
-    return `${d3.format(',.2f')(localExtrema.value.min[0].value)}`;
+const minValue = computed<string>(() => {
+  if (extrema.value !== null && extrema.value.min.length > 0) {
+    return `${d3.format(',.2f')(extrema.value.min[0].value)}`;
   }
   return '';
 });
@@ -106,12 +121,12 @@ const minValue = computed<number>(() => {
   <div class="container un-font-small subdued">
     <div>{{ message }}</div>
     <VMinMaxTooltip>
-      <div class="icon">
+      <div class="icon" @mouseover="getExtrema">
         <i class="fa fa-info" />
       </div>
       <template #popper>
         <div class="max-min-info un-font-small">
-          <section v-if="!isInverted" class="un-font-small">
+          <section v-if="!isInverted && !isEdgeInverted" class="un-font-small">
             <p>1 represents the maximum historical value:</p>
             <h2>{{ maxValue }}</h2>
             <p class="summary">{{ maxSummary }}</p>
@@ -136,8 +151,24 @@ const minValue = computed<number>(() => {
             <h2>{{ maxValue }}</h2>
             <p class="summary">{{ maxSummary }}</p>
             <hr />
+            <p class="inverted-notice">This dataset is <InvertedDatasetLabel :is-small="true" /></p>
+          </section>
+
+          <section v-if="isEdgeInverted">
+            <p>1 represents the <span>minimum</span> historical value:</p>
+            <h2>{{ minValue }}</h2>
+            <p class="summary">{{ minSummary }}</p>
+            <p>0 represents the <span>maximum</span> historical value:</p>
+            <h2>{{ maxValue }}</h2>
+            <p class="summary">{{ maxSummary }}</p>
+            <hr />
             <p class="inverted-notice">
-              This dataset is <InvertedDatasetLabel :is-small="false" />
+              There {{ oppositeEdgeCount.count > 1 ? 'are' : 'is' }}
+              <span class="un-font-small"
+                >{{ oppositeEdgeCount.count }} opposite polarity
+                {{ oppositeEdgeCount.count > 1 ? 'edges' : 'edge' }}</span
+              >
+              between {{ oppositeEdgeCount.startNode }} and {{ oppositeEdgeCount.endNode }}.
             </p>
           </section>
         </div>
@@ -177,6 +208,9 @@ const minValue = computed<number>(() => {
       @extend .un-font-small;
       @extend .subdued;
       margin-top: 10px;
+    }
+    p span {
+      color: $un-color-feedback-warning;
     }
     padding: 10px;
     box-shadow: 2px 2px 10px gray;
