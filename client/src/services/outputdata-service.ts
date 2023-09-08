@@ -776,7 +776,7 @@ export const getOutputStats = async (specs: OutputSpecWithId[]): Promise<OutputS
   return stats;
 };
 
-export const getOutputExtrema = async (spec: OutputSpec): Promise<Extrema> | null => {
+export const getOutputExtrema = async (spec: OutputSpec): Promise<Extrema | null> => {
   try {
     const { data } = await API.get('/maas/output/extrema', {
       params: {
