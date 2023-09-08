@@ -16,17 +16,10 @@ const Logger = require('#@/config/logger.js');
 const argv = require('#@/config/yargs-wrapper.js');
 
 const indexRouter = require('#@/routes/index.js');
-const auditsRouter = require('#@/routes/audits.js');
-const modelsRouter = require('#@/routes/models.js');
 const analysesRouter = require('#@/routes/analyses.js');
-const documentsRouter = require('#@/routes/documents.js');
-const scenariosRouter = require('#@/routes/scenario.js');
-const scenarioResultsRouter = require('#@/routes/scenario-results.js');
 const settingsRouter = require('#@/routes/settings.js');
-const dartRouter = require('#@/routes/dart.js');
 const insightsRouter = require('#@/routes/insights.js');
 const questionsRouter = require('#@/routes/questions.js');
-const cagsRouter = require('#@/routes/cags.js');
 const curationRecommendationsRouter = require('#@/routes/curation-recommendations.js');
 const modelRunsRouter = require('#@/routes/model-runs.js');
 const modelRunTagsRouter = require('#@/routes/model-run-tags.js');
@@ -102,29 +95,12 @@ app.use(function (req, res, next) {
 
 app.use('/api', [settingsRouter]);
 
-app.use('/api/dart', [dartRouter]);
-
 app.use('/api/insights', [insightsRouter]);
 
 app.use('/api/questions', [questionsRouter]);
 
 // The routes here are for model parameterization and model-based experiments
-app.use('/api/models', [modelsRouter]);
-
 app.use('/api/analyses', [analysesRouter]);
-
-app.use('/api/scenarios', [scenariosRouter]);
-
-app.use('/api/scenario-results', [scenarioResultsRouter]);
-
-// Routes for fetching document
-app.use('/api/documents', [documentsRouter]);
-
-// The routes here are for the CAG requests
-app.use('/api/cags', [cagsRouter]);
-
-// Routes for project auditing
-app.use('/api/audits', [auditsRouter]);
 
 // Handle some /api/mass calls ourselves. The rest get handled below.
 app.use('/api/maas/model-runs', [modelRunsRouter]);
