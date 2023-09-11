@@ -5,7 +5,7 @@ import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vu
 import { computed, ref } from 'vue';
 import { getMonthFromTimestamp, getYearFromTimestamp, MONTHS_FULL } from '@/utils/date-util';
 import * as d3 from 'd3';
-import { AttachedDataset, OppositeEdgeCount } from '@/types';
+import { AttachedDataset, OppositeEdgeCount } from '@/types/Index';
 import { getOutputExtrema } from '@/services/outputdata-service';
 import { convertDataConfigToOutputSpec } from '@/utils/index-tree-util';
 
