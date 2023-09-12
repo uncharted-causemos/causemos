@@ -80,12 +80,9 @@ export default function useIndexTree() {
 
     if (startNode !== null) {
       oppositeEdgeCount.startNode = startNode.name;
-      let rootNode = null;
-      let results = findNode(startNode.id) ?? null;
 
       let results = findNode(startNode.id) ?? null;
       let rootNode = results?.parent ?? null;
-
 
       while (results !== null && results.parent !== null && !results.parent.isOutputNode) {
         results = findNode(results.parent.id) ?? null;
