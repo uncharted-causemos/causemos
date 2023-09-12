@@ -2,6 +2,7 @@
   "private": true,
   "name": "causemos",
   "version": "1.0.0",
+  "packageManager": "yarn@1.22.19",
   "main": "index.js",
   "license": "MIT",
   "workspaces": [
