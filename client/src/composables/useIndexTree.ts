@@ -83,18 +83,13 @@ export default function useIndexTree() {
       let rootNode = null;
       let results = findNode(startNode.id) ?? null;
 
-      if (results !== null && results.parent !== null) {
-        if (results.parent.isOutputNode) {
-          rootNode = results.parent;
-        } else {
-          while (results !== null && results.parent !== null && !results.parent.isOutputNode) {
-            if (!results.parent.isOutputNode) {
-              results = findNode(results.parent.id) ?? null;
-            } else {
-              rootNode = results.parent;
-            }
-          }
-        }
+      let results = findNode(startNode.id) ?? null;
+      let rootNode = results?.parent ?? null;
+
+
+      while (results !== null && results.parent !== null && !results.parent.isOutputNode) {
+        results = findNode(results.parent.id) ?? null;
+        rootNode = results?.parent ?? null;
       }
 
       if (rootNode !== null) {
