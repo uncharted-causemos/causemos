@@ -9,7 +9,6 @@ import Toast, { useToast, TYPE } from 'vue-toastification';
 import Vue3Resize from 'vue3-resize';
 
 import 'vue-toastification/dist/index.css';
-import 'v-tooltip/dist/v-tooltip.css';
 import 'floating-vue/dist/style.css';
 
 sync(store, router);
