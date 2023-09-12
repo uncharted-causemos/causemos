@@ -25,6 +25,7 @@ import {
   BaseSpec,
   BulkRegionalAggregationData,
   OutputSpecWithAdminLevel,
+  Extrema,
 } from '@/types/Outputdata';
 import { isSplitByQualifierActive } from '@/utils/qualifier-util';
 import { FIFOCache } from '@/utils/cache-util';
@@ -773,6 +774,25 @@ export const getOutputStats = async (specs: OutputSpecWithId[]): Promise<OutputS
     };
   });
   return stats;
+};
+
+export const getOutputExtrema = async (spec: OutputSpec): Promise<Extrema | null> => {
+  try {
+    const { data } = await API.get('/maas/output/extrema', {
+      params: {
+        data_id: spec.modelId,
+        run_id: spec.runId,
+        feature: spec.outputVariable,
+        resolution: spec.temporalResolution,
+        temporal_agg: spec.temporalAggregation,
+        spatial_agg: spec.spatialAggregation,
+        admin_level: 'country',
+      },
+    });
+    return data;
+  } catch (e) {
+    return null;
+  }
 };
 
 // not in use, but available from maas/output if aggregrate regional timeseries

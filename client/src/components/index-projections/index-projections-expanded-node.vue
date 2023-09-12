@@ -22,6 +22,12 @@
           </template>
         </OptionsButton>
       </div>
+      <min-max-info
+        class="add-horizontal-margin"
+        :message="'What do 0 and 1 represent?'"
+        :dataset="props.nodeData.dataset"
+        :oppositeEdgeCount="oppositeEdgeCountToRoot"
+      ></min-max-info>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
         :class="{
@@ -56,7 +62,12 @@
       <div class="dataset-metadata add-horizontal-margin">
         <p class="margin-top">Dataset description</p>
         <p class="subdued un-font-small">{{ outputDescription }}</p>
-        <p class="margin-top">Source: {{ props.nodeData.dataset.source }}</p>
+        <p class="margin-top">
+          Source:
+          {{
+            isConceptNodeWithDatasetAttached(props.nodeData) ? props.nodeData.dataset.source : ''
+          }}
+        </p>
         <p class="subdued un-font-small">{{ metadata?.description }}</p>
         <button
           class="btn btn-default margin-top"
@@ -122,7 +133,10 @@ import { EditMode } from '@/utils/projection-util';
 import IndexProjectionsExpandedNodeWarning from './index-projections-expanded-node-warning.vue';
 import IndexProjectionsExpandedNodeResilience from './index-projections-expanded-node-resilience.vue';
 import { TemporalResolutionOption } from '@/types/Enums';
+import MinMaxInfo from '@/components/min-max-info.vue';
+import useIndexTree from '@/composables/useIndexTree';
 
+const indexTree = useIndexTree();
 const optionsButtonMenu = [
   {
     text: 'Edit data points',
@@ -161,6 +175,10 @@ const emit = defineEmits<{
   (e: 'click-chart', timestamp: number, value: number): void;
   (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
 }>();
+
+const oppositeEdgeCountToRoot = computed(() => {
+  return indexTree.oppositeEdgeCountToRoot(props.nodeData);
+});
 
 const dataSourceText = computed(() => getNodeDataSourceText(props.nodeData));
 const isInvertedData = computed(() =>
