@@ -1,3 +1,63 @@
+<template>
+  <div class="container un-font-small subdued">
+    <div>{{ message }}</div>
+    <VMinMaxTooltip>
+      <div class="icon" @mouseover="getExtrema">
+        <i class="fa fa-info" />
+      </div>
+      <template #popper>
+        <div class="max-min-info un-font-small">
+          <section v-if="!isInverted && !isEdgeInverted" class="un-font-small">
+            <p>1 represents the maximum historical value:</p>
+            <h2>{{ maxValue }}</h2>
+            <p class="summary">{{ maxSummary }}</p>
+            <p>0 represents the minimum historical value:</p>
+            <h2>{{ minValue }}</h2>
+            <p class="summary">{{ minSummary }}</p>
+          </section>
+
+          <section v-if="isInverted">
+            <p>
+              1 represents the
+              <InvertedDatasetLabel :custom-message="'minimum'" :is-small="false" /> historical
+              value:
+            </p>
+            <h2>{{ minValue }}</h2>
+            <p class="summary">{{ minSummary }}</p>
+            <p>
+              0 represents the
+              <InvertedDatasetLabel :custom-message="'maximum'" :is-small="false" /> historical
+              value:
+            </p>
+            <h2>{{ maxValue }}</h2>
+            <p class="summary">{{ maxSummary }}</p>
+            <hr />
+            <p class="inverted-notice">This dataset is <InvertedDatasetLabel :is-small="true" /></p>
+          </section>
+
+          <section v-if="isEdgeInverted">
+            <p>1 represents the <span>minimum</span> historical value:</p>
+            <h2>{{ minValue }}</h2>
+            <p class="summary">{{ minSummary }}</p>
+            <p>0 represents the <span>maximum</span> historical value:</p>
+            <h2>{{ maxValue }}</h2>
+            <p class="summary">{{ maxSummary }}</p>
+            <hr />
+            <p class="inverted-notice">
+              There {{ oppositeEdgeCount.count > 1 ? 'are' : 'is' }}
+              <span class="un-font-small"
+                >{{ oppositeEdgeCount.count }} opposite polarity
+                {{ oppositeEdgeCount.count > 1 ? 'edges' : 'edge' }}</span
+              >
+              between {{ oppositeEdgeCount.startNode }} and {{ oppositeEdgeCount.endNode }}.
+            </p>
+          </section>
+        </div>
+      </template>
+    </VMinMaxTooltip>
+  </div>
+</template>
+
 <script setup lang="ts">
 import VMinMaxTooltip from '@/components/min-max-tooltip.vue';
 import { Extrema } from '@/types/Outputdata';
@@ -116,66 +176,6 @@ const minValue = computed<string>(() => {
   return '';
 });
 </script>
-
-<template>
-  <div class="container un-font-small subdued">
-    <div>{{ message }}</div>
-    <VMinMaxTooltip>
-      <div class="icon" @mouseover="getExtrema">
-        <i class="fa fa-info" />
-      </div>
-      <template #popper>
-        <div class="max-min-info un-font-small">
-          <section v-if="!isInverted && !isEdgeInverted" class="un-font-small">
-            <p>1 represents the maximum historical value:</p>
-            <h2>{{ maxValue }}</h2>
-            <p class="summary">{{ maxSummary }}</p>
-            <p>0 represents the minimum historical value:</p>
-            <h2>{{ minValue }}</h2>
-            <p class="summary">{{ minSummary }}</p>
-          </section>
-
-          <section v-if="isInverted">
-            <p>
-              1 represents the
-              <InvertedDatasetLabel :custom-message="'minimum'" :is-small="false" /> historical
-              value:
-            </p>
-            <h2>{{ minValue }}</h2>
-            <p class="summary">{{ minSummary }}</p>
-            <p>
-              0 represents the
-              <InvertedDatasetLabel :custom-message="'maximum'" :is-small="false" /> historical
-              value:
-            </p>
-            <h2>{{ maxValue }}</h2>
-            <p class="summary">{{ maxSummary }}</p>
-            <hr />
-            <p class="inverted-notice">This dataset is <InvertedDatasetLabel :is-small="true" /></p>
-          </section>
-
-          <section v-if="isEdgeInverted">
-            <p>1 represents the <span>minimum</span> historical value:</p>
-            <h2>{{ minValue }}</h2>
-            <p class="summary">{{ minSummary }}</p>
-            <p>0 represents the <span>maximum</span> historical value:</p>
-            <h2>{{ maxValue }}</h2>
-            <p class="summary">{{ maxSummary }}</p>
-            <hr />
-            <p class="inverted-notice">
-              There {{ oppositeEdgeCount.count > 1 ? 'are' : 'is' }}
-              <span class="un-font-small"
-                >{{ oppositeEdgeCount.count }} opposite polarity
-                {{ oppositeEdgeCount.count > 1 ? 'edges' : 'edge' }}</span
-              >
-              between {{ oppositeEdgeCount.startNode }} and {{ oppositeEdgeCount.endNode }}.
-            </p>
-          </section>
-        </div>
-      </template>
-    </VMinMaxTooltip>
-  </div>
-</template>
 
 <style lang="scss">
 @import '@/styles/uncharted-design-tokens';
