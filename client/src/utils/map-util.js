@@ -3,6 +3,8 @@ import * as d3 from 'd3';
 import mapboxgl from 'maplibre-gl';
 import { BASE_LAYER } from '@/utils/map-util-new';
 import { COLOR_PALETTE_SIZE } from '@/utils/colors-util';
+import authStore from '@/store/modules/auth-store';
+
 // import { FIFOCache } from '@/utils/fifo-cache';
 
 export const ETHIOPIA_BOUNDING_BOX = {
@@ -30,12 +32,23 @@ export const BASE_MAP_OPTIONS = {
  */
 export function resolveBaseMapTileUrl(url) {
   const wmProtocol = 'wmmap://';
+  // TODO: remove this hard-coded tile protocol and grab it from the server
+  const tileProtocol = 'https://tiles.basemaps.cartocdn.com';
+
+  if (url.startsWith(tileProtocol)) {
+    return;
+  }
+
+  let resolvedUrl = url;
   if (url.startsWith(wmProtocol)) {
     const baseUrl = `${window.location.protocol}//${window.location.host}/api/map/`;
-    return {
-      url: url.replace(wmProtocol, baseUrl),
-    };
+    resolvedUrl = url.replace(wmProtocol, baseUrl);
   }
+
+  return {
+    url: resolvedUrl,
+    headers: { Authorization: `Bearer ${authStore.state.userToken}` },
+  };
 }
 
 /**

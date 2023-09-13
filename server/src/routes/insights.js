@@ -5,14 +5,14 @@ const router = express.Router();
 const insightService = rootRequire('/services/insight-service');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 /**
  * POST commit for an insight
  */
 router.post(
   '/',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     // FIXME: add support for analysisId field
     const {
@@ -59,7 +59,7 @@ router.post(
  */
 router.put(
   '/:id',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const insightId = req.params.id;
     const insight = req.body;
@@ -74,7 +74,7 @@ router.put(
  */
 router.get(
   '/',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const filterParams = JSON.parse(req.query.filters);
     const options = JSON.parse(req.query.options) || {};
@@ -85,7 +85,7 @@ router.get(
 // POST version
 router.post(
   '/search',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const filterParams = req.body.filters;
     const options = req.body.options || {};
@@ -99,7 +99,7 @@ router.post(
  **/
 router.get(
   '/count',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const filterParams = JSON.parse(req.query.filters);
     const result = await insightService.count(filterParams);
@@ -112,7 +112,7 @@ router.get(
  */
 router.get(
   '/:id',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const insightId = req.params.id;
     const allowList = req.params.allowList;
@@ -127,7 +127,7 @@ router.get(
  */
 router.get(
   '/:id/thumbnail',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const insightId = req.params.id;
     const thumbnail = await insightService.getInsightThumbnail(insightId);
@@ -144,7 +144,7 @@ router.get(
  */
 router.delete(
   '/:id',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const insightId = req.params.id;
     const result = await insightService.remove(insightId);

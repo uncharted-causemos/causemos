@@ -5,7 +5,7 @@ const router = express.Router();
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 /**
  * Get bibliographical information for a given CAG
@@ -14,7 +14,7 @@ const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
  */
 router.get(
   '/cag-bibliography',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const ids = JSON.parse(req.query.ids);
     const result = {};
