@@ -1,10 +1,11 @@
 import { AnalysisItem, CachedDatacubeMetadata, DataAnalysisState } from '@/types/Analysis';
 import _ from 'lodash';
 import { computed, Ref, ref, watch } from 'vue';
-import { getAnalysis, saveAnalysisState } from '../services/analysis-service';
 import { v4 as uuidv4 } from 'uuid';
 import { DataSpaceDataState } from '@/types/Insight';
 import {
+  getAnalysis,
+  saveAnalysisState,
   calculateResetRegionRankingWeights,
   createDataAnalysisObject,
   didSelectedItemsChange,

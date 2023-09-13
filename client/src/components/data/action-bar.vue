@@ -25,7 +25,7 @@
 <script lang="ts">
 import { mapGetters } from 'vuex';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
-import { getAnalysis } from '@/services/analysis-service';
+import { getAnalysis } from '@/services/analysis-service-new';
 import { ComparativeAnalysisMode } from '@/types/Enums';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';

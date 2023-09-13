@@ -105,7 +105,7 @@ import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-compa
 import _ from 'lodash';
 import { Insight } from '@/types/Insight';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
-import { getAnalysis } from '@/services/analysis-service';
+import { getAnalysis } from '@/services/analysis-service-new';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
 import { COLOR, getColors, colorFromIndex } from '@/utils/colors-util';
 import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';

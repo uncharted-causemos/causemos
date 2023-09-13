@@ -20,6 +20,108 @@ import { createNewIndexProjectionSettings } from '@/utils/index-projection-util'
 import { DEFAULT_EARLIEST_YEAR, DEFAULT_LAST_YEAR } from '@/composables/useProjectionDates';
 
 /**
+ * Get analysis by ID
+ * @param {string} analysisId Analysis Id
+ */
+export const getAnalysis = async (analysisId: string) => {
+  const result = await API.get(`analyses/${analysisId}`);
+  return result.data;
+};
+
+/**
+ * Get the state of the analysis with given Id
+ * @param {String} analysisId Analysis Id
+ */
+export const getAnalysisState = async (analysisId: string) => {
+  const analysis = await getAnalysis(analysisId);
+  if (analysis) return analysis.state;
+  return {};
+};
+
+/**
+ * Saves analysis state
+ * @param {string} analysisId Analysis Id
+ * @param {object} state analysis state payload
+ */
+export const saveAnalysisState = async (
+  analysisId: string,
+  state: IndexAnalysisState | DataAnalysisState
+) => {
+  const result = await API.put(
+    `analyses/${analysisId}`,
+    { state },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  return result.data;
+};
+
+/**
+ * Update the analysis with given ID
+ * @param {string} analysisId Analysis ID
+ * @param {object} payload Analysis update payload
+ * @param {string} [payload.title] Analysis title
+ * @param {string} [payload.description] Analysis description
+ */
+export const updateAnalysis = async (
+  analysisId: string,
+  payload: { description: string } | { title: string }
+) => {
+  if (!payload) return console.error(new Error('payload object must be provided'));
+  const analysis = await getAnalysis(analysisId);
+  if (analysis) {
+    const result = await API.put(
+      `analyses/${analysisId}`,
+      { ...analysis, ...payload },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return result.data;
+  } else {
+    return console.error(new Error('payload object must be provided'));
+  }
+};
+
+/**
+ * Get a list of analyses under given project Id
+ * @param {string} projectId Project Id
+ */
+export const getAnalysesByProjectId = async (projectId: string) => {
+  const result = await API.get('analyses', { params: { project_id: projectId, size: 200 } });
+  return result.data || [];
+};
+
+/**
+ * Create a copy of the analysis with given Id
+ * @param {string} analysisId Analysis Id
+ */
+export const duplicateAnalysis = async (analysisId: string, newName = '') => {
+  const original = await getAnalysis(analysisId);
+  const { id } = await createAnalysis(
+    newName || `Copy of ${original.title}`,
+    original.description,
+    original.project_id,
+    original.state
+  );
+  const duplicate = await getAnalysis(id);
+  return duplicate;
+};
+
+/**
+ * Delete the analysis with given Id
+ * @param {string} analysisId Analysis Id
+ */
+export const deleteAnalysis = (analysisId: string) => {
+  return API.delete(`analyses/${analysisId}`);
+};
+
+/**
  * Create a new DataAnalysisState object with each of its fields initialized to
  * a sensible default.
  */

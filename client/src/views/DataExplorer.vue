@@ -29,10 +29,10 @@ import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analys
 
 import { getDatacubeMetadataToCache, getDatacubesByIds } from '@/services/new-datacube-service';
 import {
+  saveAnalysisState,
   calculateResetRegionRankingWeights,
   didSelectedItemsChange,
 } from '@/services/analysis-service-new';
-import { saveAnalysisState } from '@/services/analysis-service';
 
 const SELECT_LABEL = 'Add To Analysis';
 

@@ -9,7 +9,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, toRefs } from 'vue';
-import { deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
+import { deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service-new';
 import { useStore } from 'vuex';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';

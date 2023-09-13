@@ -78,7 +78,7 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 
-import { getAnalysis } from '@/services/analysis-service';
+import { getAnalysis } from '@/services/analysis-service-new';
 import useModelMetadata from '@/composables/useModelMetadata';
 
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
