@@ -137,3 +137,14 @@ export interface BulkRegionalAggregationData {
     timestamp: string;
   }[];
 }
+
+export interface MinMaxValue {
+  region_id: string;
+  timestamp: number;
+  value: number;
+}
+
+export interface Extrema {
+  min: MinMaxValue[];
+  max: MinMaxValue[];
+}

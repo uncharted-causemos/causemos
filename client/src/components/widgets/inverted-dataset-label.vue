@@ -1,16 +1,30 @@
 <template>
-  <span class="inverted-dataset-label-container un-font-small" :class="{ inverted: isInverted }">
-    {{ isInverted ? 'Inverted' : 'Not inverted' }}
+  <span
+    class="inverted-dataset-label-container"
+    :class="{ inverted: isInverted, 'un-font-small': isSmall }"
+  >
+    {{ message }}
   </span>
 </template>
 
 <script setup lang="ts">
-withDefaults(
+import { computed } from 'vue';
+
+const props = withDefaults(
   defineProps<{
     isInverted?: boolean;
+    customMessage?: string | null;
+    isSmall?: boolean;
   }>(),
-  { isInverted: true }
+  { isInverted: true, customMessage: null, isSmall: true }
 );
+
+const message = computed(() => {
+  if (props.customMessage !== null) {
+    return props.customMessage;
+  }
+  return props.isInverted ? 'Inverted' : 'Not inverted';
+});
 </script>
 
 <style lang="scss" scoped>
