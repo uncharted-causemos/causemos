@@ -5,14 +5,14 @@ const Logger = rootRequire('/config/logger');
 const maasService = rootRequire('/services/external/maas-service');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 /**
  * Add a tag to all the model runs that match the specified filter
  */
 router.put(
   '/',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const filter = req.body.filter;
     const tag = req.body.tag;
@@ -30,7 +30,7 @@ router.put(
  */
 router.delete(
   '/',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const filter = JSON.parse(req.query.filter);
     const tag = req.query.tag;
@@ -48,7 +48,7 @@ router.delete(
  */
 router.patch(
   '/',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const filter = req.body.filter;
     const oldTag = req.body.oldTag;

@@ -15,12 +15,12 @@ const cagService = rootRequire('/services/cag-service');
 const searchService = rootRequire('/services/search-service');
 
 /* Keycloak Authentication */
-// const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = rootRequire('/util/auth-util.js');
 
 /* GET Retrieve projects */
 router.get(
   '/',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projects = await projectService.listProjects();
 
@@ -53,7 +53,7 @@ router.get(
 /* POST Create new project */
 router.post(
   '/',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectName = req.body.projectName;
     const projectDescription = req.body.projectDescription;
@@ -66,7 +66,7 @@ router.post(
 /* GET Retrieve single project summary */
 router.get(
   '/:projectId',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const result = await projectService.findProject(projectId);
@@ -92,7 +92,7 @@ router.get(
 
 router.put(
   '/:projectId/metadata',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const payload = req.body.metadata;
@@ -106,7 +106,7 @@ router.put(
 
 router.put(
   '/:projectId',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const ids = req.body.ids;
@@ -148,7 +148,7 @@ router.put(
 /* DELETE project */
 router.delete(
   '/:projectId',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const timestamp = Date.now();
@@ -159,7 +159,7 @@ router.delete(
 
 router.get(
   '/:projectId/health',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const result = await projectService.checkIndexStatus(req.params.projectId);
     res.json({
@@ -171,7 +171,7 @@ router.get(
 /* GET INDRA statements */
 router.get(
   '/:projectId/statements',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -191,7 +191,7 @@ router.get(
 /* GET Documents (summary) */
 router.get(
   '/:projectId/documents',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -210,7 +210,7 @@ router.get(
 /* GET Map locations */
 router.get(
   '/:projectId/locations',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -224,7 +224,7 @@ router.get(
 /* GET Graph */
 router.get(
   '/:projectId/graphs',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -243,7 +243,7 @@ router.get(
 /* GET project's edges */
 router.get(
   '/:projectId/edges',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const filters = filtersUtil.parse(req.query.filters);
@@ -255,7 +255,7 @@ router.get(
 /* POST Retrieve statement ids given a set of edges and filters */
 router.post(
   '/:projectId/edge-data',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const edges = req.body.edges; // Format: [{ source: "wm/concept/causal_factor/social_and_political/government/tax_duty", target:"wm/concept/causal_factor/economic_and_commerce/economic_activity/market/assets" }, { source: "..", target: ".." }]
@@ -269,7 +269,7 @@ router.post(
 /* GET stats for evidence, documents, statements */
 router.get(
   '/:projectId/count-stats',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -291,7 +291,7 @@ const _parseFacetList = (req) => {
 /* GET facet aggregations */
 router.get(
   '/:projectId/facets',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const q = req.query;
@@ -306,7 +306,7 @@ router.get(
 /* GET Ontology definitions */
 router.get(
   '/:projectId/ontology-definitions',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const definitions = await projectService.getOntologyDefinitions(projectId);
@@ -320,7 +320,7 @@ router.get(
  **/
 router.post(
   '/:projectId/statements-scores',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const ids = req.body.ids;
@@ -336,7 +336,7 @@ router.post(
  */
 router.get(
   '/:projectId/concept-suggestions',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const queryString = req.query.q;
@@ -355,7 +355,7 @@ router.get(
  **/
 router.get(
   '/:projectId/suggestions',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const field = req.query.field;
@@ -391,7 +391,7 @@ router.get(
  */
 router.get(
   '/:projectId/path-suggestions',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const source = req.query.source;
@@ -407,7 +407,7 @@ router.get(
  */
 router.post(
   '/:projectId/group-path-suggestions',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const sources = req.body.sources;
@@ -423,7 +423,7 @@ router.post(
  */
 router.get(
   '/:projectId/ontology-composition',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const concept = req.query.concept;
@@ -438,7 +438,7 @@ router.get(
  */
 router.post(
   '/:projectId/assembly',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const records = req.body.records;
@@ -456,7 +456,7 @@ router.post(
  */
 router.post(
   '/:projectId/ontology-concept',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const { definition, examples, label } = req.body;
