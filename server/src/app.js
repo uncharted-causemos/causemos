@@ -107,7 +107,7 @@ app.use(function (req, res, next) {
   next();
 });
 
-const res = request('GET', `${process.env.KC_FQDN}/realms/causemos`);
+const res = request('GET', `${process.env.KC_FQDN}/realms/${process.env.KC_REALM}`);
 const response = JSON.parse(res.getBody().toString());
 const publicKey = `-----BEGIN PUBLIC KEY-----\r\n${response.public_key}\r\n-----END PUBLIC KEY-----`;
 app.use(jwt({ secret: publicKey, algorithms: ['RS256'] }));
