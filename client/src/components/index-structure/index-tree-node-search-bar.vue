@@ -113,7 +113,7 @@ import {
   DojoFeatureSearchResult,
 } from '@/services/semantic-feature-search-service';
 import { capitalizeEachWord } from '@/utils/string-util';
-import newDatacubeService from '@/services/new-datacube-service';
+import newDatacubeService from '@/services/datacube-service';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { getCountryList } from '@/services/region-service';
 import { CountryFilter } from '@/types/Analysis';

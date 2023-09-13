@@ -49,7 +49,7 @@ import ModalHeader from './modal-header.vue';
 import Search from './search.vue';
 import SimplePagination from './simple-pagination.vue';
 
-import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
+import { getDatacubes, getDatacubeFacets } from '@/services/datacube-service';
 
 import { FACET_FIELDS, TYPE as TYPE_FIELD } from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';

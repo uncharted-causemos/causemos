@@ -27,7 +27,7 @@ import { enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
-import { getDataset } from '@/services/new-datacube-service';
+import { getDataset } from '@/services/datacube-service';
 import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 
 export default defineComponent({

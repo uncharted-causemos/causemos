@@ -216,7 +216,7 @@ import RenameModal from '@/components/action-bar/rename-modal.vue';
 import { updateQuestion } from '@/services/question-service';
 import useQuestionsData from '@/composables/useQuestionsData';
 import MessageDisplay from '@/components/widgets/message-display.vue';
-import { fetchImageAsBase64 } from '@/services/new-datacube-service';
+import { fetchImageAsBase64 } from '@/services/datacube-service';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 import { TYPE } from 'vue-toastification';
 

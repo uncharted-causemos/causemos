@@ -51,7 +51,7 @@ import { useStore } from 'vuex';
 import router from '@/router';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import useModelMetadata from '@/composables/useModelMetadata';
-import { generateSparklines, updateIndicatorsBulk } from '@/services/new-datacube-service';
+import { generateSparklines, updateIndicatorsBulk } from '@/services/datacube-service';
 import { Datacube, DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import {
   AggregationOption,

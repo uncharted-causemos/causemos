@@ -16,7 +16,7 @@ import {
   ModelParameterDataType,
 } from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
-import { getDatacubeById, updateDatacube } from '@/services/new-datacube-service';
+import { getDatacubeById, updateDatacube } from '@/services/datacube-service';
 import { ModelRun } from '@/types/ModelRun';
 import { RegionAgg, RegionalAggregations } from '@/types/Outputdata';
 import { DATA_LAYER_TRANSPARENCY } from './map-util-new';

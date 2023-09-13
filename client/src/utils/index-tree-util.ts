@@ -10,7 +10,7 @@ import {
 } from '@/types/Index';
 import _ from 'lodash';
 import { DataConfig } from '@/types/Datacube';
-import { getDefaultDataConfig } from '@/services/new-datacube-service';
+import { getDefaultDataConfig } from '@/services/datacube-service';
 import { OutputSpec } from '@/types/Outputdata';
 import { WeightedComponent } from '@/types/WeightedComponent';
 
