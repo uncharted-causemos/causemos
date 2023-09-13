@@ -4,7 +4,6 @@ import { ScenarioData } from '../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { AggregationOption, ModelRunStatus } from '@/types/Enums';
 import { getAggregationKey, getOutputs } from '@/utils/datacube-util';
-import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -16,10 +15,8 @@ export default function useParallelCoordinatesData(
   modelRunData: Ref<ModelRun[]>,
   spatialAggregation: Ref<AggregationOption>,
   temporalAggregation: Ref<AggregationOption>,
-  itemId: Ref<string>
+  currentOutputIndex: Ref<number>
 ) {
-  const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
-
   const runParameterValues = computed(() => {
     if (
       modelRunData.value.length === 0 ||

@@ -1007,7 +1007,7 @@ export default defineComponent({
       filteredRunData,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
-      itemId
+      currentOutputIndex
     );
 
     const scenarioCount = computed(() => runParameterValues.value.length);

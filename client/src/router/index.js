@@ -8,6 +8,7 @@ import DataExplorer from '@/views/DataExplorer.vue';
 import IndexStructure from '@/views/IndexStructure.vue';
 import IndexResults from '@/views/IndexResults.vue';
 import IndexProjections from '@/views/IndexProjections.vue';
+import ModelDrilldown from '@/views/ModelDrilldown.vue';
 import NotFound from '@/views/NotFound.vue';
 import DatacubeDrilldown from '@/views/DatacubeDrilldown.vue';
 import Documents from '@/views/Documents.vue';
@@ -110,6 +111,11 @@ const routes = [
     path: '/:projectType/:project/index-projections/:analysisId',
     name: 'indexProjections',
     component: IndexProjections,
+  },
+  {
+    path: '/:projectType/:project/model/:modelId',
+    name: 'modelDrilldown',
+    component: ModelDrilldown,
   },
   {
     path: '/:projectType/:project/model-publishing-experiment',
