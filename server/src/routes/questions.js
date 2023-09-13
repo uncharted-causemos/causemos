@@ -5,14 +5,14 @@ const router = express.Router();
 const questionService = require('#@/services/question-service.js');
 
 /* Keycloak Authentication */
-// const authUtil = require('#@/util/auth-util.js);
+const authUtil = require('#@/util/auth-util.js');
 
 /**
  * POST commit for an question
  */
 router.post(
   '/',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const {
       question,
@@ -52,7 +52,7 @@ router.post(
  */
 router.put(
   '/:id',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const questionId = req.params.id;
     const question = req.body;
@@ -67,7 +67,7 @@ router.put(
  */
 router.post(
   '/search',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { project_id, context_id, target_view, visibility } = req.body;
     const result = await questionService.getAllQuestions(
@@ -85,7 +85,7 @@ router.post(
  **/
 router.get(
   '/counts',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { project_id, context_id, target_view, visibility } = req.query;
     const result = await questionService.counts(project_id, context_id, target_view, visibility);
@@ -98,7 +98,7 @@ router.get(
  */
 router.get(
   '/:id',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const questionId = req.params.id;
     const result = await questionService.getQuestion(questionId);
@@ -112,7 +112,7 @@ router.get(
  */
 router.delete(
   '/:id',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const questionId = req.params.id;
     const result = await questionService.remove(questionId);

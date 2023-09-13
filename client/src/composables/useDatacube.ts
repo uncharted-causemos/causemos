@@ -28,6 +28,7 @@ import useDatacubeColorScheme from './useDatacubeColorScheme';
 import { getFilteredScenariosFromIds, isIndicator } from '@/utils/datacube-util';
 import { Filters } from '@/types/Filters';
 import { FeatureConfig } from '@/types/Outputdata';
+import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 export default function useDatacube(
   metadata: Ref<Model | Indicator | null>,
@@ -103,7 +104,8 @@ export default function useDatacube(
     selectedTransform
   );
 
-  const { dimensions } = useDatacubeDimensions(metadata, itemId);
+  const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
+  const { dimensions } = useDatacubeDimensions(metadata, currentOutputIndex);
 
   const modelRunSearchFilters = ref<Filters>({ clauses: [] });
 

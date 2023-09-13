@@ -80,7 +80,6 @@ import { BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
 import { REGION_ID_DELIMETER, adminLevelToString } from '@/utils/admin-level-util';
 import { capitalize, exponentFormatter } from '@/utils/string-util';
-import { mapActions, mapGetters } from 'vuex';
 
 const createRangeFilter = ({ min, max }, prop) => {
   const lowerBound = ['>=', prop, Number(min)];
@@ -264,9 +263,6 @@ export default defineComponent({
     extent: undefined,
   }),
   computed: {
-    ...mapGetters({
-      tour: 'tour/tour',
-    }),
     mapFixedOptions() {
       const options = {
         minZoom: 1,
@@ -428,18 +424,8 @@ export default defineComponent({
   },
   mounted() {
     this.refresh();
-    //
-    // @REVIEW
-    // the map component is visible as well as the spatial-aggregation dropdown config
-    // allow the relevant tour to advance to the next step
-    if (this.tour && this.tour.id.startsWith('aggregations-tour')) {
-      this.enableNextStep();
-    }
   },
   methods: {
-    ...mapActions({
-      enableNextStep: 'tour/enableNextStep',
-    }),
     refresh() {
       if (!this.map || !this.selection) return;
       this.setFeatureStates();

@@ -4,10 +4,11 @@ const router = express.Router();
 const paragraphSearchService = require('#@/services/external/dojo-semantic-search-service.js');
 
 /* Keycloak Authentication */
-// const authUtil = require('#@/util/auth-util.js);
+const authUtil = require('#@/util/auth-util.js');
 
 router.get(
   '/',
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { scroll_id, size, sort_by, order } = req.query;
     const result = await paragraphSearchService.getDocuments(scroll_id, size, sort_by, order);
@@ -18,7 +19,7 @@ router.get(
 
 router.get(
   '/:docId',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const docId = req.params.docId;
     if (docId) {
@@ -33,7 +34,7 @@ router.get(
 
 router.get(
   '/:docId/paragraphs',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const docId = req.params.docId;
     const scrollId = req.query.scroll_id;

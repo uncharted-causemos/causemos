@@ -1,6 +1,20 @@
 import { TemporalResolutionOption } from '@/types/Enums';
 
 export const EPOCH_YEAR = 1970;
+export const MONTHS_FULL = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 
 export const getYearFromTimestamp = (timestamp: number) => {
   return new Date(timestamp).getUTCFullYear();
