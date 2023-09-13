@@ -147,44 +147,6 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
-/* Shepherd site tour (i.e., onboarding) */
-@import 'shepherd.js/dist/css/shepherd.css';
-// override default CSS from shepherd
-/*
-.shepherd-element {
-  border-style: solid;
-  border-color: red;
-  border-width: 5px;
-  .shepherd-content {
-    .shepherd-header {
-      .shepherd-title {
-        color: red;
-      }
-    }
-  }
-}
-*/
-.shepherd-target.my-highlight {
-  border-style: solid;
-  border-color: red;
-  border-width: 3px;
-}
-.shepherd-element.my-container {
-  border-style: solid;
-  border-color: gray;
-  border-width: 1px;
-}
-.shepherd-element.my-title .shepherd-title {
-  color: black;
-  font-size: large;
-  font-weight: bold;
-  padding: 0;
-}
-.shepherd-element.my-text .shepherd-text {
-  color: rgb(37, 36, 36);
-  font-size: medium;
-}
-
 /* Font awesome */
 $fa-font-path: 'font-awesome/fonts';
 @import 'font-awesome/scss/font-awesome';
