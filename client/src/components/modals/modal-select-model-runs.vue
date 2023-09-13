@@ -141,7 +141,7 @@ const { fetchModelRuns, allModelRunData, filteredRunData } = useScenarioData(
   selectedModelId,
   modelRunSearchFilters,
   dimensions,
-  isNewRunsModeActive
+  ref(true)
 );
 const { runParameterValues } = useParallelCoordinatesData(
   metadata,
@@ -232,6 +232,8 @@ const executeNewRuns = async () => {
   const pluralizedRun = _potentialRuns.length === 1 ? 'run' : 'runs';
   try {
     const allResponses = await Promise.all(promises);
+    // Re-fetch data from server to update PC chart with pending runs
+    fetchModelRuns();
     const allResults = allResponses.flatMap((res: any) => res.data.run_id);
     if (allResults.length > 0 && _potentialRuns.length === allResults.length) {
       toaster(`New ${pluralizedRun} requested\nPlease check back later!`, TYPE.SUCCESS);
