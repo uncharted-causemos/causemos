@@ -81,7 +81,9 @@
           </div>
         </div>
 
-        <button class="btn btn-default">Filter and compare</button>
+        <button @click="isFilterAndCompareModalOpen = true" class="btn btn-default">
+          Filter and compare
+        </button>
 
         <div class="media-files">
           <span class="subdued un-font-small">This model produces media files.</span>
@@ -136,6 +138,15 @@
       @close="isSelectModelRunsModalOpen = false"
       @update-selected-model-runs="(runIds) => (selectedModelRunIds = runIds)"
     />
+
+    <modal-filter-and-compare
+      v-if="isFilterAndCompareModalOpen"
+      :initial-breakdown-state="initialBreakdownState"
+      :qualifiers="(metadata?.qualifier_outputs ?? []).filter(isBreakdownQualifier)"
+      :outputs="([] as DatacubeFeature[])"
+      @close="isFilterAndCompareModalOpen = false"
+      @apply-breakdown-state="(a) => console.log(a)"
+    />
   </div>
 </template>
 
@@ -144,13 +155,25 @@ import useModelMetadata from '@/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { Ref, computed, ref } from 'vue';
 import { IncompleteDataCorrectiveAction, TemporalResolutionOption } from '@/types/Enums';
-import { DatacubeFeature, Model } from '@/types/Datacube';
+import { BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
 import { getFilteredScenariosFromIds, getSelectedOutput } from '@/utils/datacube-util';
 import useScenarioData from '@/composables/useScenarioData';
 import stringUtil from '@/utils/string-util';
 import ModalSelectModelRuns from '@/components/modals/modal-select-model-runs.vue';
 import ModelRunSummaryList from '@/components/model-drilldown/model-run-summary-list.vue';
+import ModalFilterAndCompare from '@/components/modals/modal-filter-and-compare.vue';
+import { isBreakdownQualifier } from '@/utils/qualifier-util';
 
+const initialBreakdownState: BreakdownStateNone = {
+  // TODO: use real values
+  modelRunIds: [''],
+  outputIndex: 0,
+  comparisonSettings: {
+    indexOfBaselineTimeseries: 0,
+    shouldDisplayAbsoluteValues: true,
+    shouldUseRelativePercentage: false,
+  },
+};
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
 const metadata = useModelMetadata(modelId) as Ref<Model | null>;
 
@@ -172,6 +195,8 @@ const selectedModelRuns = computed(() =>
 );
 
 const isSelectModelRunsModalOpen = ref(false);
+
+const isFilterAndCompareModalOpen = ref(false);
 
 const setSelectedTimestamp = () => console.log('TODO:');
 </script>

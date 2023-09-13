@@ -5,6 +5,12 @@ import {
   Datacube,
   ModelParameter,
   DimensionInfo,
+  BreakdownState,
+  BreakdownStateNone,
+  BreakdownStateOutputs,
+  BreakdownStateRegions,
+  BreakdownStateYears,
+  BreakdownStateQualifiers,
 } from '@/types/Datacube';
 import {
   AggregationOption,
@@ -449,6 +455,32 @@ export const convertRegionalDataToBarData = (
       opacity: Number(selectedDataLayerTransparency),
     };
   });
+};
+
+export const isBreakdownStateNone = (
+  breakdownState: BreakdownState
+): breakdownState is BreakdownStateNone => {
+  return (breakdownState as BreakdownStateNone).modelRunIds !== undefined;
+};
+export const isBreakdownStateOutputs = (
+  breakdownState: BreakdownState
+): breakdownState is BreakdownStateOutputs => {
+  return (breakdownState as BreakdownStateOutputs).outputIndices !== undefined;
+};
+export const isBreakdownStateRegions = (
+  breakdownState: BreakdownState
+): breakdownState is BreakdownStateRegions => {
+  return (breakdownState as BreakdownStateRegions).regionIds !== undefined;
+};
+export const isBreakdownStateYears = (
+  breakdownState: BreakdownState
+): breakdownState is BreakdownStateYears => {
+  return (breakdownState as BreakdownStateYears).years !== undefined;
+};
+export const isBreakdownStateQualifiers = (
+  breakdownState: BreakdownState
+): breakdownState is BreakdownStateQualifiers => {
+  return (breakdownState as BreakdownStateQualifiers).qualifier !== undefined;
 };
 
 export default {
