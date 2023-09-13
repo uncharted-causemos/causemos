@@ -106,7 +106,7 @@ import { getFilteredScenariosFromIds, getOutputs, isGeoParameter } from '@/utils
 import ModelRunSummaryList from '@/components/model-drilldown/model-run-summary-list.vue';
 import _ from 'lodash';
 import ModelRunInProgress from '../model-drilldown/model-run-in-progress.vue';
-import newDatacubeService, { createModelRun, updateModelRun } from '@/services/datacube-service';
+import datacubeService, { createModelRun, updateModelRun } from '@/services/datacube-service';
 import { TYPE } from 'vue-toastification';
 import useToaster from '@/composables/useToaster';
 
@@ -218,7 +218,7 @@ const executeNewRuns = async () => {
         value: p.default,
       });
     });
-    return newDatacubeService.createModelRun(
+    return datacubeService.createModelRun(
       metadata.value.data_id,
       metadata.value.name,
       parameterArray
