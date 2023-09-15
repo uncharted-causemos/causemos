@@ -20,18 +20,15 @@ const analysesRouter = require('#@/routes/analyses.js');
 const settingsRouter = require('#@/routes/settings.js');
 const insightsRouter = require('#@/routes/insights.js');
 const questionsRouter = require('#@/routes/questions.js');
-const curationRecommendationsRouter = require('#@/routes/curation-recommendations.js');
 const modelRunsRouter = require('#@/routes/model-runs.js');
 const modelRunTagsRouter = require('#@/routes/model-run-tags.js');
 const indicatorsRouter = require('#@/routes/indicators.js');
 const datacubeRouter = require('#@/routes/datacubes.js');
 const gadmRouter = require('#@/routes/gadm.js');
 const pipelineReportingRouter = require('#@/routes/pipeline-reporting.js');
-const bibliographyRouter = require('#@/routes/bibliography.js');
 const sessionLogRouter = require('#@/routes/session-log.js');
 const asyncHandler = require('express-async-handler');
 
-const kbsRouter = require('#@/routes/knowledge-bases.js');
 const projectsRouter = require('#@/routes/projects.js');
 const DomainProjectsRouter = require('#@/routes/domain-projects.js');
 
@@ -146,8 +143,6 @@ app.use(
 
 app.use('/api/map', [mapProxyRouter]);
 
-app.use('/api/curation_recommendations', [curationRecommendationsRouter]);
-
 app.use(
   '/api/url-to-b64',
   asyncHandler(async (req, res) => {
@@ -183,11 +178,8 @@ app.use(
 );
 
 app.use('/api/projects', projectsRouter);
-app.use('/api/kbs', kbsRouter);
 
 app.use('/api/domain-projects', DomainProjectsRouter);
-
-app.use('/api/bibliography', bibliographyRouter);
 
 app.use('/api/dojo/paragraphs', [jatawareParagraphsRouter]);
 app.use('/api/dojo/documents', [jatawareDocumentsRouter]);

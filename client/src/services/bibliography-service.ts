@@ -1,4 +1,4 @@
-import API from '@/api/api';
+// import API from '@/api/api';
 
 export interface PubDate {
   date: number;
@@ -16,10 +16,7 @@ export interface Bibliography {
 }
 
 export const getBibiographyFromCagIds = async (cagIds: string[]) => {
-  const payload = {
-    ids: `["${cagIds.join('","')}"]`,
-  };
-
-  const result = await API.get('bibliography/cag-bibliography', { params: payload });
-  return result;
+  console.log(cagIds);
+  // As CAG specific 'bibliography/cag-bibliography' endpoint is removed from the server, return empty object for now.
+  return {};
 };
