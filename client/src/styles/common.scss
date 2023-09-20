@@ -12,3 +12,10 @@
   font-weight: 600;
   padding: 3px 8px;
 }
+
+// Temporary fix to allow call-to-action buttons to override the background color defined in
+//  .btn-default above. Eventually we should standardize buttons across the app and move button
+//  styles into one file where we won't need two definitions for .btn-call-to-action
+.btn-call-to-action {
+  background: $call-to-action-color;
+}

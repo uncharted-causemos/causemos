@@ -12,6 +12,10 @@ const morgan = require('morgan');
 const nocache = require('nocache');
 const compression = require('compression');
 
+// Authentication
+const request = require('sync-request');
+var { expressjwt: jwt } = require('express-jwt');
+
 const Logger = require('#@/config/logger.js');
 const argv = require('#@/config/yargs-wrapper.js');
 
@@ -89,6 +93,11 @@ app.use(function (req, res, next) {
   sessionLogService.logRequest(req);
   next();
 });
+
+const res = request('GET', `${process.env.KC_FQDN}/realms/${process.env.KC_REALM}`);
+const response = JSON.parse(res.getBody().toString());
+const publicKey = `-----BEGIN PUBLIC KEY-----\r\n${response.public_key}\r\n-----END PUBLIC KEY-----`;
+app.use(jwt({ secret: publicKey, algorithms: ['RS256'] }));
 
 app.use('/api', [settingsRouter]);
 

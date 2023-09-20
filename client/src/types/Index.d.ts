@@ -178,3 +178,9 @@ export interface IndexProjectionNodeDataWarning {
   warning: ProjectionDataWarning;
   message: string;
 }
+
+export interface OppositeEdgeCount {
+  count: number;
+  startNode: string | null;
+  endNode: string | null;
+}

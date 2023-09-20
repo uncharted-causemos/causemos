@@ -8,12 +8,12 @@ const projectService = require('#@/services/project-service.js');
 const router = express.Router();
 
 /* Keycloak Authentication */
-// const authUtil = require('#@/util/auth-util.js);
+const authUtil = require('#@/util/auth-util.js');
 
 /* GET Retrieve projects */
 router.get(
   '/',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projects = await projectService.listProjects();
 
@@ -38,7 +38,7 @@ router.get(
 /* POST Create new project */
 router.post(
   '/',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectName = req.body.projectName;
     const projectDescription = req.body.projectDescription;
@@ -51,7 +51,7 @@ router.post(
 /* GET Retrieve single project summary */
 router.get(
   '/:projectId',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const result = await projectService.findProject(projectId);
@@ -72,7 +72,7 @@ router.get(
 
 router.put(
   '/:projectId/metadata',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const payload = req.body.metadata;
@@ -87,7 +87,7 @@ router.put(
 /* DELETE project */
 router.delete(
   '/:projectId',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const projectId = req.params.projectId;
     const timestamp = Date.now();
@@ -98,7 +98,7 @@ router.delete(
 
 router.get(
   '/:projectId/health',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const result = await projectService.checkIndexStatus(req.params.projectId);
     res.json({

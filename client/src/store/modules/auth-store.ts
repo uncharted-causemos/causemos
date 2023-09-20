@@ -3,47 +3,95 @@ import { GetterTree, MutationTree, ActionTree } from 'vuex';
 interface AuthState {
   name: string | null;
   email: string | null;
-  initials: string | null;
   isAuthenticated: boolean;
-  isAdmin: boolean;
+  userToken: string | null;
 }
 
 const state: AuthState = {
   isAuthenticated: false,
   name: null,
   email: null,
-  initials: null,
-  isAdmin: false,
+  userToken: null,
 };
+
+/**
+ * Decode the OIDC token for additional information
+ * @param token the OIDC token
+ * @returns decoded JSON object representing the token
+ * @throws an Error if token is not formatted as expected
+ */
+const decode = (token: string) => {
+  // split the string up based on delimiter '.'
+  const tokens = token.split('.');
+
+  // retrieve only the 2nd one
+  if (tokens.length !== 3) {
+    throw new Error('Failed to Decode OIDC Token');
+  }
+  const infoToken = tokens[1];
+
+  // decode the token
+  const decodedToken = window.atob(infoToken);
+  return JSON.parse(decodedToken);
+};
+
+let timer: NodeJS.Timeout;
 
 const getters: GetterTree<AuthState, any> = {
   isAuthenticated: (state) => state.isAuthenticated,
+  userToken: (state) => state.userToken,
 };
 
 const actions: ActionTree<AuthState, any> = {
-  async fetchSSO({ commit, dispatch }) {
+  async fetchSSO({ commit, dispatch, getters }) {
     // Fetch or refresh the access token
-    const response = await fetch('/ua/user');
+    const response =
+      getters.userToken !== null
+        ? await fetch(
+            `/app/redirect_uri?refresh=/silent-check-sso.html&access_token=${getters.userToken}`
+          )
+        : await fetch('/silent-check-sso.html');
 
-    const data = await response.json();
-    if (response.ok) {
-      commit('setAuthenticated', true);
-      commit('setName', data.userName);
-      commit('setEmail', data.email);
-      commit('setInitials', data.initials);
-      commit('setAdmin', data.admin);
-    } else {
+    if (!response.ok) {
       dispatch('logout');
       throw new Error('Authentication Failed');
     }
+
+    const accessToken = response.headers.get('OIDC_access_token');
+    const expirationTimestamp = +(response?.headers?.get('OIDC_access_token_expires') ?? 0) * 1000;
+
+    commit('setUserToken', accessToken);
+
+    if (accessToken) {
+      try {
+        const tokenInfo = decode(accessToken);
+
+        commit('setAuthenticated', true);
+        commit('setName', tokenInfo.name);
+        commit('setEmail', tokenInfo.email);
+      } catch (error) {
+        console.error('Unable to decode authentication token for additional user information');
+        commit('setAuthenticated', false);
+        commit('setName', null);
+        commit('setEmail', null);
+      }
+    }
+
+    const expiresIn = expirationTimestamp - new Date().getTime();
+    timer = setTimeout(() => {
+      dispatch('autoRenew');
+    }, expiresIn);
   },
   logout({ commit }) {
+    commit('setUserToken', null);
     commit('setAuthenticated', false);
     commit('setName', null);
     commit('setEmail', null);
-    commit('setInitials', null);
-    commit('setAdmin', false);
     window.location.assign('/logout');
+  },
+  autoRenew({ dispatch }) {
+    clearTimeout(timer);
+    dispatch('fetchSSO');
   },
 };
 
@@ -57,11 +105,8 @@ const mutations: MutationTree<AuthState> = {
   setEmail(state, value) {
     state.email = value;
   },
-  setInitials(state, value) {
-    state.initials = value;
-  },
-  setAdmin(state, value) {
-    state.isAdmin = value;
+  setUserToken(state, value) {
+    state.userToken = value;
   },
 };
 

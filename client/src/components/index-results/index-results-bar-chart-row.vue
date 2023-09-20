@@ -29,6 +29,11 @@
         <div class="index-result-table-dataset-value-column">
           <p class="de-emphasized un-font-small">{{ precisionFormatter(dataset.datasetValue) }}</p>
         </div>
+        <min-max-info
+          :placement="'left'"
+          :dataset="dataset.dataset.dataset"
+          :oppositeEdgeCount="indexTree.oppositeEdgeCountToRoot(dataset.dataset)"
+        />
       </div>
       <button
         v-if="props.rowData.contributingDatasets.length > SHOW_TOP_N_DATASETS_BY_DEFAULT"
@@ -45,6 +50,8 @@
 import precisionFormatter from '@/formatters/precision-formatter';
 import { IndexResultsData } from '@/types/Index';
 import { ref, computed } from 'vue';
+import MinMaxInfo from '@/components/min-max-info.vue';
+import useIndexTree from '@/composables/useIndexTree';
 
 const SHOW_TOP_N_DATASETS_BY_DEFAULT = 3;
 
@@ -55,6 +62,7 @@ const props = defineProps<{
   isExpanded: boolean;
 }>();
 
+const indexTree = useIndexTree();
 const isShowingAllDatasets = ref(false);
 
 const visibleKeyDatasets = computed(() => {
@@ -94,7 +102,7 @@ const showMoreToggleButtonLabel = computed(() =>
 .bar-background {
   position: relative;
   height: 20px;
-  box-shadow: 0px 0px 0px 1px $un-color-black-10 inset;
+  box-shadow: 0 0 0 1px $un-color-black-10 inset;
 }
 .bar {
   position: absolute;

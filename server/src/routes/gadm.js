@@ -7,7 +7,7 @@ const { client, searchAndHighlight, queryStringBuilder } = require('#@/adapters/
 const { listCountries } = require('#@/services/regions-service.js');
 
 /* Keycloak Authentication */
-// const authUtil = require('#@/util/auth-util.js);
+const authUtil = require('#@/util/auth-util.js');
 
 const MAX_REGIONS = 10000;
 const SORT_COUNTRIES_ASC = true;
@@ -17,6 +17,7 @@ const SORT_COUNTRIES_ASC = true;
  */
 router.get(
   '/countries',
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const result = await listCountries(SORT_COUNTRIES_ASC);
     res.status(200);
@@ -29,7 +30,7 @@ router.get(
  **/
 router.get(
   '/suggestions',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const field = req.query.field;
     const unmodifiedQueryString = req.query.q;
@@ -61,7 +62,7 @@ router.get(
  **/
 router.post(
   '/spanning-bbox',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const regionIds = req.body.region_ids;
     if (!_.isArray(regionIds) || regionIds.length === 0) {

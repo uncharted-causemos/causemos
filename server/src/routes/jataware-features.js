@@ -4,14 +4,14 @@ const router = express.Router();
 const semanticSearchService = require('#@/services/external/dojo-semantic-search-service.js');
 
 /* Keycloak Authentication */
-// const authUtil = require('#@/util/auth-util.js);
+const authUtil = require('#@/util/auth-util.js');
 
 /**
  * Semantic search of features.
  */
 router.get(
   '/search',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const { query } = req.query;
     if (query) {

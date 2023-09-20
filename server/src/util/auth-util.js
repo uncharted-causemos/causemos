@@ -1,5 +1,3 @@
-var { expressjwt: jwt } = require('express-jwt');
-
 const basicAuth = (user, pass) => {
   return 'Basic ' + Buffer.from(user + ':' + pass).toString('base64');
 };
@@ -21,14 +19,6 @@ const checkRole = (roles) => {
   }
 
   return [
-    // authenticate JWT token and attach to request object
-    jwt({
-      secret: `-----BEGIN PUBLIC KEY-----
-${process.env.KC_TOKEN_SECRET}
------END PUBLIC KEY-----`,
-      algorithms: ['RS256'],
-    }),
-
     // authorize based on role
     (req, res, next) => {
       // no need to perform role verification

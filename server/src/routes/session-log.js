@@ -6,12 +6,12 @@ const { RESOURCE } = require('#@/adapters/es/adapter.js');
 const { client } = require('#@/adapters/es/client.js');
 
 /* Keycloak Authentication */
-// const authUtil = require('#@/util/auth-util.js);
+const authUtil = require('#@/util/auth-util.js');
 
 /* GET server settings */
 router.get(
   '/',
-  // authUtil.checkRole([authUtil.ROLES.USER]),
+  authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const now = Date.now();
     const cutoff = now - 2 * 24 * 60 * 60 * 1000;
