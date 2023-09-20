@@ -20,29 +20,19 @@ const Logger = require('#@/config/logger.js');
 const argv = require('#@/config/yargs-wrapper.js');
 
 const indexRouter = require('#@/routes/index.js');
-const auditsRouter = require('#@/routes/audits.js');
-const modelsRouter = require('#@/routes/models.js');
 const analysesRouter = require('#@/routes/analyses.js');
-const documentsRouter = require('#@/routes/documents.js');
-const scenariosRouter = require('#@/routes/scenario.js');
-const scenarioResultsRouter = require('#@/routes/scenario-results.js');
 const settingsRouter = require('#@/routes/settings.js');
-const dartRouter = require('#@/routes/dart.js');
 const insightsRouter = require('#@/routes/insights.js');
 const questionsRouter = require('#@/routes/questions.js');
-const cagsRouter = require('#@/routes/cags.js');
-const curationRecommendationsRouter = require('#@/routes/curation-recommendations.js');
 const modelRunsRouter = require('#@/routes/model-runs.js');
 const modelRunTagsRouter = require('#@/routes/model-run-tags.js');
 const indicatorsRouter = require('#@/routes/indicators.js');
 const datacubeRouter = require('#@/routes/datacubes.js');
 const gadmRouter = require('#@/routes/gadm.js');
 const pipelineReportingRouter = require('#@/routes/pipeline-reporting.js');
-const bibliographyRouter = require('#@/routes/bibliography.js');
 const sessionLogRouter = require('#@/routes/session-log.js');
 const asyncHandler = require('express-async-handler');
 
-const kbsRouter = require('#@/routes/knowledge-bases.js');
 const projectsRouter = require('#@/routes/projects.js');
 const DomainProjectsRouter = require('#@/routes/domain-projects.js');
 
@@ -111,29 +101,12 @@ app.use(jwt({ secret: publicKey, algorithms: ['RS256'] }));
 
 app.use('/api', [settingsRouter]);
 
-app.use('/api/dart', [dartRouter]);
-
 app.use('/api/insights', [insightsRouter]);
 
 app.use('/api/questions', [questionsRouter]);
 
 // The routes here are for model parameterization and model-based experiments
-app.use('/api/models', [modelsRouter]);
-
 app.use('/api/analyses', [analysesRouter]);
-
-app.use('/api/scenarios', [scenariosRouter]);
-
-app.use('/api/scenario-results', [scenarioResultsRouter]);
-
-// Routes for fetching document
-app.use('/api/documents', [documentsRouter]);
-
-// The routes here are for the CAG requests
-app.use('/api/cags', [cagsRouter]);
-
-// Routes for project auditing
-app.use('/api/audits', [auditsRouter]);
 
 // Handle some /api/mass calls ourselves. The rest get handled below.
 app.use('/api/maas/model-runs', [modelRunsRouter]);
@@ -179,8 +152,6 @@ app.use(
 
 app.use('/api/map', [mapProxyRouter]);
 
-app.use('/api/curation_recommendations', [curationRecommendationsRouter]);
-
 app.use(
   '/api/url-to-b64',
   asyncHandler(async (req, res) => {
@@ -216,11 +187,8 @@ app.use(
 );
 
 app.use('/api/projects', projectsRouter);
-app.use('/api/kbs', kbsRouter);
 
 app.use('/api/domain-projects', DomainProjectsRouter);
-
-app.use('/api/bibliography', bibliographyRouter);
 
 app.use('/api/dojo/paragraphs', [jatawareParagraphsRouter]);
 app.use('/api/dojo/documents', [jatawareDocumentsRouter]);
