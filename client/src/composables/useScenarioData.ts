@@ -1,6 +1,6 @@
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { computed, onMounted, onUnmounted, ref, Ref, watchEffect } from 'vue';
-import { getModelRunMetadata } from '@/services/new-datacube-service';
+import { getModelRunMetadata } from '@/services/datacube-service';
 import {
   getAggregationKey,
   isImage,

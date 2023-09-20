@@ -158,7 +158,7 @@ import { DatacubeStatus } from '@/types/Enums';
 import { AVAILABLE_DOMAINS, getValidatedOutputs, isIndicator } from '@/utils/datacube-util';
 import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
-import { updateDatacube } from '@/services/new-datacube-service';
+import { updateDatacube } from '@/services/datacube-service';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import useApplicationConfiguration from '@/composables/useApplicationConfiguration';

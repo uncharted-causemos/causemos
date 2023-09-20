@@ -57,7 +57,7 @@ import {
   updateDatacube,
   generateSparklines,
   getDefaultModelRunMetadata,
-} from '@/services/new-datacube-service';
+} from '@/services/datacube-service';
 import {
   Datacube,
   DatacubeFeature,

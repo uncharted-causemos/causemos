@@ -27,12 +27,12 @@ import { useDataAnalysis } from '@/composables/useDataAnalysis';
 import { ANALYSIS } from '@/utils/messages-util';
 import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 
-import { getDatacubeMetadataToCache, getDatacubesByIds } from '@/services/new-datacube-service';
+import { getDatacubeMetadataToCache, getDatacubesByIds } from '@/services/datacube-service';
 import {
+  saveAnalysisState,
   calculateResetRegionRankingWeights,
   didSelectedItemsChange,
 } from '@/services/analysis-service-new';
-import { saveAnalysisState } from '@/services/analysis-service';
 
 const SELECT_LABEL = 'Add To Analysis';
 

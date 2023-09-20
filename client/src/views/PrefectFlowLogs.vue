@@ -26,7 +26,7 @@ import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header
 import MultilineDescription from '@/components/widgets/multiline-description.vue';
 import { /* ref, watch, toRefs, Ref, */ defineComponent } from 'vue';
 import { FlowLogs } from '@/types/Common';
-import { fetchFlowLogs } from '@/services/new-datacube-service';
+import { fetchFlowLogs } from '@/services/datacube-service';
 
 const DEFAULT_LOGS: FlowLogs = {
   state: '',

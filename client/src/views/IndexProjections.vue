@@ -234,7 +234,7 @@ import timestampFormatter from '@/formatters/timestamp-formatter';
 import useIndexTree from '@/composables/useIndexTree';
 import { findAllDatasets } from '@/utils/index-tree-util';
 import { MAX_NUM_TIMESERIES, NO_COUNTRY_SELECTED_VALUE } from '@/utils/index-projection-util';
-import { getSpatialCoverageOverlap } from '@/services/new-datacube-service';
+import { getSpatialCoverageOverlap } from '@/services/datacube-service';
 import IndexProjectionsSettingsScenarios from '@/components/index-projections/index-projections-settings-scenarios.vue';
 import useInsightStore from '@/composables/useInsightStore';
 import useToaster from '@/composables/useToaster';
