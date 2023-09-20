@@ -8,7 +8,7 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref, toRefs } from 'vue';
 import CommentsButtonWidget from '@/components/widgets/comments-button-widget.vue';
-import { getAnalysis, updateAnalysis } from '@/services/analysis-service-new';
+import { getAnalysis, updateAnalysis } from '@/services/analysis-service';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';
