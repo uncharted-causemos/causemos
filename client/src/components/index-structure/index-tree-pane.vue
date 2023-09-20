@@ -80,7 +80,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { getAnalysisState } from '@/services/analysis-service-new';
+import { getAnalysisState } from '@/services/analysis-service';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import {
   ConceptNode,

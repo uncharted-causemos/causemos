@@ -97,7 +97,7 @@ import {
 import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
-import { openDatacubeDrilldown } from '@/services/analysis-service-new';
+import { openDatacubeDrilldown } from '@/services/analysis-service';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/composables/useDatacube';

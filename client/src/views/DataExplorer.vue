@@ -32,7 +32,7 @@ import {
   saveAnalysisState,
   calculateResetRegionRankingWeights,
   didSelectedItemsChange,
-} from '@/services/analysis-service-new';
+} from '@/services/analysis-service';
 
 const SELECT_LABEL = 'Add To Analysis';
 

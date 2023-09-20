@@ -9,7 +9,7 @@ import {
   calculateResetRegionRankingWeights,
   createDataAnalysisObject,
   didSelectedItemsChange,
-} from '../services/analysis-service-new';
+} from '../services/analysis-service';
 import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
 import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
 

@@ -5,7 +5,7 @@ import {
   getAnalysis,
   saveAnalysisState,
   createIndexAnalysisObject,
-} from '../services/analysis-service-new';
+} from '../services/analysis-service';
 
 import useIndexWorkBench from '@/composables/useIndexWorkBench';
 import useIndexTree from '@/composables/useIndexTree';

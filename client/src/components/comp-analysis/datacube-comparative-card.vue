@@ -115,7 +115,7 @@ import {
 } from '@/utils/drilldown-util';
 import { getActiveRegions, popupFormatter } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
-import { openDatacubeDrilldown } from '@/services/analysis-service-new';
+import { openDatacubeDrilldown } from '@/services/analysis-service';
 import { isDataSpaceDataState } from '@/utils/insight-util';
 import useDatacube from '@/composables/useDatacube';
 import { DatacubeFeature } from '@/types/Datacube';
