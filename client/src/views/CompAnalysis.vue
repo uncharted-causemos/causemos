@@ -1,6 +1,6 @@
 <template>
   <div class="comp-analysis-container">
-    <teleport to="#navbar-trailing-teleport-destination">
+    <teleport to="#navbar-trailing-teleport-destination" v-if="isMounted">
       <analysis-options-button :analysis-id="analysisId" />
     </teleport>
     <analytical-questions-and-insights-panel
@@ -133,6 +133,13 @@ export default defineComponent({
     AnalysisOptionsButton,
   },
   setup() {
+    // This is required because teleported components require their teleport destination to be mounted
+    //  before they can be rendered.
+    const isMounted = ref(false);
+    onMounted(() => {
+      isMounted.value = true;
+    });
+
     const store = useStore();
     const route = useRoute();
     const analysisId = computed(() => route.params.analysisId as string);
@@ -371,6 +378,7 @@ export default defineComponent({
       duplicateAnalysisItem,
       toggleAnalysisItemSelected,
       toggleIsItemInverted,
+      isMounted,
     };
   },
   mounted() {
