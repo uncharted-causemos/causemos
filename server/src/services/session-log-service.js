@@ -1,6 +1,6 @@
 const { v4: uuid } = require('uuid');
-const Logger = rootRequire('/config/logger');
-const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
+const Logger = require('#@/config/logger.js');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
 
 const sessionLogAdapter = Adapter.get(RESOURCE.SESSION_LOG);
 let buffer = [];

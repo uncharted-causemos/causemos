@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
-const { Adapter, RESOURCE } = rootRequire('adapters/es/adapter');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = require('#@/util/auth-util.js');
 
 /* GET knowledge bases */
 router.get(

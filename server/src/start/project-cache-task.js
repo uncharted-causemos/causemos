@@ -1,7 +1,7 @@
-const { setCache } = rootRequire('/cache/node-lru-cache');
-const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
-const projectService = rootRequire('/services/project-service');
-const Logger = rootRequire('/config/logger');
+const { setCache } = require('#@/cache/node-lru-cache.js');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = require('#@/adapters/es/adapter.js');
+const projectService = require('#@/services/project-service.js');
+const Logger = require('#@/config/logger.js');
 
 /**
  * Refresh project data and counts

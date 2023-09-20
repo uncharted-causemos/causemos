@@ -1,15 +1,15 @@
 const _ = require('lodash');
-const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
-const requestAsPromise = rootRequire('/util/request-as-promise');
-const domainProjectService = rootRequire('/services/domain-project-service');
-const { getFlowStatus, getFlowLogs } = rootRequire('services/external/prefect-queue-service');
-const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
-const { correctIncompleteTimeseries } = rootRequire('/util/incomplete-data-detection');
-const Logger = rootRequire('/config/logger');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = require('#@/adapters/es/adapter.js');
+const requestAsPromise = require('#@/util/request-as-promise.js');
+const domainProjectService = require('#@/services/domain-project-service.js');
+const { getFlowStatus, getFlowLogs } = require('#@/services/external/prefect-queue-service.js');
+const { processFilteredData, removeUnwantedData } = require('#@/util/post-processing-util.js');
+const { correctIncompleteTimeseries } = require('#@/util/incomplete-data-detection.js');
+const Logger = require('#@/config/logger.js');
 
-const config = rootRequire('/config/yargs-wrapper');
+const config = require('#@/config/yargs-wrapper.js');
 const shouldSyncDojo = config.dojoSync;
-const auth = rootRequire('/util/auth-util');
+const auth = require('#@/util/auth-util.js');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
 const DOJO_ROOT_FIELDS = [

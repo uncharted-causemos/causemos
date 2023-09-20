@@ -7,7 +7,4 @@ module.exports = {
   rules: {
     camelcase: ['error', { ignoreDestructuring: true, properties: 'never' }],
   },
-  globals: {
-    rootRequire: true,
-  },
 };

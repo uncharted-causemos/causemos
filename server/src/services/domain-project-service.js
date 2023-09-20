@@ -1,7 +1,7 @@
 const { v4: uuid } = require('uuid');
-const Logger = rootRequire('/config/logger');
-const es = rootRequire('adapters/es/adapter');
-const { client } = rootRequire('/adapters/es/client');
+const Logger = require('#@/config/logger.js');
+const es = require('#@/adapters/es/adapter.js');
+const { client } = require('#@/adapters/es/client.js');
 
 const Adapter = es.Adapter;
 const RESOURCE = es.RESOURCE;

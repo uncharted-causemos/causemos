@@ -1,9 +1,9 @@
 const _ = require('lodash');
 const moment = require('moment');
-const Logger = rootRequire('/config/logger');
+const Logger = require('#@/config/logger.js');
 
-const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
-const modelUtil = rootRequire('/util/model-util');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = require('#@/adapters/es/adapter.js');
+const modelUtil = require('#@/util/model-util.js');
 
 const DEFAULT_BATCH_SIZE = 1000;
 const MODEL_STATUS = modelUtil.MODEL_STATUS;

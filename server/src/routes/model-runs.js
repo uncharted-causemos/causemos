@@ -1,12 +1,12 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
-const maasService = rootRequire('/services/external/maas-service');
-const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
-const { getSelectedOutputTasks } = rootRequire('/util/query-param-util.js');
+const maasService = require('#@/services/external/maas-service.js');
+const { respondUsingCode } = require('#@/util/model-run-util.js');
+const { getSelectedOutputTasks } = require('#@/util/query-param-util.js');
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = require('#@/util/auth-util.js');
 
 /**
  * Submit a new model run to Jataware and store information about it in ES.

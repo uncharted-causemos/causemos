@@ -2,12 +2,12 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const _ = require('lodash');
 const router = express.Router();
-const { RESOURCE } = rootRequire('adapters/es/adapter');
-const { client, searchAndHighlight, queryStringBuilder } = rootRequire('adapters/es/client');
-const { listCountries } = rootRequire('/services/regions-service');
+const { RESOURCE } = require('#@/adapters/es/adapter.js');
+const { client, searchAndHighlight, queryStringBuilder } = require('#@/adapters/es/client.js');
+const { listCountries } = require('#@/services/regions-service.js');
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = require('#@/util/auth-util.js');
 
 const MAX_REGIONS = 10000;
 const SORT_COUNTRIES_ASC = true;

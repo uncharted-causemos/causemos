@@ -1,4 +1,4 @@
-const { Adapter, RESOURCE } = rootRequire('adapters/es/adapter');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
 
 const listCountries = async (sortAsc = true) => {
   const regionsAdapter = Adapter.get(RESOURCE.REGIONS);

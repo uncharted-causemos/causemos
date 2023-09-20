@@ -2,11 +2,11 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 
-const pipelineReportingService = rootRequire('/services/pipeline-reporting-service');
-const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
+const pipelineReportingService = require('#@/services/pipeline-reporting-service.js');
+const { respondUsingCode } = require('#@/util/model-run-util.js');
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = require('#@/util/auth-util.js');
 
 /**
  * Sets the status of the relevant ES documents to `PROCESSING FAILED`.

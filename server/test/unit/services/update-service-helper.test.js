@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const helper = rootRequire('/services/update-service-helper');
+const helper = require('#@/services/update-service-helper.js');
 
 describe('update-service', () => {
   let groundingInput = {};

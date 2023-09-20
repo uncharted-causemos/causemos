@@ -5,6 +5,10 @@
   "engines": {
     "node": "18.x"
   },
+  "main": "src/app.js",
+  "imports": {
+    "#@/*": "./src/*"
+  },
   "scripts": {
     "postinstall": "check-node-version --package",
     "start": "node ./src//bin/www",

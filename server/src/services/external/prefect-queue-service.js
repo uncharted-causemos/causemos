@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const QUEUE_SERVICE_URL = process.env.WM_QUEUE_SERVICE_URL + '/data-pipeline/enqueue';
-const requestAsPromise = rootRequire('/util/request-as-promise');
+const requestAsPromise = require('#@/util/request-as-promise.js');
 
 /**
  * Submit a job to the request queue for execution in prefect

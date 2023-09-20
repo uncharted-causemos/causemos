@@ -1,9 +1,9 @@
 const _ = require('lodash');
-const requestAsPromise = rootRequire('/util/request-as-promise');
-const ES = rootRequire('adapters/es/client');
-const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
-const Logger = rootRequire('/config/logger');
-const { getCache } = rootRequire('/cache/node-lru-cache');
+const requestAsPromise = require('#@/util/request-as-promise.js');
+const ES = require('#@/adapters/es/client.js');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = require('#@/adapters/es/adapter.js');
+const Logger = require('#@/config/logger.js');
+const { getCache } = require('#@/cache/node-lru-cache.js');
 
 const headers = {
   'Content-type': 'application/json',

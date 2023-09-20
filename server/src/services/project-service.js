@@ -2,20 +2,25 @@ const _ = require('lodash');
 const yaml = require('js-yaml');
 const { v4: uuid } = require('uuid');
 
-const Logger = rootRequire('/config/logger');
-const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');
+const Logger = require('#@/config/logger.js');
+const {
+  Adapter,
+  RESOURCE,
+  SEARCH_LIMIT,
+  MAX_ES_BUCKET_SIZE,
+} = require('#@/adapters/es/adapter.js');
 
-const requestAsPromise = rootRequire('/util/request-as-promise');
-const { StatementQueryUtil } = rootRequire('adapters/es/statement-query-util');
-const conceptUtil = rootRequire('/util/concept-util');
-const graphUtil = rootRequire('/util/graph-util');
+const requestAsPromise = require('#@/util/request-as-promise.js');
+const { StatementQueryUtil } = require('#@/adapters/es/statement-query-util.js');
+const conceptUtil = require('#@/util/concept-util.js');
+const graphUtil = require('#@/util/graph-util.js');
 const {
   NODE_AGGREGATION_QUERY,
   EDGE_AGGREGATION_QUERY,
   formatNodeAggregation,
   formatEdgeAggregation,
-} = rootRequire('adapters/es/graph-query-util');
-const { setCache, delCache, getCache } = rootRequire('/cache/node-lru-cache');
+} = require('#@/adapters/es/graph-query-util.js');
+const { setCache, delCache, getCache } = require('#@/cache/node-lru-cache.js');
 
 const MAX_NUMBER_PROJECTS = 100;
 

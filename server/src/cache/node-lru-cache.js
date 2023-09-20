@@ -1,5 +1,5 @@
 const LRU = require('lru-cache');
-const argv = rootRequire('/config/yargs-wrapper');
+const argv = require('#@/config/yargs-wrapper.js');
 
 // Initiate an in-memory cache
 const cache = new LRU(argv.cacheSize);

@@ -1,4 +1,4 @@
-const { MAX_ES_BUCKET_SIZE } = rootRequire('/adapters/es/adapter');
+const { MAX_ES_BUCKET_SIZE } = require('#@/adapters/es/adapter.js');
 
 const NODE_AGGREGATION_QUERY = {
   aggs: {

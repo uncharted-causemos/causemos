@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const { v4: uuid } = require('uuid');
-const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
 
 const find = async (simpleFilters, size, from, sort) => {
   const connection = Adapter.get(RESOURCE.ANALYSIS);

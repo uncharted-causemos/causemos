@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const modelUtil = rootRequire('util/model-util');
+const modelUtil = require('#@/util/model-util.js');
 
 const conflictingPolarityStatements = [1, 1, -1];
 

@@ -1,5 +1,5 @@
-const requestAsPromise = rootRequire('/util/request-as-promise');
-const Logger = rootRequire('/config/logger');
+const requestAsPromise = require('#@/util/request-as-promise.js');
+const Logger = require('#@/config/logger.js');
 
 const INDRA_URL = process.env.INDRA_URL || 'http://wm.indra.bio';
 

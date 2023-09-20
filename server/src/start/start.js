@@ -1,9 +1,9 @@
 const _ = require('lodash');
-const Logger = rootRequire('/config/logger');
-const serverConfiguration = rootRequire('/config/yargs-wrapper');
-const { startProjectCache, refreshProjectCache } = rootRequire('/start/project-cache-task');
-const { startBYOD } = rootRequire('/start/byod-task');
-const { startReindex } = rootRequire('/start/ontology-reindex-task');
+const Logger = require('#@/config/logger.js');
+const serverConfiguration = require('#@/config/yargs-wrapper.js');
+const { startProjectCache, refreshProjectCache } = require('#@/start/project-cache-task.js');
+const { startBYOD } = require('#@/start/byod-task.js');
+const { startReindex } = require('#@/start/ontology-reindex-task.js');
 
 const READER_OUTPUT_POLL_INTERVAL = 20 * 60 * 1000; // in milliseconds
 const PROJECT_CACHE_UPDATE_INTERVAL = 10 * 60 * 1000;

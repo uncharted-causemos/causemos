@@ -1,18 +1,20 @@
 const _ = require('lodash');
 const { v4: uuid } = require('uuid');
-const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
-const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
-const requestAsPromise = rootRequire('/util/request-as-promise');
-const { sendToPipeline, getFlowStatus, getFlowLogs } = rootRequire(
-  'services/external/prefect-queue-service'
-);
-const Logger = rootRequire('/config/logger');
-const auth = rootRequire('/util/auth-util');
-const domainProjectService = rootRequire('/services/domain-project-service');
-const datacubeService = rootRequire('/services/datacube-service');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = require('#@/adapters/es/adapter.js');
+const { processFilteredData, removeUnwantedData } = require('#@/util/post-processing-util.js');
+const requestAsPromise = require('#@/util/request-as-promise.js');
+const {
+  sendToPipeline,
+  getFlowStatus,
+  getFlowLogs,
+} = require('#@/services/external/prefect-queue-service.js');
+const Logger = require('#@/config/logger.js');
+const auth = require('#@/util/auth-util.js');
+const domainProjectService = require('#@/services/domain-project-service.js');
+const datacubeService = require('#@/services/datacube-service.js');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
-const config = rootRequire('/config/yargs-wrapper');
+const config = require('#@/config/yargs-wrapper.js');
 const allowModelRuns = config.allowModelRuns;
 const IMPLICIT_QUALIFIERS = [
   'timestamp',
