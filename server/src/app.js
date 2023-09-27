@@ -97,7 +97,20 @@ app.use(function (req, res, next) {
 const res = request('GET', `${process.env.KC_FQDN}/realms/${process.env.KC_REALM}`);
 const response = JSON.parse(res.getBody().toString());
 const publicKey = `-----BEGIN PUBLIC KEY-----\r\n${response.public_key}\r\n-----END PUBLIC KEY-----`;
-app.use(jwt({ secret: publicKey, algorithms: ['RS256'] }));
+app.use(
+  jwt({ secret: publicKey, algorithms: ['RS256'] }).unless({
+    path: [
+      // This endpoint is accessed by the `src` attribute on an `img` element
+      //  in the frontend. Those requests do not have any keycloak auth
+      //  information, so we don't  for a valid Keycloak bearer token.
+      /\/api\/insights\/.+\/thumbnail/,
+      // Theses endpoints are accessed by scripts and Jataware using basic auth
+      //  so we don't check for a valid Keycloak bearer token.
+      '/api/maas/indicators/post-process',
+      /\/api\/maas\/model-runs\/.+\/post-process/,
+    ],
+  })
+);
 
 app.use('/api', [settingsRouter]);
 

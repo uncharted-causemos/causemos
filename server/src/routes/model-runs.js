@@ -37,7 +37,9 @@ router.get(
  */
 router.post(
   '/:runId/post-process',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // This endpoint is accessed by scripts and Jataware using basic auth, so we
+  //  don't check the user role here.
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, maasService.startModelOutputPostProcessing, [
       req.body,
