@@ -1,13 +1,11 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
-const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
-const curationRecommendationsService = rootRequire(
-  '/services/external/curation-recommendations-service'
-);
+const { Adapter, RESOURCE, SEARCH_LIMIT } = require('#@/adapters/es/adapter.js');
+const curationRecommendationsService = require('#@/services/external/curation-recommendations-service.js');
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = require('#@/util/auth-util.js');
 
 // Helpers
 const getCAGStatements = async (cagId, sourceNode, targetNode) => {

@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 import API from '@/api/api';
-import datacubeService from '@/services/new-datacube-service';
+import datacubeService from '@/services/datacube-service';
 import { RegionalGADMDetail } from '@/types/Common';
 
 /**

@@ -1,8 +1,11 @@
 import _ from 'lodash';
 import { Ref, ref, watch, readonly, computed } from 'vue';
 import { CountryFilter, IndexAnalysisState, ProjectionDateRange } from '@/types/Analysis';
-import { getAnalysis, saveAnalysisState } from '../services/analysis-service';
-import { createIndexAnalysisObject } from '../services/analysis-service-new';
+import {
+  getAnalysis,
+  saveAnalysisState,
+  createIndexAnalysisObject,
+} from '../services/analysis-service';
 
 import useIndexWorkBench from '@/composables/useIndexWorkBench';
 import useIndexTree from '@/composables/useIndexTree';

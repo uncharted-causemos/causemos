@@ -108,7 +108,7 @@
 import { mapGetters, mapActions } from 'vuex';
 import DomainDatacubeInstanceCard from '@/components/domain-datacube-instance-card.vue';
 import filtersUtil from '@/utils/filters-util';
-import { getDatacubes } from '@/services/new-datacube-service';
+import { getDatacubes } from '@/services/datacube-service';
 import _ from 'lodash';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import domainProjectService from '@/services/domain-project-service';

@@ -1,13 +1,13 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
-const datacubeService = rootRequire('/services/datacube-service');
-const searchService = rootRequire('/services/search-service');
-const filtersUtil = rootRequire('/util/filters-util');
-const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
+const datacubeService = require('#@/services/datacube-service.js');
+const searchService = require('#@/services/search-service.js');
+const filtersUtil = require('#@/util/filters-util.js');
+const { respondUsingCode } = require('#@/util/model-run-util.js');
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = require('#@/util/auth-util.js');
 
 /**
  * Insert a new model or indicator metadata doc

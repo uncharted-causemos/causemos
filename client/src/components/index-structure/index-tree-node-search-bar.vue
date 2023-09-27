@@ -113,11 +113,11 @@ import {
   DojoFeatureSearchResult,
 } from '@/services/semantic-feature-search-service';
 import { capitalizeEachWord } from '@/utils/string-util';
-import newDatacubeService from '@/services/new-datacube-service';
+import datacubeService from '@/services/datacube-service';
 import DropdownButton from '@/components/dropdown-button.vue';
 import { getCountryList } from '@/services/region-service';
 import { CountryFilter } from '@/types/Analysis';
-import { defaultCountryFilters } from '@/services/analysis-service-new';
+import { defaultCountryFilters } from '@/services/analysis-service';
 
 const convertFeatureSearchResultToDatasetSearchResult = (
   feature: DojoFeatureSearchResult
@@ -255,7 +255,7 @@ const verifySearchFeatures = async (
   selectedCountries: string[]
 ) => {
   const verified: any[] = features.map((feature) =>
-    newDatacubeService.getDatacubeByDataIdAndOutputVariableAndCountry(
+    datacubeService.getDatacubeByDataIdAndOutputVariableAndCountry(
       feature.dataId,
       feature.outputName,
       selectedCountries

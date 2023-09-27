@@ -1,6 +1,6 @@
 const expect = require('chai').expect;
-const { FIELDS } = rootRequire('/adapters/es/config');
-const { AggUtil } = rootRequire('/adapters/es/agg-util');
+const { FIELDS } = require('#@/adapters/es/config.js');
+const { AggUtil } = require('#@/adapters/es/agg-util.js');
 const aggUtil = new AggUtil(FIELDS);
 
 describe('agg-util', function () {

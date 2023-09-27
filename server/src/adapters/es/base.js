@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const ES = require('./client');
-const Logger = rootRequire('/config/logger');
+const Logger = require('#@/config/logger.js');
 
 /**
  * Translate to ES term query

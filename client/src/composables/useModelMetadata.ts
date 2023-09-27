@@ -1,6 +1,6 @@
 import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
-import { getDatacubeById } from '@/services/new-datacube-service';
+import { getDatacubeById } from '@/services/datacube-service';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import { ModelParameterDataType } from '@/types/Enums';
 import _ from 'lodash';

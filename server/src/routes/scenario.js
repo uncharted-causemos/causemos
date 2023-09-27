@@ -2,10 +2,10 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 
-const scenarioService = rootRequire('/services/scenario-service');
+const scenarioService = require('#@/services/scenario-service.js');
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = require('#@/util/auth-util.js');
 
 const DEFAULT_SCENARIO_SIZE = 50;
 

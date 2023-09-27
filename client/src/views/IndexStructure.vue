@@ -1,5 +1,5 @@
 <template>
-  <teleport to="#navbar-trailing-teleport-destination">
+  <teleport to="#navbar-trailing-teleport-destination" v-if="isMounted">
     <analysis-options-button v-if="analysisName" :analysis-id="analysisId" />
   </teleport>
   <div class="index-structure-view-container content-full flex-col">
@@ -75,6 +75,13 @@ const {
   setCountryContextForSnippets,
   countryContextForSnippets,
 } = useIndexAnalysis(analysisId);
+
+// This is required because teleported components require their teleport destination to be mounted
+//  before they can be rendered.
+const isMounted = ref(false);
+onMounted(() => {
+  isMounted.value = true;
+});
 
 const indexWorkBench = useIndexWorkBench();
 const indexTree = useIndexTree();

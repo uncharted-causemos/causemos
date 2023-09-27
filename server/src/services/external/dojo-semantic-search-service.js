@@ -1,5 +1,5 @@
-const requestAsPromise = rootRequire('/util/request-as-promise');
-const authUtil = rootRequire('/util/auth-util');
+const requestAsPromise = require('#@/util/request-as-promise.js');
+const authUtil = require('#@/util/auth-util.js');
 
 const DOJO_DOC_PARAGRAPH_LIMIT = 200;
 const DOJO_PARAGRAPHS_HIGHLIGHT_URL = process.env.DOJO_URL + '/paragraphs/highlight';

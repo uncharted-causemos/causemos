@@ -709,7 +709,7 @@ import {
   fetchImageAsBase64,
   removeModelRunsTag,
   updateModelRun,
-} from '@/services/new-datacube-service';
+} from '@/services/datacube-service';
 
 import API from '@/api/api';
 import useToaster from '@/composables/useToaster';

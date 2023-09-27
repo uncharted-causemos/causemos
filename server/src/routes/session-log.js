@@ -2,11 +2,11 @@ const _ = require('lodash');
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
-const { RESOURCE } = rootRequire('adapters/es/adapter');
-const { client } = rootRequire('adapters/es/client');
+const { RESOURCE } = require('#@/adapters/es/adapter.js');
+const { client } = require('#@/adapters/es/client.js');
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = require('#@/util/auth-util.js');
 
 /* GET server settings */
 router.get(

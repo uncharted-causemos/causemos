@@ -192,7 +192,7 @@ import {
   getDatacubes,
   SparklineParams,
   updateIndicatorsBulk,
-} from '@/services/new-datacube-service';
+} from '@/services/datacube-service';
 import _ from 'lodash';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';

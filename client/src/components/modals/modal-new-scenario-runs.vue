@@ -49,7 +49,7 @@ import { BoxPlotStats, ScenarioData } from '@/types/Common';
 import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
 import { getOutputs, isGeoParameter } from '@/utils/datacube-util';
-import datacubeService from '@/services/new-datacube-service';
+import datacubeService from '@/services/datacube-service';
 import useToaster from '@/composables/useToaster';
 import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import DurationFormatter from '@/formatters/duration-formatter';

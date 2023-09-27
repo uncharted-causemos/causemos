@@ -134,12 +134,10 @@ import {
   deleteAnalysis,
   updateAnalysis,
   duplicateAnalysis,
-} from '@/services/analysis-service';
-import {
   createAnalysis,
   createDataAnalysisObject,
   createIndexAnalysisObject,
-} from '@/services/analysis-service-new';
+} from '@/services/analysis-service';
 import dateFormatter from '@/formatters/date-formatter';
 import { ProjectType } from '@/types/Enums';
 import { ANALYSIS } from '@/utils/messages-util';

@@ -4,13 +4,13 @@ const asyncHandler = require('express-async-handler');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
-const Logger = rootRequire('/config/logger');
-const projectService = rootRequire('/services/project-service');
+const Logger = require('#@/config/logger.js');
+const projectService = require('#@/services/project-service.js');
 
-const dartService = rootRequire('/services/external/dart-service');
+const dartService = require('#@/services/external/dart-service.js');
 
 /* Keycloak Authentication */
-const authUtil = rootRequire('/util/auth-util.js');
+const authUtil = require('#@/util/auth-util.js');
 
 /**
  * GET DART document from the docker service used for managing dart documents

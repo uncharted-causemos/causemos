@@ -1,6 +1,6 @@
 import { Indicator, Model } from '@/types/Datacube';
 import { computed, ref, Ref, watch } from 'vue';
-import newDatacubeService from '../services/new-datacube-service';
+import datacubeService from '../services/datacube-service';
 
 /**
  * Fetches a Model or Indicator's metadata from ElasticSearch based on its data_id.
@@ -23,7 +23,7 @@ export default function useModelMetadataSimple(
       }
       // Save data ID before fetching in case it changes during the request.
       const savedDataId = dataId.value;
-      const result = await newDatacubeService.getDatacubeByDataIdAndOutputVariable(
+      const result = await datacubeService.getDatacubeByDataIdAndOutputVariable(
         dataId.value,
         outputVariable.value
       );

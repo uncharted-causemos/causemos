@@ -2,10 +2,10 @@ const _ = require('lodash');
 
 const ES = require('./client');
 const { StatementQueryUtil } = require('./statement-query-util');
-const { findFilter } = rootRequire('/util/filters-util');
+const { findFilter } = require('#@/util/filters-util.js');
 const { AggUtil } = require('./agg-util');
 const { FIELDS, FIELD_TYPES, FIELD_LEVELS, NESTED_FIELD_PATHS } = require('./config');
-const Logger = rootRequire('/config/logger');
+const Logger = require('#@/config/logger.js');
 
 const MAX_ES_SUGGESTION_BUCKET_SIZE = 20;
 
