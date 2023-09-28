@@ -183,9 +183,7 @@
           :node="selectedNode"
           :countries="datasetMetadata?.geography.country ?? null"
         />
-        <button class="btn btn-sm" @click="navigateToDataset">
-          <i class="fa fa-fw fa-cube" />Explore dataset
-        </button>
+        <button class="btn btn-sm" @click="navigateToDataset">Explore dataset</button>
       </section>
       <section>
         <h4>Settings</h4>
