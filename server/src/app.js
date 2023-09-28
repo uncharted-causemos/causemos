@@ -108,6 +108,7 @@ app.use(
       //  so we don't check for a valid Keycloak bearer token.
       '/api/maas/indicators/post-process',
       /\/api\/maas\/model-runs\/.+\/post-process/,
+      /\/api\/datacubes\/.+\//,
     ],
   })
 );

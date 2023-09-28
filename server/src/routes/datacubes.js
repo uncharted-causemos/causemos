@@ -25,7 +25,9 @@ router.post(
  */
 router.put(
   '/:datacubeId',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // This endpoint is accessed by Jataware using basic auth, so we don't check
+  //  the user role here.
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const datacubeId = req.params.datacubeId;
     const metadata = req.body;
