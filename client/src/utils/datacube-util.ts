@@ -465,7 +465,7 @@ export const isBreakdownStateNone = (
 export const isBreakdownStateOutputs = (
   breakdownState: BreakdownState
 ): breakdownState is BreakdownStateOutputs => {
-  return (breakdownState as BreakdownStateOutputs).outputIndices !== undefined;
+  return (breakdownState as BreakdownStateOutputs).outputNames !== undefined;
 };
 export const isBreakdownStateRegions = (
   breakdownState: BreakdownState

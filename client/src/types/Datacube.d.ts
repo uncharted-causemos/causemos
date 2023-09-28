@@ -160,28 +160,28 @@ export interface DataConfig {
 export interface ComparisonSettings {
   shouldDisplayAbsoluteValues: boolean;
   // These settings only apply when shouldDisplayAbsoluteValues is false.
-  indexOfBaselineTimeseries: number;
+  baselineTimeseriesId: string;
   shouldUseRelativePercentage: boolean;
 }
 export interface BreakdownStateNone {
-  outputIndex: number;
+  outputName: string;
   modelRunIds: string[];
   comparisonSettings: ComparisonSettings;
 }
 export interface BreakdownStateOutputs {
   modelRunId: string;
-  outputIndices: number[];
+  outputNames: string[];
   comparisonSettings: ComparisonSettings;
 }
 export interface BreakdownStateRegions {
   modelRunId: string;
-  outputIndex: number;
+  outputName: string;
   regionIds: string[];
   comparisonSettings: ComparisonSettings;
 }
 export interface BreakdownStateYears {
   modelRunId: string;
-  outputIndex: number;
+  outputName: string;
   regionId: string | null;
   years: string[]; // TODO: number?[]
   isAllYearsReferenceTimeseriesShown: boolean;
@@ -190,7 +190,7 @@ export interface BreakdownStateYears {
 }
 export interface BreakdownStateQualifiers {
   modelRunId: string;
-  outputIndex: number;
+  outputName: string;
   regionId: string | null;
   qualifier: string; // e.g. "Car brand", "Car color"
   qualifierValues: string[]; // e.g. "Honda", "Toyota", "red", "blue"

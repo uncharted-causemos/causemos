@@ -61,7 +61,7 @@
               activeOutputVariable?.description ?? '...'
             }}</span>
           </div>
-          <p><span class="subdued">Unit:</span> # of people</p>
+          <p><span class="subdued">Unit:</span> {{ activeOutputVariable?.unit }}</p>
         </div>
 
         <div class="labelled-dropdowns">
@@ -133,7 +133,7 @@
     <modal-select-model-runs
       v-if="isSelectModelRunsModalOpen && metadata !== null"
       :metadata="metadata"
-      :current-output-index="currentOutputIndex"
+      :current-output-name="(currentOutputName as string)"
       :initial-selected-model-run-ids="selectedModelRunIds"
       @close="isSelectModelRunsModalOpen = false"
       @update-selected-model-runs="(runIds) => (selectedModelRunIds = runIds)"
@@ -143,7 +143,7 @@
       v-if="isFilterAndCompareModalOpen"
       :initial-breakdown-state="initialBreakdownState"
       :qualifiers="(metadata?.qualifier_outputs ?? []).filter(isBreakdownQualifier)"
-      :outputs="([] as DatacubeFeature[])"
+      :outputs="metadata?.outputs ?? []"
       @close="isFilterAndCompareModalOpen = false"
       @apply-breakdown-state="(a) => console.log(a)"
     />
@@ -153,21 +153,22 @@
 <script setup lang="ts">
 import useModelMetadata from '@/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import { Ref, computed, ref } from 'vue';
+import { Ref, computed, ref, watch } from 'vue';
 import { IncompleteDataCorrectiveAction, TemporalResolutionOption } from '@/types/Enums';
 import { BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
-import { getFilteredScenariosFromIds, getSelectedOutput } from '@/utils/datacube-util';
+import { getFilteredScenariosFromIds, getOutput } from '@/utils/datacube-util';
 import useScenarioData from '@/composables/useScenarioData';
 import stringUtil from '@/utils/string-util';
 import ModalSelectModelRuns from '@/components/modals/modal-select-model-runs.vue';
 import ModelRunSummaryList from '@/components/model-drilldown/model-run-summary-list.vue';
 import ModalFilterAndCompare from '@/components/modals/modal-filter-and-compare.vue';
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
+import { getDefaultFeature } from '@/services/datacube-service';
 
 const initialBreakdownState: BreakdownStateNone = {
   // TODO: use real values
   modelRunIds: [''],
-  outputIndex: 0,
+  outputName: 'data',
   comparisonSettings: {
     indexOfBaselineTimeseries: 0,
     shouldDisplayAbsoluteValues: true,
@@ -179,12 +180,20 @@ const metadata = useModelMetadata(modelId) as Ref<Model | null>;
 
 const isModelDetailsSectionExpanded = ref(false);
 
-const currentOutputIndex = ref(0);
-const activeOutputVariable = computed<DatacubeFeature | null>(() =>
-  metadata.value && currentOutputIndex.value >= 0
-    ? getSelectedOutput(metadata.value, currentOutputIndex.value)
-    : null
-);
+const currentOutputName = ref<string | null>(null);
+watch([metadata], () => {
+  if (metadata.value === null) {
+    currentOutputName.value = null;
+    return;
+  }
+  currentOutputName.value = getDefaultFeature(metadata.value)?.name ?? null;
+});
+const activeOutputVariable = computed<DatacubeFeature | null>(() => {
+  if (metadata.value === null || currentOutputName.value === null) {
+    return null;
+  }
+  return getOutput(metadata.value, currentOutputName.value) ?? null;
+});
 
 const { filteredRunData } = useScenarioData(modelId, ref({ clauses: [] }), ref([]), ref(false));
 
