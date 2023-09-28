@@ -127,7 +127,10 @@ router.get(
  */
 router.get(
   '/:id/thumbnail',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // This endpoint is accessed by the `src` attribute on an `img` element in
+  //  the frontend. Those requests do not have any keycloak auth information,
+  //  so we don't check the role here.
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const insightId = req.params.id;
     const thumbnail = await insightService.getInsightThumbnail(insightId);
