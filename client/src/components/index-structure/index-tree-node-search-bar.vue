@@ -103,6 +103,7 @@
 </template>
 
 <script setup lang="ts">
+import _ from 'lodash';
 import { ref, computed, watch, onMounted } from 'vue';
 import { DatasetSearchResult } from '@/types/Index';
 import useModelMetadataSimple from '@/composables/useModelMetadataSimple';
@@ -118,6 +119,8 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import { getCountryList } from '@/services/region-service';
 import { CountryFilter } from '@/types/Analysis';
 import { defaultCountryFilters } from '@/services/analysis-service';
+
+const SEARCH_DEBOUNCE_DELAY = 500;
 
 const convertFeatureSearchResultToDatasetSearchResult = (
   feature: DojoFeatureSearchResult
@@ -183,7 +186,9 @@ const countryFilterChoicesRemaining = computed(() => {
 });
 
 const selectedCountries = computed(() => {
-  const countryList: CountryFilter[] = props.countryFilters.filter((item) => item.countryName);
+  const countryList: CountryFilter[] = props.countryFilters.filter(
+    (item) => item.countryName && item.active
+  );
   return countryList.map((country) => country.countryName);
 });
 
@@ -205,19 +210,17 @@ const deleteCountryFilter = (filterToDelete: CountryFilter) => {
   emit('delete-country-filter', filterToDelete);
 };
 
-watch([searchText, selectedCountries], async () => {
-  // Save a copy of the current search text value in case it changes before results are fetched
-  // note: we are watching selected countries though not using them here YET.  The semantic search
-  //       cannot take the filter presently.  The models are filtered after the semantic return currently.
-  //  Add ", () => props.countryFilters" to the source for this watch when we can use this service
+const fetchSearchResult = _.debounce(async () => {
+  // Use a debounce function to optimize the search API calls. This ensures that requests are sent only after the final search text change,
+  // with a specified delay, preventing unnecessary calls for each subsequent change
 
+  // Save a copy of the current search text value in case it changes before results are fetched
   const queryString = searchText.value;
   if (queryString === '') {
     results.value = [];
     isFetchingResults.value = false;
     return;
   }
-  isFetchingResults.value = true;
   try {
     const dojoFeatureSearchResults = await searchFeatures(queryString);
 
@@ -235,6 +238,11 @@ watch([searchText, selectedCountries], async () => {
     console.error('Unable to fetch search results for query', searchText.value);
     console.error(e);
   }
+}, SEARCH_DEBOUNCE_DELAY);
+
+watch([searchText, selectedCountries], () => {
+  isFetchingResults.value = true;
+  fetchSearchResult();
 });
 
 /**
