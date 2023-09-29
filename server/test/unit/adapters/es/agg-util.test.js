@@ -1,7 +1,75 @@
 const expect = require('chai').expect;
-const { FIELDS } = require('#@/adapters/es/config.js');
+const { FIELD_TYPES } = require('#@/adapters/es/config.js');
 const { AggUtil } = require('#@/adapters/es/agg-util.js');
-const aggUtil = new AggUtil(FIELDS);
+
+const TEST_FIELDS = Object.freeze({
+  subjConcept: {
+    fields: ['subj.concept'],
+    aggFields: ['subj.concept.raw'],
+    type: FIELD_TYPES.NORMAL,
+    level: 0,
+  },
+  belief: {
+    fields: ['belief'],
+    type: FIELD_TYPES.RANGED,
+    level: 0,
+    range: [
+      { from: 0.0, to: 0.1 },
+      { from: 0.1, to: 0.2 },
+      { from: 0.2, to: 0.3 },
+      { from: 0.3, to: 0.4 },
+      { from: 0.4, to: 0.5 },
+      { from: 0.5, to: 0.6 },
+      { from: 0.6, to: 0.7 },
+      { from: 0.7, to: 0.8 },
+      { from: 0.8, to: 0.9 },
+      { from: 0.9, to: '--' },
+    ],
+  },
+  numEvidence: {
+    fields: ['wm.num_evidence'],
+    type: FIELD_TYPES.RANGED,
+    level: 0,
+    range: [
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+      { from: 3, to: 4 },
+      { from: 4, to: 5 },
+      { from: 5, to: '--' },
+    ],
+  },
+  minGroundingScore: {
+    fields: ['wm.min_grounding_score'],
+    type: FIELD_TYPES.RANGED,
+    level: 0,
+    range: [
+      { from: 0.0, to: 0.1 },
+      { from: 0.1, to: 0.2 },
+      { from: 0.2, to: 0.3 },
+      { from: 0.3, to: 0.4 },
+      { from: 0.4, to: 0.5 },
+      { from: 0.5, to: 0.6 },
+      { from: 0.6, to: 0.7 },
+      { from: 0.7, to: 0.8 },
+      { from: 0.8, to: 0.9 },
+      { from: 0.9, to: '--' },
+    ],
+  },
+  startDate: {
+    fields: ['subj.time_context.start.date', 'obj.time_context.start.date'],
+    type: FIELD_TYPES.DATE,
+    level: 0,
+    range: [
+      { from: 1990, to: 1995 },
+      { from: 1995, to: 2000 },
+      { from: 2000, to: 2005 },
+      { from: 2005, to: 2010 },
+      { from: 2010, to: '--' },
+    ],
+  },
+});
+
+const aggUtil = new AggUtil(TEST_FIELDS);
 
 describe('agg-util', function () {
   describe('buildAggregation', function () {
