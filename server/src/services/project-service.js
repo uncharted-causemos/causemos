@@ -77,11 +77,6 @@ const checkIndexStatus = async (projectId) => {
 
 /**
  * Cascade deletion of project and its resources
- * - model metadata
- * - edge
- * - node
- * - project metadata
- * - project
  *
  * @param {string} projectId - project identifier
  */
@@ -115,12 +110,6 @@ const deleteProject = async (projectId) => {
   // Remove project's questions
   Logger.info(`Deleting ${projectId} questions`);
   response = await questionAdapter.remove([{ field: 'project_id', value: projectId }]);
-  Logger.info(JSON.stringify(response));
-
-  // Remove project extension
-  Logger.info(`Deleting ${projectId} extensions`);
-  const projectExtension = Adapter.get(RESOURCE.PROJECT_EXTENSION);
-  response = await projectExtension.remove([{ field: 'project_id', value: projectId }]);
   Logger.info(JSON.stringify(response));
 };
 
