@@ -72,9 +72,9 @@
         <button
           class="btn btn-default margin-top"
           @click="navigateToDataset"
-          :disabled="metadata !== null"
+          :disabled="metadata === null"
         >
-          <i class="fa fa-fw fa-cube" />Explore dataset
+          Explore dataset
         </button>
       </div>
     </div>

@@ -25,18 +25,17 @@ class Project extends Base {
     const projectId = `project-${uuid()}`;
 
     // Add project entry
+    const now = Date.now();
     await this.client.index({
       id: projectId,
       index: this.index,
       refresh: 'wait_for',
       body: {
         id: projectId,
-        kb_id: '', // TODO: remove
         name: projectName,
         description: projectDescription,
-        created_at: Date.now(),
-        modified_at: Date.now(),
-        extended_at: Date.now(), // Last time additional documents were added to the project // TODO: remove
+        created_at: now,
+        modified_at: now,
       },
     });
 
