@@ -1,0 +1,41 @@
+.tab-description {
+  margin-top: 20px;
+}
+
+.tab-content {
+  margin: 40px 0 20px 0;
+}
+
+.fixed-width-input {
+  width: 250px;
+}
+
+.row-with-description {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.removable-row {
+  display: flex;
+  gap: 2px;
+}
+
+.icon-button {
+  width: 28px;
+  display: flex;
+  align-items: center;
+}
+
+.comparison-settings-container {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 20px;
+  border: 1px solid $un-color-black-10;
+  gap: 10px;
+
+  label {
+    display: flex;
+    gap: 10px;
+  }
+}

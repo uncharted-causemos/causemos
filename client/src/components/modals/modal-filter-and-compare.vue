@@ -7,110 +7,34 @@
       <RadioButtonGroup
         class="radio-button-group"
         :buttons="tabs"
-        :selected-button-value="selectedTabValue"
+        :selected-button-value="selectedTab"
         @button-clicked="selectTab"
       />
 
-      <template v-if="selectedTabValue === NO_FILTERS">
-        <p v-if="areTabsDisabled" class="subdued un-font-small">
-          No more than one model run may be selected to filter and compare
-          {{ namesOfSplitByOptions }}.
-        </p>
-        <p>Aggregated data from all {{ namesOfSplitByOptions }} will be displayed.</p>
-      </template>
+      <no-filters-tab
+        v-if="selectedTab === NO_FILTERS"
+        :are-tabs-disabled="areTabsDisabled"
+        :names-of-split-by-options="namesOfSplitByOptions"
+      />
+      <outputs-tab
+        v-else-if="selectedTab === OUTPUTS"
+        :breakdown-state="breakdownStateOutputs"
+        :outputs="outputs"
+        @set-breakdown-state="(newState) => (breakdownStateOutputs = newState)"
+      />
+      <regions-tab
+        v-else-if="selectedTab === REGIONS"
+        :breakdown-state="breakdownStateRegions"
+        :metadata="metadata"
+        :spatial-aggregation="spatialAggregation"
+        @set-breakdown-state="(newState) => (breakdownStateRegions = newState)"
+        @set-spatial-aggregation="setSpatialAggregation"
+      />
 
-      <template v-else-if="selectedTabValue === OUTPUTS">
-        <p class="subdued un-font-small">
-          Some models produce multiple outputs with each run. Select one or more of them here.
-        </p>
-        <dropdown-button
-          :items="outputDropdownOptions"
-          :selected-item="(breakdownState as BreakdownStateOutputs).outputNames[0]"
-          @item-selected="outputName => (breakdownState as BreakdownStateOutputs).outputNames[0] = outputName"
-        />
-        <p class="subdued un-font-small">
-          {{ getOutputDescription((breakdownState as BreakdownStateOutputs).outputNames[0]) }}
-        </p>
-
-        <div
-          v-for="(outputName, i) of (breakdownState as BreakdownStateOutputs).outputNames.slice(1)"
-          :key="i"
-        >
-          <dropdown-button
-            :items="outputDropdownOptions"
-            :selected-item="outputName"
-            @item-selected="outputName => (breakdownState as BreakdownStateOutputs).outputNames[i + 1] = outputName"
-          />
-          <button type="button" class="btn btn-default" @click="removeOutput(i + 1)">
-            <i class="fa fa-fw fa-minus" />
-          </button>
-          <p class="subdued un-font-small">
-            {{ getOutputDescription((breakdownState as BreakdownStateOutputs).outputNames[i + 1]) }}
-          </p>
-        </div>
-        <button class="btn btn-default" @click="addOutput">
-          <i class="fa fa-fw fa-plus" />Compare with another output
-        </button>
-
-        <div
-          v-if="(breakdownState as BreakdownStateOutputs).outputNames.length > 1"
-          class="comparison-settings-container"
-        >
-          <p>Comparison settings</p>
-          <label
-            ><input
-              type="radio"
-              name="display-absolute-values"
-              :checked="breakdownState.comparisonSettings.shouldDisplayAbsoluteValues === true"
-              @input="setComparisonSettings(true)"
-            />
-            Display absolute values</label
-          >
-          <label
-            ><input
-              type="radio"
-              name="display-absolute-values"
-              :checked="breakdownState.comparisonSettings.shouldDisplayAbsoluteValues === false"
-              @input="setComparisonSettings(false)"
-            />
-            Display values relative to</label
-          >
-          <dropdown-button
-            :items="comparisonBaselineOptions"
-            :selected-item="breakdownState.comparisonSettings.baselineTimeseriesId"
-            @item-selected="
-              (positionInSelectedOutputsList) =>
-                setComparisonSettings(
-                  false,
-                  positionInSelectedOutputsList,
-                  breakdownState.comparisonSettings.shouldUseRelativePercentage
-                )
-            "
-          />
-        </div>
-      </template>
-
-      <template v-else-if="selectedTabValue === REGIONS">
-        <p>Output</p>
-        <dropdown-button
-          :items="outputDropdownOptions"
-          :selected-item="(breakdownState as BreakdownStateRegions).outputName"
-          @item-selected="outputName => (breakdownState as BreakdownStateRegions).outputName = outputName"
-        />
-        <p class="subdued un-font-small">
-          {{ getOutputDescription((breakdownState as BreakdownStateRegions).outputName) }}
-        </p>
-        <p>Spatial resolution</p>
-        <button class="btn btn-default">TODO SPATIAL RESOLUTIONS</button>
-        <p>Regions</p>
-        <button class="btn btn-default">TODO REGIONS</button>
-        <button class="btn btn-default"><i class="fa fa-plus" />Compare with another region</button>
-      </template>
-
-      <template v-else-if="selectedTabValue === YEARS"> Years </template>
+      <template v-else-if="selectedTab === YEARS"> Years </template>
 
       <template v-else>
-        {{ selectedTabValue }}
+        {{ selectedTab }}
       </template>
     </template>
     <template #footer>
@@ -129,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import _ from 'lodash';
 import {
   BreakdownState,
   BreakdownStateNone,
@@ -136,11 +61,14 @@ import {
   BreakdownStateQualifiers,
   BreakdownStateRegions,
   BreakdownStateYears,
-  DatacubeFeature,
-  FeatureQualifier,
+  Indicator,
+  Model,
 } from '@/types/Datacube';
 import Modal from './modal.vue';
-import { computed, ref, toRefs } from 'vue';
+import NoFiltersTab from './modal-filter-and-compare/no-filters-tab.vue';
+import OutputsTab from './modal-filter-and-compare/outputs-tab.vue';
+import RegionsTab from './modal-filter-and-compare/regions-tab.vue';
+import { computed, onMounted, ref, toRefs } from 'vue';
 import RadioButtonGroup, { RadioButtonSpec } from '../widgets/radio-button-group.vue';
 import {
   isBreakdownStateNone,
@@ -148,7 +76,15 @@ import {
   isBreakdownStateRegions,
   isBreakdownStateYears,
 } from '@/utils/datacube-util';
-import DropdownButton, { DropdownItem } from '../dropdown-button.vue';
+import { AdminLevel } from '@/types/Enums';
+import { isBreakdownQualifier } from '@/utils/qualifier-util';
+import { getDefaultFeature } from '@/services/datacube-service';
+
+const DEFAULT_COMPARISON_SETTINGS = {
+  baselineTimeseriesId: '',
+  shouldDisplayAbsoluteValues: true,
+  shouldUseRelativePercentage: false,
+};
 
 const NO_FILTERS = 'No filters';
 const OUTPUTS = 'Outputs';
@@ -157,25 +93,30 @@ const YEARS = 'Years';
 
 const props = defineProps<{
   initialBreakdownState: BreakdownState;
-  qualifiers: FeatureQualifier[];
-  outputs: DatacubeFeature[];
+  spatialAggregation: AdminLevel | 'tiles';
+  metadata: Model | Indicator;
 }>();
 
-const { qualifiers, outputs } = toRefs(props);
+const { spatialAggregation, metadata } = toRefs(props);
+
+const qualifiers = computed(() =>
+  (metadata.value.qualifier_outputs ?? []).filter(isBreakdownQualifier)
+);
+const outputs = computed(() => metadata.value.outputs);
 
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'apply-breakdown-state', breakdownState: BreakdownState): void;
+  (e: 'set-spatial-aggregation', newValue: AdminLevel | 'tiles'): void;
 }>();
-
-const breakdownState = ref(props.initialBreakdownState);
-const applyBreakdownState = () => {
-  emit('apply-breakdown-state', breakdownState.value);
+const setSpatialAggregation = (newValue: AdminLevel | 'tiles') => {
+  emit('set-spatial-aggregation', newValue);
 };
 
-const areTabsDisabled = computed(
-  () => isBreakdownStateNone(breakdownState.value) && breakdownState.value.modelRunIds.length > 1
-);
+const applyBreakdownState = () => {
+  emit('apply-breakdown-state', breakdownState.value);
+  emit('close');
+};
 
 const tabs = computed<RadioButtonSpec[]>(() => {
   return [
@@ -204,160 +145,89 @@ const namesOfSplitByOptions = computed(() => {
   return options.join(', ');
 });
 
-const selectedTabValue = computed(() => {
-  const state = breakdownState.value;
-  if (isBreakdownStateNone(state)) {
-    return NO_FILTERS;
-  }
-  if (isBreakdownStateOutputs(state)) {
-    return OUTPUTS;
-  }
-  if (isBreakdownStateRegions(state)) {
-    return REGIONS;
-  }
-  if (isBreakdownStateYears(state)) {
-    return YEARS;
-  }
-  return state.qualifier;
-});
-
+const selectedTab = ref(NO_FILTERS);
 const selectTab = (tab: string) => {
-  if (tab === NO_FILTERS) {
-    const newState: BreakdownStateNone = {
-      outputName: 'data',
-      modelRunIds: [],
-      comparisonSettings: {
-        baselineTimeseriesId: '',
-        shouldDisplayAbsoluteValues: true,
-        shouldUseRelativePercentage: false,
-      },
-    };
-    breakdownState.value = newState;
-  } else if (tab === OUTPUTS) {
-    const newState: BreakdownStateOutputs = {
-      modelRunId: '',
-      outputNames: ['min'],
-      comparisonSettings: {
-        baselineTimeseriesId: '',
-        shouldDisplayAbsoluteValues: true,
-        shouldUseRelativePercentage: false,
-      },
-    };
-    breakdownState.value = newState;
-  } else if (tab === REGIONS) {
-    const newState: BreakdownStateRegions = {
-      modelRunId: '',
-      outputName: 'data',
-      regionIds: [],
-      comparisonSettings: {
-        baselineTimeseriesId: '',
-        shouldDisplayAbsoluteValues: true,
-        shouldUseRelativePercentage: false,
-      },
-    };
-    breakdownState.value = newState;
-  } else if (tab === YEARS) {
-    const newState: BreakdownStateYears = {
-      modelRunId: '',
-      outputName: 'data',
+  selectedTab.value = tab;
+};
+const breakdownState = computed<BreakdownState>(() => {
+  if (selectedTab.value === NO_FILTERS) return breakdownStateNone.value;
+  if (selectedTab.value === OUTPUTS) return breakdownStateOutputs.value;
+  if (selectedTab.value === REGIONS) return breakdownStateRegions.value;
+  if (selectedTab.value === YEARS) return breakdownStateYears.value;
+  return breakdownStatesQualifier.value[selectedTab.value];
+});
+const initialModelRunId = isBreakdownStateNone(props.initialBreakdownState)
+  ? props.initialBreakdownState.modelRunIds[0]
+  : props.initialBreakdownState.modelRunId;
+const breakdownStateNone = ref<BreakdownStateNone>({
+  outputName: getDefaultFeature(metadata.value)?.name ?? '',
+  modelRunIds: [initialModelRunId],
+  comparisonSettings: _.cloneDeep(DEFAULT_COMPARISON_SETTINGS),
+});
+const areTabsDisabled = computed(
+  () => selectedTab.value === NO_FILTERS && breakdownStateNone.value.modelRunIds.length > 1
+);
+const breakdownStateOutputs = ref<BreakdownStateOutputs>({
+  modelRunId: initialModelRunId,
+  outputNames: [getDefaultFeature(metadata.value)?.name ?? ''],
+  comparisonSettings: _.cloneDeep(DEFAULT_COMPARISON_SETTINGS),
+});
+const breakdownStateRegions = ref<BreakdownStateRegions>({
+  modelRunId: initialModelRunId,
+  outputName: getDefaultFeature(metadata.value)?.name ?? '',
+  regionIds: [],
+  comparisonSettings: _.cloneDeep(DEFAULT_COMPARISON_SETTINGS),
+});
+const breakdownStateYears = ref<BreakdownStateYears>({
+  modelRunId: initialModelRunId,
+  outputName: getDefaultFeature(metadata.value)?.name ?? '',
+  regionId: null,
+  years: [],
+  isAllYearsReferenceTimeseriesShown: false,
+  isSelectedYearsReferenceTimeseriesShown: false,
+  comparisonSettings: _.cloneDeep(DEFAULT_COMPARISON_SETTINGS),
+});
+const breakdownStatesQualifier = ref<{ [qualifierName: string]: BreakdownStateQualifiers }>({});
+onMounted(() => {
+  const qualifierStates: { [qualifierName: string]: BreakdownStateQualifiers } = {};
+  qualifiers.value.forEach((qualifier) => {
+    qualifierStates[qualifier.name] = {
+      modelRunId: initialModelRunId,
+      outputName: getDefaultFeature(metadata.value)?.name ?? '',
       regionId: null,
-      years: [],
-      isAllYearsReferenceTimeseriesShown: false,
-      isSelectedYearsReferenceTimeseriesShown: false,
-      comparisonSettings: {
-        baselineTimeseriesId: '',
-        shouldDisplayAbsoluteValues: true,
-        shouldUseRelativePercentage: false,
-      },
-    };
-    breakdownState.value = newState;
-  } else {
-    const newState: BreakdownStateQualifiers = {
-      modelRunId: '',
-      outputName: 'data',
-      regionId: null,
-      qualifier: tab,
+      qualifier: qualifier.name,
       qualifierValues: [],
-      comparisonSettings: {
-        baselineTimeseriesId: '',
-        shouldDisplayAbsoluteValues: true,
-        shouldUseRelativePercentage: false,
-      },
+      comparisonSettings: _.cloneDeep(DEFAULT_COMPARISON_SETTINGS),
     };
-    breakdownState.value = newState;
+  });
+  breakdownStatesQualifier.value = qualifierStates;
+});
+// Load the initial breakdown state into the selectedTab and relevant breakdownState ref.
+onMounted(() => {
+  const state = _.cloneDeep(props.initialBreakdownState);
+  if (isBreakdownStateNone(state)) {
+    breakdownStateNone.value = state;
+    selectedTab.value = NO_FILTERS;
+  } else if (isBreakdownStateOutputs(state)) {
+    breakdownStateOutputs.value = state;
+    selectedTab.value = OUTPUTS;
+  } else if (isBreakdownStateRegions(state)) {
+    breakdownStateRegions.value = state;
+    selectedTab.value = REGIONS;
+  } else if (isBreakdownStateYears(state)) {
+    breakdownStateYears.value = state;
+    selectedTab.value = YEARS;
+  } else {
+    breakdownStatesQualifier.value[state.qualifier] = state;
+    selectedTab.value = state.qualifier;
   }
-};
-
-const outputDropdownOptions = computed<DropdownItem[]>(() =>
-  outputs.value.map((output) => ({
-    displayName: output.display_name,
-    value: output.name,
-  }))
-);
-const getOutputDescription = (outputName: string) =>
-  outputs.value.find((output) => output.name === outputName)?.description ?? '';
-const addOutput = () => {
-  if (!isBreakdownStateOutputs(breakdownState.value)) {
-    return;
-  }
-  const newState: BreakdownStateOutputs = {
-    ...breakdownState.value,
-    outputNames: [...breakdownState.value.outputNames, outputDropdownOptions.value[0].value],
-  };
-  breakdownState.value = newState;
-};
-const removeOutput = (positionInSelectedOutputsList: number) => {
-  if (!isBreakdownStateOutputs(breakdownState.value)) {
-    return;
-  }
-  const newState: BreakdownStateOutputs = {
-    ...breakdownState.value,
-    outputNames: [
-      ...breakdownState.value.outputNames.filter((_, i) => i !== positionInSelectedOutputsList),
-    ],
-  };
-  breakdownState.value = newState;
-};
-const comparisonBaselineOptions = computed<DropdownItem[]>(() =>
-  (breakdownState.value as BreakdownStateOutputs).outputNames.map((outputName) => ({
-    value: outputName,
-    displayName:
-      outputs.value.find((output) => output.name === outputName)?.display_name ?? outputName,
-  }))
-);
-
-const setComparisonSettings = (
-  shouldDisplayAbsoluteValues: boolean,
-  baselineTimeseriesId?: string,
-  shouldUseRelativePercentage?: boolean
-) => {
-  // TODO: shouldn't assume we're looking at outputs
-  // Only update baselineTimeseriesId and shouldUseRelativePercentage if optional parameters are defined
-  const definedBaselineTimeseriesId =
-    baselineTimeseriesId ?? (breakdownState.value as BreakdownStateOutputs).outputNames[0];
-  const definedShouldUseRelativePercentage =
-    shouldUseRelativePercentage !== undefined
-      ? shouldDisplayAbsoluteValues
-      : breakdownState.value.comparisonSettings.shouldUseRelativePercentage;
-
-  const newState: BreakdownState = {
-    ...breakdownState.value,
-    comparisonSettings: {
-      shouldDisplayAbsoluteValues,
-      baselineTimeseriesId: definedBaselineTimeseriesId,
-      shouldUseRelativePercentage: definedShouldUseRelativePercentage,
-    },
-  };
-  breakdownState.value = newState;
-};
+});
 </script>
 
 <style lang="scss" scoped>
 @import '@/styles/common';
+@import '@/styles/uncharted-design-tokens';
 
-.radio-button-group {
-  margin-bottom: 40px;
-}
 :deep(.radio-button-group button) {
   width: 100px;
 }

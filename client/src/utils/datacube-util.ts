@@ -227,6 +227,9 @@ export function getOutput(metadata: Datacube, name: string) {
   return outputs.find((output) => output.name === name);
 }
 
+export const getOutputDescription = (outputs: DatacubeFeature[], outputName: string) =>
+  outputs.find((output) => output.name === outputName)?.description ?? '';
+
 export function getSelectedOutput(metadata: Datacube, index: number) {
   const outputs = getOutputs(metadata);
   if (index >= 0 && index < outputs.length) {
@@ -366,6 +369,17 @@ export const getFilteredScenariosFromIds = (scenarioIds: string[], allModelRunDa
   }, []);
 
   return filteredScenarios;
+};
+
+/**
+ * If there is one or more model run with is_default_run === true, returns the first.
+ * Otherwise, returns the first entry in the array if there is at least one entry.
+ * Useful for selecting a default run even when there isn't exactly one run with is_default_run.
+ * @param modelRuns a list of model run data to search
+ * @returns a ModelRun if modelRuns.length > 0, otherwise returns `undefined`
+ */
+export const getFirstDefaultModelRun = (modelRuns: ModelRun[]) => {
+  return modelRuns.find((run) => run.is_default_run === true) ?? modelRuns[0];
 };
 
 export const hasRegionLevelData = (regionLevelData: RegionAgg[] | undefined): boolean => {

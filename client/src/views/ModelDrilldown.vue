@@ -131,21 +131,22 @@
     </div>
 
     <modal-select-model-runs
-      v-if="isSelectModelRunsModalOpen && metadata !== null"
+      v-if="isSelectModelRunsModalOpen && metadata !== null && firstOutputName !== null"
       :metadata="metadata"
-      :current-output-name="(currentOutputName as string)"
+      :current-output-name="firstOutputName"
       :initial-selected-model-run-ids="selectedModelRunIds"
       @close="isSelectModelRunsModalOpen = false"
-      @update-selected-model-runs="(runIds) => (selectedModelRunIds = runIds)"
+      @update-selected-model-runs="setSelectedModelRunIds"
     />
 
     <modal-filter-and-compare
-      v-if="isFilterAndCompareModalOpen"
-      :initial-breakdown-state="initialBreakdownState"
-      :qualifiers="(metadata?.qualifier_outputs ?? []).filter(isBreakdownQualifier)"
-      :outputs="metadata?.outputs ?? []"
+      v-if="isFilterAndCompareModalOpen && metadata !== null"
+      :metadata="metadata"
+      :spatial-aggregation="spatialAggregation"
+      :initial-breakdown-state="breakdownState"
       @close="isFilterAndCompareModalOpen = false"
-      @apply-breakdown-state="(a) => console.log(a)"
+      @apply-breakdown-state="(newState) => (breakdownState = newState)"
+      @set-spatial-aggregation="(newValue) => (spatialAggregation = newValue)"
     />
   </div>
 </template>
@@ -154,51 +155,108 @@
 import useModelMetadata from '@/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { Ref, computed, ref, watch } from 'vue';
-import { IncompleteDataCorrectiveAction, TemporalResolutionOption } from '@/types/Enums';
-import { BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
-import { getFilteredScenariosFromIds, getOutput } from '@/utils/datacube-util';
+import {
+  AdminLevel,
+  IncompleteDataCorrectiveAction,
+  TemporalResolutionOption,
+} from '@/types/Enums';
+import { BreakdownState, DatacubeFeature, Model } from '@/types/Datacube';
+import {
+  getFilteredScenariosFromIds,
+  getOutput,
+  isBreakdownStateNone,
+  isBreakdownStateOutputs,
+  getFirstDefaultModelRun,
+} from '@/utils/datacube-util';
 import useScenarioData from '@/composables/useScenarioData';
 import stringUtil from '@/utils/string-util';
 import ModalSelectModelRuns from '@/components/modals/modal-select-model-runs.vue';
 import ModelRunSummaryList from '@/components/model-drilldown/model-run-summary-list.vue';
 import ModalFilterAndCompare from '@/components/modals/modal-filter-and-compare.vue';
-import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { getDefaultFeature } from '@/services/datacube-service';
 
-const initialBreakdownState: BreakdownStateNone = {
+const breakdownState = ref<BreakdownState>({
   // TODO: use real values
-  modelRunIds: [''],
-  outputName: 'data',
+  modelRunIds: [],
+  outputName: '',
   comparisonSettings: {
-    indexOfBaselineTimeseries: 0,
+    baselineTimeseriesId: '',
     shouldDisplayAbsoluteValues: true,
     shouldUseRelativePercentage: false,
   },
-};
+});
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
 const metadata = useModelMetadata(modelId) as Ref<Model | null>;
 
 const isModelDetailsSectionExpanded = ref(false);
 
-const currentOutputName = ref<string | null>(null);
+const firstOutputName = computed<string | null>(() => {
+  if (metadata.value === null) return null;
+  return isBreakdownStateOutputs(breakdownState.value)
+    ? breakdownState.value.outputNames[0]
+    : breakdownState.value.outputName;
+});
 watch([metadata], () => {
   if (metadata.value === null) {
-    currentOutputName.value = null;
     return;
   }
-  currentOutputName.value = getDefaultFeature(metadata.value)?.name ?? null;
+  const outputName = getDefaultFeature(metadata.value)?.name ?? null;
+  if (outputName === null) {
+    return;
+  }
+  if (isBreakdownStateOutputs(breakdownState.value)) {
+    breakdownState.value = {
+      ...breakdownState.value,
+      outputNames: [outputName],
+    };
+    return;
+  }
+  breakdownState.value = {
+    ...breakdownState.value,
+    outputName,
+  };
 });
+// TODO: add support for multiple selected output variables
 const activeOutputVariable = computed<DatacubeFeature | null>(() => {
-  if (metadata.value === null || currentOutputName.value === null) {
+  if (metadata.value === null || firstOutputName.value === null) {
     return null;
   }
-  return getOutput(metadata.value, currentOutputName.value) ?? null;
+  return getOutput(metadata.value, firstOutputName.value) ?? null;
 });
 
 const { filteredRunData } = useScenarioData(modelId, ref({ clauses: [] }), ref([]), ref(false));
 
-const selectedModelRunIds = ref(['17bbe11b-5c28-4bbb-8f00-3f585e7a55af']);
-
+const selectedModelRunIds = computed(() =>
+  isBreakdownStateNone(breakdownState.value)
+    ? breakdownState.value.modelRunIds
+    : [breakdownState.value.modelRunId]
+);
+const setSelectedModelRunIds = (newRunIds: string[]) => {
+  if (isBreakdownStateNone(breakdownState.value)) {
+    breakdownState.value = {
+      ...breakdownState.value,
+      modelRunIds: [...newRunIds],
+    };
+    return;
+  }
+  // TODO: gracefully handle if the user has a breakdown state selected that doesn't support multiple model run ids
+  breakdownState.value = {
+    ...breakdownState.value,
+    modelRunId: newRunIds[0],
+  };
+};
+// When model run data is first fetched, select the default model run
+watch(
+  [filteredRunData],
+  () => {
+    const defaultModelRun = getFirstDefaultModelRun(filteredRunData.value);
+    if (defaultModelRun === undefined) {
+      return;
+    }
+    setSelectedModelRunIds([defaultModelRun.id]);
+  },
+  { immediate: true }
+);
 const selectedModelRuns = computed(() =>
   getFilteredScenariosFromIds(selectedModelRunIds.value, filteredRunData.value)
 );
@@ -208,6 +266,8 @@ const isSelectModelRunsModalOpen = ref(false);
 const isFilterAndCompareModalOpen = ref(false);
 
 const setSelectedTimestamp = () => console.log('TODO:');
+
+const spatialAggregation = ref<AdminLevel | 'tiles'>(AdminLevel.Country);
 </script>
 
 <style lang="scss" scoped>
