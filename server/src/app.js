@@ -109,6 +109,9 @@ app.use(
       '/api/maas/indicators/post-process',
       /\/api\/maas\/model-runs\/.+\/post-process/,
       /\/api\/datacubes\/.+\//,
+
+      // These end points are called by wm-queue without the keycloak auth token
+      /\/api\/maas\/pipeline-reporting\/.+/,
     ],
   })
 );
