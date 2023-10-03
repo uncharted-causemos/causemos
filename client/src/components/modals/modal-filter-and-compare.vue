@@ -76,7 +76,7 @@ import {
   isBreakdownStateRegions,
   isBreakdownStateYears,
 } from '@/utils/datacube-util';
-import { AdminLevel } from '@/types/Enums';
+import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { getDefaultFeature } from '@/services/datacube-service';
 
@@ -93,7 +93,7 @@ const YEARS = 'Years';
 
 const props = defineProps<{
   initialBreakdownState: BreakdownState;
-  spatialAggregation: AdminLevel | 'tiles';
+  spatialAggregation: DatacubeGeoAttributeVariableType | 'tiles';
   metadata: Model | Indicator;
 }>();
 
@@ -107,9 +107,9 @@ const outputs = computed(() => metadata.value.outputs);
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'apply-breakdown-state', breakdownState: BreakdownState): void;
-  (e: 'set-spatial-aggregation', newValue: AdminLevel | 'tiles'): void;
+  (e: 'set-spatial-aggregation', newValue: DatacubeGeoAttributeVariableType | 'tiles'): void;
 }>();
-const setSpatialAggregation = (newValue: AdminLevel | 'tiles') => {
+const setSpatialAggregation = (newValue: DatacubeGeoAttributeVariableType | 'tiles') => {
   emit('set-spatial-aggregation', newValue);
 };
 

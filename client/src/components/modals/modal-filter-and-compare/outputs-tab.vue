@@ -149,9 +149,15 @@ const setComparisonSettings = (
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/common';
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/modal-filter-and-compare';
 .outputs-tab-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.outputs {
   display: flex;
   flex-direction: column;
   gap: 15px;

@@ -8,6 +8,18 @@
 
 .fixed-width-input {
   width: 250px;
+
+  :deep(.dropdown-button-container),
+  &.dropdown-button-container {
+    display: flex;
+  }
+
+  :deep(.dropdown-btn) {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: space-between;
+  }
 }
 
 .row-with-description {
@@ -19,6 +31,13 @@
 .removable-row {
   display: flex;
   gap: 2px;
+}
+
+.labelled-row {
+  display: flex;
+  > *:first-child {
+    width: 125px;
+  }
 }
 
 .icon-button {
