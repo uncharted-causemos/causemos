@@ -79,6 +79,7 @@ import {
 import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { getDefaultFeature } from '@/services/datacube-service';
+import useQualifierFetchInfo from '@/composables/useQualifierFetchInfo';
 
 const DEFAULT_COMPARISON_SETTINGS = {
   baselineTimeseriesId: '',
@@ -99,8 +100,18 @@ const props = defineProps<{
 
 const { spatialAggregation, metadata } = toRefs(props);
 
+const initialModelRunId = isBreakdownStateNone(props.initialBreakdownState)
+  ? props.initialBreakdownState.modelRunIds[0]
+  : props.initialBreakdownState.modelRunId;
+const qualifiersWithData = useQualifierFetchInfo(
+  metadata,
+  ref([initialModelRunId]),
+  ref(getDefaultFeature(metadata.value)?.name ?? '')
+);
 const qualifiers = computed(() =>
-  (metadata.value.qualifier_outputs ?? []).filter(isBreakdownQualifier)
+  (metadata.value.qualifier_outputs ?? [])
+    .filter(isBreakdownQualifier)
+    .filter((qualifier) => qualifiersWithData.value.has(qualifier.name))
 );
 const outputs = computed(() => metadata.value.outputs);
 
@@ -156,9 +167,6 @@ const breakdownState = computed<BreakdownState>(() => {
   if (selectedTab.value === YEARS) return breakdownStateYears.value;
   return breakdownStatesQualifier.value[selectedTab.value];
 });
-const initialModelRunId = isBreakdownStateNone(props.initialBreakdownState)
-  ? props.initialBreakdownState.modelRunIds[0]
-  : props.initialBreakdownState.modelRunId;
 const breakdownStateNone = ref<BreakdownStateNone>({
   outputName: getDefaultFeature(metadata.value)?.name ?? '',
   modelRunIds: [initialModelRunId],
