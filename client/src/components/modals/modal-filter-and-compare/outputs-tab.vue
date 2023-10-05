@@ -39,41 +39,6 @@
       <button class="btn btn-default fixed-width-input" @click="addOutput">
         <i class="fa fa-fw fa-plus" />Compare with another output
       </button>
-
-      <div v-if="breakdownState.outputNames.length > 1" class="comparison-settings-container">
-        <p>Comparison settings</p>
-        <label class="un-font-small">
-          <input
-            type="radio"
-            name="display-absolute-values"
-            :checked="breakdownState.comparisonSettings.shouldDisplayAbsoluteValues === true"
-            @input="setComparisonSettings(true)"
-          />
-          Display absolute values
-        </label>
-        <label class="un-font-small">
-          <input
-            type="radio"
-            name="display-absolute-values"
-            :checked="breakdownState.comparisonSettings.shouldDisplayAbsoluteValues === false"
-            @input="setComparisonSettings(false)"
-          />
-          Display values relative to
-        </label>
-        <dropdown-button
-          :items="comparisonBaselineOptions"
-          :selected-item="breakdownState.comparisonSettings.baselineTimeseriesId"
-          class="fixed-width-input"
-          @item-selected="
-            (timeseriesId: string) =>
-              setComparisonSettings(
-                false,
-                timeseriesId,
-                breakdownState.comparisonSettings.shouldUseRelativePercentage
-              )
-          "
-        />
-      </div>
     </div>
   </div>
 </template>
@@ -116,36 +81,6 @@ const removeOutput = (positionInSelectedOutputsList: number) => {
   };
   emit('set-breakdown-state', newState);
 };
-const comparisonBaselineOptions = computed<DropdownItem[]>(() =>
-  breakdownState.value.outputNames.map((outputName) => ({
-    value: outputName,
-    displayName:
-      outputs.value.find((output) => output.name === outputName)?.display_name ?? outputName,
-  }))
-);
-
-const setComparisonSettings = (
-  shouldDisplayAbsoluteValues: boolean,
-  baselineTimeseriesId?: string,
-  shouldUseRelativePercentage?: boolean
-) => {
-  // Only update baselineTimeseriesId and shouldUseRelativePercentage if optional parameters are defined
-  const definedBaselineTimeseriesId = baselineTimeseriesId ?? breakdownState.value.outputNames[0];
-  const definedShouldUseRelativePercentage =
-    shouldUseRelativePercentage !== undefined
-      ? shouldDisplayAbsoluteValues
-      : breakdownState.value.comparisonSettings.shouldUseRelativePercentage;
-
-  const newState: BreakdownStateOutputs = {
-    ...breakdownState.value,
-    comparisonSettings: {
-      shouldDisplayAbsoluteValues,
-      baselineTimeseriesId: definedBaselineTimeseriesId,
-      shouldUseRelativePercentage: definedShouldUseRelativePercentage,
-    },
-  };
-  emit('set-breakdown-state', newState);
-};
 </script>
 
 <style lang="scss" scoped>
@@ -156,7 +91,6 @@ const setComparisonSettings = (
   display: flex;
   flex-direction: column;
 }
-
 .outputs {
   display: flex;
   flex-direction: column;

@@ -45,16 +45,3 @@
   display: flex;
   align-items: center;
 }
-
-.comparison-settings-container {
-  display: flex;
-  flex-direction: column;
-  padding: 10px 20px;
-  border: 1px solid $un-color-black-10;
-  gap: 10px;
-
-  label {
-    display: flex;
-    gap: 10px;
-  }
-}

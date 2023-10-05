@@ -168,3 +168,7 @@ export function getLevelFromRegionId(regionId: string) {
   const level = regionId.split(REGION_ID_DELIMETER).length - 1;
   return level;
 }
+
+export function getRegionIdDisplayName(regionId: string) {
+  return regionId.split(REGION_ID_DELIMETER).pop() ?? regionId;
+}

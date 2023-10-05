@@ -37,14 +37,36 @@
           @item-selected="(regionId) => (breakdownState.regionIds[0] = regionId)"
         />
       </div>
+      <div v-for="(regionId, i) of breakdownState.regionIds.slice(1)" :key="i" class="labelled-row">
+        <!-- Empty div to align the button with the inputs above it -->
+        <div></div>
+        <div class="removable-row fixed-width-input">
+          <dropdown-button
+            :items="regionsDropdownOptions"
+            :selected-item="regionId"
+            @item-selected="(regionId: string) => (breakdownState.regionIds[i + 1] = regionId)"
+            class="fixed-width-input"
+          />
+          <button type="button" class="btn btn-default icon-button" @click="removeRegion(i + 1)">
+            <i class="fa fa-fw fa-minus" />
+          </button>
+        </div>
+      </div>
       <div class="labelled-row">
         <!-- Empty div to align the button with the inputs above it -->
         <div></div>
-        <button class="btn btn-default fixed-width-input">
+        <button class="btn btn-default fixed-width-input" @click="addRegion">
           <i class="fa fa-fw fa-plus" />Compare with another region
         </button>
       </div>
     </section>
+
+    <comparison-settings-vue
+      v-if="breakdownState.regionIds.length > 1"
+      :comparison-baseline-options="comparisonBaselineOptions"
+      :comparison-settings="breakdownState.comparisonSettings"
+      @set-comparison-settings="setComparisonSettings"
+    />
   </div>
 </template>
 
@@ -52,11 +74,12 @@
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { getRegionLists } from '@/services/outputdata-service';
 import { DatacubeGeography } from '@/types/Common';
-import { BreakdownStateRegions, Indicator, Model } from '@/types/Datacube';
+import { BreakdownStateRegions, ComparisonSettings, Indicator, Model } from '@/types/Datacube';
 import { AdminLevel, DatacubeGeoAttributeVariableType } from '@/types/Enums';
-import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
+import { ADMIN_LEVEL_TITLES, getRegionIdDisplayName } from '@/utils/admin-level-util';
 import { getOutputDescription } from '@/utils/datacube-util';
 import { computed, ref, toRefs, watch } from 'vue';
+import ComparisonSettingsVue from './comparison-settings.vue';
 
 const POSSIBLE_SPATIAL_RESOLUTION_DROPDOWN_OPTIONS: DropdownItem[] = [
   { value: AdminLevel.Country, displayName: ADMIN_LEVEL_TITLES[AdminLevel.Country] },
@@ -86,7 +109,7 @@ const outputDropdownOptions = computed<DropdownItem[]>(() =>
 
 const availableRegions = ref<DatacubeGeography | null>(null);
 watch(
-  [breakdownState, metadata],
+  [() => breakdownState.value.modelRunId, () => breakdownState.value.outputName, metadata],
   async () => {
     const result = await getRegionLists(
       metadata.value.data_id,
@@ -129,15 +152,16 @@ const regionsDropdownOptions = computed<DropdownItem[]>(() => {
     return [];
   }
   return availableRegions.value[spatialAggregation.value].map((region) => {
-    return { value: region, displayName: region.split('__').pop() ?? region };
+    return { value: region, displayName: getRegionIdDisplayName(region) };
   });
 });
-watch([spatialAggregation], () => {
+watch([spatialAggregation, availableRegions], () => {
   // When the selected admin level changes, ensure the selected regions are found at that level
   if (
     availableRegions.value === null ||
     spatialAggregation.value === 'tiles' ||
-    availableRegions.value[spatialAggregation.value].length === 0
+    availableRegions.value[spatialAggregation.value].length === 0 ||
+    availableRegions.value[spatialAggregation.value].includes(breakdownState.value.regionIds[0])
   ) {
     return;
   }
@@ -148,6 +172,37 @@ watch([spatialAggregation], () => {
   };
   emit('set-breakdown-state', newState);
 });
+
+const addRegion = () => {
+  const newState: BreakdownStateRegions = {
+    ...breakdownState.value,
+    regionIds: [...breakdownState.value.regionIds, regionsDropdownOptions.value[0].value],
+  };
+  emit('set-breakdown-state', newState);
+};
+const removeRegion = (positionInSelectedRegionsList: number) => {
+  const newState: BreakdownStateRegions = {
+    ...breakdownState.value,
+    regionIds: [
+      ...breakdownState.value.regionIds.filter((_, i) => i !== positionInSelectedRegionsList),
+    ],
+  };
+  emit('set-breakdown-state', newState);
+};
+
+const comparisonBaselineOptions = computed<DropdownItem[]>(() =>
+  breakdownState.value.regionIds.map((regionId) => ({
+    value: regionId,
+    displayName: getRegionIdDisplayName(regionId),
+  }))
+);
+const setComparisonSettings = (newComparisonSettings: ComparisonSettings) => {
+  const newState: BreakdownStateRegions = {
+    ...breakdownState.value,
+    comparisonSettings: newComparisonSettings,
+  };
+  emit('set-breakdown-state', newState);
+};
 </script>
 
 <style lang="scss" scoped>
