@@ -30,8 +30,14 @@
         @set-breakdown-state="(newState) => (breakdownStateRegions = newState)"
         @set-spatial-aggregation="setSpatialAggregation"
       />
-
-      <template v-else-if="selectedTab === YEARS"> Years </template>
+      <years-tab
+        v-else-if="selectedTab === YEARS"
+        :breakdown-state="breakdownStateYears"
+        :metadata="metadata"
+        :spatial-aggregation="spatialAggregation"
+        @set-breakdown-state="(newState) => (breakdownStateYears = newState)"
+        @set-spatial-aggregation="setSpatialAggregation"
+      />
 
       <template v-else>
         {{ selectedTab }}
@@ -68,6 +74,7 @@ import Modal from './modal.vue';
 import NoFiltersTab from './modal-filter-and-compare/no-filters-tab.vue';
 import OutputsTab from './modal-filter-and-compare/outputs-tab.vue';
 import RegionsTab from './modal-filter-and-compare/regions-tab.vue';
+import YearsTab from './modal-filter-and-compare/years-tab.vue';
 import { computed, onMounted, ref, toRefs } from 'vue';
 import RadioButtonGroup, { RadioButtonSpec } from '../widgets/radio-button-group.vue';
 import {

@@ -92,8 +92,6 @@ const removeOutput = (positionInSelectedOutputsList: number) => {
   flex-direction: column;
 }
 .outputs {
-  display: flex;
-  flex-direction: column;
   gap: 15px;
 }
 </style>

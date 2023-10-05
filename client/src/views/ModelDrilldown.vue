@@ -156,7 +156,7 @@ import useModelMetadata from '@/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { Ref, computed, ref, watch } from 'vue';
 import {
-  AdminLevel,
+  DatacubeGeoAttributeVariableType,
   IncompleteDataCorrectiveAction,
   TemporalResolutionOption,
 } from '@/types/Enums';
@@ -267,7 +267,9 @@ const isFilterAndCompareModalOpen = ref(false);
 
 const setSelectedTimestamp = () => console.log('TODO:');
 
-const spatialAggregation = ref<AdminLevel | 'tiles'>(AdminLevel.Country);
+const spatialAggregation = ref<DatacubeGeoAttributeVariableType | 'tiles'>(
+  DatacubeGeoAttributeVariableType.Country
+);
 </script>
 
 <style lang="scss" scoped>

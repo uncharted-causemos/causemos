@@ -183,7 +183,7 @@ export interface BreakdownStateYears {
   modelRunId: string;
   outputName: string;
   regionId: string | null;
-  years: string[]; // TODO: number?[]
+  years: string[];
   isAllYearsReferenceTimeseriesShown: boolean;
   isSelectedYearsReferenceTimeseriesShown: boolean;
   comparisonSettings: ComparisonSettings;
