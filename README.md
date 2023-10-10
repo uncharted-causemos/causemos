@@ -52,10 +52,9 @@ The default development config includes some flags to facilitate debugging. Inte
 
 ### Additional dependencies
 
-Causemos internally depends on two additional services: a data/tile service for doing data-intensive work, and a recommendation service to aid curations. These services are specified in the environment file, if you want to run these locally please follow the instructions at their respective repos.
+Causemos internally depends on an additional service: a data/tile service for handling data-intensive tasks. The service url is specified in the environment file. If you want to run the service locally, please follow the instructions in its respective repository.
 
 - wm-go: https://gitlab.uncharted.software/WM/wm-go
-- wm-curation-recommendation: https://gitlab.uncharted.software/WM/wm-curation-recommendation
 
 ### Running locally
 

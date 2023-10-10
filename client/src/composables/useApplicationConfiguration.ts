@@ -1,6 +1,5 @@
 import API from '@/api/api';
 import { ApplicationConfiguration } from '@/types/ApplicationConfiguration';
-import { convertStringToBoolean } from '@/utils/string-util';
 import { onMounted, ref } from 'vue';
 import _ from 'lodash';
 
@@ -10,25 +9,11 @@ import _ from 'lodash';
 const RETRY_DELAY_LENGTHS_IN_SECONDS = [1, 5, 10, 30, 60, 0];
 
 const DEFAULT_APPLICATION_CONFIGURATION: ApplicationConfiguration = {
-  CLIENT__IS_ANALYST_WORKFLOW_VISIBLE: true,
-  CLIENT__USER_DOCS_URL: 'https://app.causemos.ai/docs/',
-  CLIENT__DOJO_LOG_API_URL: 'http://causemos-analyst-api.dojo-modeling.com',
-  CLIENT__DOJO_UPLOAD_DOCUMENT_URL: 'https://causemos-analyst.dojo-modeling.com/documents/upload',
-  CLIENT__HIDE_ADD_DOCUMENT_BUTTON: true,
+  CLIENT__USER_DOCS_URL: '',
+  CLIENT__DOJO_LOG_API_URL: '',
+  CLIENT__DOJO_UPLOAD_DOCUMENT_URL: '',
 };
 
-const parseBoolean = (val: string) => {
-  try {
-    return convertStringToBoolean(val);
-  } catch (e: any) {
-    console.warn(
-      `${e.message}
-      Check that all required environment variables are configured correctly (.env).
-      Refer to README for more information.`
-    );
-    return undefined;
-  }
-};
 // Parse client settings object and return parsed results.
 // If parsing fails for a field of the object, omit the field from the result object.
 const parseSettings = (clientSettings: { [key: string]: string }) => {
@@ -43,20 +28,6 @@ const parseSettings = (clientSettings: { [key: string]: string }) => {
   }
   if (CLIENT__USER_DOCS_URL !== undefined) {
     config.CLIENT__USER_DOCS_URL = CLIENT__USER_DOCS_URL;
-  }
-
-  const CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = parseBoolean(
-    clientSettings.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE
-  );
-  if (CLIENT__IS_ANALYST_WORKFLOW_VISIBLE !== undefined) {
-    config.CLIENT__IS_ANALYST_WORKFLOW_VISIBLE = CLIENT__IS_ANALYST_WORKFLOW_VISIBLE;
-  }
-
-  const CLIENT__HIDE_ADD_DOCUMENT_BUTTON = parseBoolean(
-    clientSettings.CLIENT__HIDE_ADD_DOCUMENT_BUTTON
-  );
-  if (CLIENT__HIDE_ADD_DOCUMENT_BUTTON !== undefined) {
-    config.CLIENT__HIDE_ADD_DOCUMENT_BUTTON = CLIENT__HIDE_ADD_DOCUMENT_BUTTON;
   }
 
   return config;

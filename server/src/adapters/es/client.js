@@ -2,10 +2,10 @@ const _ = require('lodash');
 const { Client } = require('@elastic/elasticsearch');
 
 const client = new Client({
-  node: `${process.env.TD_DATA_URL}`,
+  node: `${process.env.ES_URL}`,
   auth: {
-    username: `${process.env.TD_DATA_USERNAME}`,
-    password: `${process.env.TD_DATA_PASSWORD}`,
+    username: `${process.env.ES_USERNAME}`,
+    password: `${process.env.ES_PASSWORD}`,
   },
   ssl: {
     // might be required if it's a self-signed certificate
