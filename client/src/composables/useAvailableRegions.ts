@@ -1,11 +1,17 @@
 import { getRegionLists } from '@/services/outputdata-service';
 import { DatacubeGeography } from '@/types/Common';
-import { BreakdownStateRegions, BreakdownStateYears, Indicator, Model } from '@/types/Datacube';
+import {
+  BreakdownStateQualifiers,
+  BreakdownStateRegions,
+  BreakdownStateYears,
+  Indicator,
+  Model,
+} from '@/types/Datacube';
 import { Ref, ref, watch } from 'vue';
 
 export function useAvailableRegions(
   metadata: Ref<Model | Indicator>,
-  breakdownState: Ref<BreakdownStateRegions | BreakdownStateYears>
+  breakdownState: Ref<BreakdownStateRegions | BreakdownStateYears | BreakdownStateQualifiers>
 ) {
   const availableRegions = ref<DatacubeGeography | null>(null);
   watch(

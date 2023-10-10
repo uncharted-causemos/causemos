@@ -398,11 +398,15 @@ export const getDatacubeMetadataToCache = (datacube: Datacube): CachedDatacubeMe
   };
 };
 
-export const getDefaultDataConfig = async (dataId: string, outputVariable: string) => {
+export const getDefaultDataConfig = async (
+  dataId: string,
+  outputVariable: string,
+  runId: string
+) => {
   const metadata = await getDatacubeByDataId(dataId);
   const config: DataConfig = {
     datasetId: dataId,
-    runId: 'indicator',
+    runId,
     outputVariable,
     selectedTimestamp: 0,
     spatialAggregation: metadata?.default_view?.spatialAggregation || AggregationOption.Mean,

@@ -324,6 +324,8 @@ const isModelRunsInProgressSectionExpanded = ref(false);
   gap: 40px;
   overflow-y: auto;
   height: 850px;
+  // Ensure the top and bottom of the modal are always visible
+  max-height: 80vh;
 }
 
 .column {

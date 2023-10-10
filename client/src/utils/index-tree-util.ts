@@ -378,7 +378,7 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
       return;
     }
     const { found: node, parent } = foundResult;
-    const dataConfig = await getDefaultDataConfig(dataset.dataId, dataset.outputName);
+    const dataConfig = await getDefaultDataConfig(dataset.dataId, dataset.outputName, 'indicator');
     const datasetNode: ConceptNodeWithDatasetAttached = {
       // Set starting values for new dataset node
       // Store values from the search result and pre-calculated starting weight

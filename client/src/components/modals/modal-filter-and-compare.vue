@@ -1,5 +1,5 @@
 <template>
-  <Modal>
+  <Modal @close="emit('close')">
     <template #header>
       <h4 class="title">Filter and compare</h4>
     </template>
@@ -39,9 +39,17 @@
         @set-spatial-aggregation="setSpatialAggregation"
       />
 
-      <template v-else>
-        {{ selectedTab }}
-      </template>
+      <qualifier-tab
+        v-else
+        :breakdown-state="breakdownStatesQualifier[selectedTab]"
+        :metadata="metadata"
+        :spatial-aggregation="spatialAggregation"
+        :qualifier-display-name="
+          qualifiers.find(({ name }) => name === selectedTab)?.display_name ?? selectedTab
+        "
+        @set-breakdown-state="(newState) => (breakdownStatesQualifier[selectedTab] = newState)"
+        @set-spatial-aggregation="setSpatialAggregation"
+      />
     </template>
     <template #footer>
       <ul class="unstyled-list">
@@ -75,7 +83,8 @@ import NoFiltersTab from './modal-filter-and-compare/no-filters-tab.vue';
 import OutputsTab from './modal-filter-and-compare/outputs-tab.vue';
 import RegionsTab from './modal-filter-and-compare/regions-tab.vue';
 import YearsTab from './modal-filter-and-compare/years-tab.vue';
-import { computed, onMounted, ref, toRefs } from 'vue';
+import QualifierTab from './modal-filter-and-compare/qualifier-tab.vue';
+import { computed, onMounted, ref, toRefs, watch } from 'vue';
 import RadioButtonGroup, { RadioButtonSpec } from '../widgets/radio-button-group.vue';
 import {
   isBreakdownStateNone,
@@ -203,10 +212,11 @@ const breakdownStateYears = ref<BreakdownStateYears>({
   comparisonSettings: _.cloneDeep(DEFAULT_COMPARISON_SETTINGS),
 });
 const breakdownStatesQualifier = ref<{ [qualifierName: string]: BreakdownStateQualifiers }>({});
-onMounted(() => {
-  const qualifierStates: { [qualifierName: string]: BreakdownStateQualifiers } = {};
+watch(qualifiers, () => {
+  // When qualifiers are fetched, initialize breakdown states for each one
+  const defaultQualifierStates: { [qualifierName: string]: BreakdownStateQualifiers } = {};
   qualifiers.value.forEach((qualifier) => {
-    qualifierStates[qualifier.name] = {
+    defaultQualifierStates[qualifier.name] = {
       modelRunId: initialModelRunId,
       outputName: getDefaultFeature(metadata.value)?.name ?? '',
       regionId: null,
@@ -215,6 +225,12 @@ onMounted(() => {
       comparisonSettings: _.cloneDeep(DEFAULT_COMPARISON_SETTINGS),
     };
   });
+  // Persist any qualifier state that's already in breakdownStatesQualifier.
+  //  This occurs when "split by qualifier" is already active when the modal is opened.
+  const qualifierStates = {
+    ...defaultQualifierStates,
+    ...breakdownStatesQualifier.value,
+  };
   breakdownStatesQualifier.value = qualifierStates;
 });
 // Load the initial breakdown state into the selectedTab and relevant breakdownState ref.
