@@ -45,19 +45,20 @@
 
 <script setup lang="ts">
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
-import { BreakdownStateOutputs, DatacubeFeature } from '@/types/Datacube';
+import { BreakdownStateOutputs, Indicator, Model } from '@/types/Datacube';
 import { getOutputDescription } from '@/utils/datacube-util';
 import { computed, toRefs } from 'vue';
 
 const props = defineProps<{
   breakdownState: BreakdownStateOutputs;
-  outputs: DatacubeFeature[];
+  metadata: Model | Indicator;
 }>();
-const { breakdownState, outputs } = toRefs(props);
+const { breakdownState, metadata } = toRefs(props);
 const emit = defineEmits<{
   (e: 'set-breakdown-state', breakdownState: BreakdownStateOutputs): void;
 }>();
 
+const outputs = computed(() => metadata.value.outputs);
 const outputDropdownOptions = computed<DropdownItem[]>(() =>
   outputs.value.map((output) => ({
     displayName: output.display_name,

@@ -19,7 +19,7 @@
       <outputs-tab
         v-else-if="selectedTab === OUTPUTS"
         :breakdown-state="breakdownStateOutputs"
-        :outputs="outputs"
+        :metadata="metadata"
         @set-breakdown-state="(newState) => (breakdownStateOutputs = newState)"
       />
       <regions-tab
@@ -113,8 +113,19 @@ const props = defineProps<{
   spatialAggregation: DatacubeGeoAttributeVariableType | 'tiles';
   metadata: Model | Indicator;
 }>();
-
 const { spatialAggregation, metadata } = toRefs(props);
+const emit = defineEmits<{
+  (e: 'close'): void;
+  (e: 'apply-breakdown-state', breakdownState: BreakdownState): void;
+  (e: 'set-spatial-aggregation', newValue: DatacubeGeoAttributeVariableType | 'tiles'): void;
+}>();
+const setSpatialAggregation = (newValue: DatacubeGeoAttributeVariableType | 'tiles') => {
+  emit('set-spatial-aggregation', newValue);
+};
+const applyBreakdownState = () => {
+  emit('apply-breakdown-state', breakdownState.value);
+  emit('close');
+};
 
 const initialModelRunId = isBreakdownStateNone(props.initialBreakdownState)
   ? props.initialBreakdownState.modelRunIds[0]
@@ -129,21 +140,6 @@ const qualifiers = computed(() =>
     .filter(isBreakdownQualifier)
     .filter((qualifier) => qualifiersWithData.value.has(qualifier.name))
 );
-const outputs = computed(() => metadata.value.outputs);
-
-const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'apply-breakdown-state', breakdownState: BreakdownState): void;
-  (e: 'set-spatial-aggregation', newValue: DatacubeGeoAttributeVariableType | 'tiles'): void;
-}>();
-const setSpatialAggregation = (newValue: DatacubeGeoAttributeVariableType | 'tiles') => {
-  emit('set-spatial-aggregation', newValue);
-};
-
-const applyBreakdownState = () => {
-  emit('apply-breakdown-state', breakdownState.value);
-  emit('close');
-};
 
 const tabs = computed<RadioButtonSpec[]>(() => {
   return [
