@@ -50,7 +50,7 @@ export default function useMultiTimeseriesData(
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each active feature
-      let promises: Promise<{ data: any } | null>[] = [];
+      let promises: Promise<any>[] = [];
 
       // NOTE: we will always have one scenario selected if we breakdown by variable
       // since upon the selection on more than one run, the breakdown options are disabled

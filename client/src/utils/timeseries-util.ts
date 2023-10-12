@@ -32,7 +32,7 @@ export function applyReference(
       const brokenDownByYear = breakdownByYear(rawTimeseriesData[0].points);
       const allYearsFormattedTimeseries = Object.keys(brokenDownByYear).map((year) => {
         const points = brokenDownByYear[year];
-        const mappedToBreakdownDomain = mapToBreakdownDomain(points);
+        const mappedToBreakdownDomain = convertTimestampsToMonthIndex(points);
         return {
           name: year,
           id: year,
@@ -124,7 +124,7 @@ export function breakdownByYear(timeseries: TimeseriesPoint[]) {
   return _.groupBy(timeseries, (point) => getYearFromTimestamp(point.timestamp));
 }
 
-export function mapToBreakdownDomain(points: TimeseriesPoint[]) {
+export function convertTimestampsToMonthIndex(points: TimeseriesPoint[]) {
   return points.map(({ value, timestamp }) => ({
     value,
     timestamp: getMonthFromTimestamp(timestamp),

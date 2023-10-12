@@ -173,7 +173,7 @@ export const getRawQualifierTimeseries = async (param: {
   return result;
 };
 
-export const getTimeseries = async (spec: OutputSpecWithRegionId): Promise<any> => {
+export const getTimeseries = async (spec: OutputSpecWithRegionId): Promise<TimeseriesPoint[]> => {
   try {
     const result = await API.get('maas/output/timeseries', {
       params: {
@@ -351,7 +351,7 @@ export const getQualifierTimeseries = async (
   qualifierOptions: string[],
   transform?: string,
   regionId?: string
-) => {
+): Promise<{ data: { name: string; timeseries: TimeseriesPoint[] }[] }> => {
   return await API.get('maas/output/qualifier-timeseries', {
     params: {
       data_id: dataId,
