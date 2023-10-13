@@ -17,7 +17,6 @@ async function runStartup() {
   Logger.info(`\tES_URL: ${process.env.ES_URL}`);
   Logger.info(`\tWM GO URL: ${process.env.WM_GO_URL}`);
   Logger.info(`\tPipeline URL: ${process.env.WM_PIPELINE_URL}`);
-  Logger.info(`\tPipeline Target S3 URL: [${process.env.S3_URL}]`);
   Logger.info(`\tPipeline Target S3 Indicators Bucket: [${process.env.S3_INDICATORS_BUCKET}]`);
   Logger.info(`\tPipeline Target S3 Model Bucket: [${process.env.S3_MODELS_BUCKET}]`);
   Logger.info(`\tQueue Service URL: ${process.env.WM_QUEUE_SERVICE_URL}`);
