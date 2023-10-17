@@ -21,7 +21,6 @@ router.get('/settings', authUtil.checkRole([authUtil.ROLES.USER]), function (req
     esURL: env.ES_URL,
     dojoURL: env.DOJO_URL,
     pipelineURL: env.WM_PIPELINE_URL,
-    pipelineTargetS3URL: env.S3_URL,
     pipelineTargetS3IndicatorsBucket: env.S3_INDICATORS_BUCKET,
     pipelineTargetS3ModelsBucket: env.S3_MODELS_BUCKET,
     requestQueueURL: env.WM_QUEUE_SERVICE_URL,
