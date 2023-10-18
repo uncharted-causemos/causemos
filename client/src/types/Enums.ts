@@ -42,6 +42,8 @@ export enum DatacubeGeoAttributeVariableType {
   Admin3 = 'admin3',
 }
 
+export type SpatialAggregation = DatacubeGeoAttributeVariableType | 'tiles';
+
 export enum DatacubeGenericAttributeVariableType {
   Int = 'int',
   Float = 'float',

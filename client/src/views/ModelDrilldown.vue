@@ -145,6 +145,7 @@ import { Ref, computed, ref, watch } from 'vue';
 import {
   AggregationOption,
   DatacubeGeoAttributeVariableType,
+  SpatialAggregation,
   TemporalResolutionOption,
 } from '@/types/Enums';
 import { BreakdownState, BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
@@ -268,9 +269,7 @@ const isSelectModelRunsModalOpen = ref(false);
 
 const isFilterAndCompareModalOpen = ref(false);
 
-const spatialAggregation = ref<DatacubeGeoAttributeVariableType | 'tiles'>(
-  DatacubeGeoAttributeVariableType.Country
-);
+const spatialAggregation = ref<SpatialAggregation>(DatacubeGeoAttributeVariableType.Country);
 const spatialAggregationMethod = ref<AggregationOption>(AggregationOption.Mean);
 const temporalResolution = ref(TemporalResolutionOption.Month);
 const temporalAggregationMethod = ref<AggregationOption>(AggregationOption.Mean);

@@ -98,24 +98,20 @@ import { useRegionalDropdownOptions } from '@/composables/useRegionalDropdownOpt
 import { getDefaultDataConfig, getDefaultFeature } from '@/services/datacube-service';
 import { getQualifierBreakdown } from '@/services/outputdata-service';
 import { BreakdownStateQualifiers, ComparisonSettings, Indicator, Model } from '@/types/Datacube';
-import {
-  AggregationOption,
-  DatacubeGeoAttributeVariableType,
-  TemporalResolutionOption,
-} from '@/types/Enums';
+import { AggregationOption, SpatialAggregation, TemporalResolutionOption } from '@/types/Enums';
 import { getOutputDescription } from '@/utils/datacube-util';
 import { computed, ref, toRefs, watch } from 'vue';
 
 const props = defineProps<{
   breakdownState: BreakdownStateQualifiers;
   metadata: Model | Indicator;
-  spatialAggregation: DatacubeGeoAttributeVariableType | 'tiles';
+  spatialAggregation: SpatialAggregation;
   qualifierDisplayName: string;
 }>();
 const { breakdownState, metadata, spatialAggregation } = toRefs(props);
 const emit = defineEmits<{
   (e: 'set-breakdown-state', breakdownState: BreakdownStateQualifiers): void;
-  (e: 'set-spatial-aggregation', newValue: DatacubeGeoAttributeVariableType | 'tiles'): void;
+  (e: 'set-spatial-aggregation', newValue: SpatialAggregation): void;
 }>();
 const outputs = computed(() => metadata.value.outputs);
 const outputDropdownOptions = computed<DropdownItem[]>(() =>
@@ -136,7 +132,7 @@ const regionsDropdownOptions = computed<DropdownItem[]>(() => [
   ...incompleteRegionsDropdownOptions.value,
 ]);
 
-const setSpatialAggregation = (newValue: DatacubeGeoAttributeVariableType | 'tiles') => {
+const setSpatialAggregation = (newValue: SpatialAggregation) => {
   emit('set-spatial-aggregation', newValue);
 };
 

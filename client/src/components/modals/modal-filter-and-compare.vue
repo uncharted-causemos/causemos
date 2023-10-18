@@ -92,7 +92,7 @@ import {
   isBreakdownStateRegions,
   isBreakdownStateYears,
 } from '@/utils/datacube-util';
-import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
+import { SpatialAggregation } from '@/types/Enums';
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { getDefaultFeature } from '@/services/datacube-service';
 import useQualifierFetchInfo from '@/composables/useQualifierFetchInfo';
@@ -110,16 +110,16 @@ const YEARS = 'Years';
 
 const props = defineProps<{
   initialBreakdownState: BreakdownState;
-  spatialAggregation: DatacubeGeoAttributeVariableType | 'tiles';
+  spatialAggregation: SpatialAggregation;
   metadata: Model | Indicator;
 }>();
 const { spatialAggregation, metadata } = toRefs(props);
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'apply-breakdown-state', breakdownState: BreakdownState): void;
-  (e: 'set-spatial-aggregation', newValue: DatacubeGeoAttributeVariableType | 'tiles'): void;
+  (e: 'set-spatial-aggregation', newValue: SpatialAggregation): void;
 }>();
-const setSpatialAggregation = (newValue: DatacubeGeoAttributeVariableType | 'tiles') => {
+const setSpatialAggregation = (newValue: SpatialAggregation) => {
   emit('set-spatial-aggregation', newValue);
 };
 const applyBreakdownState = () => {
