@@ -1,5 +1,5 @@
 <template>
-  <rename-modal
+  <!-- <rename-modal
     v-if="showRenameModal"
     :modal-title="'Rename Analysis'"
     :current-name="selectedAnalysis.title"
@@ -11,7 +11,7 @@
     :current-name="selectedAnalysis.title"
     @confirm="onDuplicateConfirm"
     @cancel="showDuplicateModal = false"
-  />
+  /> -->
 
   <div class="project-overview-container">
     <header>
@@ -22,7 +22,9 @@
           type="text"
           class="editable-title"
         />
-        <h3 v-else @click="editTitle">{{ projectMetadata.name }}</h3>
+        <h3 v-else @click="editTitle">
+          {{ projectMetadata.name }} <i class="fa fa-fw fa-pencil subdued" />
+        </h3>
         <small-icon-button v-if="isEditingTitle">
           <i class="fa fa-check" @click="saveTitle" v-tooltip.top-center="'Save changes'" />
         </small-icon-button>
@@ -37,27 +39,71 @@
           type="text"
           class="editable-description"
         />
-        <div v-else-if="projectMetadata.description">
-          {{ projectMetadata.description }}
+        <div
+          v-else
+          @click="editDesc"
+          v-tooltip.top-center="'Edit description'"
+          :class="{ 'description-hint-text': !projectMetadata.description }"
+        >
+          {{ projectMetadata.description ? projectMetadata.description : 'Add a description' }}
+          <i class="fa fa-fw fa-pencil" />
         </div>
-        <div v-else class="description-hint-text">Add a description</div>
         <small-icon-button v-if="isEditingDesc">
           <i class="fa fa-check" @click="saveDesc" v-tooltip.top-center="'Save changes'" />
         </small-icon-button>
         <small-icon-button v-if="isEditingDesc">
           <i class="fa fa-close" @click="discardDesc" v-tooltip.top-center="'Discard changes'" />
         </small-icon-button>
-        <small-icon-button v-else>
-          <i class="fa fa-edit" @click="editDesc" v-tooltip.top-center="'Edit description'" />
-        </small-icon-button>
+      </div>
+
+      <div>
+        <h4>Questions</h4>
+        <p class="un-font-small subdued">
+          Add questions related to your area of focus. Answer them by attaching insights with the
+          tools below.
+        </p>
+        <input type="text" placeholder="What would you like to know?" class="question-input" />
+        <button class="btn btn-default" @click="openInsightsExplorer">
+          <i class="fa fa-fw fa-presentation" />Review insights
+        </button>
       </div>
     </header>
     <main>
-      <div class="insights-column">
-        <button type="button" class="btn btn-call-to-action" @click.stop="openInsightsExplorer">
-          <i class="fa fa-fw fa-star fa-lg" />
-          Review All Insights
-        </button>
+      <h4>Create insights with the following tools</h4>
+      <div class="tool-cards">
+        <div class="tool-card" @click="onCreateIndexAnalysis">
+          <!-- TODO: image -->
+          <h5>Rank countries</h5>
+          <p class="un-font-small subdued tool-card-description">
+            Choose criteria and see how rankings are projected to change over time.
+          </p>
+          <p class="call-to-action">
+            Create country ranking
+            <i class="fa fa-fw fa-chevron-right" />
+          </p>
+        </div>
+        <div class="tool-card" @click="onCreateDataAnalysis">
+          <!-- TODO: image -->
+          <h5>Compare data trends and interrogate expert models</h5>
+          <ul class="un-font-small subdued tool-card-description">
+            <li>Use spatial and temporal trends to generate and confirm hypotheses.</li>
+            <li>Select parameter values to compare model simulations and forecasts.</li>
+          </ul>
+          <p class="call-to-action">
+            Select datasets and models <i class="fa fa-fw fa-chevron-right" />
+          </p>
+        </div>
+        <div class="tool-card" @click="goToDocuments">
+          <!-- TODO: image -->
+          <h5>Search documents</h5>
+          <p class="un-font-small subdued tool-card-description">
+            Choose criteria and see how rankings are projected to change over time.
+          </p>
+          <p class="call-to-action">Search documents <i class="fa fa-fw fa-chevron-right" /></p>
+        </div>
+      </div>
+
+      <!-- <div class="insights-column">
         <list-analytical-questions-pane
           :show-checklist-title="true"
           :insights-by-section="insightsBySection"
@@ -69,41 +115,8 @@
           @move-insight="moveInsight"
           class="insights"
         />
-      </div>
+      </div> -->
       <div class="analysis-list-column">
-        <div class="analysis-list-header">
-          <input v-model="searchText" type="text" placeholder="Search ..." class="search-bar" />
-          <dropdown-button
-            :items="analysisSortingOptions"
-            :selected-item="selectedAnalysisSortingOption"
-            :inner-button-label="'Sort by'"
-            @item-selected="sortAnalyses"
-          />
-          <div class="button-container">
-            <button type="button" class="btn btn-default" @click="goToDocuments">
-              <i class="fa fa-book" />
-              Explore documents
-            </button>
-            <button
-              v-tooltip.top-center="'Create a new Quantitative Analysis'"
-              type="button"
-              class="btn btn-default"
-              @click="onCreateDataAnalysis"
-            >
-              <i class="fa fa-plus" />
-              Create quantitative analysis
-            </button>
-            <button
-              v-tooltip.top-center="'Create a new Index'"
-              type="button"
-              class="btn btn-call-to-action"
-              @click="onCreateIndexAnalysis"
-            >
-              <i class="fa fa-plus" />
-              Create index model analysis
-            </button>
-          </div>
-        </div>
         <div class="analysis-list" v-if="filteredAnalyses.length > 0">
           <analysis-overview-card
             v-for="(analysis, index) in filteredAnalyses"
@@ -141,12 +154,10 @@ import {
 import dateFormatter from '@/formatters/date-formatter';
 import { ProjectType } from '@/types/Enums';
 import { ANALYSIS } from '@/utils/messages-util';
-import RenameModal from '@/components/action-bar/rename-modal.vue';
+// import RenameModal from '@/components/action-bar/rename-modal.vue';
 import projectService from '@/services/project-service';
-import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
-import DuplicateModal from '@/components/action-bar/duplicate-modal.vue';
+// import DuplicateModal from '@/components/action-bar/duplicate-modal.vue';
 import numberFormatter from '@/formatters/number-formatter';
-import DropdownButton from '@/components/dropdown-button.vue';
 import useQuestionsData from '@/composables/useQuestionsData';
 import useInsightsData from '@/composables/useInsightsData';
 import { computed } from '@vue/reactivity';
@@ -177,10 +188,8 @@ export default defineComponent({
   name: 'AnalysisProjectOverview',
   components: {
     AnalysisOverviewCard,
-    ListAnalyticalQuestionsPane,
-    RenameModal,
-    DuplicateModal,
-    DropdownButton,
+    // RenameModal,
+    // DuplicateModal,
     SmallIconButton,
   },
   setup() {
@@ -232,7 +241,6 @@ export default defineComponent({
     analyses: [],
     quantitativeAnalyses: [],
     indexAnalyses: [],
-    searchText: '',
     showSortingDropdownAnalyses: false,
     analysisSortingOptions: Object.values(SortOptions),
     selectedAnalysisSortingOption: SortOptions.MostRecent,
@@ -249,9 +257,7 @@ export default defineComponent({
       projectMetadata: 'app/projectMetadata',
     }),
     filteredAnalyses() {
-      return this.analyses.filter((analysis) => {
-        return analysis.title.toLowerCase().includes(this.searchText.toLowerCase());
-      });
+      return this.analyses;
     },
   },
   watch: {
@@ -481,27 +487,34 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/common';
 @import '@/styles/variables';
+@import '@/styles/uncharted-design-tokens';
 
 .project-overview-container {
   display: flex;
   flex-direction: column;
   height: $content-full-height;
+  background: $background-light-1;
 }
 
 .description-hint-text {
   font-style: italic;
   color: $label-color;
+  cursor: pointer;
 }
 
 header {
   overflow: auto;
-  padding: 20px;
-  padding-bottom: 0;
-  height: 25vh;
+  padding: 30px;
 
   h3 {
     margin: 0;
+    cursor: pointer;
+
+    i {
+      font-size: $font-size-small;
+    }
   }
 
   & > *:not(:first-child) {
@@ -527,11 +540,55 @@ header {
   flex-basis: 85%;
 }
 
+.question-input {
+  border: 1px solid $separator;
+  padding: 10px;
+  width: 624px;
+}
+
 main {
   flex: 1;
   min-height: 0;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  border-top: 1px solid #f5f1fe;
+  background: linear-gradient(180deg, #fcfbff 0%, #ebe5f6 100%);
+}
+
+.tool-cards {
+  display: flex;
+  gap: 20px;
+}
+
+.tool-card {
+  flex: 1;
+  min-width: 0;
+  max-width: 500px;
   padding: 20px;
   display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: white;
+  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+
+  h5 {
+    font-weight: bold;
+  }
+
+  ul {
+    padding-left: 20px;
+  }
+
+  .tool-card-description {
+    min-height: 32px;
+  }
+
+  .call-to-action {
+    color: $accent-main;
+  }
 }
 
 .insights-column {
