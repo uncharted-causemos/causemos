@@ -29,7 +29,7 @@ export function applyReference(
 
   if (breakdownOption === TemporalAggregationLevel.Year) {
     if (referenceOptions.includes(ReferenceSeriesOption.AllYears)) {
-      const brokenDownByYear = breakdownByYear(rawTimeseriesData);
+      const brokenDownByYear = breakdownByYear(rawTimeseriesData[0].points);
       const allYearsFormattedTimeseries = Object.keys(brokenDownByYear).map((year) => {
         const points = brokenDownByYear[year];
         const mappedToBreakdownDomain = mapToBreakdownDomain(points);
@@ -120,9 +120,8 @@ export function applyRelativeTo(
   return { baselineMetadata, timeseriesData: returnValue };
 }
 
-export function breakdownByYear(timeseriesData: Timeseries[]) {
-  const onlyTimeseries = timeseriesData[0].points;
-  return _.groupBy(onlyTimeseries, (point) => getYearFromTimestamp(point.timestamp));
+export function breakdownByYear(timeseries: TimeseriesPoint[]) {
+  return _.groupBy(timeseries, (point) => getYearFromTimestamp(point.timestamp));
 }
 
 export function mapToBreakdownDomain(points: TimeseriesPoint[]) {

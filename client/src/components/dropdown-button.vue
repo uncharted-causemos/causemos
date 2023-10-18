@@ -2,7 +2,7 @@
   <div class="dropdown-button-container" ref="containerElement">
     <button
       type="button"
-      class="btn dropdown-btn"
+      class="btn btn-default btn-sm dropdown-btn"
       :class="{
         warning: isWarningStateActive,
       }"
@@ -10,9 +10,9 @@
     >
       <span>
         {{ innerButtonLabel ? `${innerButtonLabel}: ` : '' }}
-        <strong :style="hasColorOverride ? { color: getColorOverride(selectedItem) } : {}">{{
+        <span :style="hasColorOverride ? { color: getColorOverride(selectedItem) } : {}">{{
           selectedItemDisplayName
-        }}</strong>
+        }}</span>
       </span>
       <i class="fa fa-fw fa-angle-down" />
     </button>
@@ -199,6 +199,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '@/styles/variables';
 @import '@/styles/uncharted-design-tokens';
+@import '@/styles/common';
 
 .dropdown-button-container {
   position: relative;
@@ -229,7 +230,6 @@ export default defineComponent({
   display: flex;
   align-items: center;
   font-weight: normal;
-  padding: 5px;
 
   &.warning {
     color: $un-color-feedback-warning;

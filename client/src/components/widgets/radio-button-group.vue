@@ -3,11 +3,11 @@
     <button
       v-for="button of buttons"
       :key="button.value"
-      :disabled="button.value === selectedButtonValue"
-      v-tooltip.top-center="button.tooltip ?? button.label"
-      class="btn btn-sm"
+      :disabled="button.isDisabled || button.value === selectedButtonValue"
+      v-tooltip="getTooltip(button)"
+      class="btn btn-sm btn-default"
       :class="{ 'button-active': button.value === selectedButtonValue }"
-      @click="emitButtonClicked(button.value)"
+      @click="emit('button-clicked', button.value)"
     >
       <i v-if="button.icon !== undefined" class="fa" :class="[button.icon]" />
       {{ button.label }}
@@ -15,9 +15,7 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
-
+<script lang="ts" setup>
 export interface RadioButtonSpec {
   value: any;
   label: string;
@@ -25,36 +23,49 @@ export interface RadioButtonSpec {
   icon?: string;
   /** Tooltip defaults to label if omitted */
   tooltip?: string;
+  isDisabled?: boolean;
 }
 
-export default defineComponent({
-  name: 'RadioButtonGroup',
-  emits: ['button-clicked'],
-  props: {
-    selectedButtonValue: {
-      type: [String, Number, Boolean] as PropType<any>,
-      default: null,
-    },
-    buttons: {
-      type: Array as PropType<RadioButtonSpec[]>,
-      default: [],
-    },
-  },
-  setup(props, { emit }) {
-    return {
-      emitButtonClicked: (value: any) => {
-        emit('button-clicked', value);
-      },
-    };
-  },
-});
+const emit = defineEmits<{ (e: 'button-clicked', value: any): void }>();
+defineProps<{
+  selectedButtonValue: string | number | boolean;
+  buttons: RadioButtonSpec[];
+}>();
+
+const getTooltip = (button: RadioButtonSpec) => {
+  // If the spec specifies a tooltip, display that.
+  if (button.tooltip !== undefined) return button.tooltip;
+  // Otherwise, display the button label for long labels, since they might be cut off.
+  if (button.label.length > 15) return button.label;
+  // Otherwise, don't show a tooltip
+  return null;
+};
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/common';
 .radio-button-group-container {
   display: flex;
-  border-radius: 3px;
   overflow: hidden;
+}
+
+$border-radius: 3px;
+button.btn-default {
+  border-radius: 0;
+
+  &:first-child {
+    border-top-left-radius: $border-radius;
+    border-bottom-left-radius: $border-radius;
+  }
+
+  &:not(:first-child) {
+    border-left-width: 0;
+  }
+
+  &:last-child {
+    border-top-right-radius: $border-radius;
+    border-bottom-right-radius: $border-radius;
+  }
 }
 
 button.button-active,

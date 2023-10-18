@@ -156,3 +156,49 @@ export interface DataConfig {
   temporalAggregation: AggregationOption;
   spatialAggregation: AggregationOption;
 }
+
+export interface ComparisonSettings {
+  shouldDisplayAbsoluteValues: boolean;
+  // These settings only apply when shouldDisplayAbsoluteValues is false.
+  baselineTimeseriesId: string;
+  shouldUseRelativePercentage: boolean;
+}
+export interface BreakdownStateNone {
+  outputName: string;
+  modelRunIds: string[];
+  comparisonSettings: ComparisonSettings;
+}
+export interface BreakdownStateOutputs {
+  modelRunId: string;
+  outputNames: string[];
+  comparisonSettings: ComparisonSettings;
+}
+export interface BreakdownStateRegions {
+  modelRunId: string;
+  outputName: string;
+  regionIds: string[];
+  comparisonSettings: ComparisonSettings;
+}
+export interface BreakdownStateYears {
+  modelRunId: string;
+  outputName: string;
+  regionId: string | null;
+  years: string[];
+  isAllYearsReferenceTimeseriesShown: boolean;
+  isSelectedYearsReferenceTimeseriesShown: boolean;
+  comparisonSettings: ComparisonSettings;
+}
+export interface BreakdownStateQualifiers {
+  modelRunId: string;
+  outputName: string;
+  regionId: string | null;
+  qualifier: string; // e.g. "Car brand", "Car color"
+  qualifierValues: string[]; // e.g. "Honda", "Toyota", "red", "blue"
+  comparisonSettings: ComparisonSettings;
+}
+export type BreakdownState =
+  | BreakdownStateNone
+  | BreakdownStateOutputs
+  | BreakdownStateRegions
+  | BreakdownStateYears
+  | BreakdownStateQualifiers;

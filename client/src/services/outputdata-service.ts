@@ -496,7 +496,11 @@ export const getQualifierBreakdownByRegionId = async (
  * @param runIds the IDs of the model runs. If this is an indicator, should be ['indicator']
  * @param feature the output feature
  */
-export const getRegionLists = async (dataId: string, runIds: string[], feature: string) => {
+export const getRegionLists = async (
+  dataId: string,
+  runIds: string[],
+  feature: string
+): Promise<DatacubeGeography> => {
   const { data } = await API.get('maas/output/region-lists', {
     params: {
       data_id: dataId,

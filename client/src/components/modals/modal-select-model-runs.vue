@@ -112,10 +112,10 @@ import useToaster from '@/composables/useToaster';
 
 const props = defineProps<{
   metadata: Model;
-  currentOutputIndex: number;
+  currentOutputName: string;
   initialSelectedModelRunIds: string[];
 }>();
-const { metadata, currentOutputIndex } = toRefs(props);
+const { metadata, currentOutputName } = toRefs(props);
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -132,6 +132,10 @@ const selectedTemporalAggregation = ref(AggregationOption.Sum);
 
 const selectedModelId = computed(() => metadata.value?.id ?? null);
 const modelRunSearchFilters = ref<Filters>({ clauses: [] });
+const currentOutputIndex = computed(() => {
+  const outputs = getOutputs(metadata.value);
+  return outputs.findIndex((output) => output.name === currentOutputName.value);
+});
 const { dimensions } = useDatacubeDimensions(metadata, currentOutputIndex);
 const isNewRunsModeActive = ref(false);
 const { fetchModelRuns, allModelRunData, filteredRunData } = useScenarioData(
@@ -201,14 +205,12 @@ const executeNewRuns = async () => {
 
   // Create a final array of parameter name/value pairs for each potential run and send it to the
   //  server.
-  const outputs = getOutputs(metadata.value);
-  const currentOutputName = outputs[currentOutputIndex.value].name;
   const drilldownParams = metadata.value.parameters.filter((d) => d.is_drilldown);
   const promises = _potentialRuns.map(async (modelRun) => {
     // Exclude output variable values since they will be undefined for potential runs and exclude
     //  the "status" field since it will be populated by the server.
     const parameterArray = Object.keys(modelRun)
-      .filter((key) => key !== currentOutputName && key !== 'status')
+      .filter((key) => key !== currentOutputName.value && key !== 'status')
       .map((key) => ({ name: key, value: modelRun[key] }));
     // Add drilldown/freeform params since they are still inputs, although they are hidden in the
     //  parallel coordinates chart.
@@ -322,6 +324,8 @@ const isModelRunsInProgressSectionExpanded = ref(false);
   gap: 40px;
   overflow-y: auto;
   height: 850px;
+  // Ensure the top and bottom of the modal are always visible
+  max-height: 80vh;
 }
 
 .column {

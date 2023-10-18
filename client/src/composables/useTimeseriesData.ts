@@ -41,7 +41,7 @@ const applyBreakdown = (
   if (breakdownOption !== TemporalAggregationLevel.Year || timeseriesData.length !== 1) {
     return timeseriesData;
   }
-  const brokenDownByYear = breakdownByYear(timeseriesData);
+  const brokenDownByYear = breakdownByYear(timeseriesData[0].points);
 
   return Object.keys(brokenDownByYear)
     .filter((year) => selectedYears.has(year))
