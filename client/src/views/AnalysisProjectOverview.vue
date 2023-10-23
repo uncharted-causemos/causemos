@@ -1,78 +1,110 @@
 <template>
-  <!-- <rename-modal
+  <rename-modal
     v-if="showRenameModal"
     :modal-title="'Rename Analysis'"
-    :current-name="selectedAnalysis.title"
+    :current-name="selectedAnalysis?.title ?? ''"
     @confirm="onRenameModalConfirm"
-    @cancel="onRenameModalClose"
+    @cancel="showRenameModal = false"
   />
   <duplicate-modal
     v-if="showDuplicateModal"
-    :current-name="selectedAnalysis.title"
+    :current-name="selectedAnalysis?.title"
     @confirm="onDuplicateConfirm"
     @cancel="showDuplicateModal = false"
-  /> -->
+  />
 
   <div class="project-overview-container">
     <header>
-      <div class="title">
-        <input
-          v-if="isEditingTitle"
-          v-model="projectMetadata.name"
-          type="text"
-          class="editable-title"
-        />
-        <h3 v-else @click="editTitle">
-          {{ projectMetadata.name }} <i class="fa fa-fw fa-pencil subdued" />
-        </h3>
-        <small-icon-button v-if="isEditingTitle">
-          <i class="fa fa-check" @click="saveTitle" v-tooltip.top-center="'Save changes'" />
-        </small-icon-button>
-        <small-icon-button v-if="isEditingTitle">
-          <i class="fa fa-close" @click="discardTitle" v-tooltip.top-center="'Discard changes'" />
-        </small-icon-button>
-      </div>
-      <div class="description">
-        <textarea
-          v-if="isEditingDesc"
-          v-model="projectMetadata.description"
-          type="text"
-          class="editable-description"
-        />
-        <div
-          v-else
-          @click="editDesc"
-          v-tooltip.top-center="'Edit description'"
-          :class="{ 'description-hint-text': !projectMetadata.description }"
-        >
-          {{ projectMetadata.description ? projectMetadata.description : 'Add a description' }}
-          <i class="fa fa-fw fa-pencil" />
+      <section class="project-metadata">
+        <div class="title">
+          <input
+            v-if="isEditingTitle"
+            v-model="projectMetadata.name"
+            type="text"
+            class="editable-title"
+          />
+          <h3 v-else @click="editTitle">
+            {{ projectMetadata.name }} <i class="fa fa-fw fa-pencil subdued" />
+          </h3>
+          <small-icon-button
+            v-if="isEditingTitle"
+            @click="saveTitle"
+            v-tooltip.top-center="'Save changes'"
+          >
+            <i class="fa fa-check" />
+          </small-icon-button>
+          <small-icon-button
+            v-if="isEditingTitle"
+            @click="discardTitle"
+            v-tooltip.top-center="'Discard changes'"
+          >
+            <i class="fa fa-close" />
+          </small-icon-button>
         </div>
-        <small-icon-button v-if="isEditingDesc">
-          <i class="fa fa-check" @click="saveDesc" v-tooltip.top-center="'Save changes'" />
-        </small-icon-button>
-        <small-icon-button v-if="isEditingDesc">
-          <i class="fa fa-close" @click="discardDesc" v-tooltip.top-center="'Discard changes'" />
-        </small-icon-button>
-      </div>
+        <div class="description">
+          <textarea
+            v-if="isEditingDesc"
+            v-model="projectMetadata.description"
+            type="text"
+            class="editable-description"
+          />
+          <div
+            v-else
+            @click="editDesc"
+            v-tooltip.top-center="'Edit description'"
+            :class="{ 'description-hint-text': !projectMetadata.description }"
+          >
+            {{ projectMetadata.description ? projectMetadata.description : 'Add a description' }}
+            <i class="fa fa-fw fa-pencil" />
+          </div>
+          <small-icon-button v-if="isEditingDesc">
+            <i class="fa fa-check" @click="saveDesc" v-tooltip.top-center="'Save changes'" />
+          </small-icon-button>
+          <small-icon-button v-if="isEditingDesc">
+            <i class="fa fa-close" @click="discardDesc" v-tooltip.top-center="'Discard changes'" />
+          </small-icon-button>
+        </div>
+      </section>
 
-      <div>
-        <h4>Questions</h4>
-        <p class="un-font-small subdued">
-          Add questions related to your area of focus. Answer them by attaching insights with the
-          tools below.
-        </p>
-        <input type="text" placeholder="What would you like to know?" class="question-input" />
-        <button class="btn btn-default" @click="openInsightsExplorer">
-          <i class="fa fa-fw fa-presentation" />Review insights
-        </button>
-      </div>
+      <section class="questions">
+        <div class="section-title">
+          <h4>Questions</h4>
+          <p class="un-font-small subdued">
+            Jot down the questions you'll answer with this analysis.
+          </p>
+        </div>
+        <div class="questions-list">
+          <analysis-project-overview-question
+            v-for="question of questionsList"
+            :key="question.id"
+            :question="question"
+            :is-editing-question="question.id === questionBeingEdited"
+            @delete-question="onDeleteQuestion"
+            @edit-question="onEditQuestion"
+            @save-title="onSaveQuestionTitle"
+            @stop-editing-question="questionBeingEdited = null"
+          ></analysis-project-overview-question>
+        </div>
+        <div class="question-buttons">
+          <button class="btn btn-default" @click="onAddQuestion">
+            <i class="fa fa-fw fa-plus" />Add question
+          </button>
+          <button class="btn btn-default" @click="openInsightsExplorer">
+            <i class="fa fa-fw fa-star" />Review insights
+          </button>
+        </div>
+      </section>
     </header>
     <main>
-      <h4>Create insights with the following tools</h4>
+      <div class="section-title">
+        <h4>Create insights with the following tools</h4>
+        <p class="un-font-small subdued">
+          Insights are screenshots of key findings that you can annotate and share.
+        </p>
+      </div>
       <div class="tool-cards">
         <div class="tool-card" @click="onCreateIndexAnalysis">
-          <!-- TODO: image -->
+          <img src="@/assets/thumbnail-index.png" class="thumbnail thumbnail-index" />
           <h5>Rank countries</h5>
           <p class="un-font-small subdued tool-card-description">
             Choose criteria and see how rankings are projected to change over time.
@@ -83,18 +115,23 @@
           </p>
         </div>
         <div class="tool-card" @click="onCreateDataAnalysis">
-          <!-- TODO: image -->
-          <h5>Compare data trends and interrogate expert models</h5>
-          <ul class="un-font-small subdued tool-card-description">
-            <li>Use spatial and temporal trends to generate and confirm hypotheses.</li>
-            <li>Select parameter values to compare model simulations and forecasts.</li>
-          </ul>
-          <p class="call-to-action">
-            Select datasets and models <i class="fa fa-fw fa-chevron-right" />
+          <img src="@/assets/thumbnail-dataset.png" class="thumbnail thumbnail-dataset" />
+          <h5>Compare data trends</h5>
+          <p class="un-font-small subdued tool-card-description">
+            Use spatial and temporal trends to generate and confirm hypotheses.
           </p>
+          <p class="call-to-action">Select a dataset <i class="fa fa-fw fa-chevron-right" /></p>
+        </div>
+        <div class="tool-card" @click="onCreateDataAnalysis">
+          <img src="@/assets/thumbnail-model.png" class="thumbnail thumbnail-model" />
+          <h5>Simulate scenarios</h5>
+          <p class="un-font-small subdued tool-card-description">
+            Select different parameter values to compare model simulations and forecasts.
+          </p>
+          <p class="call-to-action">Select a model <i class="fa fa-fw fa-chevron-right" /></p>
         </div>
         <div class="tool-card" @click="goToDocuments">
-          <!-- TODO: image -->
+          <img src="@/assets/thumbnail-documents.png" class="thumbnail thumbnail-documents" />
           <h5>Search documents</h5>
           <p class="un-font-small subdued tool-card-description">
             Choose criteria and see how rankings are projected to change over time.
@@ -103,26 +140,13 @@
         </div>
       </div>
 
-      <!-- <div class="insights-column">
-        <list-analytical-questions-pane
-          :show-checklist-title="true"
-          :insights-by-section="insightsBySection"
-          @update-section-title="updateSectionTitle"
-          @add-section="addSection"
-          @delete-section="deleteSection"
-          @move-section-above-section="moveSectionAboveSection"
-          @remove-insight-from-section="removeInsightFromSection"
-          @move-insight="moveInsight"
-          class="insights"
-        />
-      </div> -->
       <div class="analysis-list-column">
-        <div class="analysis-list" v-if="filteredAnalyses.length > 0">
+        <div class="analysis-list" v-if="analyses.length > 0">
           <analysis-overview-card
-            v-for="(analysis, index) in filteredAnalyses"
-            :key="`${analysis.id}${index}`"
+            v-for="(analysis, index) in analyses"
+            :key="`${analysis.analysisId}${index}`"
             class="analysis-overview-card"
-            :analysis="analysis"
+            :analysis="(analysis as any)"
             @open="onOpen(analysis)"
             @delete="onDelete(analysis)"
             @rename="onRename(analysis)"
@@ -137,9 +161,9 @@
   </div>
 </template>
 
-<script>
-import { defineComponent, ref } from 'vue';
-import { mapGetters, mapActions } from 'vuex';
+<script setup lang="ts">
+import { onMounted, ref, watch } from 'vue';
+import { useStore } from 'vuex';
 import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
 import {
@@ -154,21 +178,34 @@ import {
 import dateFormatter from '@/formatters/date-formatter';
 import { ProjectType } from '@/types/Enums';
 import { ANALYSIS } from '@/utils/messages-util';
-// import RenameModal from '@/components/action-bar/rename-modal.vue';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 import projectService from '@/services/project-service';
-// import DuplicateModal from '@/components/action-bar/duplicate-modal.vue';
-import numberFormatter from '@/formatters/number-formatter';
+import DuplicateModal from '@/components/action-bar/duplicate-modal.vue';
 import useQuestionsData from '@/composables/useQuestionsData';
-import useInsightsData from '@/composables/useInsightsData';
 import { computed } from '@vue/reactivity';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
-import { sortItem, modifiedAtSorter, titleSorter, SortOptions } from '@/utils/sort/sort-items';
 import { TYPE } from 'vue-toastification';
 import { isIndexAnalysisState } from '@/utils/insight-util';
+import useToaster from '@/composables/useToaster';
+import { useRouter } from 'vue-router';
+import AnalysisProjectOverviewQuestion from '@/components/home/analysis-project-overview-question.vue';
 
-const toAnalysisObject = (analysis) => {
+const router = useRouter();
+
+interface Analysis {
+  analysisId: string;
+  previewImageSrc: string | null;
+  title: string;
+  subtitle: string;
+  description: string;
+  type: string;
+  modified_at: string;
+  analysisItemIds?: string[];
+  datacubesCount?: number;
+}
+const toAnalysisObject = (analysis: any): Analysis => {
   const type = isIndexAnalysisState(analysis.state) ? 'index' : 'quantitative';
-  const item = {
+  const item: Analysis = {
     analysisId: analysis.id,
     previewImageSrc: analysis.thumbnail_source || null,
     title: analysis.title,
@@ -178,312 +215,241 @@ const toAnalysisObject = (analysis) => {
     modified_at: analysis.modified_at,
   };
   if (analysis.state?.analysisItems) {
-    item.analysisItemIds = analysis.state.analysisItems.map((dc) => dc.id);
-    item.datacubesCount = item.analysisItemIds.length;
+    const itemIds = analysis.state.analysisItems.map(({ id }: { id: string }) => id);
+    item.analysisItemIds = itemIds;
+    item.datacubesCount = itemIds.length;
   }
   return item;
 };
 
-export default defineComponent({
-  name: 'AnalysisProjectOverview',
-  components: {
-    AnalysisOverviewCard,
-    // RenameModal,
-    // DuplicateModal,
-    SmallIconButton,
-  },
-  setup() {
-    const { insights } = useInsightsData(undefined, [
-      'id',
-      'name',
-      'visibility',
-      'analytical_question',
-    ]);
+const { questionsList, addSection, updateSectionTitle, deleteSection } = useQuestionsData();
+const questionBeingEdited = ref<string | null>(null);
+const onAddQuestion = () => {
+  addSection(
+    '',
+    () => {},
+    () => toaster('Unable to add question. Please refresh the page and try again.', TYPE.ERROR)
+  );
+  // TODO: start editing question name: what's its ID?
+  // questionBeingEdited.value = questionId;
+};
+const onEditQuestion = (questionId: string) => {
+  questionBeingEdited.value = questionId;
+};
+const onSaveQuestionTitle = async (questionId: string, newTitle: string) => {
+  questionBeingEdited.value = null;
+  updateSectionTitle(questionId, newTitle, () =>
+    toaster('Unable to update question. Please refresh the page and try again.', TYPE.ERROR)
+  );
+};
+const onDeleteQuestion = (questionId: string) => {
+  deleteSection(
+    questionId,
+    () => {},
+    () => toaster('Unable to delete question. Please refresh the page and try again.', TYPE.ERROR)
+  );
+};
 
-    const {
-      questionsList,
-      addSection,
-      updateSectionTitle,
-      deleteSection,
-      moveSectionAboveSection,
-      removeInsightFromSection,
-      moveInsight,
-    } = useQuestionsData();
+const store = useStore();
+const project = computed<string>(() => store.getters['app/project']);
+const projectMetadata = computed(() => store.getters['app/projectMetadata']);
 
-    const insightsBySection = computed(() => {
-      return questionsList.value.map((section) => {
-        // FIXME: optimize by using maps
-        const _insights = section.linked_insights
-          .map((insightId) => insights.value.find((insight) => insight.id === insightId))
-          .filter((insight) => insight !== undefined);
-        return {
-          section,
-          // FIXME: these might need to be FullInsights when we support jumping
-          //  straight to review from this page.
-          insights: _insights,
-        };
-      });
-    });
+const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
+const disableOverlay = () => store.dispatch('app/disableOverlay');
 
-    const showDuplicateModal = ref(false);
-    return {
-      insightsBySection,
-      addSection,
-      updateSectionTitle,
-      deleteSection,
-      moveSectionAboveSection,
-      removeInsightFromSection,
-      moveInsight,
-      showDuplicateModal,
-    };
-  },
-  data: () => ({
-    analyses: [],
-    quantitativeAnalyses: [],
-    indexAnalyses: [],
-    showSortingDropdownAnalyses: false,
-    analysisSortingOptions: Object.values(SortOptions),
-    selectedAnalysisSortingOption: SortOptions.MostRecent,
-    isEditingTitle: false,
-    isEditingDesc: false,
-    showDocumentModal: false,
-    showRenameModal: false,
-    selectedAnalysis: null,
-    projectDesc: '',
-  }),
-  computed: {
-    ...mapGetters({
-      project: 'app/project',
-      projectMetadata: 'app/projectMetadata',
-    }),
-    filteredAnalyses() {
-      return this.analyses;
-    },
-  },
-  watch: {
-    projectMetadata: function () {
-      this.fetchAnalyses();
-    },
-  },
-  async mounted() {
-    this.fetchAnalyses();
-  },
-  methods: {
-    ...mapActions({
-      enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay',
-      setContextId: 'insightPanel/setContextId',
-      showInsightPanel: 'insightPanel/showInsightPanel',
-      setCurrentPane: 'insightPanel/setCurrentPane',
-    }),
-    numberFormatter,
-    openInsightsExplorer() {
-      this.showInsightPanel();
-      this.setCurrentPane('list-insights');
-    },
-    editDesc() {
-      this.projectDesc = this.projectMetadata.description;
-      this.isEditingDesc = true;
-    },
-    discardDesc() {
-      this.projectMetadata.description = this.projectDesc;
-      this.isEditingDesc = false;
-    },
-    saveDesc() {
-      // we may have just modified the desc text, so update the server value
-      projectService.updateProjectMetadata(this.project, {
-        description: this.projectMetadata.description,
-      });
-      this.isEditingDesc = false;
-    },
-    editTitle() {
-      this.projectTitle = this.projectMetadata.name;
-      this.isEditingTitle = true;
-    },
-    saveTitle() {
-      projectService.updateProjectMetadata(this.project, {
-        name: this.projectMetadata.name,
-      });
-      this.isEditingTitle = false;
-    },
-    discardTitle() {
-      this.projectMetadata.name = this.projectTitle;
-      this.isEditingTitle = false;
-    },
-    async fetchAnalyses() {
-      if (_.isEmpty(this.projectMetadata)) {
-        return;
-      }
+const clearContextId = () => store.dispatch('insightPanel/setContextId', []);
+onMounted(() => {
+  // clear the context to fetch all questions and insights
+  clearContextId();
+});
 
-      this.enableOverlay('Loading analyses...');
+const showInsightPanel = () => store.dispatch('insightPanel/showInsightPanel');
+const setCurrentPane = (paneId: string) => store.dispatch('insightPanel/setCurrentPane', paneId);
 
-      // context-id should be an array to fetch insights for each and every datacube/cag in all project analyses
-      const contextIDs = [];
+const openInsightsExplorer = () => {
+  showInsightPanel();
+  setCurrentPane('list-insights');
+};
 
-      // fetch data space analyses
-      const analyses = (await getAnalysesByProjectId(this.project)).map(toAnalysisObject);
+// TODO: rename these
+const projectDesc = ref('');
+const isEditingDesc = ref(false);
+const editDesc = () => {
+  projectDesc.value = projectMetadata.value.description;
+  isEditingDesc.value = true;
+};
+const discardDesc = () => {
+  projectMetadata.value.description = projectDesc.value;
+  isEditingDesc.value = false;
+};
+const saveDesc = () => {
+  // we may have just modified the desc text, so update the server value
+  projectService.updateProjectMetadata(project.value, {
+    description: projectMetadata.value.description,
+  });
+  isEditingDesc.value = false;
+};
 
-      this.indexAnalyses = analyses.filter((a) => a.type === 'index');
+const projectTitle = ref('');
+const isEditingTitle = ref(false);
+const editTitle = () => {
+  projectTitle.value = projectMetadata.value.name;
+  isEditingTitle.value = true;
+};
+const saveTitle = () => {
+  projectService.updateProjectMetadata(project.value, {
+    name: projectMetadata.value.name,
+  });
+  isEditingTitle.value = false;
+};
+const discardTitle = () => {
+  projectMetadata.value.name = projectTitle.value;
+  isEditingTitle.value = false;
+};
 
-      this.quantitativeAnalyses = analyses.filter((a) => a.type === 'quantitative');
+const analyses = ref<Analysis[]>([]);
+const fetchAnalyses = async () => {
+  if (_.isEmpty(projectMetadata.value)) {
+    return;
+  }
+  enableOverlay('Loading analyses...');
+  // fetch data space analyses
+  const results = (await getAnalysesByProjectId(project.value)).map(toAnalysisObject);
+  // Sort by modified_at date with latest on top
+  const sortedResults = results.sort((a: any, b: any) => {
+    return a.modified_at && b.modified_at ? b.modified_at - a.modified_at : 0;
+  });
+  analyses.value = sortedResults;
+  disableOverlay();
+};
+watch(projectMetadata, fetchAnalyses, { immediate: true });
+// TODO:
+// const quantitativeAnalyses = computed(() =>
+//   analyses.value.filter((a) => a.type === 'quantitative')
+// );
+// const indexAnalyses = computed(() => analyses.value.filter((a) => a.type === 'index'));
 
-      // save context-id(s) for all data-analyses
-      this.quantitativeAnalyses.forEach((analysis) => {
-        contextIDs.push(...(analysis.analysisItemsIds || []));
-      });
+const showRenameModal = ref(false);
+const selectedAnalysis = ref<Analysis | null>(null);
+const onRename = (analysis: Analysis) => {
+  showRenameModal.value = true;
+  selectedAnalysis.value = analysis;
+};
+const toaster = useToaster();
+const onRenameModalConfirm = async (newName: string) => {
+  const oldName = selectedAnalysis.value?.title;
+  // updating data analysis
+  const analysisId = selectedAnalysis.value?.analysisId;
+  if (analysisId && oldName !== newName) {
+    try {
+      await updateAnalysis(analysisId, { title: newName });
+      (selectedAnalysis.value as Analysis).title = newName;
+      toaster(ANALYSIS.SUCCESSFUL_RENAME, TYPE.SUCCESS, false);
+    } catch (e) {
+      toaster(ANALYSIS.ERRONEOUS_RENAME, TYPE.INFO, true);
+    }
+  }
+  showRenameModal.value = false;
+};
 
-      this.analyses = [...this.indexAnalyses, ...this.quantitativeAnalyses];
+const showDuplicateModal = ref(false);
+const onDuplicate = (analysis: Analysis) => {
+  selectedAnalysis.value = analysis;
+  showDuplicateModal.value = true;
+};
+const onDuplicateConfirm = async (newName: string) => {
+  const analysis = selectedAnalysis.value;
 
-      // FIXME: setContextId would fetch insights/questions for all datacubes and CAGs in all analyses
-      //
-      // @UPDATE: not needed currently in this context since we do not display the insight count and the insight panel is not shown
-      //  with regards to questions, also, there is no need to fetch for all contexts as it is enough to fetch public and project-level questions
-      // this.setContextId(contextIDs);
-      //
-      // clear the context to fetch all questions, and insights if applicable
-      this.setContextId([]);
+  if (analysis?.analysisId) {
+    try {
+      const duplicatedAnalysis = await duplicateAnalysis(analysis.analysisId, newName);
+      analyses.value.unshift(toAnalysisObject(duplicatedAnalysis));
+      toaster(ANALYSIS.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
+    } catch (e) {
+      toaster(ANALYSIS.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
+    }
+  }
+  showDuplicateModal.value = false;
+};
 
-      // Sort by modified_at date with latest on top
-      this.sortAnalysesByMostRecentDate();
-
-      this.disableOverlay();
-    },
-    onRename(analysis) {
-      this.showRenameModal = true;
-      this.selectedAnalysis = analysis;
-    },
-    async onRenameModalConfirm(newName) {
-      const oldName = this.selectedAnalysis && this.selectedAnalysis.title;
-
-      // updating data analysis
-      const analysisId = this.selectedAnalysis && this.selectedAnalysis.analysisId;
-      if (analysisId && oldName !== newName) {
-        try {
-          await updateAnalysis(analysisId, { title: newName });
-          this.selectedAnalysis.title = newName;
-          this.toaster(ANALYSIS.SUCCESSFUL_RENAME, TYPE.SUCCESS, false);
-        } catch (e) {
-          this.toaster(ANALYSIS.ERRONEOUS_RENAME, TYPE.INFO, true);
-        }
-      }
-
-      this.onRenameModalClose();
-    },
-    onRenameModalClose() {
-      this.showRenameModal = false;
-    },
-    onDuplicate(analysis) {
-      this.selectedAnalysis = analysis;
-      this.showDuplicateModal = true;
-    },
-    async onDuplicateConfirm(newName) {
-      const analysis = this.selectedAnalysis;
-
-      if (analysis.analysisId) {
-        try {
-          const duplicatedAnalysis = await duplicateAnalysis(analysis.analysisId, newName);
-          this.analyses.unshift(toAnalysisObject(duplicatedAnalysis));
-          this.toaster(ANALYSIS.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
-        } catch (e) {
-          this.toaster(ANALYSIS.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
-        }
-      }
-      this.showDuplicateModal = false;
-    },
-    async onDelete(analysis) {
-      if (analysis.analysisId) {
-        try {
-          await deleteAnalysis(analysis.analysisId);
-          this.analyses = this.analyses.filter((item) => item.analysisId !== analysis.analysisId);
-          this.toaster(ANALYSIS.SUCCESSFUL_DELETION, TYPE.SUCCESS, false);
-        } catch (e) {
-          this.toaster(ANALYSIS.ERRONEOUS_DELETION, TYPE.INFO, true);
-        }
-      }
-    },
-    onOpen(analysis) {
-      const params = {
-        project: this.project,
-        projectType: ProjectType.Analysis,
-      };
-      let name = '';
-      switch (analysis.type) {
-        case 'quantitative':
-          params.analysisId = analysis.analysisId;
-          name = 'dataComparative';
-          break;
-        case 'index':
-          params.analysisId = analysis.analysisId;
-          name = 'indexStructure';
-          break;
-        default:
-          break;
-      }
-      this.$router.push({
-        name,
-        params,
-      });
-    },
-    async onCreateIndexAnalysis() {
-      const analysis = await createAnalysis(
-        `untitled at ${dateFormatter(Date.now())}`,
-        '',
-        this.project,
-        createIndexAnalysisObject()
-      );
-      this.$router.push({
-        name: 'indexStructure',
-        params: {
-          project: this.project,
-          analysisId: analysis.id,
-          projectType: ProjectType.Analysis,
-        },
-      });
-    },
-    async onCreateDataAnalysis() {
-      const analysis = await createAnalysis(
-        `untitled at ${dateFormatter(Date.now())}`,
-        '',
-        this.project,
-        createDataAnalysisObject()
-      );
-      this.$router.push({
+const onOpen = (analysis: Analysis) => {
+  switch (analysis.type) {
+    case 'quantitative':
+      router.push({
         name: 'dataComparative',
         params: {
-          project: this.project,
-          analysisId: analysis.id,
+          project: project.value,
           projectType: ProjectType.Analysis,
+          analysisId: analysis.analysisId,
         },
       });
-    },
-    goToDocuments() {
-      this.$router.push({
-        name: 'documents',
+      break;
+    case 'index':
+      router.push({
+        name: 'indexStructure',
         params: {
-          project: this.project,
+          project: project.value,
           projectType: ProjectType.Analysis,
+          analysisId: analysis.analysisId,
         },
       });
+      break;
+    default:
+      break;
+  }
+};
+const onCreateIndexAnalysis = async () => {
+  const analysis = await createAnalysis(
+    `untitled at ${dateFormatter(Date.now())}`,
+    '',
+    project.value,
+    createIndexAnalysisObject()
+  );
+  router.push({
+    name: 'indexStructure',
+    params: {
+      project: project.value,
+      analysisId: analysis.id,
+      projectType: ProjectType.Analysis,
     },
-    toggleSortingDropdownAnalyses() {
-      this.showSortingDropdownAnalyses = !this.showSortingDropdownAnalyses;
+  });
+};
+const onDelete = async (analysis: Analysis) => {
+  if (analysis.analysisId) {
+    try {
+      await deleteAnalysis(analysis.analysisId);
+      analyses.value = analyses.value.filter((item) => item.analysisId !== analysis.analysisId);
+      toaster(ANALYSIS.SUCCESSFUL_DELETION, TYPE.SUCCESS, false);
+    } catch (e) {
+      toaster(ANALYSIS.ERRONEOUS_DELETION, TYPE.INFO, true);
+    }
+  }
+};
+const onCreateDataAnalysis = async () => {
+  const analysis = await createAnalysis(
+    `untitled at ${dateFormatter(Date.now())}`,
+    '',
+    project.value,
+    createDataAnalysisObject()
+  );
+  router.push({
+    name: 'dataComparative',
+    params: {
+      project: project.value,
+      analysisId: analysis.id,
+      projectType: ProjectType.Analysis,
     },
-    sortAnalysesByMostRecentDate() {
-      this.analyses.sort((a, b) => {
-        return a.modified_at && b.modified_at ? b.modified_at - a.modified_at : 0;
-      });
+  });
+};
+const goToDocuments = () => {
+  router.push({
+    name: 'documents',
+    params: {
+      project: project.value,
+      projectType: ProjectType.Analysis,
     },
-    sortAnalyses(option) {
-      this.selectedAnalysisSortingOption = option;
-      this.showSortingDropdownAnalyses = false;
-      this.analyses = sortItem(
-        this.analyses,
-        { date: modifiedAtSorter, name: titleSorter },
-        this.selectedAnalysisSortingOption
-      );
-    },
-  },
-});
+  });
+};
 </script>
 
 <style lang="scss" scoped>
@@ -507,6 +473,9 @@ export default defineComponent({
 header {
   overflow: auto;
   padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
 
   h3 {
     margin: 0;
@@ -527,6 +496,33 @@ header {
   }
 }
 
+section.project-metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+section.questions {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 800px;
+}
+
+.section-title {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.questions-list {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+  border-top: 1px solid $un-color-black-10;
+  border-bottom: 1px solid $un-color-black-10;
+}
+
 .editable-title {
   border-width: 1px;
   border-color: rgb(216, 214, 214);
@@ -540,10 +536,9 @@ header {
   flex-basis: 85%;
 }
 
-.question-input {
-  border: 1px solid $separator;
-  padding: 10px;
-  width: 624px;
+.question-buttons {
+  display: flex;
+  gap: 10px;
 }
 
 main {
@@ -573,13 +568,42 @@ main {
   background: white;
   box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.2);
   border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+
+  .thumbnail {
+    transition: opacity 0.2s ease;
+  }
+
+  .thumbnail-index {
+    opacity: 30%;
+  }
+  .thumbnail-dataset {
+    opacity: 50%;
+  }
+  .thumbnail-model {
+    opacity: 40%;
+  }
+  .thumbnail-documents {
+    opacity: 50%;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: $selected;
+
+    .thumbnail {
+      opacity: 100%;
+    }
+  }
 
   h5 {
     font-weight: bold;
   }
 
-  ul {
-    padding-left: 20px;
+  .thumbnail {
+    height: 153px;
   }
 
   .tool-card-description {
