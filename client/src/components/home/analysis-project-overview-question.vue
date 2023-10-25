@@ -1,13 +1,20 @@
 <template>
   <div class="analysis-project-overview-question-container">
-    <div v-if="isEditingQuestion" class="question-input">
-      <input type="text" placeholder="What would you like to know?" v-model="newTitle" v-focus />
-      <small-icon-button @click="saveTitle" v-tooltip.top-center="'Save changes'">
-        <i class="fa fa-check" />
-      </small-icon-button>
-      <small-icon-button @click="discardTitle" v-tooltip.top-center="'Discard changes'">
-        <i class="fa fa-close" />
-      </small-icon-button>
+    <input
+      v-if="isEditingQuestion"
+      class="question-input"
+      type="text"
+      placeholder="What would you like to know?"
+      v-model="newTitle"
+      v-focus
+    />
+    <div class="is-editing-question-buttons" v-if="isEditingQuestion">
+      <button class="btn btn-default btn-call-to-action" @click="saveTitle">
+        <i class="fa fa-fw fa-check" />Confirm
+      </button>
+      <button class="btn btn-default" @click="discardTitle">
+        <i class="fa fa-fw fa-close" />Cancel
+      </button>
     </div>
     <div v-else class="question-title">
       <p class="un-font-small">
@@ -68,6 +75,7 @@ const getInsightsDisplayString = (insightIds: string[]) => {
 
 <style lang="scss" scoped>
 @import '@/styles/variables';
+@import '@/styles/common';
 .analysis-project-overview-question-container {
   display: flex;
   flex-direction: column;
@@ -87,17 +95,16 @@ const getInsightsDisplayString = (insightIds: string[]) => {
 }
 
 .question-input {
-  display: flex;
-  gap: 2px;
-  width: 624px;
-  align-items: center;
+  width: 100%;
+  border: 1px solid $separator;
+  padding: 10px;
+  margin-bottom: 5px;
+}
 
-  input {
-    border: 1px solid $separator;
-    padding: 10px;
-    flex: 1;
-    min-width: 0;
-  }
+.is-editing-question-buttons {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
 }
 
 .question-title {

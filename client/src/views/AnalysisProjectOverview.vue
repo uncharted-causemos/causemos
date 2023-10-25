@@ -91,7 +91,11 @@
           <div v-if="questionsList.length === 0" class="un-font-small subdued">No questions.</div>
         </div>
         <div class="question-buttons">
-          <button class="btn btn-default" @click="onAddQuestion">
+          <button
+            class="btn btn-default"
+            @click="onAddQuestion"
+            :disabled="questionBeingEdited !== null"
+          >
             <i class="fa fa-fw fa-plus" />Add question
           </button>
           <button class="btn btn-default" @click="openInsightsExplorer">
