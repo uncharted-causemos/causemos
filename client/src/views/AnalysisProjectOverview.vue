@@ -236,7 +236,7 @@ const toAnalysisObject = (analysis: any): Analysis => {
     item.datacubesCount = itemIds.length;
     item.subtitle =
       `${item.datacubesCount} item${item.datacubesCount === 1 ? '' : 's'}` +
-      '<br>' +
+      '<br />' +
       modifiedDateString;
   }
   return item;
