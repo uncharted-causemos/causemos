@@ -43,25 +43,29 @@
         </div>
         <div class="description">
           <textarea
-            v-if="isEditingDesc"
+            v-if="isEditingProjectDescription"
             v-model="projectMetadata.description"
             type="text"
             class="editable-description"
           />
           <div
             v-else
-            @click="editDesc"
+            @click="editProjectDescription"
             v-tooltip.top-center="'Edit description'"
             :class="{ 'description-hint-text': !projectMetadata.description }"
           >
             {{ projectMetadata.description ? projectMetadata.description : 'Add a description' }}
             <i class="fa fa-fw fa-pencil" />
           </div>
-          <small-icon-button v-if="isEditingDesc">
+          <small-icon-button v-if="isEditingProjectDescription">
             <i class="fa fa-check" @click="saveDesc" v-tooltip.top-center="'Save changes'" />
           </small-icon-button>
-          <small-icon-button v-if="isEditingDesc">
-            <i class="fa fa-close" @click="discardDesc" v-tooltip.top-center="'Discard changes'" />
+          <small-icon-button v-if="isEditingProjectDescription">
+            <i
+              class="fa fa-close"
+              @click="discardProjectDescription"
+              v-tooltip.top-center="'Discard changes'"
+            />
           </small-icon-button>
         </div>
       </section>
@@ -83,7 +87,8 @@
             @edit-question="onEditQuestion"
             @save-title="onSaveQuestionTitle"
             @stop-editing-question="questionBeingEdited = null"
-          ></analysis-project-overview-question>
+          />
+          <div v-if="questionsList.length === 0" class="un-font-small subdued">No questions.</div>
         </div>
         <div class="question-buttons">
           <button class="btn btn-default" @click="onAddQuestion">
@@ -103,58 +108,63 @@
         </p>
       </div>
       <div class="tool-cards">
-        <div class="tool-card" @click="onCreateIndexAnalysis">
-          <img src="@/assets/thumbnail-index.png" class="thumbnail thumbnail-index" />
-          <h5>Rank countries</h5>
-          <p class="un-font-small subdued tool-card-description">
-            Choose criteria and see how rankings are projected to change over time.
-          </p>
-          <p class="call-to-action">
-            Create country ranking
-            <i class="fa fa-fw fa-chevron-right" />
-          </p>
-        </div>
-        <div class="tool-card" @click="onCreateDataAnalysis">
-          <img src="@/assets/thumbnail-dataset.png" class="thumbnail thumbnail-dataset" />
-          <h5>Compare data trends</h5>
-          <p class="un-font-small subdued tool-card-description">
-            Use spatial and temporal trends to generate and confirm hypotheses.
-          </p>
-          <p class="call-to-action">Select a dataset <i class="fa fa-fw fa-chevron-right" /></p>
-        </div>
-        <div class="tool-card" @click="onCreateDataAnalysis">
-          <img src="@/assets/thumbnail-model.png" class="thumbnail thumbnail-model" />
-          <h5>Simulate scenarios</h5>
-          <p class="un-font-small subdued tool-card-description">
-            Select different parameter values to compare model simulations and forecasts.
-          </p>
-          <p class="call-to-action">Select a model <i class="fa fa-fw fa-chevron-right" /></p>
-        </div>
-        <div class="tool-card" @click="goToDocuments">
-          <img src="@/assets/thumbnail-documents.png" class="thumbnail thumbnail-documents" />
-          <h5>Search documents</h5>
-          <p class="un-font-small subdued tool-card-description">
-            Choose criteria and see how rankings are projected to change over time.
-          </p>
-          <p class="call-to-action">Search documents <i class="fa fa-fw fa-chevron-right" /></p>
-        </div>
-      </div>
-
-      <div class="analysis-list-column">
-        <div class="analysis-list" v-if="analyses.length > 0">
-          <analysis-overview-card
-            v-for="(analysis, index) in analyses"
-            :key="`${analysis.analysisId}${index}`"
-            class="analysis-overview-card"
-            :analysis="(analysis as any)"
-            @open="onOpen(analysis)"
-            @delete="onDelete(analysis)"
-            @rename="onRename(analysis)"
-            @duplicate="onDuplicate(analysis)"
+        <tool-card-with-analyses
+          class="tool-card-column"
+          imgSrc="thumbnail-index.png"
+          image-opacity="low"
+          title="Rank countries"
+          subtitle="Choose criteria and see how rankings are projected to change over time."
+          call-to-action-title="Create country ranking"
+          :analyses="indexAnalyses"
+          recent-items-title="Recent country rankings"
+          recent-items-type-plural="Country rankings"
+          @create="onCreateIndexAnalysis"
+          @open="onOpen"
+          @delete="onDelete"
+          @rename="onRename"
+          @duplicate="onDuplicate"
+        />
+        <tool-card-with-analyses
+          class="tool-card-column"
+          imgSrc="thumbnail-dataset.png"
+          image-opacity="high"
+          title="Compare data trends"
+          subtitle="Use spatial and temporal trends to generate and confirm hypotheses."
+          call-to-action-title="Select a dataset"
+          :analyses="datasetAnalyses"
+          recent-items-title="Recent collections of datasets"
+          recent-items-type-plural="Collections of datasets"
+          @create="onCreateDataAnalysis(true)"
+          @open="onOpen"
+          @delete="onDelete"
+          @rename="onRename"
+          @duplicate="onDuplicate"
+        />
+        <tool-card-with-analyses
+          class="tool-card-column"
+          imgSrc="thumbnail-model.png"
+          image-opacity="medium"
+          title="Simulate scenarios"
+          subtitle="Select different parameter values to compare model simulations and forecasts."
+          call-to-action-title="Select a model"
+          :analyses="modelAnalyses"
+          recent-items-title="Recent collections of models"
+          recent-items-type-plural="Collections of models"
+          @create="onCreateDataAnalysis(false)"
+          @open="onOpen"
+          @delete="onDelete"
+          @rename="onRename"
+          @duplicate="onDuplicate"
+        />
+        <div class="tool-card-column">
+          <tool-card
+            @click="goToDocuments"
+            imgSrc="thumbnail-documents.png"
+            image-opacity="high"
+            title="Search documents"
+            subtitle="Choose criteria and see how rankings are projected to change over time."
+            call-to-action-title="Search documents"
           />
-        </div>
-        <div v-if="analyses.length === 0" class="empty-state-container">
-          Analyses you create will appear here.
         </div>
       </div>
     </main>
@@ -164,7 +174,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
-import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
 import {
   getAnalysesByProjectId,
@@ -174,6 +183,7 @@ import {
   createAnalysis,
   createDataAnalysisObject,
   createIndexAnalysisObject,
+  getAnalysisState,
 } from '@/services/analysis-service';
 import dateFormatter from '@/formatters/date-formatter';
 import { ProjectType } from '@/types/Enums';
@@ -185,39 +195,45 @@ import useQuestionsData from '@/composables/useQuestionsData';
 import { computed } from '@vue/reactivity';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { TYPE } from 'vue-toastification';
-import { isIndexAnalysisState } from '@/utils/insight-util';
+import { isDataAnalysisState, isIndexAnalysisState } from '@/utils/insight-util';
 import useToaster from '@/composables/useToaster';
 import { useRouter } from 'vue-router';
 import AnalysisProjectOverviewQuestion from '@/components/home/analysis-project-overview-question.vue';
+import { Analysis, DataAnalysisState, IndexAnalysisState } from '@/types/Analysis';
+import ToolCard from '@/components/home/tool-card.vue';
+import { findAllDatasets } from '@/utils/index-tree-util';
+import filtersUtil from '@/utils/filters-util';
+import { STATUS, TYPE as FILTERS_FIELD_TYPE } from '@/utils/datacube-util';
+import ToolCardWithAnalyses from '@/components/home/tool-card-with-analyses.vue';
 
 const router = useRouter();
 
-interface Analysis {
-  analysisId: string;
-  previewImageSrc: string | null;
-  title: string;
-  subtitle: string;
-  description: string;
-  type: string;
-  modified_at: string;
-  analysisItemIds?: string[];
-  datacubesCount?: number;
-}
 const toAnalysisObject = (analysis: any): Analysis => {
-  const type = isIndexAnalysisState(analysis.state) ? 'index' : 'quantitative';
+  const state: IndexAnalysisState | DataAnalysisState = analysis.state;
+  const type = isIndexAnalysisState(state) ? 'index' : 'quantitative';
   const item: Analysis = {
     analysisId: analysis.id,
     previewImageSrc: analysis.thumbnail_source || null,
     title: analysis.title,
-    subtitle: dateFormatter(analysis.modified_at, 'MMM DD, YYYY'),
+    subtitle: '',
     description: analysis.description || '',
     type,
     modified_at: analysis.modified_at,
   };
-  if (analysis.state?.analysisItems) {
-    const itemIds = analysis.state.analysisItems.map(({ id }: { id: string }) => id);
-    item.analysisItemIds = itemIds;
+  const modifiedDateString = 'Modified on ' + dateFormatter(analysis.modified_at, 'MMM DD, YYYY');
+  if (isIndexAnalysisState(state)) {
+    item.nodesWithDatasetsCount = findAllDatasets((state as IndexAnalysisState).index).length;
+    item.subtitle =
+      `${item.nodesWithDatasetsCount} dataset${item.nodesWithDatasetsCount === 1 ? '' : 's'}` +
+      '<br />' +
+      modifiedDateString;
+  } else if (isDataAnalysisState(state)) {
+    const itemIds = state.analysisItems.map(({ id }: { id: string }) => id);
     item.datacubesCount = itemIds.length;
+    item.subtitle =
+      `${item.datacubesCount} item${item.datacubesCount === 1 ? '' : 's'}` +
+      '<br>' +
+      modifiedDateString;
   }
   return item;
 };
@@ -227,11 +243,11 @@ const questionBeingEdited = ref<string | null>(null);
 const onAddQuestion = () => {
   addSection(
     '',
-    () => {},
+    (newQuestionId: string) => {
+      questionBeingEdited.value = newQuestionId;
+    },
     () => toaster('Unable to add question. Please refresh the page and try again.', TYPE.ERROR)
   );
-  // TODO: start editing question name: what's its ID?
-  // questionBeingEdited.value = questionId;
 };
 const onEditQuestion = (questionId: string) => {
   questionBeingEdited.value = questionId;
@@ -271,23 +287,22 @@ const openInsightsExplorer = () => {
   setCurrentPane('list-insights');
 };
 
-// TODO: rename these
-const projectDesc = ref('');
-const isEditingDesc = ref(false);
-const editDesc = () => {
-  projectDesc.value = projectMetadata.value.description;
-  isEditingDesc.value = true;
+const projectDescription = ref('');
+const isEditingProjectDescription = ref(false);
+const editProjectDescription = () => {
+  projectDescription.value = projectMetadata.value.description;
+  isEditingProjectDescription.value = true;
 };
-const discardDesc = () => {
-  projectMetadata.value.description = projectDesc.value;
-  isEditingDesc.value = false;
+const discardProjectDescription = () => {
+  projectMetadata.value.description = projectDescription.value;
+  isEditingProjectDescription.value = false;
 };
 const saveDesc = () => {
   // we may have just modified the desc text, so update the server value
   projectService.updateProjectMetadata(project.value, {
     description: projectMetadata.value.description,
   });
-  isEditingDesc.value = false;
+  isEditingProjectDescription.value = false;
 };
 
 const projectTitle = ref('');
@@ -323,11 +338,52 @@ const fetchAnalyses = async () => {
   disableOverlay();
 };
 watch(projectMetadata, fetchAnalyses, { immediate: true });
-// TODO:
-// const quantitativeAnalyses = computed(() =>
-//   analyses.value.filter((a) => a.type === 'quantitative')
-// );
-// const indexAnalyses = computed(() => analyses.value.filter((a) => a.type === 'index'));
+const indexAnalyses = computed(() => analyses.value.filter((a) => a.type === 'index'));
+const quantitativeAnalyses = computed(() =>
+  analyses.value.filter((a) => a.type === 'quantitative')
+);
+
+// NOTE: As of October 2023, "quantitative" analyses can contain any combination of models and
+//  datasets(indicators), though the interface guides the user to create an analysis of one type
+//  or the other. As a temporary measure, we store the type of the first datacube in each analysis
+//  to sort the analyses into "collections of datasets" and "collections of models".
+const analysisFirstDatacubeIsAnIndicatorMap = ref(new Map<string, boolean>());
+const storeIsFirstDatacubeAnIndicator = async (analysisId: string) => {
+  const analysisState = await getAnalysisState(analysisId);
+  if (analysisState === null) {
+    analysisFirstDatacubeIsAnIndicatorMap.value.set(analysisId, false);
+    return;
+  }
+  const isIndicator =
+    (analysisState as DataAnalysisState).analysisItems[0].dataConfig.selectedScenarioIds[0] ===
+    'indicator';
+  analysisFirstDatacubeIsAnIndicatorMap.value.set(analysisId, isIndicator);
+};
+watch(quantitativeAnalyses, () => {
+  // Label each analysis as "contains indicators" or not by fetching and checking the type of the
+  //  first datacube. If the analysis has no datacubes, flag it as "doesn't contain indicators".
+  quantitativeAnalyses.value.forEach((analysis) => {
+    if ((analysis.datacubesCount ?? 0) === 0) {
+      analysisFirstDatacubeIsAnIndicatorMap.value.set(analysis.analysisId, false);
+      return;
+    }
+    storeIsFirstDatacubeAnIndicator(analysis.analysisId);
+  });
+});
+const datasetAnalyses = computed(() =>
+  analyses.value.filter(
+    (a) =>
+      a.type === 'quantitative' &&
+      analysisFirstDatacubeIsAnIndicatorMap.value.get(a.analysisId) === true
+  )
+);
+const modelAnalyses = computed(() =>
+  analyses.value.filter(
+    (a) =>
+      a.type === 'quantitative' &&
+      analysisFirstDatacubeIsAnIndicatorMap.value.get(a.analysisId) === false
+  )
+);
 
 const showRenameModal = ref(false);
 const selectedAnalysis = ref<Analysis | null>(null);
@@ -425,20 +481,25 @@ const onDelete = async (analysis: Analysis) => {
     }
   }
 };
-const onCreateDataAnalysis = async () => {
+const onCreateDataAnalysis = async (isIndicatorAnalysis: boolean) => {
   const analysis = await createAnalysis(
     `untitled at ${dateFormatter(Date.now())}`,
     '',
     project.value,
     createDataAnalysisObject()
   );
+  const filters = filtersUtil.newFilters();
+  filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
+  const type = isIndicatorAnalysis ? 'indicator' : 'model';
+  filtersUtil.setClause(filters, FILTERS_FIELD_TYPE, [type], 'or', false);
   router.push({
-    name: 'dataComparative',
+    name: 'dataExplorer',
     params: {
       project: project.value,
       analysisId: analysis.id,
       projectType: ProjectType.Analysis,
     },
+    query: { analysisId: analysis.id, filters: filters as any },
   });
 };
 const goToDocuments = () => {
@@ -460,7 +521,7 @@ const goToDocuments = () => {
 .project-overview-container {
   display: flex;
   flex-direction: column;
-  height: $content-full-height;
+  min-height: $content-full-height;
   background: $background-light-1;
 }
 
@@ -543,7 +604,6 @@ section.questions {
 
 main {
   flex: 1;
-  min-height: 0;
   padding: 30px;
   display: flex;
   flex-direction: column;
@@ -555,126 +615,14 @@ main {
 .tool-cards {
   display: flex;
   gap: 20px;
+  align-items: flex-start;
 }
 
-.tool-card {
+.tool-card-column {
   flex: 1;
   min-width: 0;
-  max-width: 500px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  background: white;
-  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-
-  .thumbnail {
-    transition: opacity 0.2s ease;
-  }
-
-  .thumbnail-index {
-    opacity: 30%;
-  }
-  .thumbnail-dataset {
-    opacity: 50%;
-  }
-  .thumbnail-model {
-    opacity: 40%;
-  }
-  .thumbnail-documents {
-    opacity: 50%;
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    border-color: $selected;
-
-    .thumbnail {
-      opacity: 100%;
-    }
-  }
-
-  h5 {
-    font-weight: bold;
-  }
-
-  .thumbnail {
-    height: 153px;
-  }
-
-  .tool-card-description {
-    min-height: 32px;
-  }
-
-  .call-to-action {
-    color: $accent-main;
-  }
-}
-
-.insights-column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.insights {
-  background: white;
-  padding: 10px;
-  // Pane already contains bottom margin
-  padding-bottom: 0;
-  margin-top: 10px;
-  flex: 1;
-  min-height: 0;
-}
-
-.analysis-list-column {
-  flex: 3;
-  display: flex;
-  flex-direction: column;
-  margin-left: 10px;
-}
-
-.analysis-list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  .search-bar {
-    padding: 8px;
-    width: 250px;
-    margin-right: 5px;
-    border: 1px solid grey;
-  }
-}
-
-.analysis-list {
-  margin-top: 10px;
-  padding-bottom: 20px;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.empty-state-container {
-  flex: 1;
-  min-height: 0;
-  position: relative;
-  padding: 10px 0;
-}
-
-.analysis-overview-card:not(:first-child) {
-  margin-top: 5px;
-}
-
-.button-container {
-  display: flex;
-  justify-content: space-between;
-
-  & > *:not(:first-child) {
-    margin-left: 5px;
-  }
+  max-width: 350px;
+  // Make sure dropdown options for the lowest recent item are still visible
+  margin-bottom: 140px;
 }
 </style>

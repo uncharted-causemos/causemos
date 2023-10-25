@@ -32,10 +32,12 @@ export const getAnalysis = async (analysisId: string) => {
  * Get the state of the analysis with given Id
  * @param {String} analysisId Analysis Id
  */
-export const getAnalysisState = async (analysisId: string) => {
+export const getAnalysisState = async (
+  analysisId: string
+): Promise<DataAnalysisState | IndexAnalysisState | null> => {
   const analysis = await getAnalysis(analysisId);
   if (analysis) return analysis.state;
-  return {};
+  return null;
 };
 
 /**

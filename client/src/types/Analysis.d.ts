@@ -84,3 +84,15 @@ export interface IndexAnalysisState {
   /** date range for projection view */
   projectionDateRange: ProjectionDateRange;
 }
+
+export interface Analysis {
+  analysisId: string;
+  previewImageSrc: string | null;
+  title: string;
+  subtitle: string;
+  description: string;
+  type: string;
+  modified_at: string;
+  datacubesCount?: number;
+  nodesWithDatasetsCount?: number;
+}
