@@ -22,10 +22,15 @@
       </div>
       <p v-else-if="snippets !== null && snippets.length === 0" class="subdued">No results</p>
       <div v-else class="snippets">
-        <div class="snippet" v-for="(snippet, i) in snippets" :key="i">
+        <div class="snippet" v-for="(snippet, i) in snippets" :key="i" ref="snippetRefs">
+          <DocumentSnippetInsightControls
+            class="document-snippet-insight-controls-container"
+            :snippet-index="i"
+            @click-save="saveInsight"
+          />
           <span class="open-quote">"</span>
           <div class="snippet-body">
-            <p class="overflow-auto"><span v-html="snippet.text" /></p>
+            <p class="snippet-content overflow-auto"><span v-html="snippet.text" /></p>
             <div class="bottom-row">
               <div class="metadata">
                 <p>{{ snippet.documentTitle }}</p>
@@ -48,10 +53,24 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, computed, ref, onMounted } from 'vue';
+import { toRefs, computed, ref, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import html2canvas from 'html2canvas';
 import ModalDocument from '@/components/modals/modal-document.vue';
 import GeographicContext from '@/components/geographic-context.vue';
+import DocumentSnippetInsightControls from '@/components/document-snippet-insight-controls.vue';
 import useParagraphSearchResults from '@/composables/useParagraphSearchResults';
+import useInsightStore from '@/composables/useInsightStore';
+import { FullInsight } from '@/types/Insight';
+import { Snippet } from '@/types/IndexDocuments';
+import { INSIGHTS } from '@/utils/messages-util';
+import { addInsight } from '@/services/insight-service';
+import useToaster from '@/composables/useToaster';
+import { TYPE } from 'vue-toastification';
+
+const route = useRoute();
+const toaster = useToaster();
+const { getDataState, getViewState } = useInsightStore();
 
 const props = defineProps<{
   selectedNodeName: string;
@@ -99,10 +118,60 @@ const searchString = computed(() => {
 });
 
 const {
-  results: snippets,
+  results,
   isLoading: isLoadingSnippets,
   highlights,
 } = useParagraphSearchResults(searchString, 10);
+
+const snippets = ref<(Snippet & { hasInsight: boolean })[]>([]);
+watch([results], () => {
+  snippets.value = (results?.value || []).map((val) => ({ ...val, hasInsight: false }));
+});
+
+// Snippet Insight controls
+const snippetRefs = ref([]);
+const saveInsight = async (snippetIndex: number) => {
+  // Create an image of the snippet
+  const imgScale = 1.5;
+  const contentElementSelector = '.snippet-content';
+  const ref: HTMLElement = snippetRefs.value[snippetIndex];
+  const snippetBodyEl = ref.querySelector<HTMLElement>(contentElementSelector);
+  const image = !snippetBodyEl
+    ? ''
+    : (await html2canvas(snippetBodyEl, { scale: imgScale })).toDataURL();
+
+  // Construct insight name from snippet metadata
+  const { documentTitle, fragmentParagraphLocation } = snippets?.value?.[snippetIndex] || {};
+  const insightName = `${fragmentParagraphLocation}-${documentTitle}`;
+
+  // Save new insight
+  const newInsight: FullInsight = {
+    name: insightName,
+    description: '',
+    visibility: 'private',
+    project_id: route.params.project as string,
+    context_id: [route.params.analysisId as string],
+    url: route.fullPath,
+    target_view: [], // Is this property actually being used in the app?
+    is_default: true,
+    image,
+    // Note: data_state is already set globally using setDataState from `useInsightStore` in `indexStructure.vue` page.
+    // So the value is available at this moment. This document snippet shares same viewState from the index structure page.
+    // TODO: we should consider avoiding setting the state globally using the insight store. This makes it difficult to understand where the value is set from and how it's being modified.
+    // Instead of keeping insight store globally, we should scope insight creation to its own component and space and pass necessary data for creating insight as props to it when needed.
+    // e.g. Pass states or necessary data as props to review-insight-modal.vue instead of passing them through global store.
+    // This might require quite a bit of refactoring so further reviews and inspection might be needed.
+    data_state: getDataState(),
+    view_state: getViewState(),
+    analytical_question: [],
+  };
+  try {
+    await addInsight(newInsight);
+    toaster(INSIGHTS.SUCCESSFUL_ADDITION, TYPE.SUCCESS, false);
+  } catch (e) {
+    toaster(INSIGHTS.ERRONEOUS_ADDITION, TYPE.ERROR, true);
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -192,12 +261,16 @@ section {
 
 .snippet {
   display: flex;
+  position: relative;
   .open-quote {
     // FIXME: use IBM Plex Sans or another font with more distinct open quotations
     width: 2rem;
     font-size: 2.4rem;
     line-height: 2.8rem;
     color: $un-color-black-40;
+  }
+  &:hover .snippet-body {
+    color: $accent-main;
   }
   .snippet-body {
     flex: 1;
@@ -220,5 +293,14 @@ section {
 
 .overflow-auto {
   overflow: auto;
+}
+.document-snippet-insight-controls-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: none;
+}
+.snippet:hover .document-snippet-insight-controls-container {
+  display: block;
 }
 </style>

@@ -90,7 +90,7 @@ export interface Snapshot {
   visibility: string; // public or private
   project_id?: string;
 
-  // e.g., datacube-id, CAG-id, etc.
+  // e.g., datacube-id, index-structure-id, etc.
   context_id?: string[];
 
   url: string;
