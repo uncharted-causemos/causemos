@@ -27,6 +27,12 @@ export const addInsight = async (insight: Insight) => {
   return result;
 };
 
+// Alias to addInsight but it returns the data
+export const createInsight = async (insight: Insight) => {
+  const { data } = await API.post('insights', insight);
+  return data as { id: string };
+};
+
 export const updateInsight = async (insight_id: string, insight: Insight) => {
   const result = await API.put(`insights/${insight_id}`, insight, {
     headers: {

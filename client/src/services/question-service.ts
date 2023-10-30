@@ -26,6 +26,25 @@ export const deleteQuestion = async (id: string) => {
   return result;
 };
 
+export const addInsightToQuestion = async (questionId: string, insightId: string) => {
+  // Note: Insight update is not an atomic update. It can be rare but it's possible there might be data inconsistency resulting
+  // unexpected results especially when multiple update operations on a same insight at the same time concurrently.
+  // In that case, the last update received by the database will overwrite the previous ones.
+  const question: AnalyticalQuestion = await getQuestionById(questionId);
+  question.linked_insights = _.uniq([...question.linked_insights, insightId]);
+  const result = await updateQuestion(questionId, question);
+  return result;
+};
+export const removeInsightFromQuestion = async (questionId: string, insightId: string) => {
+  // Note: Insight update is not an atomic update. It can be rare but it's possible there might be data inconsistency resulting
+  // unexpected results especially when multiple update operations on a same insight at the same time concurrently.
+  // In that case, the last update received by the database will overwrite the previous ones.
+  const question: AnalyticalQuestion = await getQuestionById(questionId);
+  question.linked_insights = _.uniq([...question.linked_insights.filter((i) => i !== insightId)]);
+  const result = await updateQuestion(questionId, question);
+  return result;
+};
+
 //
 // Core fetch functions
 //
@@ -62,4 +81,6 @@ export default {
   addQuestion,
   updateQuestion,
   fetchQuestions,
+  addInsightToQuestion,
+  removeInsightFromQuestion,
 };
