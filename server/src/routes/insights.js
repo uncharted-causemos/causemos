@@ -32,6 +32,7 @@ router.post(
       view_state,
       data_state,
       annotation_state,
+      metadata,
     } = req.body;
     const result = await insightService.createInsight(
       name,
@@ -48,7 +49,8 @@ router.post(
       image,
       view_state,
       data_state,
-      annotation_state
+      annotation_state,
+      metadata
     );
     res.json(result);
   })
