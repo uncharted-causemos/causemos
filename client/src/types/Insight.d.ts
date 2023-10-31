@@ -1,6 +1,6 @@
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import { COLOR, ColorScaleType } from '@/utils/colors-util';
-import { DatacubeViewMode, DataTransform } from '@/types/Enums';
+import { DatacubeViewMode, DataTransform, InsightMetadataType } from '@/types/Enums';
 import { Filters } from './Filters';
 import { FeatureConfig } from './Outputdata';
 import { IndexProjectionCountry, IndexProjectionScenario, SelectableIndexElementId } from './Index';
@@ -124,6 +124,10 @@ export interface Insight extends Snapshot {
   is_default: boolean; // is this the default insight?
   analytical_question: string[]; // question(s) this insight may answer
   modified_at?: number;
+  metadata?: {
+    type: InsightMetadataType;
+    [key: string]: any; // arbitrary json object for metadata
+  };
 }
 
 // @concrete type

@@ -37,12 +37,13 @@ import { TYPE } from 'vue-toastification';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useToaster from '@/composables/useToaster';
 import useInsightStore from '@/composables/useInsightStore';
-import { createInsight } from '@/services/insight-service';
+import { createInsight, getInsightById } from '@/services/insight-service';
 import { addInsightToQuestion, removeInsightFromQuestion } from '@/services/question-service';
 import { INSIGHTS } from '@/utils/messages-util';
 import insightUtil from '@/utils/insight-util';
 import { Snippet } from '@/types/IndexDocuments';
 import { AnalyticalQuestion, FullInsight, Insight } from '@/types/Insight';
+import { InsightMetadataType } from '@/types/Enums';
 
 const route = useRoute();
 const toaster = useToaster();
@@ -105,6 +106,10 @@ const saveInsight = async () => {
     data_state: getDataState(),
     view_state: getViewState(),
     analytical_question: [],
+    metadata: {
+      type: InsightMetadataType.DocumentSnippet,
+      ...props.snippetData,
+    },
   };
   try {
     const data = await createInsight(newInsight);
@@ -117,15 +122,19 @@ const saveInsight = async () => {
   }
 };
 
-const editInsight = () => {
-  if (!savedInsight.value) return;
+const editInsight = async () => {
+  if (!savedInsight.value?.id) return;
   showInsightPanel();
-  setUpdatedInsight(savedInsight.value);
+  setUpdatedInsight(null);
+  // Get the latest version of the insight from the server
+  const insight = await getInsightById(savedInsight.value.id);
+  setUpdatedInsight(insight);
+  // Get the latest version of the insight from the server
   const dummySection = insightUtil.createEmptyChecklistSection();
   const insightsBySection = [
     {
       section: dummySection,
-      insights: [savedInsight.value as Insight],
+      insights: [insight as Insight],
     },
   ];
   setInsightsBySection(insightsBySection);

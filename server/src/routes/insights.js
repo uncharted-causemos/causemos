@@ -115,7 +115,7 @@ router.get(
   authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const insightId = req.params.id;
-    const allowList = req.params.allowList;
+    const allowList = req.query.allowList;
     const result = await insightService.getInsight(insightId, allowList);
     res.status(200);
     res.json(result);
