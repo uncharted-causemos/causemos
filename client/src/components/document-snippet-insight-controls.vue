@@ -1,16 +1,24 @@
 <template>
   <div class="document-snippet-insight-controls-container">
-    <div v-if="!savedInsightId">
-      <button class="btn btn-default btn-sm" @click="saveInsight">Save insight</button>
+    <div v-if="!savedInsight?.id">
+      <button class="btn btn-default btn-sm" :disabled="isSaveButtonDisabled" @click="saveInsight">
+        <i class="fa fa-fw fa-star" />
+        Save insight
+      </button>
     </div>
-    <!-- <div v-else> -->
-    <div>
-      <button class="btn btn-default btn-sm">Edit</button>
+    <div v-else>
+      <div class="edit-btn-group">
+        <label class="saved-label"><i class="fa fa-fw fa-check" /> Insight saved</label>
+        <button class="btn btn-default btn-sm" @click="editInsight">
+          <i class="fa fa-fw fa-pencil" />
+          Edit
+        </button>
+      </div>
       <DropdownButton
         class="dropdown-button"
-        :is-dropdown-left-aligned="true"
+        :class="{ disabled: dropdownActionDisabled }"
         :items="questionsDropdown"
-        :inner-button-label="'Add to checklist question'"
+        :inner-button-label="selectedDropdownItems.length > 0 ? '' : 'Add to checklist question'"
         :selected-items="selectedDropdownItems"
         :is-multi-select="true"
         @items-selected="updateSelectedItems"
@@ -32,12 +40,21 @@ import useInsightStore from '@/composables/useInsightStore';
 import { createInsight } from '@/services/insight-service';
 import { addInsightToQuestion, removeInsightFromQuestion } from '@/services/question-service';
 import { INSIGHTS } from '@/utils/messages-util';
+import insightUtil from '@/utils/insight-util';
 import { Snippet } from '@/types/IndexDocuments';
-import { AnalyticalQuestion, FullInsight } from '@/types/Insight';
+import { AnalyticalQuestion, FullInsight, Insight } from '@/types/Insight';
 
 const route = useRoute();
 const toaster = useToaster();
-const { getDataState, getViewState } = useInsightStore();
+const {
+  getDataState,
+  getViewState,
+  showInsightPanel,
+  setCurrentPane,
+  setUpdatedInsight,
+  setInsightsBySection,
+  setPositionInReview,
+} = useInsightStore();
 
 const props = defineProps<{
   snippetData: Snippet;
@@ -46,13 +63,15 @@ const props = defineProps<{
   questionsList: AnalyticalQuestion[];
 }>();
 
-const savedInsightId = ref('');
+const savedInsight = ref<Insight | null>(null);
+const isSaveButtonDisabled = ref(false);
 
 const questionsDropdown = computed(() => {
   return [...props.questionsList.map((q) => ({ value: q.id, displayName: q.question }))];
 });
 
 const saveInsight = async () => {
+  isSaveButtonDisabled.value = true;
   // Create an image of the snippet
   const imgScale = 1.5;
   const snippetBodyEl = props.snippetElementRef.querySelector<HTMLElement>(
@@ -89,30 +108,54 @@ const saveInsight = async () => {
   };
   try {
     const data = await createInsight(newInsight);
-    savedInsightId.value = data.id;
+    savedInsight.value = { ...newInsight, ...data };
     toaster(INSIGHTS.SUCCESSFUL_ADDITION, TYPE.SUCCESS, false);
   } catch (e) {
     toaster(INSIGHTS.ERRONEOUS_ADDITION, TYPE.ERROR, true);
+  } finally {
+    isSaveButtonDisabled.value = false;
   }
 };
 
+const editInsight = () => {
+  if (!savedInsight.value) return;
+  showInsightPanel();
+  setUpdatedInsight(savedInsight.value);
+  const dummySection = insightUtil.createEmptyChecklistSection();
+  const insightsBySection = [
+    {
+      section: dummySection,
+      insights: [savedInsight.value as Insight],
+    },
+  ];
+  setInsightsBySection(insightsBySection);
+  setPositionInReview({
+    sectionId: dummySection.id as string,
+    insightId: savedInsight.value?.id as string,
+  });
+  setCurrentPane('review-edit-insight');
+};
+
+const dropdownActionDisabled = ref(false);
 const selectedQuestions = ref<string[]>([]);
 const selectedDropdownItems = ref<string[]>([]);
 const updateSelectedItems = (selectedQuestionId: string[]) => {
   selectedQuestions.value = [...selectedQuestionId];
 };
 watch(selectedQuestions, async (newVal, oldVal) => {
-  if (!savedInsightId.value) return;
+  if (!savedInsight.value?.id) return;
+  dropdownActionDisabled.value = true;
   // Values are question ids
   const addedToSelection = _.difference(newVal, oldVal);
   const removedFromSelection = _.difference(oldVal, newVal);
   for (const qid of addedToSelection) {
-    await addInsightToQuestion(qid, savedInsightId.value);
+    await addInsightToQuestion(qid, savedInsight.value.id);
   }
   for (const qid of removedFromSelection) {
-    await removeInsightFromQuestion(qid, savedInsightId.value);
+    await removeInsightFromQuestion(qid, savedInsight.value.id);
   }
   selectedDropdownItems.value = selectedQuestions.value;
+  dropdownActionDisabled.value = false;
 });
 </script>
 
@@ -122,20 +165,50 @@ watch(selectedQuestions, async (newVal, oldVal) => {
 @import '@/styles/common';
 .document-snippet-insight-controls-container {
   background-color: #fff;
+  padding: 20px;
 }
-/* .dropdown-button {
-  width: auto;
-  height: auto;
+.saved-label {
+  color: #038537;
+}
+.edit-btn-group {
   display: flex;
-  margin-bottom: 4px;
-  flex: 1;
-
+  flex-direction: row;
+  justify-content: space-between;
+  padding-bottom: 10px;
+}
+.dropdown-button {
+  width: 185px;
   :deep(.dropdown-btn) {
     width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: row;
     justify-content: space-between;
+    span {
+      width: 100%;
+      text-align: initial;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
-  :deep(.dropdown-container) {
+  :deep(.dropdown-control) {
     width: 100%;
   }
-} */
+  :deep(.dropdown-option) {
+    position: relative;
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    padding-left: 30px;
+    text-overflow: ellipsis;
+    text-wrap: wrap;
+    i {
+      position: absolute;
+      top: 10px;
+      left: 5px;
+      margin-left: 0 !important;
+    }
+  }
+}
 </style>

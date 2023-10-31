@@ -234,6 +234,9 @@ section {
       }
     }
   }
+  &:hover .document-snippet-insight-controls-container {
+    display: block;
+  }
 }
 
 .overflow-auto {
@@ -243,5 +246,6 @@ section {
   position: absolute;
   top: 0;
   right: 0;
+  display: none;
 }
 </style>
