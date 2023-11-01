@@ -28,6 +28,9 @@ export const deleteQuestion = async (id: string) => {
 };
 
 export const addInsightToQuestion = async (questionId: string, insightId: string) => {
+  // TODO: For the optimization, we might want to move this operations to the server side
+  // to reduce the network overhead caused by sending multiple requests.
+
   // Note: Insight update is not an atomic update. It can be rare but it's possible there might be data inconsistency resulting
   // unexpected results especially when multiple update operations on a same insight at the same time concurrently.
   // In that case, the last update received by the database will overwrite the previous ones.
@@ -40,6 +43,9 @@ export const addInsightToQuestion = async (questionId: string, insightId: string
   await Promise.all([updateQuestion(questionId, question), updateInsight(insightId, insight)]);
 };
 export const removeInsightFromQuestion = async (questionId: string, insightId: string) => {
+  // TODO: For the optimization, we might want to move this operations to the server side
+  // to reduce the network overhead caused by sending multiple requests.
+
   // Note: Insight update is not an atomic update. It can be rare but it's possible there might be data inconsistency resulting
   // unexpected results especially when multiple update operations on a same insight at the same time concurrently.
   // In that case, the last update received by the database will overwrite the previous ones.
