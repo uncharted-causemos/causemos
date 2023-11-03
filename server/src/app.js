@@ -112,6 +112,9 @@ app.use(
 
       // These end points are called by wm-queue without the keycloak auth token
       /\/api\/maas\/pipeline-reporting\/.+/,
+
+      // Static app media assets, e.g. /app/src/assets/thumbnail-dataset.png
+      /\/app\/src\/assets\/.+/,
     ],
   })
 );
