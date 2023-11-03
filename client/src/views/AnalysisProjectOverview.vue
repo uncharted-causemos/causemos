@@ -1,12 +1,12 @@
 <template>
-  <rename-modal
+  <RenameModal
     v-if="showRenameModal"
     :modal-title="'Rename Analysis'"
     :current-name="selectedAnalysis?.title ?? ''"
     @confirm="onRenameModalConfirm"
     @cancel="showRenameModal = false"
   />
-  <duplicate-modal
+  <DuplicateModal
     v-if="showDuplicateModal"
     :current-name="selectedAnalysis?.title"
     @confirm="onDuplicateConfirm"
@@ -26,20 +26,20 @@
           <h3 v-else @click="editTitle">
             {{ projectMetadata.name }} <i class="fa fa-fw fa-pencil subdued" />
           </h3>
-          <small-icon-button
+          <SmallIconButton
             v-if="isEditingTitle"
             @click="saveTitle"
             v-tooltip.top-center="'Save changes'"
           >
             <i class="fa fa-check" />
-          </small-icon-button>
-          <small-icon-button
+          </SmallIconButton>
+          <SmallIconButton
             v-if="isEditingTitle"
             @click="discardTitle"
             v-tooltip.top-center="'Discard changes'"
           >
             <i class="fa fa-close" />
-          </small-icon-button>
+          </SmallIconButton>
         </div>
         <div class="description">
           <textarea
@@ -57,16 +57,16 @@
             {{ projectMetadata.description ? projectMetadata.description : 'Add a description' }}
             <i class="fa fa-fw fa-pencil" />
           </div>
-          <small-icon-button v-if="isEditingProjectDescription">
+          <SmallIconButton v-if="isEditingProjectDescription">
             <i class="fa fa-check" @click="saveDesc" v-tooltip.top-center="'Save changes'" />
-          </small-icon-button>
-          <small-icon-button v-if="isEditingProjectDescription">
+          </SmallIconButton>
+          <SmallIconButton v-if="isEditingProjectDescription">
             <i
               class="fa fa-close"
               @click="discardProjectDescription"
               v-tooltip.top-center="'Discard changes'"
             />
-          </small-icon-button>
+          </SmallIconButton>
         </div>
       </section>
 
@@ -78,7 +78,7 @@
           </p>
         </div>
         <div class="questions-list">
-          <analysis-project-overview-question
+          <AnalysisProjectOverviewQuestion
             v-for="question of questionsList"
             :key="question.id"
             :question="question"
@@ -112,7 +112,7 @@
         </p>
       </div>
       <div class="tool-cards">
-        <tool-card-with-analyses
+        <ToolCardWithAnalyses
           class="tool-card-column"
           imgSrc="thumbnail-index.png"
           image-opacity="low"
@@ -128,7 +128,7 @@
           @rename="onRename"
           @duplicate="onDuplicate"
         />
-        <tool-card-with-analyses
+        <ToolCardWithAnalyses
           class="tool-card-column"
           imgSrc="thumbnail-dataset.png"
           image-opacity="high"
@@ -144,7 +144,7 @@
           @rename="onRename"
           @duplicate="onDuplicate"
         />
-        <tool-card-with-analyses
+        <ToolCardWithAnalyses
           class="tool-card-column"
           imgSrc="thumbnail-model.png"
           image-opacity="medium"
@@ -161,7 +161,7 @@
           @duplicate="onDuplicate"
         />
         <div class="tool-card-column">
-          <tool-card
+          <ToolCard
             @click="goToDocuments"
             imgSrc="thumbnail-documents.png"
             image-opacity="high"
