@@ -7,6 +7,7 @@ import {
   IndexAnalysisState,
   CountryFilter,
   ProjectionDateRange,
+  AnalysisBackendDocument,
 } from '@/types/Analysis';
 import {
   BinningOptions,
@@ -23,7 +24,7 @@ import { DEFAULT_EARLIEST_YEAR, DEFAULT_LAST_YEAR } from '@/composables/useProje
  * Get analysis by ID
  * @param {string} analysisId Analysis Id
  */
-export const getAnalysis = async (analysisId: string) => {
+export const getAnalysis = async (analysisId: string): Promise<AnalysisBackendDocument> => {
   const result = await API.get(`analyses/${analysisId}`);
   return result.data;
 };
@@ -32,10 +33,12 @@ export const getAnalysis = async (analysisId: string) => {
  * Get the state of the analysis with given Id
  * @param {String} analysisId Analysis Id
  */
-export const getAnalysisState = async (analysisId: string) => {
+export const getAnalysisState = async (
+  analysisId: string
+): Promise<DataAnalysisState | IndexAnalysisState | null> => {
   const analysis = await getAnalysis(analysisId);
   if (analysis) return analysis.state;
-  return {};
+  return null;
 };
 
 /**
@@ -92,7 +95,9 @@ export const updateAnalysis = async (
  * Get a list of analyses under given project Id
  * @param {string} projectId Project Id
  */
-export const getAnalysesByProjectId = async (projectId: string) => {
+export const getAnalysesByProjectId = async (
+  projectId: string
+): Promise<AnalysisBackendDocument[]> => {
   const result = await API.get('analyses', { params: { project_id: projectId, size: 200 } });
   return result.data || [];
 };

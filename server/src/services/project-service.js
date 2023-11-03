@@ -1,7 +1,13 @@
 const Logger = require('#@/config/logger.js');
 const { Adapter, RESOURCE } = require('#@/adapters/es/adapter.js');
+const questionService = require('#@/services/question-service.js');
 
 const MAX_NUMBER_PROJECTS = 100;
+const DEFAULT_QUESTIONS = [
+  'Which countries should be prioritized for _____?',
+  'How does the prioritization change over time?',
+  'How does adding or removing  factors like _____ or _____ affect the prioritization? Short term? Long term?',
+];
 
 /**
  * Returns projects summary
@@ -35,6 +41,24 @@ const findProject = async (projectId) => {
 const createProject = async (name, description) => {
   const projectAdapter = Adapter.get(RESOURCE.PROJECT);
   const projectId = await projectAdapter.create(name, description);
+  // Create default questions within the new project
+  const promises = DEFAULT_QUESTIONS.map((question) =>
+    questionService.createQuestion(
+      question,
+      '',
+      'private',
+      projectId,
+      undefined,
+      undefined,
+      '',
+      [],
+      null,
+      null,
+      [],
+      {}
+    )
+  );
+  await Promise.all(promises);
   return projectId;
 };
 

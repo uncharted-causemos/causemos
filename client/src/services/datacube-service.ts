@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import API from '@/api/api';
-import { DataConfig, Datacube, Model } from '@/types/Datacube';
+import { DataConfig, Datacube, Indicator, Model } from '@/types/Datacube';
 import { Clause, Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import { getTimeseries } from '@/services/outputdata-service';
@@ -137,11 +137,11 @@ export const getDatacubeFacets = async (facets: string[], filters: Filters): Pro
  * Get a datacube by id
  * @param {string} datacubeId
  */
-export const getDatacubeById = async (datacubeId: string) => {
+export const getDatacubeById = async (datacubeId: string): Promise<Model | Indicator | null> => {
   const filters = fu.newFilters();
   fu.setClause(filters, 'id', [datacubeId], 'or', false);
   const cubes = await getDatacubes(filters);
-  return cubes && cubes.length > 0 && cubes[0];
+  return (cubes?.[0] as Model | Indicator | undefined) ?? null;
 };
 
 /**

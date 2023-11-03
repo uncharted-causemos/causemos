@@ -29,6 +29,9 @@ export default function useInsightStore() {
   const setContextId = (contextId: string) => {
     store.dispatch('insightPanel/setContextId', [contextId]);
   };
+  const clearContextId = () => {
+    store.dispatch('insightPanel/setContextId', []);
+  };
   const setDataState = (newDataState: DataState | null) => {
     store.dispatch('insightPanel/setDataState', newDataState);
   };
@@ -45,6 +48,7 @@ export default function useInsightStore() {
     setPositionInReview,
     setRefreshDatacubes,
     setContextId,
+    clearContextId,
     setDataState,
     setViewState,
   };
