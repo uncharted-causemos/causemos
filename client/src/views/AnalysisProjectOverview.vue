@@ -211,13 +211,14 @@ import {
 import ToolCard from '@/components/home/tool-card.vue';
 import { findAllDatasets } from '@/utils/index-tree-util';
 import filtersUtil from '@/utils/filters-util';
-import { STATUS, TYPE as FILTERS_FIELD_TYPE } from '@/utils/datacube-util';
+import { STATUS, TYPE as FILTERS_FIELD_TYPE, isIndicator } from '@/utils/datacube-util';
 import ToolCardWithAnalyses from '@/components/home/tool-card-with-analyses.vue';
 import useInsightStore from '@/composables/useInsightStore';
+import { getDatacubeById } from '@/services/datacube-service';
 
 const router = useRouter();
 
-const toAnalysisObject = (analysis: AnalysisBackendDocument): Analysis => {
+const toAnalysisObject = async (analysis: AnalysisBackendDocument): Promise<Analysis> => {
   const state: IndexAnalysisState | DataAnalysisState = analysis.state;
   const type = isIndexAnalysisState(state) ? 'index' : 'quantitative';
   const item: Analysis = {
@@ -247,10 +248,13 @@ const toAnalysisObject = (analysis: AnalysisBackendDocument): Analysis => {
     //  datasets(indicators), though the interface guides the user to create an analysis of one type
     //  or the other. As a temporary measure, we store the type of the first datacube in each analysis
     //  to sort the analyses into "collections of datasets" and "collections of models".
-    // If the analysis has no datacubes, flag it as "doesn't contain indicators".
-    item.isFirstDatacubeAnIndicator =
-      state.analysisItems.length > 0 &&
-      state.analysisItems[0].dataConfig.selectedScenarioIds[0] === 'indicator';
+    // If the analysis has no datacubes, leave it flagged as "doesn't contain indicators".
+    if (state.analysisItems.length > 0) {
+      const modelOrIndicator = await getDatacubeById(state.analysisItems[0].id);
+      if (isIndicator(modelOrIndicator)) {
+        item.isFirstDatacubeAnIndicator = true;
+      }
+    }
   }
   return item;
 };
@@ -343,7 +347,8 @@ const fetchAnalyses = async () => {
   }
   enableOverlay('Loading analyses...');
   // fetch data space analyses
-  const results = (await getAnalysesByProjectId(project.value)).map(toAnalysisObject);
+  const promises = (await getAnalysesByProjectId(project.value)).map(toAnalysisObject);
+  const results = await Promise.all(promises);
   // Sort by modified_at date with latest on top
   const sortedResults = results.sort((a: any, b: any) => {
     return a.modified_at && b.modified_at ? b.modified_at - a.modified_at : 0;
@@ -394,7 +399,7 @@ const onDuplicateConfirm = async (newName: string) => {
   if (analysis?.analysisId) {
     try {
       const duplicatedAnalysis = await duplicateAnalysis(analysis.analysisId, newName);
-      analyses.value.unshift(toAnalysisObject(duplicatedAnalysis));
+      analyses.value.unshift(await toAnalysisObject(duplicatedAnalysis));
       toaster(ANALYSIS.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
     } catch (e) {
       toaster(ANALYSIS.ERRONEOUS_DUPLICATE, TYPE.INFO, true);
