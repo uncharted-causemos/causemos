@@ -84,7 +84,7 @@ const saveInsight = async () => {
 
   // Construct insight name from snippet metadata
   const { documentTitle, fragmentParagraphLocation } = props.snippetData || {};
-  const insightName = `${fragmentParagraphLocation}-${documentTitle}`;
+  const insightName = `${documentTitle} (paragraph ${fragmentParagraphLocation + 1})`;
 
   // Save new insight
   const newInsight: FullInsight = {

@@ -56,13 +56,15 @@
 
 <script setup lang="ts">
 import { toRefs, computed, ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import ModalDocument from '@/components/modals/modal-document.vue';
 import GeographicContext from '@/components/geographic-context.vue';
 import DocumentSnippetInsightControls from '@/components/document-snippet-insight-controls.vue';
 import useParagraphSearchResults from '@/composables/useParagraphSearchResults';
-import useQuestionsData from '@/composables/useQuestionsData';
+import { fetchQuestions } from '@/services/question-service';
+import { AnalyticalQuestion } from '@/types/Insight';
 
-const { questionsList } = useQuestionsData();
+const route = useRoute();
 
 const props = defineProps<{
   selectedNodeName: string;
@@ -117,6 +119,14 @@ const {
 
 // Snippet Insight controls
 const snippetRefs = ref<HTMLElement[]>([]);
+
+// fetch questions for insight controls
+const questionsList = ref<AnalyticalQuestion[]>([]);
+onMounted(async () => {
+  questionsList.value = await fetchQuestions([
+    { project_id: route.params.project, visibility: 'private' },
+  ]);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -213,9 +223,6 @@ section {
     font-size: 2.4rem;
     line-height: 2.8rem;
     color: $un-color-black-40;
-  }
-  &:hover .snippet-body {
-    color: $accent-main;
   }
   .snippet-body {
     flex: 1;
