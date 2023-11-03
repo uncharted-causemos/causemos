@@ -85,14 +85,23 @@ export interface IndexAnalysisState {
   projectionDateRange: ProjectionDateRange;
 }
 
+export interface AnalysisBackendDocument {
+  id: string;
+  title: string;
+  description: string;
+  project_id: string;
+  created_at: number;
+  modified_at: number;
+  state: IndexAnalysisState | DataAnalysisState;
+}
+
 export interface Analysis {
   analysisId: string;
-  previewImageSrc: string | null;
   title: string;
   subtitle: string;
   description: string;
   type: string;
-  modified_at: string;
+  modified_at: number;
   datacubesCount?: number;
   nodesWithDatasetsCount?: number;
 }

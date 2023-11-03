@@ -203,7 +203,12 @@ import { isDataAnalysisState, isIndexAnalysisState } from '@/utils/insight-util'
 import useToaster from '@/composables/useToaster';
 import { useRouter } from 'vue-router';
 import AnalysisProjectOverviewQuestion from '@/components/home/analysis-project-overview-question.vue';
-import { Analysis, DataAnalysisState, IndexAnalysisState } from '@/types/Analysis';
+import {
+  Analysis,
+  DataAnalysisState,
+  IndexAnalysisState,
+  AnalysisBackendDocument,
+} from '@/types/Analysis';
 import ToolCard from '@/components/home/tool-card.vue';
 import { findAllDatasets } from '@/utils/index-tree-util';
 import filtersUtil from '@/utils/filters-util';
@@ -213,12 +218,11 @@ import useInsightStore from '@/composables/useInsightStore';
 
 const router = useRouter();
 
-const toAnalysisObject = (analysis: any): Analysis => {
+const toAnalysisObject = (analysis: AnalysisBackendDocument): Analysis => {
   const state: IndexAnalysisState | DataAnalysisState = analysis.state;
   const type = isIndexAnalysisState(state) ? 'index' : 'quantitative';
   const item: Analysis = {
     analysisId: analysis.id,
-    previewImageSrc: analysis.thumbnail_source || null,
     title: analysis.title,
     subtitle: '',
     description: analysis.description || '',
