@@ -104,4 +104,5 @@ export interface Analysis {
   modified_at: number;
   datacubesCount?: number;
   nodesWithDatasetsCount?: number;
+  isFirstDatacubeAnIndicator: boolean;
 }

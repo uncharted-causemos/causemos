@@ -187,7 +187,6 @@ import {
   createAnalysis,
   createDataAnalysisObject,
   createIndexAnalysisObject,
-  getAnalysisState,
 } from '@/services/analysis-service';
 import dateFormatter from '@/formatters/date-formatter';
 import { ProjectType } from '@/types/Enums';
@@ -228,6 +227,7 @@ const toAnalysisObject = (analysis: AnalysisBackendDocument): Analysis => {
     description: analysis.description || '',
     type,
     modified_at: analysis.modified_at,
+    isFirstDatacubeAnIndicator: false,
   };
   const modifiedDateString = 'Modified on ' + dateFormatter(analysis.modified_at, 'MMM DD, YYYY');
   if (isIndexAnalysisState(state)) {
@@ -243,6 +243,14 @@ const toAnalysisObject = (analysis: AnalysisBackendDocument): Analysis => {
       `${item.datacubesCount} item${item.datacubesCount === 1 ? '' : 's'}` +
       '<br />' +
       modifiedDateString;
+    // NOTE: As of October 2023, "quantitative" analyses can contain any combination of models and
+    //  datasets(indicators), though the interface guides the user to create an analysis of one type
+    //  or the other. As a temporary measure, we store the type of the first datacube in each analysis
+    //  to sort the analyses into "collections of datasets" and "collections of models".
+    // If the analysis has no datacubes, flag it as "doesn't contain indicators".
+    item.isFirstDatacubeAnIndicator =
+      state.analysisItems.length > 0 &&
+      state.analysisItems[0].dataConfig.selectedScenarioIds[0] === 'indicator';
   }
   return item;
 };
@@ -345,50 +353,11 @@ const fetchAnalyses = async () => {
 };
 watch(projectMetadata, fetchAnalyses, { immediate: true });
 const indexAnalyses = computed(() => analyses.value.filter((a) => a.type === 'index'));
-const quantitativeAnalyses = computed(() =>
-  analyses.value.filter((a) => a.type === 'quantitative')
-);
-
-// NOTE: As of October 2023, "quantitative" analyses can contain any combination of models and
-//  datasets(indicators), though the interface guides the user to create an analysis of one type
-//  or the other. As a temporary measure, we store the type of the first datacube in each analysis
-//  to sort the analyses into "collections of datasets" and "collections of models".
-const analysisFirstDatacubeIsAnIndicatorMap = ref(new Map<string, boolean>());
-const storeIsFirstDatacubeAnIndicator = async (analysisId: string) => {
-  const analysisState = await getAnalysisState(analysisId);
-  if (analysisState === null) {
-    analysisFirstDatacubeIsAnIndicatorMap.value.set(analysisId, false);
-    return;
-  }
-  const isIndicator =
-    (analysisState as DataAnalysisState).analysisItems[0].dataConfig.selectedScenarioIds[0] ===
-    'indicator';
-  analysisFirstDatacubeIsAnIndicatorMap.value.set(analysisId, isIndicator);
-};
-watch(quantitativeAnalyses, () => {
-  // Label each analysis as "contains indicators" or not by fetching and checking the type of the
-  //  first datacube. If the analysis has no datacubes, flag it as "doesn't contain indicators".
-  quantitativeAnalyses.value.forEach((analysis) => {
-    if ((analysis.datacubesCount ?? 0) === 0) {
-      analysisFirstDatacubeIsAnIndicatorMap.value.set(analysis.analysisId, false);
-      return;
-    }
-    storeIsFirstDatacubeAnIndicator(analysis.analysisId);
-  });
-});
 const datasetAnalyses = computed(() =>
-  analyses.value.filter(
-    (a) =>
-      a.type === 'quantitative' &&
-      analysisFirstDatacubeIsAnIndicatorMap.value.get(a.analysisId) === true
-  )
+  analyses.value.filter((a) => a.type === 'quantitative' && a.isFirstDatacubeAnIndicator === true)
 );
 const modelAnalyses = computed(() =>
-  analyses.value.filter(
-    (a) =>
-      a.type === 'quantitative' &&
-      analysisFirstDatacubeIsAnIndicatorMap.value.get(a.analysisId) === false
-  )
+  analyses.value.filter((a) => a.type === 'quantitative' && a.isFirstDatacubeAnIndicator === false)
 );
 
 const showRenameModal = ref(false);
