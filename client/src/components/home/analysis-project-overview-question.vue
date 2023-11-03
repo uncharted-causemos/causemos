@@ -9,7 +9,11 @@
       v-focus
     />
     <div class="is-editing-question-buttons" v-if="isEditingQuestion">
-      <button class="btn btn-default btn-call-to-action" @click="saveTitle">
+      <button
+        class="btn btn-default btn-call-to-action"
+        @click="saveTitle"
+        :disabled="newTitle.trim().length === 0"
+      >
         <i class="fa fa-fw fa-check" />Confirm
       </button>
       <button class="btn btn-default" @click="discardTitle">
@@ -28,7 +32,7 @@
       </p>
       <SmallIconButton
         class="delete-button"
-        @click="emit('delete-question', question.id ?? '')"
+        @click="deleteQuestion"
         v-tooltip.top-center="'Delete question'"
       >
         <i class="fa fa-trash" />
@@ -52,14 +56,23 @@ const emit = defineEmits<{
   (e: 'save-title', questionId: string, newTitle: string): void;
   (e: 'stop-editing-question'): void;
 }>();
+const deleteQuestion = () => {
+  emit('delete-question', props.question.id ?? '');
+  emit('stop-editing-question');
+};
 
 const newTitle = ref(props.question.question);
 const saveTitle = () => {
   emit('save-title', props.question.id ?? '', newTitle.value);
 };
 const discardTitle = () => {
-  newTitle.value = props.question.question;
-  emit('stop-editing-question');
+  // If the question has never been named and we click "cancel", delete the question.
+  if (props.question.question === '') {
+    deleteQuestion();
+  } else {
+    newTitle.value = props.question.question;
+    emit('stop-editing-question');
+  }
 };
 
 const getInsightsDisplayString = (insightIds: string[]) => {
