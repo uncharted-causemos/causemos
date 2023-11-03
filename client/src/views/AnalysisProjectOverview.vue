@@ -209,6 +209,7 @@ import { findAllDatasets } from '@/utils/index-tree-util';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS, TYPE as FILTERS_FIELD_TYPE } from '@/utils/datacube-util';
 import ToolCardWithAnalyses from '@/components/home/tool-card-with-analyses.vue';
+import useInsightStore from '@/composables/useInsightStore';
 
 const router = useRouter();
 
@@ -277,14 +278,11 @@ const projectMetadata = computed(() => store.getters['app/projectMetadata']);
 const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
 const disableOverlay = () => store.dispatch('app/disableOverlay');
 
-const clearContextId = () => store.dispatch('insightPanel/setContextId', []);
+const { showInsightPanel, setCurrentPane, clearContextId } = useInsightStore();
 onMounted(() => {
   // clear the context to fetch all questions and insights
   clearContextId();
 });
-
-const showInsightPanel = () => store.dispatch('insightPanel/showInsightPanel');
-const setCurrentPane = (paneId: string) => store.dispatch('insightPanel/setCurrentPane', paneId);
 
 const openInsightsExplorer = () => {
   showInsightPanel();
