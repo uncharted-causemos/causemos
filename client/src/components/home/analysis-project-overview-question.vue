@@ -19,20 +19,20 @@
     <div v-else class="question-title">
       <p class="un-font-small">
         {{ question.question }}
-        <small-icon-button
+        <SmallIconButton
           @click="emit('edit-question', question.id ?? '')"
           v-tooltip.top-center="'Edit question'"
         >
           <i class="fa fa-pencil" />
-        </small-icon-button>
+        </SmallIconButton>
       </p>
-      <small-icon-button
+      <SmallIconButton
         class="delete-button"
         @click="emit('delete-question', question.id ?? '')"
         v-tooltip.top-center="'Delete question'"
       >
         <i class="fa fa-trash" />
-      </small-icon-button>
+      </SmallIconButton>
     </div>
     <p class="un-font-small subdued">
       <i class="fa fa-fw fa-star" />{{ getInsightsDisplayString(question.linked_insights) }}

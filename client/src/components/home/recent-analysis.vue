@@ -7,7 +7,7 @@
     <span class="un-font-small">
       {{ analysis.title }}
     </span>
-    <options-button
+    <OptionsButton
       class="more-options-button"
       :wider-dropdown-options="true"
       :dropdown-below="true"
@@ -27,8 +27,8 @@
           <i class="fa fa-fw fa-trash" /> Delete
         </div>
       </template>
-    </options-button>
-    <modal-confirmation
+    </OptionsButton>
+    <ModalConfirmation
       v-if="isShowingDeleteModal"
       :autofocus-confirm="false"
       @confirm="deleteAnalysis"
@@ -40,12 +40,12 @@
           Are you sure you want to remove <strong>{{ analysis.title }}</strong
           >?
         </p>
-        <message-display
+        <MessageDisplay
           :message="'Warning: This action cannot be undone.'"
           :message-type="'alert-warning'"
         />
       </template>
-    </modal-confirmation>
+    </ModalConfirmation>
   </div>
 </template>
 

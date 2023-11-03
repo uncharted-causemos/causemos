@@ -1,6 +1,6 @@
 <template>
   <div class="tool-card-with-analyses-container">
-    <tool-card
+    <ToolCard
       @click="emit('create')"
       :imgSrc="imgSrc"
       :image-opacity="imageOpacity"
@@ -10,7 +10,7 @@
     />
     <div class="recent-items">
       <p>{{ recentItemsTitle }}</p>
-      <recent-analysis
+      <RecentAnalysis
         v-for="analysis of analyses"
         :key="analysis.analysisId"
         :analysis="analysis"
