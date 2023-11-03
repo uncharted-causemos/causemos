@@ -18,7 +18,7 @@ export interface InsightFilterFields {
 }
 
 export const getInsightById = async (insight_id: string, fieldAllowList?: string[]) => {
-  const result = await API.get(`insights/${insight_id}`, { params: { fieldAllowList } });
+  const result = await API.get(`insights/${insight_id}`, { params: { allowList: fieldAllowList } });
   return result.data;
 };
 
@@ -27,7 +27,13 @@ export const addInsight = async (insight: Insight) => {
   return result;
 };
 
-export const updateInsight = async (insight_id: string, insight: Insight) => {
+// Alias to addInsight but it returns the data
+export const createInsight = async (insight: Insight) => {
+  const { data } = await API.post('insights', insight);
+  return data as { id: string };
+};
+
+export const updateInsight = async (insight_id: string, insight: Partial<Insight>) => {
   const result = await API.put(`insights/${insight_id}`, insight, {
     headers: {
       'Content-Type': 'application/json',
@@ -172,6 +178,7 @@ export const extractMetadataDetails = (
     });
     summary.datacubes = datacubes;
   }
+
   return summary;
 };
 
