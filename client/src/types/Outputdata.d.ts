@@ -130,8 +130,8 @@ export interface FeatureConfig {
 }
 
 export interface BulkRegionalAggregationData {
-  all_agg: RegionalAggregation;
-  select_agg: RegionalAggregation;
+  all_agg: RegionalAggregation | null;
+  select_agg: RegionalAggregation | null;
   regional_data: {
     data: RegionalAggregation;
     timestamp: string;

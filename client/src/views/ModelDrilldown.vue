@@ -107,7 +107,78 @@
       </div>
       <div class="date-dependent-data">
         <div class="maps">
-          <!-- TODO: map components -->
+          <!-- TODO: breakdown state outputs -->
+          <!-- <div class="card-maps-box" v-if="breakdownState !== null && isBreakdownStateOutputs(breakdownState)">
+            <div
+              v-for="({ name: featureName }, indx) in selectedFeatures"
+              :key="featureName"
+              class="card-map-container"
+              :class="[`card-count-${selectedFeatures.length < 5 ? selectedFeatures.length : 'n'}`]"
+            >
+              <span v-if="selectedFeatures.length > 1" :style="{ color: colorFromIndex(indx) }">
+                {{ featureName }}
+              </span>
+              <region-map
+                class="card-map"
+                :style="{ borderColor: colorFromIndex(indx) }"
+                :data="regionMapData[featureName]"
+                :map-bounds="mapBounds"
+                :popup-Formatter="popupFormatter"
+                :region-filter="selectedRegionIdsAtAllLevels"
+                :selected-admin-level="selectedAdminLevel"
+                @sync-bounds="onSyncMapBounds"
+              />
+            </div>
+          </div> -->
+          <!-- TODO: v else if -->
+          <!-- <div class="card-maps-box" v-else-if="breakdownState !== null && regionalData !== null"> -->
+          <div class="card-maps-box" v-if="breakdownState !== null && regionalData !== null">
+            <div
+              v-for="spec in outputSpecs"
+              :key="spec.id"
+              class="card-map-container"
+              :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
+            >
+              <!-- TODO: timeseries name and border colour -->
+              <!-- <span v-if="outputSpecs.length > 1" :style="{ color: colorFromIndex(indx) }">
+              {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
+            </span> -->
+              <!-- :style="{ borderColor: colorFromIndex(indx) }" -->
+              <!-- :selected-layer-id="getSelectedLayer(spec.id)" -->
+              <analysis-map
+                class="card-map"
+                :output-source-specs="outputSpecs"
+                :output-selection="spec.id"
+                :relative-to="
+                  breakdownState.comparisonSettings.shouldDisplayAbsoluteValues === false
+                    ? breakdownState.comparisonSettings.baselineTimeseriesId
+                    : undefined
+                "
+                :show-tooltip="true"
+                :selected-layer-id="getSelectedLayer()"
+                :map-bounds="mapBounds"
+                :region-data="regionalData"
+                :raw-data="[]"
+                :selected-regions="mapSelectedRegions"
+                :admin-layer-stats="adminLayerStats"
+                :grid-layer-stats="gridLayerStats"
+                :points-layer-stats="pointsLayerStats"
+                :selected-base-layer="selectedBaseLayer"
+                :unit="''"
+                :color-options="mapColorOptions"
+                :show-percent-change="breakdownState.comparisonSettings.shouldUseRelativePercentage"
+              />
+              <!-- :map-bounds="isSplitByRegionMode ? mapBoundsForEachSpec[spec.id] : mapBounds" -->
+              <!-- :unit="unit" -->
+              <!-- raw data="rawDataPointsList[indx]"" -->
+              <!-- @sync-bounds="
+                  (bounds) => (isSplitByRegionMode ? () => {} : onSyncMapBounds(bounds))
+                "
+                @on-map-load="onMapLoad"
+                @zoom-change="updateMapCurSyncedZoom"
+                @map-update="recalculateGridMapDiffStats" -->
+            </div>
+          </div>
           <button class="btn btn-default"><i class="fa fa-fw fa-gear" />Map options</button>
         </div>
         <div class="breakdown-column">
@@ -155,6 +226,7 @@ import {
   isBreakdownStateNone,
   isBreakdownStateOutputs,
   getFirstDefaultModelRun,
+  isBreakdownStateRegions,
 } from '@/utils/datacube-util';
 import useScenarioData from '@/composables/useScenarioData';
 import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
@@ -165,6 +237,15 @@ import ModalFilterAndCompare from '@/components/modals/modal-filter-and-compare.
 import { getDefaultFeature } from '@/services/datacube-service';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
+import AnalysisMap from '@/components/data/analysis-map.vue';
+import { BASE_LAYER, DATA_LAYER, SOURCE_LAYERS, getMapSourceLayer } from '@/utils/map-util-new';
+import useMapBounds from '@/composables/useMapBounds';
+import useRegionalDataFromBreakdownState from '@/composables/useRegionalDataFromBreakdownState';
+import useOutputSpecsFromBreakdownState from '@/composables/useOutputSpecsFromBreakdownState';
+import { stringToAdminLevel } from '@/utils/admin-level-util';
+import useAnalysisMapStats from '@/composables/useAnalysisMapStats';
+import useDatacubeColorScheme from '@/composables/useDatacubeColorScheme';
+import { AdminRegionSets } from '@/types/Datacubes';
 
 const breakdownState = ref<BreakdownState | null>(null);
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
@@ -303,6 +384,121 @@ watch(
     }
   },
   { immediate: true }
+);
+
+// const activeFeatures = computed<FeatureConfig[]>(() => {
+//   // TODO: support multiple
+//   if (activeOutputVariable.value === null) return [];
+//   const config: FeatureConfig = {
+//     name: activeOutputVariable.value.name,
+//     display_name: activeOutputVariable.value.display_name,
+//     temporalResolution: temporalResolution.value,
+//     temporalAggregation: temporalAggregationMethod.value,
+//     spatialAggregation: spatialAggregationMethod.value,
+//     // TODO: transform?
+//     transform: DataTransform.None,
+//   };
+//   return [config];
+// });
+// const activeFeatureName = computed(() => firstOutputName.value ?? '');
+// const selectedTimeseriesPoints = computed<TimeseriesPointSelection[]>(() => {
+//   if (selectedTimestamp.value === null) return [];
+//   const test: TimeseriesPointSelection = {
+//     timeseriesId: timeseriesData.value[0].id,
+//     // scenarioId: string,
+//     timestamp: selectedTimestamp.value,
+//     isTimestampInTimeseries: true, // TODO:
+//     timeseriesName: string,
+//     color: string,
+//   };
+//   return [test];
+// });
+const { outputSpecs } = useOutputSpecsFromBreakdownState(
+  breakdownState,
+  metadata,
+  spatialAggregationMethod,
+  temporalAggregationMethod,
+  temporalResolution,
+  selectedTimestamp
+);
+
+const { regionalData } = useRegionalDataFromBreakdownState(
+  breakdownState,
+  metadata,
+  outputSpecs,
+  selectedTimestamp
+);
+
+const selectedRegionIds = computed<string[]>(() => {
+  const state = breakdownState.value;
+  if (state === null || isBreakdownStateNone(state) || isBreakdownStateOutputs(state)) return [];
+  if (isBreakdownStateRegions(state)) return state.regionIds;
+  return state.regionId ? [state.regionId] : [];
+});
+// TODO:
+// const { onSyncMapBounds, mapBounds } = useMapBounds(regionalData, selectedRegionIds);
+const { mapBounds } = useMapBounds(regionalData, selectedRegionIds);
+// TODO: user-selected
+const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+
+const mapSelectedLayerId = computed(() => {
+  const adminLevel =
+    spatialAggregation.value === 'tiles' ? 0 : stringToAdminLevel(spatialAggregation.value);
+  return getMapSourceLayer(selectedDataLayer.value, adminLevel).layerId;
+});
+// TODO:
+// const getSelectedLayer = (id: string): string => {
+const getSelectedLayer = (): string => {
+  const isReferenceSeries = false;
+  // TODO: reference series
+  // const isReferenceSeries = this.availableReferenceOptions.filter((item) => item.id === id).length > 0;
+  const layerId =
+    isReferenceSeries &&
+    breakdownState.value !== null &&
+    isBreakdownStateRegions(breakdownState.value) &&
+    selectedDataLayer.value === DATA_LAYER.ADMIN
+      ? SOURCE_LAYERS[0].layerId
+      : mapSelectedLayerId.value;
+  return layerId;
+};
+
+const mapSelectedRegions = computed<AdminRegionSets>(() => {
+  return {
+    country: new Set(),
+    admin1: new Set(),
+    admin2: new Set(),
+    admin3: new Set(),
+  };
+  // In 'Split by region' mode, regional data is already filtered by region so we don't need additional region selection
+  // return breakdownState.value === null || isBreakdownStateRegions(breakdownState.value)
+  //   ? undefined
+  //   : selectedRegionIds.value;
+  // TODO: check difference between regionids at all levels and selected level in datacube-card. When would they be different?
+  // selectedRegionIds currently is only selected level
+  // : selectedRegionIdsAtAllLevels.value;
+});
+
+const { mapColorOptions } = useDatacubeColorScheme();
+const {
+  // updateMapCurSyncedZoom,
+  // recalculateGridMapDiffStats,
+  adminLayerStats,
+  gridLayerStats,
+  pointsLayerStats,
+  // mapLegendData,
+} = useAnalysisMapStats(
+  outputSpecs,
+  regionalData,
+  ref(null), // TODO: relativeTo,
+  selectedDataLayer,
+  ref(0), // TODO: selectedAdminLevel,
+  mapSelectedRegions, // TODO:, selectedRegionIdsAtAllLevels,
+  ref(false), // TODO: showPercentChange,
+  mapColorOptions,
+  ref([]), // TODO: activeReferenceOptions,
+  ref(null), // TODO: breakdownOption,
+  ref([]) // TODO: rawDataPointsList
 );
 </script>
 
@@ -456,6 +652,50 @@ watch(
 .maps {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+
+  .card-maps-box {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  $marginSize: 5px;
+
+  .card-map-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+
+    :deep(.wm-map) {
+      border-style: solid;
+      border-color: inherit;
+    }
+    &.card-count-1 {
+      :deep(.wm-map) {
+        border: none;
+      }
+    }
+    &.card-count-2,
+    &.card-count-3,
+    &.card-count-4 {
+      min-width: calc(50% - calc($marginSize / 2));
+      max-width: calc(50% - calc($marginSize / 2));
+    }
+    &.card-count-n {
+      min-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
+      max-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
+    }
+  }
+
+  & > button {
+    align-self: flex-start;
+  }
+}
+.card-map {
+  flex-grow: 1;
+  min-height: 0;
 }
 
 .breakdown-column {
