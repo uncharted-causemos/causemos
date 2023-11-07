@@ -117,7 +117,7 @@ export default function useQuestionsData() {
 
   const addSection = async (
     title: string,
-    handleSuccessfulUpdate: () => void,
+    handleSuccessfulUpdate: (newSectionId: string) => void,
     handleFailedUpdate: () => void
   ) => {
     const view_state: ViewState = _.cloneDeep(store.getters['insightPanel/viewState']);
@@ -155,7 +155,7 @@ export default function useQuestionsData() {
     };
     const result = await addQuestion(newSection);
     if (result.status === 200) {
-      handleSuccessfulUpdate();
+      handleSuccessfulUpdate(result.data.id);
       reFetchQuestions();
     } else {
       handleFailedUpdate();

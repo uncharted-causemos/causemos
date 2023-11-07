@@ -32,6 +32,7 @@ router.post(
       view_state,
       data_state,
       annotation_state,
+      metadata,
     } = req.body;
     const result = await insightService.createInsight(
       name,
@@ -48,7 +49,8 @@ router.post(
       image,
       view_state,
       data_state,
-      annotation_state
+      annotation_state,
+      metadata
     );
     res.json(result);
   })
@@ -115,7 +117,7 @@ router.get(
   authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const insightId = req.params.id;
-    const allowList = req.params.allowList;
+    const allowList = req.query.allowList;
     const result = await insightService.getInsight(insightId, allowList);
     res.status(200);
     res.json(result);

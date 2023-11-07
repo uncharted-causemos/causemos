@@ -1,6 +1,7 @@
-import API from '@/api/api';
-import { AnalyticalQuestion } from '@/types/Insight';
 import _ from 'lodash';
+import API from '@/api/api';
+import { AnalyticalQuestion, Insight } from '@/types/Insight';
+import { getInsightById, updateInsight } from '@/services/insight-service';
 
 export const getQuestionById = async (question_id: string) => {
   const result = await API.get(`questions/${question_id}`);
@@ -24,6 +25,39 @@ export const addQuestion = async (question: AnalyticalQuestion) => {
 export const deleteQuestion = async (id: string) => {
   const result = await API.delete(`questions/${id}`);
   return result;
+};
+
+export const addInsightToQuestion = async (questionId: string, insightId: string) => {
+  // TODO: For the optimization, we might want to move this operations to the server side
+  // to reduce the network overhead caused by sending multiple requests.
+
+  // Note: Insight update is not an atomic update. It can be rare but it's possible there might be data inconsistency resulting
+  // unexpected results especially when multiple update operations on a same insight at the same time concurrently.
+  // In that case, the last update received by the database will overwrite the previous ones.
+  const [question, insight]: [AnalyticalQuestion, Partial<Insight>] = await Promise.all([
+    getQuestionById(questionId),
+    getInsightById(insightId, ['analytical_question']),
+  ]);
+  question.linked_insights = _.uniq([...question.linked_insights, insightId]);
+  insight.analytical_question = _.uniq([...(insight.analytical_question || []), questionId]);
+  await Promise.all([updateQuestion(questionId, question), updateInsight(insightId, insight)]);
+};
+export const removeInsightFromQuestion = async (questionId: string, insightId: string) => {
+  // TODO: For the optimization, we might want to move this operations to the server side
+  // to reduce the network overhead caused by sending multiple requests.
+
+  // Note: Insight update is not an atomic update. It can be rare but it's possible there might be data inconsistency resulting
+  // unexpected results especially when multiple update operations on a same insight at the same time concurrently.
+  // In that case, the last update received by the database will overwrite the previous ones.
+  const [question, insight]: [AnalyticalQuestion, Partial<Insight>] = await Promise.all([
+    getQuestionById(questionId),
+    getInsightById(insightId, ['analytical_question']),
+  ]);
+  question.linked_insights = _.uniq([...question.linked_insights.filter((i) => i !== insightId)]);
+  insight.analytical_question = _.uniq([
+    ...(insight.analytical_question || []).filter((q) => q !== questionId),
+  ]);
+  await Promise.all([updateQuestion(questionId, question), updateInsight(insightId, insight)]);
 };
 
 //
@@ -62,4 +96,6 @@ export default {
   addQuestion,
   updateQuestion,
   fetchQuestions,
+  addInsightToQuestion,
+  removeInsightFromQuestion,
 };

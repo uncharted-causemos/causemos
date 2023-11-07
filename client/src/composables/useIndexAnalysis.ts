@@ -39,7 +39,7 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     const analysis = await getAnalysis(analysisId.value);
     _analysisName.value = analysis.title;
 
-    if (analysis.state?.index?.type !== undefined) {
+    if ((analysis.state as any).index?.type !== undefined) {
       // This analysis uses the deprecated data structure.
       console.log(
         'This analysis uses a deprecated data structure and cannot be viewed or modified.'
@@ -49,14 +49,17 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
       isDeprecatedDataStructure.value = false;
     }
 
+    // ASSUMPTION: useIndexAnalysis should never be passed an analysisId for a DataAnalysis.
+    const { resultsSettings, projectionSettings } = analysis.state as IndexAnalysisState;
+
     // ensure default values
     const defaults = createIndexAnalysisObject();
     _analysisState.value = {
       ...defaults,
       ...analysis.state,
       // For settings object, copy properties from one level deeper
-      resultsSettings: { ...defaults.resultsSettings, ...analysis.state.resultsSettings },
-      projectionSettings: { ...defaults.projectionSettings, ...analysis.state.projectionSettings },
+      resultsSettings: { ...defaults.resultsSettings, ...resultsSettings },
+      projectionSettings: { ...defaults.projectionSettings, ...projectionSettings },
     };
     // Initialize workbench items and the index tree
     workbench.initialize(analysisId.value, _analysisState.value.workBench);
