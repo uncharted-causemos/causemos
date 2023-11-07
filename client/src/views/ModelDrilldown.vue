@@ -107,46 +107,33 @@
       </div>
       <div class="date-dependent-data">
         <div class="maps">
-          <!-- TODO: breakdown state outputs -->
-          <!-- <div class="card-maps-box" v-if="breakdownState !== null && isBreakdownStateOutputs(breakdownState)">
-            <div
-              v-for="({ name: featureName }, indx) in selectedFeatures"
-              :key="featureName"
-              class="card-map-container"
-              :class="[`card-count-${selectedFeatures.length < 5 ? selectedFeatures.length : 'n'}`]"
-            >
-              <span v-if="selectedFeatures.length > 1" :style="{ color: colorFromIndex(indx) }">
-                {{ featureName }}
-              </span>
-              <region-map
-                class="card-map"
-                :style="{ borderColor: colorFromIndex(indx) }"
-                :data="regionMapData[featureName]"
-                :map-bounds="mapBounds"
-                :popup-Formatter="popupFormatter"
-                :region-filter="selectedRegionIdsAtAllLevels"
-                :selected-admin-level="selectedAdminLevel"
-                @sync-bounds="onSyncMapBounds"
-              />
-            </div>
-          </div> -->
-          <!-- TODO: v else if -->
-          <!-- <div class="card-maps-box" v-else-if="breakdownState !== null && regionalData !== null"> -->
           <div class="card-maps-box" v-if="breakdownState !== null && regionalData !== null">
             <div
-              v-for="spec in outputSpecs"
+              v-for="(spec, index) of outputSpecs"
               :key="spec.id"
               class="card-map-container"
               :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
             >
-              <!-- TODO: timeseries name and border colour -->
-              <!-- <span v-if="outputSpecs.length > 1" :style="{ color: colorFromIndex(indx) }">
-              {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
-            </span> -->
-              <!-- :style="{ borderColor: colorFromIndex(indx) }" -->
+              <!-- TODO: remove this reference when breakdown state outputs is working correctly -->
+              <!-- <region-map
+              :data="regionMapData[featureName]"
+              :popup-Formatter="popupFormatter"
+              :region-filter="selectedRegionIdsAtAllLevels"
+              :selected-admin-level="selectedAdminLevel"
+            /> -->
+              <span
+                v-if="outputSpecs.length > 1"
+                :style="{ color: colorFromIndex(index) }"
+                class="map-label"
+              >
+                <div class="color-indicator" :style="{ background: colorFromIndex(index) }" />
+                <!-- TODO: get the display name -->
+                <span>{{ spec.id }}</span>
+              </span>
               <!-- :selected-layer-id="getSelectedLayer(spec.id)" -->
               <analysis-map
                 class="card-map"
+                :style="{ borderColor: colorFromIndex(index) }"
                 :output-source-specs="outputSpecs"
                 :output-selection="spec.id"
                 :relative-to="
@@ -156,7 +143,7 @@
                 "
                 :show-tooltip="true"
                 :selected-layer-id="getSelectedLayer()"
-                :map-bounds="mapBounds"
+                :map-bounds="getMapBounds(spec.id)"
                 :region-data="regionalData"
                 :raw-data="[]"
                 :selected-regions="mapSelectedRegions"
@@ -167,16 +154,13 @@
                 :unit="''"
                 :color-options="mapColorOptions"
                 :show-percent-change="breakdownState.comparisonSettings.shouldUseRelativePercentage"
+                @sync-bounds="onMapMove"
               />
-              <!-- :map-bounds="isSplitByRegionMode ? mapBoundsForEachSpec[spec.id] : mapBounds" -->
               <!-- :unit="unit" -->
               <!-- raw data="rawDataPointsList[indx]"" -->
-              <!-- @sync-bounds="
-                  (bounds) => (isSplitByRegionMode ? () => {} : onSyncMapBounds(bounds))
-                "
-                @on-map-load="onMapLoad"
-                @zoom-change="updateMapCurSyncedZoom"
-                @map-update="recalculateGridMapDiffStats" -->
+              <!-- @on-map-load="onMapLoad" -->
+              <!-- @zoom-change="updateMapCurSyncedZoom" -->
+              <!-- @map-update="recalculateGridMapDiffStats" -->
             </div>
           </div>
           <button class="btn btn-default"><i class="fa fa-fw fa-gear" />Map options</button>
@@ -239,13 +223,14 @@ import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import AnalysisMap from '@/components/data/analysis-map.vue';
 import { BASE_LAYER, DATA_LAYER, SOURCE_LAYERS, getMapSourceLayer } from '@/utils/map-util-new';
-import useMapBounds from '@/composables/useMapBounds';
+import useMapBoundsFromBreakdownState from '@/composables/useMapBoundsFromBreakdownState';
 import useRegionalDataFromBreakdownState from '@/composables/useRegionalDataFromBreakdownState';
 import useOutputSpecsFromBreakdownState from '@/composables/useOutputSpecsFromBreakdownState';
 import { stringToAdminLevel } from '@/utils/admin-level-util';
 import useAnalysisMapStats from '@/composables/useAnalysisMapStats';
 import useDatacubeColorScheme from '@/composables/useDatacubeColorScheme';
 import { AdminRegionSets } from '@/types/Datacubes';
+import { colorFromIndex } from '@/utils/colors-util';
 
 const breakdownState = ref<BreakdownState | null>(null);
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
@@ -386,33 +371,6 @@ watch(
   { immediate: true }
 );
 
-// const activeFeatures = computed<FeatureConfig[]>(() => {
-//   // TODO: support multiple
-//   if (activeOutputVariable.value === null) return [];
-//   const config: FeatureConfig = {
-//     name: activeOutputVariable.value.name,
-//     display_name: activeOutputVariable.value.display_name,
-//     temporalResolution: temporalResolution.value,
-//     temporalAggregation: temporalAggregationMethod.value,
-//     spatialAggregation: spatialAggregationMethod.value,
-//     // TODO: transform?
-//     transform: DataTransform.None,
-//   };
-//   return [config];
-// });
-// const activeFeatureName = computed(() => firstOutputName.value ?? '');
-// const selectedTimeseriesPoints = computed<TimeseriesPointSelection[]>(() => {
-//   if (selectedTimestamp.value === null) return [];
-//   const test: TimeseriesPointSelection = {
-//     timeseriesId: timeseriesData.value[0].id,
-//     // scenarioId: string,
-//     timestamp: selectedTimestamp.value,
-//     isTimestampInTimeseries: true, // TODO:
-//     timeseriesName: string,
-//     color: string,
-//   };
-//   return [test];
-// });
 const { outputSpecs } = useOutputSpecsFromBreakdownState(
   breakdownState,
   metadata,
@@ -429,15 +387,8 @@ const { regionalData } = useRegionalDataFromBreakdownState(
   selectedTimestamp
 );
 
-const selectedRegionIds = computed<string[]>(() => {
-  const state = breakdownState.value;
-  if (state === null || isBreakdownStateNone(state) || isBreakdownStateOutputs(state)) return [];
-  if (isBreakdownStateRegions(state)) return state.regionIds;
-  return state.regionId ? [state.regionId] : [];
-});
-// TODO:
-// const { onSyncMapBounds, mapBounds } = useMapBounds(regionalData, selectedRegionIds);
-const { mapBounds } = useMapBounds(regionalData, selectedRegionIds);
+const { onMapMove, getMapBounds } = useMapBoundsFromBreakdownState(breakdownState, regionalData);
+
 // TODO: user-selected
 const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
 const selectedDataLayer = ref(DATA_LAYER.ADMIN);
@@ -659,6 +610,7 @@ const {
     flex: 1;
     min-height: 0;
     display: flex;
+    gap: 2px;
   }
 
   $marginSize: 5px;
@@ -667,16 +619,33 @@ const {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+    position: relative;
+    isolation: isolate;
 
-    :deep(.wm-map) {
-      border-style: solid;
-      border-color: inherit;
-    }
-    &.card-count-1 {
-      :deep(.wm-map) {
-        border: none;
+    .map-label {
+      --horizontal-padding: 5px;
+      position: absolute;
+      background: white;
+      padding: 2px var(--horizontal-padding);
+      top: 5px;
+      left: 5px;
+      z-index: 1; // Render overtop of the map
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      max-width: calc(100% - calc(2 * var(--horizontal-padding)));
+
+      .color-indicator {
+        width: 7px;
+        height: 7px;
+      }
+
+      span {
+        flex: 1;
+        min-width: 0;
       }
     }
+
     &.card-count-2,
     &.card-count-3,
     &.card-count-4 {
