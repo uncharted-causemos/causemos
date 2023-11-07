@@ -19,7 +19,7 @@ import {
   applyReference,
   applyRelativeTo,
   breakdownByYear,
-  mapToBreakdownDomain,
+  convertTimestampsToMonthIndex,
 } from '@/utils/timeseries-util';
 import _ from 'lodash';
 import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
@@ -50,7 +50,7 @@ const applyBreakdown = (
       // Depending on the selected breakdown option, timestamp values may need to be mapped
       //  from the standard epoch format, e.g. `1451606400` for `Dec 31, 2015 @ 7pm`
       //  to a less specific domain like "the month's index", e.g. `1` for `February`
-      const mappedToBreakdownDomain = mapToBreakdownDomain(points);
+      const mappedToBreakdownDomain = convertTimestampsToMonthIndex(points);
       return {
         name: year,
         id: year,

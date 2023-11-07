@@ -73,7 +73,7 @@
 <script setup lang="ts">
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { BreakdownStateRegions, ComparisonSettings, Indicator, Model } from '@/types/Datacube';
-import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
+import { SpatialAggregation } from '@/types/Enums';
 import { getRegionIdDisplayName } from '@/utils/admin-level-util';
 import { getOutputDescription } from '@/utils/datacube-util';
 import { computed, toRefs, watch } from 'vue';
@@ -84,12 +84,12 @@ import { useRegionalDropdownOptions } from '@/composables/useRegionalDropdownOpt
 const props = defineProps<{
   breakdownState: BreakdownStateRegions;
   metadata: Model | Indicator;
-  spatialAggregation: DatacubeGeoAttributeVariableType | 'tiles';
+  spatialAggregation: SpatialAggregation;
 }>();
 const { breakdownState, metadata, spatialAggregation } = toRefs(props);
 const emit = defineEmits<{
   (e: 'set-breakdown-state', breakdownState: BreakdownStateRegions): void;
-  (e: 'set-spatial-aggregation', newValue: DatacubeGeoAttributeVariableType | 'tiles'): void;
+  (e: 'set-spatial-aggregation', newValue: SpatialAggregation): void;
 }>();
 const outputs = computed(() => metadata.value.outputs);
 const outputDropdownOptions = computed<DropdownItem[]>(() =>
@@ -105,7 +105,7 @@ const { spatialAggregationDropdownOptions, regionsDropdownOptions } = useRegiona
   spatialAggregation
 );
 
-const setSpatialAggregation = (newValue: DatacubeGeoAttributeVariableType | 'tiles') => {
+const setSpatialAggregation = (newValue: SpatialAggregation) => {
   emit('set-spatial-aggregation', newValue);
 };
 

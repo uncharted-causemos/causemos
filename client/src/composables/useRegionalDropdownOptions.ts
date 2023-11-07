@@ -1,6 +1,6 @@
 import { DropdownItem } from '@/components/dropdown-button.vue';
 import { DatacubeGeography } from '@/types/Common';
-import { AdminLevel, DatacubeGeoAttributeVariableType } from '@/types/Enums';
+import { AdminLevel, DatacubeGeoAttributeVariableType, SpatialAggregation } from '@/types/Enums';
 import { ADMIN_LEVEL_TITLES, getRegionIdDisplayName } from '@/utils/admin-level-util';
 import { Ref, computed } from 'vue';
 
@@ -14,7 +14,7 @@ export const POSSIBLE_SPATIAL_RESOLUTION_DROPDOWN_OPTIONS: DropdownItem[] = [
 
 export function useRegionalDropdownOptions(
   availableRegions: Ref<DatacubeGeography | null>,
-  spatialAggregation: Ref<DatacubeGeoAttributeVariableType | 'tiles'>
+  spatialAggregation: Ref<SpatialAggregation>
 ) {
   const spatialAggregationDropdownOptions = computed(() => {
     // If available spatial resolutions haven't been fetched yet, only show the currently selected one

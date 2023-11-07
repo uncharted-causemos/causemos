@@ -76,6 +76,11 @@ export function correctIncompleteTimeseriesLists(
  * If the coverage falls between these values and the aggregation is set to 'Sum' the data is scaled
  * by the reciprocal of the coverage.
  *
+ * NOTE Oct 2023: This behaviour is not included in the updated data space due because
+ *  - it's unexpected (other data visualizers do not artificially modify the data this way)
+ *  - it adds complexity to the page's behaviour
+ *  - it introduces the possibility of invalid data modifications and comparisons
+ *
  * @param {TimeseriesPoint[]} timeseries - List of points
  * @param {TemporalResolution} rawResolution - Resolution of the raw data
  * @param {TemporalResolutionOption} temporalResolution - Resolution of the aggregated data
