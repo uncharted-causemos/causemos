@@ -79,8 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { getAnalysisState } from '@/services/analysis-service';
+import { computed, ref } from 'vue';
 import IndexTreeNode from '@/components/index-structure/index-tree-node.vue';
 import {
   ConceptNode,
@@ -97,11 +96,7 @@ import {
   getIncomingEdgeClassObject,
   getOutgoingEdgeClassObject,
 } from '@/utils/grid-cell-util';
-import { useRoute } from 'vue-router';
 import { CountryFilter } from '@/types/Analysis';
-
-const route = useRoute();
-const analysisId = computed(() => route.params.analysisId as string);
 
 const props = defineProps<{
   selectedElementId: SelectableIndexElementId | null;
@@ -118,7 +113,6 @@ const props = defineProps<{
 const isConnecting = ref<boolean>(false);
 const connectingId = ref<string | null>(null);
 const gridCellElements = ref([]);
-const analysisState = ref();
 
 const emit = defineEmits<{
   (e: 'select-element', selectedElement: SelectableIndexElementId): void;
@@ -134,10 +128,6 @@ const emit = defineEmits<{
 const indexTree = useIndexTree();
 const { findNode } = indexTree;
 const workbench = useIndexWorkBench();
-
-onMounted(async () => {
-  analysisState.value = await getAnalysisState(analysisId.value);
-});
 
 const isDescendentOfConnectingNode = (targetId: string) => {
   if (connectingId.value !== null) {

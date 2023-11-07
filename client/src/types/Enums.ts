@@ -217,3 +217,7 @@ export enum SortableTableHeaderState {
   Down = 'DOWN',
   None = 'NONE',
 }
+
+export enum InsightMetadataType {
+  DocumentSnippet = 'DocumentSnippet',
+}

@@ -22,10 +22,17 @@
       </div>
       <p v-else-if="snippets !== null && snippets.length === 0" class="subdued">No results</p>
       <div v-else class="snippets">
-        <div class="snippet" v-for="(snippet, i) in snippets" :key="i">
+        <div class="snippet" v-for="(snippet, i) in snippets" :key="i" ref="snippetRefs">
+          <DocumentSnippetInsightControls
+            class="document-snippet-insight-controls-container"
+            :snippet-data="snippet"
+            :snippet-element-ref="snippetRefs[i]"
+            :content-element-selector="'.snippet-content'"
+            :questions-list="questionsList"
+          />
           <span class="open-quote">"</span>
           <div class="snippet-body">
-            <p class="overflow-auto"><span v-html="snippet.text" /></p>
+            <p class="snippet-content overflow-auto"><span v-html="snippet.text" /></p>
             <div class="bottom-row">
               <div class="metadata">
                 <p>{{ snippet.documentTitle }}</p>
@@ -49,9 +56,15 @@
 
 <script setup lang="ts">
 import { toRefs, computed, ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import ModalDocument from '@/components/modals/modal-document.vue';
 import GeographicContext from '@/components/geographic-context.vue';
+import DocumentSnippetInsightControls from '@/components/document-snippet-insight-controls.vue';
 import useParagraphSearchResults from '@/composables/useParagraphSearchResults';
+import { fetchQuestions } from '@/services/question-service';
+import { AnalyticalQuestion } from '@/types/Insight';
+
+const route = useRoute();
 
 const props = defineProps<{
   selectedNodeName: string;
@@ -103,6 +116,17 @@ const {
   isLoading: isLoadingSnippets,
   highlights,
 } = useParagraphSearchResults(searchString, 10);
+
+// Snippet Insight controls
+const snippetRefs = ref<HTMLElement[]>([]);
+
+// fetch questions for insight controls
+const questionsList = ref<AnalyticalQuestion[]>([]);
+onMounted(async () => {
+  questionsList.value = await fetchQuestions([
+    { project_id: route.params.project, visibility: 'private' },
+  ]);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -192,6 +216,7 @@ section {
 
 .snippet {
   display: flex;
+  position: relative;
   .open-quote {
     // FIXME: use IBM Plex Sans or another font with more distinct open quotations
     width: 2rem;
@@ -216,9 +241,18 @@ section {
       }
     }
   }
+  &:hover .document-snippet-insight-controls-container {
+    display: block;
+  }
 }
 
 .overflow-auto {
   overflow: auto;
+}
+.document-snippet-insight-controls-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: none;
 }
 </style>

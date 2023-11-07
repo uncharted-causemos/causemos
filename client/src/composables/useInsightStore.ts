@@ -3,6 +3,8 @@ import { useStore } from 'vuex';
 
 export default function useInsightStore() {
   const store = useStore();
+  const getDataState = () => store.getters['insightPanel/dataState'];
+  const getViewState = () => store.getters['insightPanel/viewState'];
   const setSnapshotUrl = (url: any) => {
     store.dispatch('insightPanel/setSnapshotUrl', url);
   };
@@ -29,6 +31,9 @@ export default function useInsightStore() {
   const setContextId = (contextId: string) => {
     store.dispatch('insightPanel/setContextId', [contextId]);
   };
+  const clearContextId = () => {
+    store.dispatch('insightPanel/setContextId', []);
+  };
   const setDataState = (newDataState: DataState | null) => {
     store.dispatch('insightPanel/setDataState', newDataState);
   };
@@ -37,6 +42,8 @@ export default function useInsightStore() {
   };
 
   return {
+    getDataState,
+    getViewState,
     setSnapshotUrl,
     showInsightPanel,
     setUpdatedInsight,
@@ -45,6 +52,7 @@ export default function useInsightStore() {
     setPositionInReview,
     setRefreshDatacubes,
     setContextId,
+    clearContextId,
     setDataState,
     setViewState,
   };

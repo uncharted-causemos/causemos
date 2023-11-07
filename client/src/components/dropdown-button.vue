@@ -152,12 +152,11 @@ export default defineComponent({
     });
 
     const selectedItemDisplayName = computed(() => {
-      return isMultiSelect.value && selectedItems.value.length > 0
-        ? selectedItems.value.length > 1
-          ? '(multiple)'
-          : selectedItems.value[0]
-        : dropdownItems.value.find((item) => item.value === selectedItem.value)?.displayName ??
-            selectedItem.value;
+      const selectedItemValue = isMultiSelect.value ? selectedItems.value[0] : selectedItem.value;
+      const displayName =
+        dropdownItems.value.find((item) => item.value === selectedItemValue)?.displayName ??
+        selectedItemValue;
+      return isMultiSelect && selectedItems.value.length > 1 ? '(multiple)' : displayName;
     });
 
     const emitItemSelection = (item: any) => {
