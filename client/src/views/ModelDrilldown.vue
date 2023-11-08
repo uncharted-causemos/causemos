@@ -100,7 +100,7 @@
           :selected-timestamp="selectedTimestamp"
           :breakdown-option="null"
           :selected-temporal-resolution="TemporalResolutionOption.Month"
-          :unit="''"
+          :unit="activeOutputVariable?.unit ?? ''"
           @select-timestamp="setSelectedTimestamp"
         />
         <p class="selected-date"><span class="subdued">Selected date:</span> December 2012</p>
@@ -108,58 +108,29 @@
       <div class="date-dependent-data">
         <div class="maps">
           <div class="card-maps-box" v-if="breakdownState !== null && regionalData !== null">
-            <div
-              v-for="(spec, index) of outputSpecs"
-              :key="spec.id"
-              class="card-map-container"
-              :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
-            >
-              <!-- TODO: remove this reference when breakdown state outputs is working correctly -->
-              <!-- <region-map
+            <!-- TODO: remove this reference when breakdown state outputs is working correctly -->
+            <!-- <region-map
               :data="regionMapData[featureName]"
               :popup-Formatter="popupFormatter"
               :region-filter="selectedRegionIdsAtAllLevels"
               :selected-admin-level="selectedAdminLevel"
             /> -->
-              <span
-                v-if="outputSpecs.length > 1"
-                :style="{ color: colorFromIndex(index) }"
-                class="map-label"
-              >
-                <div class="color-indicator" :style="{ background: colorFromIndex(index) }" />
-                <!-- TODO: get the display name -->
-                <span>{{ spec.id }}</span>
-              </span>
-              <!-- :selected-layer-id="getSelectedLayer(spec.id)" -->
-              <analysis-map
-                class="card-map"
-                :style="{ borderColor: colorFromIndex(index) }"
-                :output-source-specs="outputSpecs"
-                :output-selection="spec.id"
-                :relative-to="
-                  breakdownState.comparisonSettings.shouldDisplayAbsoluteValues === false
-                    ? breakdownState.comparisonSettings.baselineTimeseriesId
-                    : undefined
-                "
-                :show-tooltip="true"
-                :selected-layer-id="getSelectedLayer()"
-                :map-bounds="getMapBounds(spec.id)"
-                :region-data="regionalData"
-                :raw-data="[]"
-                :selected-regions="mapSelectedRegions"
-                :admin-layer-stats="adminLayerStats"
-                :grid-layer-stats="gridLayerStats"
-                :points-layer-stats="pointsLayerStats"
-                :selected-base-layer="selectedBaseLayer"
-                :unit="activeOutputVariable?.unit"
-                :color-options="mapColorOptions"
-                :show-percent-change="breakdownState.comparisonSettings.shouldUseRelativePercentage"
-                @sync-bounds="onMapMove"
-                @zoom-change="updateMapCurSyncedZoom"
-                @map-update="recalculateGridMapDiffStats"
-              />
-              <!-- raw data="rawDataPointsList[indx]"" -->
-            </div>
+            <NewAnalysisMap
+              v-for="(spec, index) of outputSpecs"
+              :key="spec.id"
+              class="analysis-map"
+              :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
+              :color="colorFromIndex(index)"
+              :breakdown-state="breakdownState"
+              :metadata="metadata"
+              :regional-data="regionalData"
+              :output-specs="outputSpecs"
+              :output-spec-id="spec.id"
+              :unit="activeOutputVariable?.unit ?? ''"
+              :spatial-aggregation="spatialAggregation"
+              :map-bounds="getMapBounds(spec.id)"
+              @map-move="onMapMove"
+            />
           </div>
           <button class="btn btn-default"><i class="fa fa-fw fa-gear" />Map options</button>
         </div>
@@ -199,7 +170,6 @@ import {
   AggregationOption,
   DatacubeGeoAttributeVariableType,
   SpatialAggregation,
-  SpatialAggregationLevel,
   TemporalResolutionOption,
 } from '@/types/Enums';
 import { BreakdownState, BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
@@ -209,8 +179,6 @@ import {
   isBreakdownStateNone,
   isBreakdownStateOutputs,
   getFirstDefaultModelRun,
-  isBreakdownStateRegions,
-  getRegionIdsFromBreakdownState,
 } from '@/utils/datacube-util';
 import useScenarioData from '@/composables/useScenarioData';
 import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
@@ -221,16 +189,11 @@ import ModalFilterAndCompare from '@/components/modals/modal-filter-and-compare.
 import { getDefaultFeature } from '@/services/datacube-service';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
-import AnalysisMap from '@/components/data/analysis-map.vue';
-import { BASE_LAYER, DATA_LAYER, SOURCE_LAYERS, getMapSourceLayer } from '@/utils/map-util-new';
-import useMapBoundsFromBreakdownState from '@/composables/useMapBoundsFromBreakdownState';
 import useRegionalDataFromBreakdownState from '@/composables/useRegionalDataFromBreakdownState';
 import useOutputSpecsFromBreakdownState from '@/composables/useOutputSpecsFromBreakdownState';
-import { stringToAdminLevel } from '@/utils/admin-level-util';
-import useAnalysisMapStats from '@/composables/useAnalysisMapStats';
-import useDatacubeColorScheme from '@/composables/useDatacubeColorScheme';
-import { AdminRegionSets } from '@/types/Datacubes';
 import { colorFromIndex } from '@/utils/colors-util';
+import NewAnalysisMap from '@/components/data/new-analysis-map.vue';
+import useMapBoundsFromBreakdownState from '@/composables/useMapBoundsFromBreakdownState';
 
 const breakdownState = ref<BreakdownState | null>(null);
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
@@ -388,79 +351,6 @@ const { regionalData } = useRegionalDataFromBreakdownState(
 );
 
 const { onMapMove, getMapBounds } = useMapBoundsFromBreakdownState(breakdownState, regionalData);
-
-// TODO: user-selected
-// Default or satellite
-const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
-// Admin, tiles, or dot
-const selectedDataLayer = ref(DATA_LAYER.ADMIN);
-
-// TODO:
-// const getSelectedLayer = (id: string): string => {
-const getSelectedLayer = (): string => {
-  const adminLevel =
-    spatialAggregation.value === 'tiles' ? 0 : stringToAdminLevel(spatialAggregation.value);
-  const selectedLayerId = getMapSourceLayer(selectedDataLayer.value, adminLevel).layerId;
-
-  // TODO: If the current output spec is a "split by region" reference series, return SOURCE_LAYER.COUNTRY
-  //  we can probably determine this using the timeseries ID alone
-  const isReferenceSeries = false;
-  // const isReferenceSeries = this.availableReferenceOptions.filter((item) => item.id === id).length > 0;
-  const layerId =
-    isReferenceSeries &&
-    breakdownState.value !== null &&
-    isBreakdownStateRegions(breakdownState.value) &&
-    selectedDataLayer.value === DATA_LAYER.ADMIN
-      ? SOURCE_LAYERS[0].layerId
-      : selectedLayerId;
-  return layerId;
-};
-
-// This is a legacy data structure that's required for useAnalysisMapStats and analysis-map.vue.
-//  We just wrap the selected regionIds from the breakdown state in a Set and put that in an object.
-const mapSelectedRegions = computed<AdminRegionSets>(() => {
-  const result: AdminRegionSets = {
-    country: new Set(),
-    admin1: new Set(),
-    admin2: new Set(),
-    admin3: new Set(),
-  };
-  if (spatialAggregation.value === 'tiles') {
-    return result;
-  }
-  const newSet = new Set(getRegionIdsFromBreakdownState(breakdownState.value));
-  result[spatialAggregation.value] = newSet;
-  return result;
-});
-
-const { mapColorOptions } = useDatacubeColorScheme();
-// HACK: useAnalysisMapStats needs to know if "split by region" is active. Once the old data space
-//  is removed, we can replace the breakdownOption parameter with a simple boolean.
-const breakdownOption = computed(() =>
-  breakdownState.value && isBreakdownStateRegions(breakdownState.value)
-    ? SpatialAggregationLevel.Region
-    : null
-);
-const {
-  updateMapCurSyncedZoom,
-  recalculateGridMapDiffStats,
-  adminLayerStats,
-  gridLayerStats,
-  pointsLayerStats,
-  // mapLegendData, // TODO: legend
-} = useAnalysisMapStats(
-  outputSpecs,
-  regionalData,
-  computed(() => breakdownState.value?.comparisonSettings.baselineTimeseriesId ?? null),
-  selectedDataLayer,
-  computed(() => stringToAdminLevel(spatialAggregation.value)),
-  mapSelectedRegions,
-  computed(() => breakdownState.value?.comparisonSettings.shouldDisplayAbsoluteValues ?? false),
-  mapColorOptions,
-  ref([]), // TODO: activeReferenceOptions,
-  breakdownOption,
-  ref([]) // TODO: rawDataPointsList
-);
 </script>
 
 <style lang="scss" scoped>
@@ -617,6 +507,7 @@ $configColumnButtonWidth: 122px;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 
   .card-maps-box {
     flex: 1;
@@ -627,36 +518,12 @@ $configColumnButtonWidth: 122px;
 
   $marginSize: 5px;
 
-  .card-map-container {
+  .analysis-map {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
     position: relative;
     isolation: isolate;
-
-    .map-label {
-      --horizontal-padding: 5px;
-      position: absolute;
-      background: white;
-      padding: 2px var(--horizontal-padding);
-      top: 5px;
-      left: 5px;
-      z-index: 1; // Render overtop of the map
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      max-width: calc(100% - calc(2 * var(--horizontal-padding)));
-
-      .color-indicator {
-        width: 7px;
-        height: 7px;
-      }
-
-      span {
-        flex: 1;
-        min-width: 0;
-      }
-    }
 
     &.card-count-2,
     &.card-count-3,
@@ -673,10 +540,6 @@ $configColumnButtonWidth: 122px;
   & > button {
     align-self: flex-start;
   }
-}
-.card-map {
-  flex-grow: 1;
-  min-height: 0;
 }
 
 .breakdown-column {
