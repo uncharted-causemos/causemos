@@ -111,7 +111,7 @@
             <NewAnalysisMap
               v-for="(spec, index) of outputSpecs"
               :key="spec.id"
-              class="analysis-map"
+              class="new-analysis-map"
               :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
               :color="colorFromIndex(index)"
               :breakdown-state="breakdownState"
@@ -507,11 +507,12 @@ $configColumnButtonWidth: 122px;
     min-height: 0;
     display: flex;
     gap: 2px;
+    flex-wrap: wrap;
   }
 
   $marginSize: 5px;
 
-  .analysis-map {
+  .new-analysis-map {
     flex-grow: 1;
 
     &.card-count-2,
