@@ -9,6 +9,7 @@ import {
   isBreakdownStateRegions,
   isBreakdownStateYears,
 } from '@/utils/datacube-util';
+import { getTimestampMillis } from '@/utils/date-util';
 
 export default function useOutputSpecsFromBreakdownState(
   breakdownState: Ref<BreakdownState | null>,
@@ -25,14 +26,28 @@ export default function useOutputSpecsFromBreakdownState(
     if (_metadata === null || _timestamp === null || _breakdownState === null) {
       return [];
     }
+    // There is a brief state when switching to/from "split by years" mode where the timestamp is
+    //  in milliseconds or months when it should be the opposite. In those cases, return no
+    //  outputSpecs and wait for the selectedTimestamp to automatically update.
+    const isInvalidTimestamp =
+      (isBreakdownStateYears(_breakdownState) && _timestamp > 11) ||
+      (!isBreakdownStateYears(_breakdownState) && _timestamp < 12);
+    if (isInvalidTimestamp) {
+      return [];
+    }
 
-    const createOutputSpec = (outputSpecId: string, runId: string, outputVariable: string) => {
+    const createOutputSpec = (
+      outputSpecId: string,
+      runId: string,
+      outputVariable: string,
+      timestamp: number
+    ) => {
       const outputSpec: OutputSpecWithId = {
         id: outputSpecId,
         modelId: _metadata.data_id,
         runId,
         outputVariable,
-        timestamp: _timestamp,
+        timestamp,
         transform: undefined,
         temporalResolution: temporalResolution.value,
         temporalAggregation: temporalAggregationMethod.value,
@@ -45,24 +60,39 @@ export default function useOutputSpecsFromBreakdownState(
 
     if (isBreakdownStateOutputs(_breakdownState)) {
       return _breakdownState.outputNames.map((outputName) =>
-        createOutputSpec(outputName, _breakdownState.modelRunId, outputName)
+        createOutputSpec(outputName, _breakdownState.modelRunId, outputName, _timestamp)
       );
     } else if (isBreakdownStateNone(_breakdownState)) {
       return _breakdownState.modelRunIds.map((modelRunId) =>
-        createOutputSpec(modelRunId, modelRunId, _breakdownState.outputName)
+        createOutputSpec(modelRunId, modelRunId, _breakdownState.outputName, _timestamp)
       );
     } else if (isBreakdownStateYears(_breakdownState)) {
       return _breakdownState.years.map((year) =>
-        createOutputSpec(year, _breakdownState.modelRunId, _breakdownState.outputName)
+        createOutputSpec(
+          year,
+          _breakdownState.modelRunId,
+          _breakdownState.outputName,
+          getTimestampMillis(parseInt(year), _timestamp)
+        )
       );
     } else if (isBreakdownStateRegions(_breakdownState)) {
       return _breakdownState.regionIds.map((regionId) =>
-        createOutputSpec(regionId, _breakdownState.modelRunId, _breakdownState.outputName)
+        createOutputSpec(
+          regionId,
+          _breakdownState.modelRunId,
+          _breakdownState.outputName,
+          _timestamp
+        )
       );
     } else {
       // isBreakdownStateQualifiers(_breakdownState)
       return _breakdownState.qualifierValues.map((qualifierValue) =>
-        createOutputSpec(qualifierValue, _breakdownState.modelRunId, _breakdownState.outputName)
+        createOutputSpec(
+          qualifierValue,
+          _breakdownState.modelRunId,
+          _breakdownState.outputName,
+          _timestamp
+        )
       );
     }
   });

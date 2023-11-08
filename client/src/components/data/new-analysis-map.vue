@@ -34,7 +34,12 @@
     <!-- TODO: raw data -->
     <!-- raw data="rawDataPointsList[indx]"" -->
 
-    <analysis-map-legend class="legend" :ramp="getMapLegend()" :isContinuous="isContinuousScale" />
+    <analysis-map-legend
+      v-if="mapLegendData.length > 0"
+      class="legend"
+      :ramp="getMapLegend()"
+      :isContinuous="isContinuousScale"
+    />
   </div>
 </template>
 
