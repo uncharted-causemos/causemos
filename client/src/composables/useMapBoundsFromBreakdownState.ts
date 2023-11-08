@@ -70,7 +70,7 @@ export default function useMapBoundsFromBreakdownState(
     mapBounds.value = bounds;
   };
 
-  const getMapBounds = (outputSpecId: string) => {
+  const getMapBounds = (outputSpecId: string): MapBounds | undefined => {
     if (breakdownState.value !== null && isBreakdownStateRegions(breakdownState.value)) {
       return mapBoundsForEachRegion.value[outputSpecId];
     }
