@@ -81,7 +81,7 @@ export function getSourceLayerById(layerId: SOURCE_LAYER) {
 }
 
 export function getMapSourceLayer(dataLayer: DATA_LAYER, adminLevel = 0) {
-  const sLayers = [
+  const adminSourceLevels = [
     SOURCE_LAYER.COUNTRY,
     SOURCE_LAYER.ADMIN1,
     SOURCE_LAYER.ADMIN2,
@@ -89,13 +89,13 @@ export function getMapSourceLayer(dataLayer: DATA_LAYER, adminLevel = 0) {
   ];
   switch (dataLayer) {
     case DATA_LAYER.ADMIN:
-      return getSourceLayerById(sLayers[adminLevel]);
+      return getSourceLayerById(adminSourceLevels[adminLevel]);
     case DATA_LAYER.TILES:
       return getSourceLayerById(SOURCE_LAYER.GRID);
     case DATA_LAYER.RAW:
       return getSourceLayerById(SOURCE_LAYER.POINTS);
     default:
-      return getSourceLayerById(sLayers[adminLevel]);
+      return getSourceLayerById(adminSourceLevels[adminLevel]);
   }
 }
 

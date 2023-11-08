@@ -50,7 +50,8 @@ export default function useMapBoundsFromBreakdownState(
       }
       // If there's no selected regions, select all countries in the regional data
       const regionIds =
-        isBreakdownStateQualifiers(state) && isBreakdownStateYears(state) && state.regionId !== null
+        (isBreakdownStateQualifiers(state) || isBreakdownStateYears(state)) &&
+        state.regionId !== null
           ? [state.regionId]
           : (regionalData.value?.country || []).map((item) => item.id);
       if (regionIds.length === 0) return;

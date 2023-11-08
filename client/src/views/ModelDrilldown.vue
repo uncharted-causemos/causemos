@@ -151,16 +151,14 @@
                 :grid-layer-stats="gridLayerStats"
                 :points-layer-stats="pointsLayerStats"
                 :selected-base-layer="selectedBaseLayer"
-                :unit="''"
+                :unit="activeOutputVariable?.unit"
                 :color-options="mapColorOptions"
                 :show-percent-change="breakdownState.comparisonSettings.shouldUseRelativePercentage"
                 @sync-bounds="onMapMove"
+                @zoom-change="updateMapCurSyncedZoom"
+                @map-update="recalculateGridMapDiffStats"
               />
-              <!-- :unit="unit" -->
               <!-- raw data="rawDataPointsList[indx]"" -->
-              <!-- @on-map-load="onMapLoad" -->
-              <!-- @zoom-change="updateMapCurSyncedZoom" -->
-              <!-- @map-update="recalculateGridMapDiffStats" -->
             </div>
           </div>
           <button class="btn btn-default"><i class="fa fa-fw fa-gear" />Map options</button>
@@ -201,6 +199,7 @@ import {
   AggregationOption,
   DatacubeGeoAttributeVariableType,
   SpatialAggregation,
+  SpatialAggregationLevel,
   TemporalResolutionOption,
 } from '@/types/Enums';
 import { BreakdownState, BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
@@ -211,6 +210,7 @@ import {
   isBreakdownStateOutputs,
   getFirstDefaultModelRun,
   isBreakdownStateRegions,
+  getRegionIdsFromBreakdownState,
 } from '@/utils/datacube-util';
 import useScenarioData from '@/composables/useScenarioData';
 import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
@@ -390,19 +390,21 @@ const { regionalData } = useRegionalDataFromBreakdownState(
 const { onMapMove, getMapBounds } = useMapBoundsFromBreakdownState(breakdownState, regionalData);
 
 // TODO: user-selected
+// Default or satellite
 const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+// Admin, tiles, or dot
 const selectedDataLayer = ref(DATA_LAYER.ADMIN);
 
-const mapSelectedLayerId = computed(() => {
-  const adminLevel =
-    spatialAggregation.value === 'tiles' ? 0 : stringToAdminLevel(spatialAggregation.value);
-  return getMapSourceLayer(selectedDataLayer.value, adminLevel).layerId;
-});
 // TODO:
 // const getSelectedLayer = (id: string): string => {
 const getSelectedLayer = (): string => {
+  const adminLevel =
+    spatialAggregation.value === 'tiles' ? 0 : stringToAdminLevel(spatialAggregation.value);
+  const selectedLayerId = getMapSourceLayer(selectedDataLayer.value, adminLevel).layerId;
+
+  // TODO: If the current output spec is a "split by region" reference series, return SOURCE_LAYER.COUNTRY
+  //  we can probably determine this using the timeseries ID alone
   const isReferenceSeries = false;
-  // TODO: reference series
   // const isReferenceSeries = this.availableReferenceOptions.filter((item) => item.id === id).length > 0;
   const layerId =
     isReferenceSeries &&
@@ -410,45 +412,53 @@ const getSelectedLayer = (): string => {
     isBreakdownStateRegions(breakdownState.value) &&
     selectedDataLayer.value === DATA_LAYER.ADMIN
       ? SOURCE_LAYERS[0].layerId
-      : mapSelectedLayerId.value;
+      : selectedLayerId;
   return layerId;
 };
 
+// This is a legacy data structure that's required for useAnalysisMapStats and analysis-map.vue.
+//  We just wrap the selected regionIds from the breakdown state in a Set and put that in an object.
 const mapSelectedRegions = computed<AdminRegionSets>(() => {
-  return {
+  const result: AdminRegionSets = {
     country: new Set(),
     admin1: new Set(),
     admin2: new Set(),
     admin3: new Set(),
   };
-  // In 'Split by region' mode, regional data is already filtered by region so we don't need additional region selection
-  // return breakdownState.value === null || isBreakdownStateRegions(breakdownState.value)
-  //   ? undefined
-  //   : selectedRegionIds.value;
-  // TODO: check difference between regionids at all levels and selected level in datacube-card. When would they be different?
-  // selectedRegionIds currently is only selected level
-  // : selectedRegionIdsAtAllLevels.value;
+  if (spatialAggregation.value === 'tiles') {
+    return result;
+  }
+  const newSet = new Set(getRegionIdsFromBreakdownState(breakdownState.value));
+  result[spatialAggregation.value] = newSet;
+  return result;
 });
 
 const { mapColorOptions } = useDatacubeColorScheme();
+// HACK: useAnalysisMapStats needs to know if "split by region" is active. Once the old data space
+//  is removed, we can replace the breakdownOption parameter with a simple boolean.
+const breakdownOption = computed(() =>
+  breakdownState.value && isBreakdownStateRegions(breakdownState.value)
+    ? SpatialAggregationLevel.Region
+    : null
+);
 const {
-  // updateMapCurSyncedZoom,
-  // recalculateGridMapDiffStats,
+  updateMapCurSyncedZoom,
+  recalculateGridMapDiffStats,
   adminLayerStats,
   gridLayerStats,
   pointsLayerStats,
-  // mapLegendData,
+  // mapLegendData, // TODO: legend
 } = useAnalysisMapStats(
   outputSpecs,
   regionalData,
-  ref(null), // TODO: relativeTo,
+  computed(() => breakdownState.value?.comparisonSettings.baselineTimeseriesId ?? null),
   selectedDataLayer,
-  ref(0), // TODO: selectedAdminLevel,
-  mapSelectedRegions, // TODO:, selectedRegionIdsAtAllLevels,
-  ref(false), // TODO: showPercentChange,
+  computed(() => stringToAdminLevel(spatialAggregation.value)),
+  mapSelectedRegions,
+  computed(() => breakdownState.value?.comparisonSettings.shouldDisplayAbsoluteValues ?? false),
   mapColorOptions,
   ref([]), // TODO: activeReferenceOptions,
-  ref(null), // TODO: breakdownOption,
+  breakdownOption,
   ref([]) // TODO: rawDataPointsList
 );
 </script>
@@ -457,6 +467,8 @@ const {
 @import '@/styles/common';
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/variables';
+
+$configColumnButtonWidth: 122px;
 
 .model-drilldown-container {
   height: $content-full-height;
@@ -564,7 +576,7 @@ const {
   }
 
   button {
-    width: 122px; /* TODO: extract variable */
+    width: $configColumnButtonWidth;
   }
 }
 
