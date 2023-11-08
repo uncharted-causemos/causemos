@@ -10,22 +10,16 @@ import {
   isBreakdownStateRegions,
   isBreakdownStateYears,
 } from '@/utils/datacube-util';
-
-// Map bounds can be either
-//  - 4 numbers or
-//  - an object containing the numbers along with an object to specify animation parameters for
-//    transitioning to the new bounds.
-type SimpleMapBounds = number[][];
-type MapBoundsWithAnimationParameters = {
-  value: SimpleMapBounds;
-  options: { padding: number; duration: number; essential: boolean };
-};
-type MapBounds = SimpleMapBounds | MapBoundsWithAnimationParameters;
+import { BoundingBox, MapBounds } from '@/types/Common';
 
 export default function useMapBoundsFromBreakdownState(
   breakdownState: Ref<BreakdownState | null>,
   regionalData: Ref<RegionalAggregations | null>
 ) {
+  // Map bounds can be either
+  //  - 4 numbers or
+  //  - an object containing the numbers along with an object to specify animation parameters for
+  //    transitioning to the new bounds.
   const mapBounds = ref<MapBounds>([
     [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
     [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
@@ -40,7 +34,7 @@ export default function useMapBoundsFromBreakdownState(
       if (state === null) return;
       if (isBreakdownStateRegions(state)) {
         const bboxes = await getBboxForEachRegionId(state.regionIds);
-        const result: { [outputSpecId: string]: SimpleMapBounds } = {};
+        const result: { [outputSpecId: string]: BoundingBox } = {};
         state.regionIds.forEach((regionId, index) => {
           const bbox = bboxes[index];
           if (bbox) result[regionId] = bbox;
@@ -69,7 +63,7 @@ export default function useMapBoundsFromBreakdownState(
     { immediate: true }
   );
 
-  const onMapMove = (bounds: SimpleMapBounds) => {
+  const onMapMove = (bounds: BoundingBox) => {
     if (breakdownState.value !== null && isBreakdownStateRegions(breakdownState.value)) {
       return;
     }
