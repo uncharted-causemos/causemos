@@ -1,11 +1,18 @@
 import _ from 'lodash';
 import { Ref, ref } from '@vue/reactivity';
-import { watchEffect } from '@vue/runtime-core';
+import { watch } from '@vue/runtime-core';
 import { AdminLevel } from '@/types/Enums';
 import { OutputSpecWithId, RegionalAggregation, RegionalAggregations } from '@/types/Outputdata';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { getTimestampMillis } from '@/utils/date-util';
-import { BreakdownState, Indicator, Model } from '@/types/Datacube';
+import {
+  BreakdownState,
+  BreakdownStateQualifiers,
+  BreakdownStateRegions,
+  BreakdownStateYears,
+  Indicator,
+  Model,
+} from '@/types/Datacube';
 import {
   isBreakdownStateQualifiers,
   isBreakdownStateRegions,
@@ -125,6 +132,105 @@ const applySplitByRegion = (
   return clonedData;
 };
 
+const getRegionalDataYears = async (
+  breakdownState: BreakdownStateYears,
+  dataId: string,
+  outputSpecs: OutputSpecWithId[],
+  timestamp: number
+) => {
+  const { regionId, outputName, modelRunId, years } = breakdownState;
+  const selectedMonthInSelectedYears = years.map((year) =>
+    getTimestampMillis(parseInt(year), timestamp).toString()
+  );
+  const allYears = await fetchAvailableYears(dataId, regionId, outputName, modelRunId);
+  const selectedMonthInAllYears = allYears.map((year) =>
+    getTimestampMillis(parseInt(year), timestamp).toString()
+  );
+
+  // Get bulk results for all years, then parse them into an object of type RegionalAggregations
+  const bulkResults = await getBulkRegionalData(
+    outputSpecs[0],
+    selectedMonthInSelectedYears,
+    selectedMonthInAllYears,
+    undefined // TODO: reference series
+  );
+  const results: RegionalAggregation[] = bulkResults.regional_data?.map((rd) => rd.data) ?? [];
+  // TODO: reference series: "all years" and "selected years"
+  // if (bulkResults.all_agg !== null) {
+  //   results.push(bulkResults.all_agg);
+  //   const newSpec = <OutputSpecWithId>{
+  //     id: ReferenceSeriesOption.AllYears as string,
+  //   };
+  //   outputSpecs.push(newSpec);
+  // }
+  // if (bulkResults.select_agg) {
+  //   results.push(bulkResults.select_agg);
+  //   const newSpec = <OutputSpecWithId>{
+  //     id: ReferenceSeriesOption.SelectYears as string,
+  //   };
+  //   outputSpecs.push(newSpec);
+  // }
+  return combineRegionAggregationList(
+    results,
+    outputSpecs.map((outputSpec) => outputSpec.id)
+  );
+};
+
+const getRegionalDataRegions = async (
+  breakdownState: BreakdownStateRegions,
+  outputSpecs: OutputSpecWithId[]
+) => {
+  // Only fetch regional data once for the whole world.
+  const regionalAggregation = await getRegionAggregation(outputSpecs[0]);
+  const regionalAggregations: RegionalAggregations = {
+    country: [],
+    admin1: [],
+    admin2: [],
+    admin3: [],
+  };
+  // Filter out any regions that aren't selected
+  Object.values(AdminLevel).forEach((adminLevel) => {
+    const regionAggsAtCurrentAdminLevel = regionalAggregation[adminLevel] || [];
+    regionalAggregations[adminLevel] = regionAggsAtCurrentAdminLevel
+      .filter((regionAgg) => breakdownState.regionIds.includes(regionAgg.id))
+      .map((regionAgg) => ({
+        id: regionAgg.id,
+        values: { [regionAgg.id]: regionAgg.value },
+      }));
+  });
+  return applySplitByRegion(
+    regionalAggregations,
+    outputSpecs,
+    undefined, // TODO: relativeTo && relativeTo.value,
+    undefined // TODO: referenceOptions && referenceOptions.value
+  );
+};
+
+const getRegionalDataQualifiers = async (
+  breakdownState: BreakdownStateQualifiers,
+  outputSpecs: OutputSpecWithId[]
+) => {
+  const results = await getRegionAggregationWithQualifiers(
+    outputSpecs[0],
+    breakdownState.qualifier
+  );
+  // Filter results so that only values from selected qualifiers are retained
+  Object.values(AdminLevel).forEach((adminLevel) => {
+    const regionAggsAtCurrentAdminLevel = results[adminLevel] || [];
+    results[adminLevel] = regionAggsAtCurrentAdminLevel.map((regionAgg) => {
+      const newValues: { [key: string]: number } = {};
+      Object.entries(regionAgg.values)
+        .filter(([qualifierValue]) => breakdownState.qualifierValues.includes(qualifierValue))
+        .forEach(([qualifierValue, value]) => (newValues[qualifierValue] = value));
+      return {
+        id: regionAgg.id,
+        values: newValues,
+      };
+    });
+  });
+  return results;
+};
+
 export default function useRegionalDataFromBreakdownState(
   breakdownState: Ref<BreakdownState | null>,
   metadata: Ref<Model | Indicator | null>,
@@ -134,115 +240,50 @@ export default function useRegionalDataFromBreakdownState(
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
 
-  watchEffect(async (onInvalidate) => {
-    const _breakdownState = breakdownState.value;
-    const _timestamp = selectedTimestamp.value;
-    const _metadata = metadata.value;
-    if (_timestamp === null || _breakdownState === null || _metadata === null) return;
-    let isCancelled = false;
-    onInvalidate(() => {
-      isCancelled = true;
-    });
-
-    if (isBreakdownStateYears(_breakdownState)) {
-      // all output specs are sent to the getRegionAggregations where it will optimize
-      // the number of calls made based on the context like breakdownOption sent with it.
-      const selectedMonthInSelectedYears = _breakdownState.years.map((year) =>
-        getTimestampMillis(parseInt(year), _timestamp).toString()
-      );
-      const { regionId, outputName, modelRunId } = _breakdownState;
-      const allYears = await fetchAvailableYears(
-        _metadata.data_id,
-        regionId,
-        outputName,
-        modelRunId
-      );
-      const selectedMonthInAllYears = allYears.map((year) =>
-        getTimestampMillis(parseInt(year), _timestamp).toString()
-      );
-
-      // get bulk results then parse them into a format usable for the formatting section afterwards
-      const bulkResults = await getBulkRegionalData(
-        outputSpecs.value[0],
-        selectedMonthInSelectedYears,
-        selectedMonthInAllYears,
-        undefined // TODO: reference series
-      );
-      if (isCancelled) return;
-      const results: RegionalAggregation[] = bulkResults.regional_data?.map((rd) => rd.data) ?? [];
-      // TODO: reference series: "all years" and "selected years"
-      // if (bulkResults.all_agg !== null) {
-      //   results.push(bulkResults.all_agg);
-      //   const newSpec = <OutputSpecWithId>{
-      //     id: ReferenceSeriesOption.AllYears as string,
-      //   };
-      //   outputSpecs.push(newSpec);
-      // }
-      // if (bulkResults.select_agg) {
-      //   results.push(bulkResults.select_agg);
-      //   const newSpec = <OutputSpecWithId>{
-      //     id: ReferenceSeriesOption.SelectYears as string,
-      //   };
-      //   outputSpecs.push(newSpec);
-      // }
-      regionalData.value = combineRegionAggregationList(
-        results,
-        outputSpecs.value.map((outputSpec) => outputSpec.id)
-      );
-    } else if (isBreakdownStateRegions(_breakdownState)) {
-      // Only fetch regional data once for the whole world.
-      const regionalAggregation = await getRegionAggregation(outputSpecs.value[0]);
-      if (isCancelled) return;
-      const regionalAggregations: RegionalAggregations = {
-        country: [],
-        admin1: [],
-        admin2: [],
-        admin3: [],
-      };
-      // Filter out any regions that aren't selected
-      Object.values(AdminLevel).forEach((adminLevel) => {
-        const regionAggsAtCurrentAdminLevel = regionalAggregation[adminLevel] || [];
-        regionalAggregations[adminLevel] = regionAggsAtCurrentAdminLevel
-          .filter((regionAgg) => _breakdownState.regionIds.includes(regionAgg.id))
-          .map((regionAgg) => ({ id: regionAgg.id, values: { [regionAgg.id]: regionAgg.value } }));
+  watch(
+    [breakdownState, selectedTimestamp, metadata, outputSpecs],
+    async ([_breakdownState, _timestamp, _metadata, _outputSpecs], oldValues, onInvalidate) => {
+      if (
+        _timestamp === null ||
+        _breakdownState === null ||
+        _metadata === null ||
+        _outputSpecs.length === 0
+      )
+        return;
+      let isCancelled = false;
+      onInvalidate(() => {
+        isCancelled = true;
       });
-      regionalData.value = applySplitByRegion(
-        regionalAggregations,
-        outputSpecs.value,
-        undefined, // TODO: relativeTo && relativeTo.value,
-        undefined // TODO: referenceOptions && referenceOptions.value
-      );
-    } else if (isBreakdownStateQualifiers(_breakdownState)) {
-      const results = await getRegionAggregationWithQualifiers(
-        outputSpecs.value[0],
-        _breakdownState.qualifier
-      );
-      if (isCancelled) return;
-      // Filter results so that only values from selected qualifiers are retained
-      Object.values(AdminLevel).forEach((adminLevel) => {
-        const regionAggsAtCurrentAdminLevel = results[adminLevel] || [];
-        results[adminLevel] = regionAggsAtCurrentAdminLevel.map((regionAgg) => {
-          const newValues: { [key: string]: number } = {};
-          Object.entries(regionAgg.values)
-            .filter(([qualifierValue]) => _breakdownState.qualifierValues.includes(qualifierValue))
-            .forEach(([qualifierValue, value]) => (newValues[qualifierValue] = value));
-          return {
-            id: regionAgg.id,
-            values: newValues,
-          };
-        });
-      });
-      regionalData.value = results;
-    } else {
-      // breakdownState is Split by None or Split by Outputs
-      const results = await Promise.all(outputSpecs.value.map(getRegionAggregation));
-      if (isCancelled) return;
-      regionalData.value = combineRegionAggregationList(
-        results,
-        outputSpecs.value.map((outputSpec) => outputSpec.id)
-      );
-    }
-  });
+
+      if (isBreakdownStateYears(_breakdownState)) {
+        const result = await getRegionalDataYears(
+          _breakdownState,
+          _metadata.data_id,
+          _outputSpecs,
+          _timestamp
+        );
+        if (isCancelled) return;
+        regionalData.value = result;
+      } else if (isBreakdownStateRegions(_breakdownState)) {
+        const result = await getRegionalDataRegions(_breakdownState, _outputSpecs);
+        if (isCancelled) return;
+        regionalData.value = result;
+      } else if (isBreakdownStateQualifiers(_breakdownState)) {
+        const result = await getRegionalDataQualifiers(_breakdownState, _outputSpecs);
+        if (isCancelled) return;
+        regionalData.value = result;
+      } else {
+        // breakdownState is Split by None or Split by Outputs
+        const results = await Promise.all(outputSpecs.value.map(getRegionAggregation));
+        if (isCancelled) return;
+        regionalData.value = combineRegionAggregationList(
+          results,
+          outputSpecs.value.map((outputSpec) => outputSpec.id)
+        );
+      }
+    },
+    { immediate: true }
+  );
 
   return {
     regionalData,
