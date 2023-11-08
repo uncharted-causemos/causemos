@@ -70,7 +70,7 @@ const props = defineProps<{
   regionalData: RegionalAggregations;
   metadata: Model | Indicator | null;
   unit: string;
-  mapBounds: MapBounds;
+  mapBounds?: MapBounds;
 }>();
 const { breakdownState, outputSpecs, spatialAggregation, regionalData, metadata } = toRefs(props);
 
