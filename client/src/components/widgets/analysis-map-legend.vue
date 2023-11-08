@@ -69,7 +69,7 @@ $font-size: 12px;
   line-height: $font-size;
   background: white;
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   justify-content: space-between;
   align-items: center;
   padding: 5px;
