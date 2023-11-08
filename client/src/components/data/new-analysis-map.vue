@@ -34,23 +34,13 @@
     <!-- TODO: raw data -->
     <!-- raw data="rawDataPointsList[indx]"" -->
 
-    <!-- <map-legend
-      class="map-legend"
-      :ramp="
-        mapLegendData.length === 2 &&
-        outputSpecId === breakdownState.comparisonSettings.baselineTimeseriesId
-          ? mapLegendData[0]
-          : mapLegendData[1]
-      "
-      :isContinuous="false"
-    /> -->
-    <!-- TODO: legend options -->
-    <!-- :isContinuous="isContinuousScale" -->
+    <analysis-map-legend class="legend" :ramp="getMapLegend()" :isContinuous="isContinuousScale" />
   </div>
 </template>
 
 <script setup lang="ts">
 import AnalysisMap from '@/components/data/analysis-map.vue';
+import AnalysisMapLegend from '@/components/widgets/analysis-map-legend.vue';
 import useAnalysisMapStats from '@/composables/useAnalysisMapStats';
 import useDatacubeColorScheme from '@/composables/useDatacubeColorScheme';
 import useOutputSpecDisplayNames from '@/composables/useOutputSpecDisplayNames';
@@ -104,7 +94,7 @@ const getSelectedLayer = (): string => {
   return layerId;
 };
 
-const { mapColorOptions } = useDatacubeColorScheme();
+const { mapColorOptions, isContinuousScale } = useDatacubeColorScheme();
 // HACK: useAnalysisMapStats needs to know if "split by region" is active. Once the old data space
 //  is removed, we can replace the breakdownOption parameter with a simple boolean.
 const breakdownOption = computed(() =>
@@ -128,17 +118,25 @@ const mapSelectedRegions = computed<AdminRegionSets>(() => {
   result[spatialAggregation.value] = newSet;
   return result;
 });
+// useAnalysisMapStats expects this to be null if "relative to" mode isn't active, and otherwise
+//  it should be the id of the baseline maps that the other specs are compared to.
+const relativeTo = computed(() => {
+  if (breakdownState.value === null) return null;
+  return breakdownState.value.comparisonSettings.shouldDisplayAbsoluteValues
+    ? null
+    : breakdownState.value.comparisonSettings.baselineTimeseriesId;
+});
 const {
   updateMapCurSyncedZoom,
   recalculateGridMapDiffStats,
   adminLayerStats,
   gridLayerStats,
   pointsLayerStats,
-  // mapLegendData, TODO: legend
+  mapLegendData,
 } = useAnalysisMapStats(
   outputSpecs,
   regionalData,
-  computed(() => breakdownState.value?.comparisonSettings.baselineTimeseriesId ?? null),
+  relativeTo,
   selectedDataLayer,
   computed(() => stringToAdminLevel(spatialAggregation.value)),
   mapSelectedRegions,
@@ -148,12 +146,24 @@ const {
   breakdownOption,
   ref([]) // TODO: rawDataPointsList
 );
+const getMapLegend = () => {
+  if (
+    mapLegendData.value.length === 2 &&
+    breakdownState.value.comparisonSettings.shouldDisplayAbsoluteValues === false &&
+    props.outputSpecId === breakdownState.value.comparisonSettings.baselineTimeseriesId
+  ) {
+    return mapLegendData.value[1];
+  }
+  return mapLegendData.value[0];
+};
 
 const { getOutputSpecName } = useOutputSpecDisplayNames(breakdownState, metadata);
 </script>
 
 <style lang="scss" scoped>
 .new-analysis-map-container {
+  position: relative;
+  isolation: isolate;
 }
 
 .analysis-map {
@@ -161,13 +171,15 @@ const { getOutputSpecName } = useOutputSpecDisplayNames(breakdownState, metadata
   width: 100%;
 }
 
+$mapPadding: 5px;
+
 .map-label {
   --horizontal-padding: 5px;
   position: absolute;
   background: white;
   padding: 2px var(--horizontal-padding);
-  top: 5px;
-  left: 5px;
+  top: $mapPadding;
+  left: $mapPadding;
   z-index: 1; // Render overtop of the map
   display: flex;
   align-items: center;
@@ -183,5 +195,12 @@ const { getOutputSpecName } = useOutputSpecDisplayNames(breakdownState, metadata
     flex: 1;
     min-width: 0;
   }
+}
+
+.legend {
+  position: absolute;
+  bottom: $mapPadding;
+  left: $mapPadding;
+  height: 150px;
 }
 </style>

@@ -108,13 +108,6 @@
       <div class="date-dependent-data">
         <div class="maps">
           <div class="card-maps-box" v-if="breakdownState !== null && regionalData !== null">
-            <!-- TODO: remove this reference when breakdown state outputs is working correctly -->
-            <!-- <region-map
-              :data="regionMapData[featureName]"
-              :popup-Formatter="popupFormatter"
-              :region-filter="selectedRegionIdsAtAllLevels"
-              :selected-admin-level="selectedAdminLevel"
-            /> -->
             <NewAnalysisMap
               v-for="(spec, index) of outputSpecs"
               :key="spec.id"
@@ -520,10 +513,6 @@ $configColumnButtonWidth: 122px;
 
   .analysis-map {
     flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    isolation: isolate;
 
     &.card-count-2,
     &.card-count-3,

@@ -28,7 +28,7 @@ export default function useMapBoundsFromBreakdownState(
 
   // Whenever the breakdown state changes, set the map bounds to focus on the selected regions
   watch(
-    breakdownState,
+    [breakdownState, regionalData],
     async () => {
       const state = breakdownState.value;
       if (state === null) return;
