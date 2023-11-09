@@ -1,6 +1,5 @@
 node_modules
 logs
-public
 .DS_Store
 .env
 .idea

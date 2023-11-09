@@ -1,10 +1,6 @@
 <template>
   <div class="tool-card-container">
-    <img
-      :src="`src/assets/${imgSrc}`"
-      class="thumbnail thumbnail-dataset"
-      :class="[`opacity-${imageOpacity}`]"
-    />
+    <img :src="`${imgSrc}`" class="thumbnail" :class="[`opacity-${imageOpacity}`]" />
     <h5>{{ title }}</h5>
     <p class="un-font-small subdued tool-card-description">
       {{ subtitle }}
