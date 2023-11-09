@@ -161,6 +161,7 @@
       v-if="isFilterAndCompareModalOpen && metadata !== null && breakdownState !== null"
       :metadata="metadata"
       :spatial-aggregation="spatialAggregation"
+      :aggregation-method="spatialAggregationMethod"
       :initial-breakdown-state="breakdownState"
       @close="isFilterAndCompareModalOpen = false"
       @apply-breakdown-state="(newState) => (breakdownState = newState)"

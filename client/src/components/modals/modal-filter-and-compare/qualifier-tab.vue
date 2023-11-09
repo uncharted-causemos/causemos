@@ -106,6 +106,7 @@ const props = defineProps<{
   breakdownState: BreakdownStateQualifiers;
   metadata: Model | Indicator;
   spatialAggregation: SpatialAggregation;
+  aggregationMethod: AggregationOption;
   qualifierDisplayName: string;
 }>();
 const { breakdownState, metadata, spatialAggregation } = toRefs(props);
@@ -127,8 +128,12 @@ const {
   regionsDropdownOptions: incompleteRegionsDropdownOptions,
 } = useRegionalDropdownOptions(availableRegions, spatialAggregation);
 const regionsDropdownOptions = computed<DropdownItem[]>(() => [
-  // TODO: display 'sum' or 'average' depending on the selected aggregation type
-  { value: null, displayName: 'Sum of all regions' },
+  {
+    value: null,
+    displayName: `${
+      props.aggregationMethod === AggregationOption.Mean ? 'Average' : 'Sum'
+    } of all regions`,
+  },
   ...incompleteRegionsDropdownOptions.value,
 ]);
 

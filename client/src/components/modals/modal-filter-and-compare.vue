@@ -44,6 +44,7 @@
         :breakdown-state="breakdownStatesQualifier[selectedTab]"
         :metadata="metadata"
         :spatial-aggregation="spatialAggregation"
+        :aggregation-method="aggregationMethod"
         :qualifier-display-name="
           qualifiers.find(({ name }) => name === selectedTab)?.display_name ?? selectedTab
         "
@@ -92,7 +93,7 @@ import {
   isBreakdownStateRegions,
   isBreakdownStateYears,
 } from '@/utils/datacube-util';
-import { SpatialAggregation } from '@/types/Enums';
+import { AggregationOption, SpatialAggregation } from '@/types/Enums';
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { getDefaultFeature } from '@/services/datacube-service';
 import useQualifierFetchInfo from '@/composables/useQualifierFetchInfo';
@@ -111,6 +112,7 @@ const YEARS = 'Years';
 const props = defineProps<{
   initialBreakdownState: BreakdownState;
   spatialAggregation: SpatialAggregation;
+  aggregationMethod: AggregationOption;
   metadata: Model | Indicator;
 }>();
 const { spatialAggregation, metadata } = toRefs(props);
