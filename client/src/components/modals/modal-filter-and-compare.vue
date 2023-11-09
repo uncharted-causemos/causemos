@@ -35,6 +35,7 @@
         :breakdown-state="breakdownStateYears"
         :metadata="metadata"
         :spatial-aggregation="spatialAggregation"
+        :aggregation-method="aggregationMethod"
         @set-breakdown-state="(newState) => (breakdownStateYears = newState)"
         @set-spatial-aggregation="setSpatialAggregation"
       />

@@ -85,7 +85,7 @@
 <script setup lang="ts">
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { BreakdownStateYears, ComparisonSettings, Indicator, Model } from '@/types/Datacube';
-import { SpatialAggregation } from '@/types/Enums';
+import { AggregationOption, SpatialAggregation } from '@/types/Enums';
 import { getOutputDescription } from '@/utils/datacube-util';
 import { computed, toRefs, watch } from 'vue';
 import ComparisonSettingsVue from './comparison-settings.vue';
@@ -97,6 +97,7 @@ const props = defineProps<{
   breakdownState: BreakdownStateYears;
   metadata: Model | Indicator;
   spatialAggregation: SpatialAggregation;
+  aggregationMethod: AggregationOption;
 }>();
 const { breakdownState, metadata, spatialAggregation } = toRefs(props);
 const emit = defineEmits<{
@@ -117,8 +118,12 @@ const {
   regionsDropdownOptions: incompleteRegionsDropdownOptions,
 } = useRegionalDropdownOptions(availableRegions, spatialAggregation);
 const regionsDropdownOptions = computed<DropdownItem[]>(() => [
-  // TODO: display 'sum' or 'average' depending on the selected aggregation type
-  { value: null, displayName: 'Sum of all regions' },
+  {
+    value: null,
+    displayName: `${
+      props.aggregationMethod === AggregationOption.Mean ? 'Average' : 'Sum'
+    } of all regions`,
+  },
   ...incompleteRegionsDropdownOptions.value,
 ]);
 
