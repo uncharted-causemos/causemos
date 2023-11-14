@@ -46,7 +46,10 @@
           {{ scenario.description }}
         </p>
         <div v-if="scenarioHasConstraints(scenario)" class="node-constraint-list">
-          <p class="un-font-small"><i class="fa fa-square-o" /> Constraints</p>
+          <div class="constraint-title">
+            <ConstraintIcon />
+            <p class="un-font-small">&nbsp;Constraints</p>
+          </div>
           <p class="un-font-small subdued">{{ constrainedNodeListString(scenario) }}</p>
         </div>
       </li>
@@ -65,6 +68,7 @@ import OptionsButton from '@/components/widgets/options-button.vue';
 import { IndexProjectionScenario } from '@/types/Index';
 import useIndexTree from '@/composables/useIndexTree';
 import useIndexWorkBench from '@/composables/useIndexWorkBench';
+import ConstraintIcon from '../widgets/constraint-icon.vue';
 
 const indexTree = useIndexTree();
 const indexWorkBench = useIndexWorkBench();
@@ -183,6 +187,10 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
   .node-constraint-list {
     margin-left: 10px;
     margin-top: 5px;
+  }
+  .constraint-title {
+    display: flex;
+    align-items: baseline;
   }
 }
 </style>
