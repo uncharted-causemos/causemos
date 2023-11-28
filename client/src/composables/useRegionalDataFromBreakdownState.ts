@@ -255,32 +255,27 @@ export default function useRegionalDataFromBreakdownState(
         isCancelled = true;
       });
 
+      let result = null; 
       if (isBreakdownStateYears(_breakdownState)) {
-        const result = await getRegionalDataYears(
+        result = await getRegionalDataYears(
           _breakdownState,
           _metadata.data_id,
           _outputSpecs,
           _timestamp
         );
-        if (isCancelled) return;
-        regionalData.value = result;
       } else if (isBreakdownStateRegions(_breakdownState)) {
-        const result = await getRegionalDataRegions(_breakdownState, _outputSpecs);
-        if (isCancelled) return;
-        regionalData.value = result;
+        result = await getRegionalDataRegions(_breakdownState, _outputSpecs);
       } else if (isBreakdownStateQualifiers(_breakdownState)) {
-        const result = await getRegionalDataQualifiers(_breakdownState, _outputSpecs);
-        if (isCancelled) return;
-        regionalData.value = result;
+        result = await getRegionalDataQualifiers(_breakdownState, _outputSpecs);
       } else {
         // breakdownState is Split by None or Split by Outputs
-        const results = await Promise.all(outputSpecs.value.map(getRegionAggregation));
-        if (isCancelled) return;
-        regionalData.value = combineRegionAggregationList(
-          results,
+        result = combineRegionAggregationList(
+          await Promise.all(outputSpecs.value.map(getRegionAggregation)),
           outputSpecs.value.map((outputSpec) => outputSpec.id)
-        );
+        ) 
       }
+      if (isCancelled) return;
+      regionalData.value = result
     },
     { immediate: true }
   );
