@@ -255,7 +255,7 @@ export default function useRegionalDataFromBreakdownState(
         isCancelled = true;
       });
 
-      let result = null; 
+      let result = null;
       if (isBreakdownStateYears(_breakdownState)) {
         result = await getRegionalDataYears(
           _breakdownState,
@@ -272,10 +272,10 @@ export default function useRegionalDataFromBreakdownState(
         result = combineRegionAggregationList(
           await Promise.all(outputSpecs.value.map(getRegionAggregation)),
           outputSpecs.value.map((outputSpec) => outputSpec.id)
-        ) 
+        );
       }
       if (isCancelled) return;
-      regionalData.value = result
+      regionalData.value = result;
     },
     { immediate: true }
   );
