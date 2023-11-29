@@ -26,15 +26,6 @@ export default function useOutputSpecsFromBreakdownState(
     if (_metadata === null || _timestamp === null || _breakdownState === null) {
       return [];
     }
-    // There is a brief state when switching to/from "split by years" mode where the timestamp is
-    //  in milliseconds or months when it should be the opposite. In those cases, return no
-    //  outputSpecs and wait for the selectedTimestamp to automatically update.
-    const isInvalidTimestamp =
-      (isBreakdownStateYears(_breakdownState) && _timestamp > 11) ||
-      (!isBreakdownStateYears(_breakdownState) && _timestamp < 12);
-    if (isInvalidTimestamp) {
-      return [];
-    }
 
     const createOutputSpec = (
       outputSpecId: string,

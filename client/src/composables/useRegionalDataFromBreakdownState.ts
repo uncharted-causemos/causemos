@@ -248,8 +248,10 @@ export default function useRegionalDataFromBreakdownState(
         _breakdownState === null ||
         _metadata === null ||
         _outputSpecs.length === 0
-      )
+      ) {
+        regionalData.value = null;
         return;
+      }
       let isCancelled = false;
       onInvalidate(() => {
         isCancelled = true;
