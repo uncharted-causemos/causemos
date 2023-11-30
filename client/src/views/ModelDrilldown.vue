@@ -188,6 +188,7 @@ import {
   isBreakdownStateNone,
   isBreakdownStateOutputs,
   getFirstDefaultModelRun,
+  isBreakdownStateYears,
 } from '@/utils/datacube-util';
 import useScenarioData from '@/composables/useScenarioData';
 import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
@@ -334,6 +335,19 @@ const selectedTimestamp = ref<number | null>(null);
 const setSelectedTimestamp = (newValue: number | null) => {
   selectedTimestamp.value = newValue;
 };
+// There is a brief state when switching to/from "split by years" mode where the timestamp is
+//  in milliseconds or months when it should be the opposite. In those cases, reset
+//  selectedTimestamp until the new timeseries data triggers the watcher below.
+watch(breakdownState, (newValue, oldValue) => {
+  if (newValue === null || oldValue === null) return;
+  const isSwitchingToSplitByYears =
+    isBreakdownStateYears(newValue) && !isBreakdownStateYears(oldValue);
+  const isSwitchingFromSplitByYears =
+    isBreakdownStateYears(newValue) && !isBreakdownStateYears(oldValue);
+  if (isSwitchingToSplitByYears || isSwitchingFromSplitByYears) {
+    setSelectedTimestamp(null);
+  }
+});
 // Whenever the timeseries data changes, ensure the selected timestamp is found within it.
 watch(
   timeseriesData,

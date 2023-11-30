@@ -4,7 +4,7 @@
       <div class="color-indicator" :style="{ background: color }" />
       <span>{{ getOutputSpecName(outputSpecId) }}</span>
     </span>
-    <analysis-map
+    <AnalysisMap
       class="analysis-map"
       :style="{ borderColor: color }"
       :output-source-specs="outputSpecs"
@@ -34,7 +34,7 @@
     <!-- TODO: raw data -->
     <!-- raw data="rawDataPointsList[indx]"" -->
 
-    <analysis-map-legend
+    <AnalysisMapLegend
       v-if="mapLegendData.length > 0"
       class="legend"
       :ramp="getMapLegend()"

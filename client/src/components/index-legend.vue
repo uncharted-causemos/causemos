@@ -5,10 +5,10 @@
         <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
         Concepts with datasets attached
       </p>
-      <p class="un-font-small">
-        <i class="fa fa-fw fa-square-o" :style="{ color: 'black' }" />
-        Constraint
-      </p>
+      <div class="constraint-row">
+        <ConstraintIcon />
+        <p class="un-font-small">&nbsp;Constraint</p>
+      </div>
       <p class="un-font-small">
         <i class="fa fa-fw fa-circle" :style="{ color: 'black' }" />
         Dataset value
@@ -25,10 +25,10 @@
     </div>
     <div v-if="props.isProjectionSpace" class="legend-column">
       <p class="un-font-small">Concepts without datasets</p>
-      <p class="un-font-small">
-        <i class="fa fa-fw fa-square-o" :style="{ color: 'black' }" />
-        Constraint
-      </p>
+      <div class="constraint-row">
+        <ConstraintIcon />
+        <p class="un-font-small">&nbsp;Constraint</p>
+      </div>
       <p class="un-font-small">
         <i class="fa fa-fw fa-circle" :style="{ color: 'black' }" />All components have values
       </p>
@@ -59,6 +59,7 @@
 import { NEGATIVE_COLOR, POSITIVE_COLOR } from '@/utils/colors-util';
 import { DATASET_COLOR, DATASET_ICON } from '@/utils/index-tree-util';
 import { WEIGHTED_SUM_LINE_OPACITY } from '@/charts/projections-renderer-simple';
+import ConstraintIcon from '@/components/widgets/constraint-icon.vue';
 
 const props = defineProps<{ isProjectionSpace: boolean }>();
 </script>
@@ -82,11 +83,8 @@ const props = defineProps<{ isProjectionSpace: boolean }>();
   }
 }
 
-.data-warning {
-  color: $un-color-feedback-warning;
-}
-
-.old-data {
-  color: #f0edd9;
+.constraint-row {
+  display: flex;
+  align-items: baseline;
 }
 </style>
