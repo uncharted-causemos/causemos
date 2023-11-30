@@ -1,7 +1,5 @@
-import { getTimeseries } from '@/services/outputdata-service';
+import { fetchAvailableYears } from '@/services/outputdata-service';
 import { BreakdownStateYears, Indicator, Model } from '@/types/Datacube';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
-import { breakdownByYear } from '@/utils/timeseries-util';
 import { Ref, ref, watch } from 'vue';
 
 export function useAvailableYears(
@@ -18,33 +16,21 @@ export function useAvailableYears(
     ],
     (newValues, oldValues, onInvalidate) => {
       let isCancelled = false;
-      async function fetchTimeseries() {
-        // Fetch the timeseries data for each modelRunId
+      async function _fetchAvailableYears() {
         const dataId = metadata.value.data_id;
         const { regionId, outputName, modelRunId } = breakdownState.value;
-        const result = await getTimeseries({
-          modelId: dataId,
-          runId: modelRunId,
-          outputVariable: outputName,
-          temporalResolution: TemporalResolutionOption.Year,
-          temporalAggregation: AggregationOption.Mean,
-          spatialAggregation: AggregationOption.Mean,
-          transform: undefined,
-          // If no region is selected, pass "undefined" as the region_id to get the aggregated
-          // timeseries for all regions.
-          regionId: regionId ?? undefined,
-        });
+        const result = await fetchAvailableYears(dataId, regionId, outputName, modelRunId);
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the fetch results to avoid
           //  a race condition.
           return;
         }
-        availableYears.value = Object.keys(breakdownByYear(result));
+        availableYears.value = result;
       }
       onInvalidate(() => {
         isCancelled = true;
       });
-      fetchTimeseries();
+      _fetchAvailableYears();
     },
     { immediate: true }
   );

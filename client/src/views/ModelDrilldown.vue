@@ -100,14 +100,31 @@
           :selected-timestamp="selectedTimestamp"
           :breakdown-option="null"
           :selected-temporal-resolution="TemporalResolutionOption.Month"
-          :unit="''"
+          :unit="activeOutputVariable?.unit ?? ''"
           @select-timestamp="setSelectedTimestamp"
         />
         <p class="selected-date"><span class="subdued">Selected date:</span> December 2012</p>
       </div>
       <div class="date-dependent-data">
         <div class="maps">
-          <!-- TODO: map components -->
+          <div class="card-maps-box" v-if="breakdownState !== null && regionalData !== null">
+            <NewAnalysisMap
+              v-for="(spec, index) of outputSpecs"
+              :key="spec.id"
+              class="new-analysis-map"
+              :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
+              :color="colorFromIndex(index)"
+              :breakdown-state="breakdownState"
+              :metadata="metadata"
+              :regional-data="regionalData"
+              :output-specs="outputSpecs"
+              :output-spec-id="spec.id"
+              :unit="activeOutputVariable?.unit ?? ''"
+              :spatial-aggregation="spatialAggregation"
+              :map-bounds="getMapBounds(spec.id)"
+              @map-move="onMapMove"
+            />
+          </div>
           <button class="btn btn-default"><i class="fa fa-fw fa-gear" />Map options</button>
         </div>
         <div class="breakdown-column">
@@ -155,6 +172,7 @@ import {
   isBreakdownStateNone,
   isBreakdownStateOutputs,
   getFirstDefaultModelRun,
+  isBreakdownStateYears,
 } from '@/utils/datacube-util';
 import useScenarioData from '@/composables/useScenarioData';
 import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
@@ -165,6 +183,11 @@ import ModalFilterAndCompare from '@/components/modals/modal-filter-and-compare.
 import { getDefaultFeature } from '@/services/datacube-service';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
+import useRegionalDataFromBreakdownState from '@/composables/useRegionalDataFromBreakdownState';
+import useOutputSpecsFromBreakdownState from '@/composables/useOutputSpecsFromBreakdownState';
+import { colorFromIndex } from '@/utils/colors-util';
+import NewAnalysisMap from '@/components/data/new-analysis-map.vue';
+import useMapBoundsFromBreakdownState from '@/composables/useMapBoundsFromBreakdownState';
 
 const breakdownState = ref<BreakdownState | null>(null);
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
@@ -286,6 +309,19 @@ const selectedTimestamp = ref<number | null>(null);
 const setSelectedTimestamp = (newValue: number | null) => {
   selectedTimestamp.value = newValue;
 };
+// There is a brief state when switching to/from "split by years" mode where the timestamp is
+//  in milliseconds or months when it should be the opposite. In those cases, reset
+//  selectedTimestamp until the new timeseries data triggers the watcher below.
+watch(breakdownState, (newValue, oldValue) => {
+  if (newValue === null || oldValue === null) return;
+  const isSwitchingToSplitByYears =
+    isBreakdownStateYears(newValue) && !isBreakdownStateYears(oldValue);
+  const isSwitchingFromSplitByYears =
+    isBreakdownStateYears(newValue) && !isBreakdownStateYears(oldValue);
+  if (isSwitchingToSplitByYears || isSwitchingFromSplitByYears) {
+    setSelectedTimestamp(null);
+  }
+});
 // Whenever the timeseries data changes, ensure the selected timestamp is found within it.
 watch(
   timeseriesData,
@@ -304,12 +340,32 @@ watch(
   },
   { immediate: true }
 );
+
+const { outputSpecs } = useOutputSpecsFromBreakdownState(
+  breakdownState,
+  metadata,
+  spatialAggregationMethod,
+  temporalAggregationMethod,
+  temporalResolution,
+  selectedTimestamp
+);
+
+const { regionalData } = useRegionalDataFromBreakdownState(
+  breakdownState,
+  metadata,
+  outputSpecs,
+  selectedTimestamp
+);
+
+const { onMapMove, getMapBounds } = useMapBoundsFromBreakdownState(breakdownState, regionalData);
 </script>
 
 <style lang="scss" scoped>
 @import '@/styles/common';
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/variables';
+
+$configColumnButtonWidth: 122px;
 
 .model-drilldown-container {
   height: $content-full-height;
@@ -417,7 +473,7 @@ watch(
   }
 
   button {
-    width: 122px; /* TODO: extract variable */
+    width: $configColumnButtonWidth;
   }
 }
 
@@ -456,6 +512,38 @@ watch(
 .maps {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .card-maps-box {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+
+  $marginSize: 5px;
+
+  .new-analysis-map {
+    flex-grow: 1;
+
+    &.card-count-2,
+    &.card-count-3,
+    &.card-count-4 {
+      min-width: calc(50% - calc($marginSize / 2));
+      max-width: calc(50% - calc($marginSize / 2));
+    }
+    &.card-count-n {
+      min-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
+      max-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
+    }
+  }
+
+  & > button {
+    align-self: flex-start;
+  }
 }
 
 .breakdown-column {

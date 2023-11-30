@@ -497,6 +497,17 @@ export const isBreakdownStateQualifiers = (
   return (breakdownState as BreakdownStateQualifiers).qualifier !== undefined;
 };
 
+export const getRegionIdsFromBreakdownState = (breakdownState: BreakdownState | null) => {
+  if (breakdownState === null) return [];
+  if (isBreakdownStateRegions(breakdownState)) {
+    return breakdownState.regionIds;
+  }
+  return (isBreakdownStateQualifiers(breakdownState) || isBreakdownStateYears(breakdownState)) &&
+    breakdownState.regionId !== null
+    ? [breakdownState.regionId]
+    : [];
+};
+
 export default {
   CODE_TABLE,
   SUGGESTION_CODE_TABLE,

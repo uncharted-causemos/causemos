@@ -8,6 +8,7 @@ import {
   ReferenceSeriesOption,
   TemporalAggregationLevel,
   TemporalResolution,
+  TemporalResolutionOption,
 } from '@/types/Enums';
 import {
   OutputSpec,
@@ -32,6 +33,7 @@ import { FIFOCache } from '@/utils/cache-util';
 import { filterRawDataByRegionIds, computeTimeseriesFromRawData } from '@/utils/outputdata-util';
 import { getLevelFromRegionId, adminLevelToString } from '@/utils/admin-level-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
+import { breakdownByYear } from '@/utils/timeseries-util';
 
 const RAW_DATA_REQUEST_CACHE_SIZE = 20;
 const rawDataRequestCache = new FIFOCache<Promise<RawOutputDataPoint[]>>(
@@ -191,6 +193,28 @@ export const getTimeseries = async (spec: OutputSpecWithRegionId): Promise<Times
   } catch (e) {
     return [];
   }
+};
+
+export const fetchAvailableYears = async (
+  dataId: string,
+  regionId: string | null,
+  outputName: string,
+  modelRunId: string
+) => {
+  // Fetch the timeseries data for the modelRunId
+  const result = await getTimeseries({
+    modelId: dataId,
+    runId: modelRunId,
+    outputVariable: outputName,
+    temporalResolution: TemporalResolutionOption.Year,
+    temporalAggregation: AggregationOption.Mean,
+    spatialAggregation: AggregationOption.Mean,
+    transform: undefined,
+    // If no region is selected, pass "undefined" as the region_id to get the aggregated
+    // timeseries for all regions.
+    regionId: regionId ?? undefined,
+  });
+  return Object.keys(breakdownByYear(result));
 };
 
 export const getBulkTimeseries = async (spec: OutputSpec, regionIds: string[]): Promise<any> => {
