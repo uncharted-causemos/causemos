@@ -108,7 +108,7 @@
     </div>
     <div class="visualization-container">
       <div class="date-selector">
-        <timeseries-chart
+        <TimeseriesChart
           v-if="timeseriesData.length > 0 && selectedTimestamp !== null"
           class="timeseries-chart"
           :timeseries-data="timeseriesData"
@@ -142,9 +142,17 @@
           </div>
           <button class="btn btn-default"><i class="fa fa-fw fa-gear" />Map options</button>
         </div>
-        <div class="breakdown-column">
-          <!-- TODO: breakdown column-->
-        </div>
+        <!-- TODO: these props -->
+        <BarChartPanel
+          class="bar-chart-panel"
+          :aggregation-level="stringToAdminLevel(spatialAggregation)"
+          :raw-data="filteredRegionalData"
+          :ordered-aggregation-level-keys="[]"
+          :selected-item-ids="selectedRegionIds"
+          :selected-timeseries-points="[]"
+          :should-show-deselected-bars="true"
+          :unit="'test'"
+        />
       </div>
     </div>
 
@@ -189,6 +197,7 @@ import {
   isBreakdownStateOutputs,
   getFirstDefaultModelRun,
   isBreakdownStateYears,
+  getRegionIdsFromBreakdownState,
 } from '@/utils/datacube-util';
 import useScenarioData from '@/composables/useScenarioData';
 import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
@@ -207,6 +216,9 @@ import useMapBoundsFromBreakdownState from '@/composables/useMapBoundsFromBreakd
 import { useAvailableRegions } from '@/composables/useAvailableRegions';
 import { useRegionalDropdownOptions } from '@/composables/useRegionalDropdownOptions';
 import DropdownButton from '@/components/dropdown-button.vue';
+import BarChartPanel from '@/components/drilldown-panel/bar-chart-panel.vue';
+import { AdminRegionSets, BreakdownData } from '@/types/Datacubes';
+import { filterRegionalLevelData, stringToAdminLevel } from '@/utils/admin-level-util';
 
 const breakdownState = ref<BreakdownState | null>(null);
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
@@ -384,6 +396,46 @@ const { regionalData } = useRegionalDataFromBreakdownState(
 );
 
 const { onMapMove, getMapBounds } = useMapBoundsFromBreakdownState(breakdownState, regionalData);
+
+// TODO: move all of this into the bar-chart-panel component?
+const selectedRegionIds = computed(() => getRegionIdsFromBreakdownState(breakdownState.value));
+// TODO: copied from new-analysis-map
+// This is a legacy data structure that's required for useAnalysisMapStats and analysis-map.vue.
+//  We just wrap the selected regionIds from the breakdown state in a Set and put that in an object.
+const mapSelectedRegions = computed<AdminRegionSets>(() => {
+  const result: AdminRegionSets = {
+    country: new Set(),
+    admin1: new Set(),
+    admin2: new Set(),
+    admin3: new Set(),
+  };
+  if (spatialAggregation.value === 'tiles') {
+    return result;
+  }
+  const newSet = new Set(getRegionIdsFromBreakdownState(breakdownState.value));
+  result[spatialAggregation.value] = newSet;
+  return result;
+});
+
+// TODO: rename?
+// Pull out the regions at the current level that are selected,
+//  or which have an ancestor that's selected.
+const filteredRegionalData = ref<BreakdownData | null>(null);
+watch(
+  () => [regionalData, mapSelectedRegions],
+  () => {
+    if (regionalData.value !== null && Object.keys(regionalData.value).length !== 0) {
+      // apply filtering to all levels starting from the admin1 (i.e., adminIndx > 0)
+      const filteredRegionLevelData = filterRegionalLevelData(
+        regionalData.value,
+        mapSelectedRegions.value,
+        false /* apply filtering to country level */
+      );
+      filteredRegionalData.value = filteredRegionLevelData as BreakdownData | null;
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style lang="scss" scoped>
@@ -567,7 +619,7 @@ $configColumnButtonWidth: 122px;
   }
 }
 
-.breakdown-column {
+.bar-chart-panel {
   width: 300px;
 }
 </style>
