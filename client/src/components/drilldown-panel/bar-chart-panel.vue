@@ -2,17 +2,23 @@
   <div class="bar-chart-panel-container">
     <!-- TODO: switch to qualifiers -->
     <p>Breakdown by (region)</p>
-    <!-- TODO: get this from the table components -->
-    <div>
-      <span class="subdued un-font-small">Region</span>
-      <!-- TODO: -->
-      <!-- <span class="subdued un-font-small">{{ unit }}</span> -->
-      <span class="subdued un-font-small">{{ '# of people' }}</span>
-      <!-- <radio-button-group
-              :selected-button-value="sortValue"
-              :buttons="Object.values(SORT_OPTIONS)"
-              @button-clicked="clickRadioButton"
-            /> -->
+    <div class="sortable-headers">
+      <!-- TODO: 'Region' or qualifier name -->
+      <SortableTableHeaderCell
+        :active-state="getHeaderCellSortState(SortOption.Name)"
+        :label="'Region'"
+        :up-label="'Sort from A-Z'"
+        :down-label="'Sort from Z-A'"
+        @set-sort="(order) => setSortColumnAndOrder(SortOption.Name, order)"
+      />
+      <!-- TODO: '# of people' or unit -->
+      <SortableTableHeaderCell
+        :active-state="getHeaderCellSortState(SortOption.Value)"
+        :label="'# of people'"
+        :up-label="'Sort by highest'"
+        :down-label="'Sort by lowest'"
+        @set-sort="(order) => setSortColumnAndOrder(SortOption.Value, order)"
+      />
     </div>
     <!-- TODO: support qualifier pagination -->
     <!-- <button v-if="totalDataLength > 0" class="btn btn-sm" @click="requestData">
@@ -40,7 +46,7 @@ import { BreakdownData } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { toRefs, ref, computed } from '@vue/runtime-core';
 import {
-  SORT_OPTIONS,
+  SortOption,
   isStatefulDataNode,
   extractPossibleRows,
   findMaxVisibleBarValue,
@@ -48,6 +54,8 @@ import {
   constructHierarchichalDataNodeTree,
 } from '@/utils/bar-chart-panel-util';
 import { watch } from 'vue';
+import SortableTableHeaderCell from '@/components/widgets/sortable-table-header-cell.vue';
+import { SortableTableHeaderState } from '@/types/Enums';
 
 const props = defineProps<{
   orderedAggregationLevelKeys: string[];
@@ -67,16 +75,22 @@ const {
   selectedItemIds,
 } = toRefs(props);
 
-const sortValue = ref<string>(SORT_OPTIONS.Name.value);
-// TODO: add sort controls
-// const setSortValue = (value: 'Name' | 'Value') => {
-//   sortValue.value = value;
-// };
+const columnToSortBy = ref<SortOption>(SortOption.Name);
+const sortOrder = ref<SortableTableHeaderState.Up | SortableTableHeaderState.Down>(
+  SortableTableHeaderState.Up
+);
+const setSortColumnAndOrder = (
+  column: SortOption,
+  direction: SortableTableHeaderState.Up | SortableTableHeaderState.Down
+) => {
+  columnToSortBy.value = column;
+  sortOrder.value = direction;
+};
+const getHeaderCellSortState = (cell: SortOption) =>
+  cell === columnToSortBy.value ? sortOrder.value : SortableTableHeaderState.None;
 const statefulData = ref<RootStatefulDataNode | null>(null);
-// TODO: extract this business logic to a util function
-// TODO: replace watchEffect with watch()
 watch(
-  [orderedAggregationLevelKeys, rawData, selectedTimeseriesPoints, sortValue],
+  [orderedAggregationLevelKeys, rawData, selectedTimeseriesPoints, columnToSortBy, sortOrder],
   () => {
     if (rawData.value === null) return;
     const getColorFromTimeseriesId = (timeseriesId: string) =>
@@ -86,7 +100,8 @@ watch(
       orderedAggregationLevelKeys.value,
       rawData.value,
       getColorFromTimeseriesId,
-      sortValue.value
+      columnToSortBy.value,
+      sortOrder.value
     );
   },
   { immediate: true }
@@ -179,75 +194,24 @@ h5 {
   margin-bottom: 5px;
 }
 
-.sort-selection {
-  width: fit-content;
+.bar-chart-panel-container {
   display: flex;
-  align-items: center;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  span {
-    margin-right: 5px;
-  }
+  flex-direction: column;
+  gap: 5px;
 }
 
-.aggregation-level-range {
-  margin-top: 10px;
-
-  &::-webkit-slider-runnable-track {
-    background: $un-color-surface-30;
-    height: $track-height;
-  }
-
-  &::-webkit-slider-thumb {
-    margin-top: -1 * calc(($thumb-size - $track-height) / 2);
-  }
-}
-
-.aggregation-level-range-container {
-  position: relative;
-  margin: 15px 0;
-}
-
-.aggregation-level-tick {
-  width: $tick-size;
-  height: $tick-size;
-  border: 2px solid $un-color-surface-30;
-  background-color: $background-light-1;
-  border-radius: 50%;
-  position: absolute;
-  top: -1 * calc(($tick-size - $track-height) / 2);
-  cursor: pointer;
-}
-
-.checklist-container {
-  margin-top: 5px;
-}
-
-.all-radio-button {
-  cursor: pointer;
-  i {
-    width: 16px;
-    margin-right: 5px;
-  }
-}
-
-.units {
-  color: $text-color-medium;
-  font-weight: bold;
-}
-
-.flex-row {
+.sortable-headers {
   display: flex;
   justify-content: space-between;
-  // If there's only one item, right-align it
-  & *:only-child {
-    margin-left: auto;
+  margin-left: -10px;
+  margin-right: -10px;
+
+  & > * {
+    left: 0;
   }
 }
 
-.message {
-  background: $background-light-2;
-  color: $text-color-dark;
-  padding: 5px;
+.rows {
+  margin-left: -20px;
 }
 </style>

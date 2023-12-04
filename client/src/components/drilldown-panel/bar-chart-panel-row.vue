@@ -7,10 +7,10 @@
     <div v-for="i in itemData.indentationCount" :key="i" class="indentation" />
     <i
       v-if="itemData.showExpandToggle"
-      class="icon-centered unit-width fa fa-fw"
+      class="unit-width fa fa-fw expand-toggle-icon"
       :class="{
-        'fa-angle-down': itemData.isExpanded,
-        'fa-angle-right': !itemData.isExpanded,
+        'fa-caret-down': itemData.isExpanded,
+        'fa-caret-right': !itemData.isExpanded,
       }"
     />
     <div v-else class="unit-width" />
@@ -20,11 +20,11 @@
       class="content--single-row"
     >
       <div class="single-row-headings">
-        <span class="title">
+        <span class="title un-font-small">
           <span class="faded">{{ ancestorPrefix }}</span>
           {{ itemData.name }}
         </span>
-        <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
+        <span class="un-font-small value" :class="{ faded: !itemData.isSelectedAggregationLevel }">
           {{ valueFormatter(itemData.bars[0].value) }}
         </span>
       </div>
@@ -40,7 +40,7 @@
       />
     </div>
     <div v-else v-tooltip.top-start="ancestorTooltip" class="content--multiple-rows">
-      <span class="title">
+      <span class="title un-font-small">
         <span class="faded">{{ ancestorPrefix }}</span>
         {{ itemData.name }}
       </span>
@@ -58,6 +58,7 @@
           />
         </div>
         <span
+          class="un-font-small value"
           :class="{
             faded: !itemData.isSelectedAggregationLevel || !itemData.isChecked,
             'multiple-row-label': true,
@@ -127,35 +128,41 @@ const ancestorTooltip = computed(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/uncharted-design-tokens';
+
 .bar-chart-panel-row-container {
   display: flex;
   padding-bottom: 4px;
   margin-bottom: 2px;
 
+  &:hover .value {
+    color: black;
+  }
+
   &.canToggleExpanded {
     cursor: pointer;
+
+    &:hover .expand-toggle-icon {
+      color: black;
+    }
   }
 }
 
-.agg-item-checkbox {
-  cursor: pointer;
-}
-
-.icon-centered {
-  margin-top: 2px;
-}
-
 .unit-width {
-  width: 16px;
+  width: 20px;
 }
 
 .indentation {
-  width: 8px;
+  width: 20px;
 }
 
-.unit-width,
-.indentation {
-  margin-right: 10px;
+.expand-toggle-icon {
+  color: $un-color-black-20;
+  margin-top: 4px;
+}
+
+.value {
+  color: $subdued;
 }
 
 .content--single-row {
@@ -166,6 +173,7 @@ const ancestorTooltip = computed(() => {
   .single-row-headings {
     display: flex;
     flex-direction: row;
+    align-items: baseline;
   }
   .title {
     flex: 1;

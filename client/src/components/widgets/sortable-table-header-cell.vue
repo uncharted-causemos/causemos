@@ -46,7 +46,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'set-sort', state: SortableTableHeaderState): void;
+  (e: 'set-sort', state: SortableTableHeaderState.Up | SortableTableHeaderState.Down): void;
 }>();
 </script>
 

@@ -146,8 +146,8 @@
         <BarChartPanel
           class="bar-chart-panel"
           :aggregation-level="stringToAdminLevel(spatialAggregation)"
-          :raw-data="filteredRegionalData"
-          :ordered-aggregation-level-keys="[]"
+          :raw-data="regionalData"
+          :ordered-aggregation-level-keys="['country', 'admin1', 'admin2', 'admin3']"
           :selected-item-ids="selectedRegionIds"
           :selected-timeseries-points="[]"
           :should-show-deselected-bars="true"
@@ -621,5 +621,6 @@ $configColumnButtonWidth: 122px;
 
 .bar-chart-panel {
   width: 300px;
+  margin-left: 20px;
 }
 </style>

@@ -90,6 +90,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/uncharted-design-tokens';
 $bar-height-half: 2px;
 .is-wrapped {
   top: 50%;
@@ -101,6 +102,7 @@ $bar-height-half: 2px;
   width: 100%;
   display: flex;
   flex-direction: row;
+  background: $un-color-black-5;
   span.faded {
     opacity: 50%;
   }

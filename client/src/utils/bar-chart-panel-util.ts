@@ -1,11 +1,12 @@
 import _ from 'lodash';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { BreakdownData } from '@/types/Datacubes';
+import { SortableTableHeaderState } from '@/types/Enums';
 
-export const SORT_OPTIONS = {
-  Name: { label: 'Name', value: 'name' },
-  Value: { label: 'Value', value: 'value' },
-};
+export enum SortOption {
+  Name,
+  Value,
+}
 
 // A helper function to allow TypeScript to distinguish between
 //  the the root node (that is missing several properties) and
@@ -87,7 +88,7 @@ const checklistRowDataFromNode = (
   const { name, bars, children, isExpanded, path } = node;
   const isSelectedAggregationLevel = depthLevel === selectedLevel;
   const showExpandToggle = children.length > 0;
-  const indentationCount = depthLevel > selectedLevel ? depthLevel - selectedLevel + 1 : 0;
+  const indentationCount = selectedLevel === 0 ? depthLevel : depthLevel - selectedLevel + 1;
   return {
     name,
     bars,
@@ -101,14 +102,18 @@ const checklistRowDataFromNode = (
   };
 };
 
-const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string) => {
+const sortHierarchy = (
+  newStatefulData: RootStatefulDataNode,
+  sortValue: SortOption,
+  sortDirection: SortableTableHeaderState.Up | SortableTableHeaderState.Down
+) => {
   // Sort top level children (i.e. countries) without values to the bottom
   //  of the list, since if they had descendants with values, they would
   //  have values themselves, aggregated up from their descendants
   const hasOneOrMoreValues = (node: StatefulDataNode) => {
     return node.bars.length > 0;
   };
-  if (sortValue === SORT_OPTIONS.Value.value) {
+  if (sortValue === SortOption.Value) {
     newStatefulData.children.sort((nodeA, nodeB) => {
       const nodeAFirstValue = nodeA.bars.map((bar) => bar.value)[0];
       const nodeBFirstValue = nodeB.bars.map((bar) => bar.value)[0];
@@ -124,7 +129,8 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string)
         return -1;
       }
       // Sort based on value
-      return (nodeAValue as number) <= (nodeBValue as number) ? 1 : -1;
+      const result = (nodeAValue as number) <= (nodeBValue as number) ? 1 : -1;
+      return sortDirection === SortableTableHeaderState.Down ? result * -1 : result;
     });
   } else {
     newStatefulData.children.sort((nodeA, nodeB) => {
@@ -136,12 +142,13 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string)
         return -1;
       }
       // Sort by name
-      return nodeA.name > nodeB.name ? 1 : -1;
+      const result = nodeA.name > nodeB.name ? 1 : -1;
+      return sortDirection === SortableTableHeaderState.Down ? result * -1 : result;
     });
   }
   newStatefulData.children.forEach((node) => {
     if (_.has(node, 'children')) {
-      sortHierarchy(node, sortValue);
+      sortHierarchy(node, sortValue, sortDirection);
     }
   });
   return newStatefulData;
@@ -152,7 +159,8 @@ export const constructHierarchichalDataNodeTree = (
   orderedAggregationLevelKeys: string[],
   rawData: BreakdownData,
   getColorFromTimeseriesId: (timeseriesId: string) => string,
-  sortValue: string
+  sortValue: SortOption,
+  sortDirection: SortableTableHeaderState.Up | SortableTableHeaderState.Down
 ) => {
   // Whenever the raw data changes, construct a hierarchical data structure
   //  out of it, augmented with a boolean 'expanded' property to keep
@@ -202,7 +210,7 @@ export const constructHierarchichalDataNodeTree = (
       });
     });
   });
-  sortHierarchy(newStatefulData, sortValue);
+  sortHierarchy(newStatefulData, sortValue, sortDirection);
   return newStatefulData;
 };
 
