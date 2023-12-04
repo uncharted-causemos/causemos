@@ -9,6 +9,7 @@
         :label="'Region'"
         :up-label="'Sort from A-Z'"
         :down-label="'Sort from Z-A'"
+        :is-small-text="true"
         @set-sort="(order) => setSortColumnAndOrder(SortOption.Name, order)"
       />
       <!-- TODO: '# of people' or unit -->
@@ -17,6 +18,8 @@
         :label="'# of people'"
         :up-label="'Sort by highest'"
         :down-label="'Sort by lowest'"
+        :is-dropdown-aligned-right="true"
+        :is-small-text="true"
         @set-sort="(order) => setSortColumnAndOrder(SortOption.Value, order)"
       />
     </div>
@@ -213,5 +216,8 @@ h5 {
 
 .rows {
   margin-left: -20px;
+  & > * {
+    margin-bottom: 6px;
+  }
 }
 </style>

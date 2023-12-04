@@ -132,8 +132,6 @@ const ancestorTooltip = computed(() => {
 
 .bar-chart-panel-row-container {
   display: flex;
-  padding-bottom: 4px;
-  margin-bottom: 2px;
 
   &:hover .value {
     color: black;
