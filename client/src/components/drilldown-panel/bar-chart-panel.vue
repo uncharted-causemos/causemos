@@ -1,9 +1,6 @@
 <template>
   <div class="bar-chart-panel-container">
-    <!-- TODO: switch to qualifiers -->
-    <p>Breakdown by (region)</p>
     <div class="sortable-headers">
-      <!-- TODO: 'Region' or qualifier name -->
       <SortableTableHeaderCell
         :active-state="getHeaderCellSortState(SortOption.Name)"
         :label="'Region'"
@@ -12,10 +9,9 @@
         :is-small-text="true"
         @set-sort="(order) => setSortColumnAndOrder(SortOption.Name, order)"
       />
-      <!-- TODO: '# of people' or unit -->
       <SortableTableHeaderCell
         :active-state="getHeaderCellSortState(SortOption.Value)"
-        :label="'# of people'"
+        :label="unit"
         :up-label="'Sort by highest'"
         :down-label="'Sort by lowest'"
         :is-dropdown-aligned-right="true"
@@ -23,19 +19,13 @@
         @set-sort="(order) => setSortColumnAndOrder(SortOption.Value, order)"
       />
     </div>
-    <!-- TODO: support qualifier pagination -->
-    <!-- <button v-if="totalDataLength > 0" class="btn btn-sm" @click="requestData">
-            Load {{ numberFormatter(totalDataLength) }} values
-          </button> -->
     <div class="rows">
       <BarChartPanelRow
         v-for="(row, rowIndex) of rowsWithData"
         :key="rowIndex"
-        :histogram-visible="shouldShowDeselectedBars || row.isChecked"
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
         :min-visible-bar-value="minVisibleBarValue"
-        :selected-timeseries-points="selectedTimeseriesPoints"
         @toggle-expanded="toggleExpanded(row.path)"
       />
     </div>
@@ -46,7 +36,6 @@
 import BarChartPanelRow from '@/components/drilldown-panel/bar-chart-panel-row.vue';
 import _ from 'lodash';
 import { BreakdownData } from '@/types/Datacubes';
-import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { toRefs, ref, computed } from '@vue/runtime-core';
 import {
   SortOption,
@@ -59,24 +48,20 @@ import {
 import { watch } from 'vue';
 import SortableTableHeaderCell from '@/components/widgets/sortable-table-header-cell.vue';
 import { SortableTableHeaderState } from '@/types/Enums';
+import { BreakdownState } from '@/types/Datacube';
+import { getRegionIdsFromBreakdownState } from '@/utils/datacube-util';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 
 const props = defineProps<{
-  orderedAggregationLevelKeys: string[];
   aggregationLevel: number;
   rawData: BreakdownData | null;
   unit: string;
-  selectedTimeseriesPoints: TimeseriesPointSelection[];
-  selectedItemIds: string[];
-  shouldShowDeselectedBars: boolean;
+  breakdownState: BreakdownState;
+  getColorFromTimeseriesId: (timeseriesId: string) => string;
 }>();
-const {
-  rawData,
-  aggregationLevel,
-  orderedAggregationLevelKeys,
-  shouldShowDeselectedBars,
-  selectedTimeseriesPoints,
-  selectedItemIds,
-} = toRefs(props);
+const { rawData, aggregationLevel, breakdownState, getColorFromTimeseriesId } = toRefs(props);
+
+const selectedRegionIds = computed(() => getRegionIdsFromBreakdownState(breakdownState.value));
 
 const columnToSortBy = ref<SortOption>(SortOption.Name);
 const sortOrder = ref<SortableTableHeaderState.Up | SortableTableHeaderState.Down>(
@@ -93,16 +78,13 @@ const getHeaderCellSortState = (cell: SortOption) =>
   cell === columnToSortBy.value ? sortOrder.value : SortableTableHeaderState.None;
 const statefulData = ref<RootStatefulDataNode | null>(null);
 watch(
-  [orderedAggregationLevelKeys, rawData, selectedTimeseriesPoints, columnToSortBy, sortOrder],
+  [rawData, columnToSortBy, sortOrder, getColorFromTimeseriesId],
   () => {
     if (rawData.value === null) return;
-    const getColorFromTimeseriesId = (timeseriesId: string) =>
-      selectedTimeseriesPoints.value.find((point) => point.timeseriesId === timeseriesId)?.color ??
-      '#000';
     statefulData.value = constructHierarchichalDataNodeTree(
-      orderedAggregationLevelKeys.value,
+      ADMIN_LEVEL_KEYS,
       rawData.value,
-      getColorFromTimeseriesId,
+      getColorFromTimeseriesId.value,
       columnToSortBy.value,
       sortOrder.value
     );
@@ -141,8 +123,8 @@ const maxVisibleBarValue = computed(() => {
   return findMaxVisibleBarValue(
     statefulData.value,
     aggregationLevel.value + 1,
-    selectedItemIds.value,
-    shouldShowDeselectedBars.value
+    selectedRegionIds.value,
+    true
   );
 });
 
@@ -153,8 +135,8 @@ const minVisibleBarValue = computed(() => {
   return findMinVisibleBarValue(
     statefulData.value,
     aggregationLevel.value + 1,
-    selectedItemIds.value,
-    shouldShowDeselectedBars.value
+    selectedRegionIds.value,
+    true
   );
 });
 
@@ -164,8 +146,8 @@ const rowsWithData = computed(() => {
     statefulData.value,
     [],
     aggregationLevel.value,
-    selectedItemIds.value,
-    orderedAggregationLevelKeys.value
+    selectedRegionIds.value,
+    ADMIN_LEVEL_KEYS
   ).filter((row) => row.bars.length);
 });
 

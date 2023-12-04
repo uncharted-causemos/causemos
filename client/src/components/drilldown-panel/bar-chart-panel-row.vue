@@ -29,7 +29,6 @@
         </span>
       </div>
       <AggregationChecklistBar
-        v-if="histogramVisible"
         :barColor="itemData.bars[0].color"
         :barValue="itemData.bars[0].value"
         :isChecked="itemData.isChecked"
@@ -47,7 +46,6 @@
       <div v-for="(bar, index) in itemData.bars" :key="index" class="value-on-same-line">
         <div class="histogram-bar-wrapper">
           <AggregationChecklistBar
-            v-if="histogramVisible"
             :barColor="bar.color"
             :barValue="bar.value"
             :isChecked="itemData.isChecked"
@@ -73,7 +71,6 @@
 </template>
 
 <script setup lang="ts">
-import { TimeseriesPointSelection } from '@/types/Timeseries';
 import AggregationChecklistBar from '@/components/drilldown-panel/aggregation-checklist-bar.vue';
 import { valueFormatter } from '@/utils/string-util';
 import { computed, toRefs } from 'vue';
@@ -94,10 +91,8 @@ const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
 const emit = defineEmits<{ (e: 'toggle-expanded'): void }>();
 const props = defineProps<{
   itemData: AggregationChecklistItemPropType;
-  histogramVisible: boolean;
   maxVisibleBarValue: number;
   minVisibleBarValue: number;
-  selectedTimeseriesPoints: TimeseriesPointSelection[];
 }>();
 const { itemData } = toRefs(props);
 
