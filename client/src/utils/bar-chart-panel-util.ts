@@ -33,7 +33,6 @@ export const extractPossibleRows = (
   metadataNode: RootStatefulDataNode | StatefulDataNode,
   hiddenAncestorNames: string[],
   selectedLevel: number,
-  selectedItemIds: string[],
   orderedAggregationLevelKeys: string[]
 ): ChecklistRowData[] => {
   // The root node is at depth level "-1" since it isn't selectable
@@ -52,7 +51,6 @@ export const extractPossibleRows = (
         child,
         _hiddenAncestorNames,
         selectedLevel,
-        selectedItemIds,
         orderedAggregationLevelKeys
       ),
     ];
@@ -64,17 +62,9 @@ export const extractPossibleRows = (
   if (!isNodeVisible || !isStatefulDataNode(metadataNode)) {
     return visibleChildren;
   }
-  const itemId = metadataNode.path.join(REGION_ID_DELIMETER);
-  const isChecked = selectedItemIds.includes(itemId);
   // Add the metadata that's required to display the entry as a row in the checklist
   return [
-    checklistRowDataFromNode(
-      metadataNode,
-      depthLevel,
-      _hiddenAncestorNames,
-      selectedLevel,
-      isChecked
-    ),
+    checklistRowDataFromNode(metadataNode, depthLevel, _hiddenAncestorNames, selectedLevel),
     ...visibleChildren,
   ];
 };
@@ -83,8 +73,7 @@ const checklistRowDataFromNode = (
   node: StatefulDataNode,
   depthLevel: number,
   hiddenAncestorNames: string[],
-  selectedLevel: number,
-  isChecked: boolean
+  selectedLevel: number
 ): ChecklistRowData => {
   const { name, bars, children, isExpanded, path } = node;
   const isSelectedAggregationLevel = depthLevel === selectedLevel;
@@ -96,7 +85,7 @@ const checklistRowDataFromNode = (
     isSelectedAggregationLevel,
     showExpandToggle,
     isExpanded,
-    isChecked,
+    isChecked: false, // leftover field from the old data space
     indentationCount,
     hiddenAncestorNames,
     path,
@@ -227,8 +216,7 @@ export const constructHierarchichalDataNodeTree = (
 // Returns the maximum among bar values or zero, whichever is greater
 export const findMaxVisibleBarValue = (
   node: RootStatefulDataNode | StatefulDataNode,
-  levelsUntilSelectedDepth: number,
-  selectedItemIds: string[]
+  levelsUntilSelectedDepth: number
 ) => {
   if (levelsUntilSelectedDepth === 0) {
     const values = isStatefulDataNode(node) ? node.bars.map((bar) => bar.value) : [];
@@ -236,10 +224,7 @@ export const findMaxVisibleBarValue = (
   }
   let maxValue = 0;
   node.children.forEach((child) => {
-    maxValue = Math.max(
-      maxValue,
-      findMaxVisibleBarValue(child, levelsUntilSelectedDepth - 1, selectedItemIds)
-    );
+    maxValue = Math.max(maxValue, findMaxVisibleBarValue(child, levelsUntilSelectedDepth - 1));
   });
   return maxValue;
 };
@@ -247,8 +232,7 @@ export const findMaxVisibleBarValue = (
 // Returns the minimum among bar values or zero, whichever is less
 export const findMinVisibleBarValue = (
   node: RootStatefulDataNode | StatefulDataNode,
-  levelsUntilSelectedDepth: number,
-  selectedItemIds: string[]
+  levelsUntilSelectedDepth: number
 ) => {
   if (levelsUntilSelectedDepth === 0) {
     const values = isStatefulDataNode(node) ? node.bars.map((bar) => bar.value) : [];
@@ -256,10 +240,7 @@ export const findMinVisibleBarValue = (
   }
   let minValue = 0;
   node.children.forEach((child) => {
-    minValue = Math.min(
-      minValue,
-      findMinVisibleBarValue(child, levelsUntilSelectedDepth - 1, selectedItemIds)
-    );
+    minValue = Math.min(minValue, findMinVisibleBarValue(child, levelsUntilSelectedDepth - 1));
   });
   return minValue;
 };

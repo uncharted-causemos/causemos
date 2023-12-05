@@ -50,8 +50,6 @@ import {
 import { watch } from 'vue';
 import SortableTableHeaderCell from '@/components/widgets/sortable-table-header-cell.vue';
 import { AggregationOption, SortableTableHeaderState } from '@/types/Enums';
-import { BreakdownState } from '@/types/Datacube';
-import { getRegionIdsFromBreakdownState } from '@/utils/datacube-util';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import { RootStatefulDataNode, StatefulDataNode } from '@/types/BarChartPanel';
 
@@ -59,14 +57,11 @@ const props = defineProps<{
   aggregationLevel: number;
   rawData: BreakdownData | null;
   unit: string;
-  breakdownState: BreakdownState;
   getColorFromTimeseriesId: (timeseriesId: string) => string;
   aggregationMethod: AggregationOption;
   outputName: string;
 }>();
-const { rawData, aggregationLevel, breakdownState, getColorFromTimeseriesId } = toRefs(props);
-
-const selectedRegionIds = computed(() => getRegionIdsFromBreakdownState(breakdownState.value));
+const { rawData, aggregationLevel, getColorFromTimeseriesId } = toRefs(props);
 
 const columnToSortBy = ref<SortOption>(SortOption.Name);
 const sortOrder = ref<SortableTableHeaderState.Up | SortableTableHeaderState.Down>(
@@ -127,8 +122,7 @@ const maxVisibleBarValue = computed(() =>
     : findMaxVisibleBarValue(
         statefulData.value,
         // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than the root level.
-        aggregationLevel.value + 1,
-        selectedRegionIds.value
+        aggregationLevel.value + 1
       )
 );
 
@@ -138,8 +132,7 @@ const minVisibleBarValue = computed(() =>
     : findMinVisibleBarValue(
         statefulData.value,
         // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than the root level.
-        aggregationLevel.value + 1,
-        selectedRegionIds.value
+        aggregationLevel.value + 1
       )
 );
 
@@ -149,7 +142,6 @@ const rowsWithData = computed(() => {
     statefulData.value,
     [],
     aggregationLevel.value,
-    selectedRegionIds.value,
     ADMIN_LEVEL_KEYS
   ).filter((row) => row.bars.length);
 });
