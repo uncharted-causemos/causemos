@@ -5,6 +5,7 @@
       class="btn btn-default btn-sm dropdown-btn"
       :class="{
         warning: isWarningStateActive,
+        'btn-white': isWhite,
       }"
       @click="isDropdownOpen = !isDropdownOpen"
     >
@@ -92,6 +93,10 @@ export default defineComponent({
       default: [],
     },
     isWarningStateActive: {
+      type: Boolean,
+      default: false,
+    },
+    isWhite: {
       type: Boolean,
       default: false,
     },

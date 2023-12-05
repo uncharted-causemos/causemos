@@ -44,7 +44,7 @@
       <section v-if="metadata !== null" class="model-run-parameters-section">
         <div class="section-header">
           <h4>Model run parameters</h4>
-          <button @click="isSelectModelRunsModalOpen = true" class="btn btn-default">
+          <button @click="isSelectModelRunsModalOpen = true" class="btn btn-default btn-white">
             Select model runs
           </button>
         </div>
@@ -67,27 +67,45 @@
         <div class="labelled-dropdowns">
           <div class="labelled-dropdown">
             <p class="subdued">Aggregated by</p>
-            <button class="btn btn-default">sum</button>
+            <DropdownButton
+              :items="spatialAggregationMethodOptions"
+              :selected-item="spatialAggregationMethod"
+              :is-white="true"
+              :is-dropdown-above="true"
+              @item-selected="(newValue) => (spatialAggregationMethod = newValue)"
+            />
           </div>
 
           <div class="labelled-dropdown">
             <p class="subdued">Temporal resolution</p>
-            <button class="btn btn-default">monthly</button>
+            <DropdownButton
+              :items="temporalResolutionOptions"
+              :selected-item="temporalResolution"
+              :is-white="true"
+              :is-dropdown-above="true"
+              @item-selected="(newValue) => (temporalResolution = newValue)"
+            />
           </div>
 
           <div class="labelled-dropdown">
             <p class="subdued">Spatial resolution</p>
-            <button class="btn btn-default">country</button>
+            <DropdownButton
+              :items="spatialAggregationDropdownOptions"
+              :selected-item="spatialAggregation"
+              :is-white="true"
+              :is-dropdown-above="true"
+              @item-selected="(newValue) => (spatialAggregation = newValue)"
+            />
           </div>
         </div>
 
-        <button @click="isFilterAndCompareModalOpen = true" class="btn btn-default">
+        <button @click="isFilterAndCompareModalOpen = true" class="btn btn-default btn-white">
           Filter and compare
         </button>
 
         <div class="media-files">
           <span class="subdued un-font-small">This model produces media files.</span>
-          <button class="btn btn-default">View supporting media</button>
+          <button class="btn btn-default btn-white">View supporting media</button>
         </div>
       </section>
     </div>
@@ -146,6 +164,7 @@
       v-if="isFilterAndCompareModalOpen && metadata !== null && breakdownState !== null"
       :metadata="metadata"
       :spatial-aggregation="spatialAggregation"
+      :aggregation-method="spatialAggregationMethod"
       :initial-breakdown-state="breakdownState"
       @close="isFilterAndCompareModalOpen = false"
       @apply-breakdown-state="(newState) => (breakdownState = newState)"
@@ -188,6 +207,9 @@ import useOutputSpecsFromBreakdownState from '@/composables/useOutputSpecsFromBr
 import { colorFromIndex } from '@/utils/colors-util';
 import NewAnalysisMap from '@/components/data/new-analysis-map.vue';
 import useMapBoundsFromBreakdownState from '@/composables/useMapBoundsFromBreakdownState';
+import { useAvailableRegions } from '@/composables/useAvailableRegions';
+import { useRegionalDropdownOptions } from '@/composables/useRegionalDropdownOptions';
+import DropdownButton from '@/components/dropdown-button.vue';
 
 const breakdownState = ref<BreakdownState | null>(null);
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
@@ -294,8 +316,15 @@ const isFilterAndCompareModalOpen = ref(false);
 
 const spatialAggregation = ref<SpatialAggregation>(DatacubeGeoAttributeVariableType.Country);
 const spatialAggregationMethod = ref<AggregationOption>(AggregationOption.Mean);
+const spatialAggregationMethodOptions = [AggregationOption.Mean, AggregationOption.Sum];
+const { availableRegions } = useAvailableRegions(metadata, breakdownState);
+const { spatialAggregationDropdownOptions } = useRegionalDropdownOptions(
+  availableRegions,
+  spatialAggregation
+);
 const temporalResolution = ref(TemporalResolutionOption.Month);
-const temporalAggregationMethod = ref<AggregationOption>(AggregationOption.Mean);
+const temporalResolutionOptions = [TemporalResolutionOption.Month, TemporalResolutionOption.Year];
+const temporalAggregationMethod = computed(() => spatialAggregationMethod.value);
 
 const { timeseriesData } = useTimeseriesDataFromBreakdownState(
   breakdownState,
@@ -398,14 +427,6 @@ $configColumnButtonWidth: 122px;
     flex-direction: column;
     gap: 20px;
   }
-
-  .btn-default {
-    background: white;
-
-    &:hover {
-      background: $un-color-black-5;
-    }
-  }
 }
 
 .model-run-parameters-section {
@@ -466,14 +487,17 @@ $configColumnButtonWidth: 122px;
 .labelled-dropdown {
   display: flex;
   gap: 5px;
+  align-items: baseline;
 
   p {
     flex: 1;
     min-width: 0;
   }
 
-  button {
+  & :deep(.dropdown-btn) {
     width: $configColumnButtonWidth;
+    display: flex;
+    justify-content: space-between;
   }
 }
 
