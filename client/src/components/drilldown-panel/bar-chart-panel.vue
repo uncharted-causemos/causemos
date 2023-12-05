@@ -52,6 +52,7 @@ import { AggregationOption, SortableTableHeaderState } from '@/types/Enums';
 import { BreakdownState } from '@/types/Datacube';
 import { getRegionIdsFromBreakdownState } from '@/utils/datacube-util';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+import { RootStatefulDataNode, StatefulDataNode } from '@/types/BarChartPanel';
 
 const props = defineProps<{
   aggregationLevel: number;
