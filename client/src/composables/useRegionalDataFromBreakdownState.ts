@@ -184,7 +184,8 @@ const getRegionalDataRegions = async (outputSpecs: OutputSpecWithId[]) => {
     admin2: [],
     admin3: [],
   };
-  // Filter out any regions that aren't selected
+  // Storing the aggregated data for every region allows us to display the selected regions, while
+  //  also displaying aggregated values for their ancestors in the bar chart panel.
   Object.values(AdminLevel).forEach((adminLevel) => {
     const regionAggsAtCurrentAdminLevel = regionalAggregation[adminLevel] || [];
     regionalAggregations[adminLevel] = regionAggsAtCurrentAdminLevel.map((regionAgg) => ({
