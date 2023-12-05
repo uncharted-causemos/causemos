@@ -124,11 +124,11 @@
         <div class="maps">
           <div class="card-maps-box" v-if="breakdownState !== null && regionalData !== null">
             <NewAnalysisMap
-              v-for="(spec, index) of outputSpecs"
+              v-for="spec of outputSpecs"
               :key="spec.id"
               class="new-analysis-map"
               :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
-              :color="colorFromIndex(index)"
+              :color="getColorFromTimeseriesId(spec.id)"
               :breakdown-state="breakdownState"
               :metadata="metadata"
               :regional-data="regionalData"
@@ -208,7 +208,6 @@ import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import useRegionalDataFromBreakdownState from '@/composables/useRegionalDataFromBreakdownState';
 import useOutputSpecsFromBreakdownState from '@/composables/useOutputSpecsFromBreakdownState';
-import { colorFromIndex } from '@/utils/colors-util';
 import NewAnalysisMap from '@/components/data/new-analysis-map.vue';
 import useMapBoundsFromBreakdownState from '@/composables/useMapBoundsFromBreakdownState';
 import { useAvailableRegions } from '@/composables/useAvailableRegions';
@@ -216,6 +215,7 @@ import { useRegionalDropdownOptions } from '@/composables/useRegionalDropdownOpt
 import DropdownButton from '@/components/dropdown-button.vue';
 import BarChartPanel from '@/components/drilldown-panel/bar-chart-panel.vue';
 import { stringToAdminLevel } from '@/utils/admin-level-util';
+import useTimeseriesIdToColorMap from '@/composables/useTimeseriesIdToColorMap';
 
 const breakdownState = ref<BreakdownState | null>(null);
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
@@ -393,13 +393,7 @@ const { regionalData } = useRegionalDataFromBreakdownState(
 );
 
 const { onMapMove, getMapBounds } = useMapBoundsFromBreakdownState(breakdownState, regionalData);
-
-const getColorFromTimeseriesId = (timeseriesId: string) => {
-  // TODO:
-  return 'green' ?? timeseriesId;
-  // selectedTimeseriesPoints.value.find((point) => point.timeseriesId === timeseriesId)?.color ??
-  // '#000';
-};
+const { getColorFromTimeseriesId } = useTimeseriesIdToColorMap(breakdownState);
 </script>
 
 <style lang="scss" scoped>
