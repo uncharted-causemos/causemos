@@ -155,7 +155,16 @@ const sortHierarchy = (
   return newStatefulData;
 };
 
-// TODO: improve naming
+/**
+ * Restructures a BreakdownData object (like RegionalAggregations) into a hierarchical tree data
+ *  structure that can be used to render a collapsible hierarchy of bars.
+ * @param orderedAggregationLevelKeys rawData's keys, in descending order (e.g. ['country', 'admin1', ...]).
+ * @param rawData the data that will be restructured into a tree.
+ * @param getColorFromTimeseriesId a function that determines which colour each bar should be.
+ * @param sortValue determines which field the rows are sorted by.
+ * @param sortDirection determines whether rows are sorted in ascending or descending order.
+ * @returns the root node of the tree.
+ */
 export const constructHierarchichalDataNodeTree = (
   orderedAggregationLevelKeys: string[],
   rawData: BreakdownData,
