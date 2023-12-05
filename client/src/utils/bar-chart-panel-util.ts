@@ -228,27 +228,17 @@ export const constructHierarchichalDataNodeTree = (
 export const findMaxVisibleBarValue = (
   node: RootStatefulDataNode | StatefulDataNode,
   levelsUntilSelectedDepth: number,
-  selectedItemIds: string[],
-  shouldShowDeselectedBars: boolean
+  selectedItemIds: string[]
 ) => {
   if (levelsUntilSelectedDepth === 0) {
-    const values =
-      isStatefulDataNode(node) &&
-      (_.includes(selectedItemIds, node.path.join(REGION_ID_DELIMETER)) || shouldShowDeselectedBars)
-        ? node.bars.map((bar) => bar.value)
-        : [];
+    const values = isStatefulDataNode(node) ? node.bars.map((bar) => bar.value) : [];
     return _.max(values) ?? 0;
   }
   let maxValue = 0;
   node.children.forEach((child) => {
     maxValue = Math.max(
       maxValue,
-      findMaxVisibleBarValue(
-        child,
-        levelsUntilSelectedDepth - 1,
-        selectedItemIds,
-        shouldShowDeselectedBars
-      )
+      findMaxVisibleBarValue(child, levelsUntilSelectedDepth - 1, selectedItemIds)
     );
   });
   return maxValue;
@@ -258,28 +248,39 @@ export const findMaxVisibleBarValue = (
 export const findMinVisibleBarValue = (
   node: RootStatefulDataNode | StatefulDataNode,
   levelsUntilSelectedDepth: number,
-  selectedItemIds: string[],
-  shouldShowDeselectedBars: boolean
+  selectedItemIds: string[]
 ) => {
   if (levelsUntilSelectedDepth === 0) {
-    const values =
-      isStatefulDataNode(node) &&
-      (_.includes(selectedItemIds, node.path.join(REGION_ID_DELIMETER)) || shouldShowDeselectedBars)
-        ? node.bars.map((bar) => bar.value)
-        : [];
+    const values = isStatefulDataNode(node) ? node.bars.map((bar) => bar.value) : [];
     return _.min(values) ?? 0;
   }
   let minValue = 0;
   node.children.forEach((child) => {
     minValue = Math.min(
       minValue,
-      findMinVisibleBarValue(
-        child,
-        levelsUntilSelectedDepth - 1,
-        selectedItemIds,
-        shouldShowDeselectedBars
-      )
+      findMinVisibleBarValue(child, levelsUntilSelectedDepth - 1, selectedItemIds)
     );
   });
   return minValue;
+};
+
+/**
+ * Finds a stateful data node within `tree` and toggles its isExpanded field.
+ * @param pathToNode the series of nodes that should be traversed to find the node.
+ * @param tree the root of the tree to find the node in.
+ * @returns nothing. Modifies the tree in place.
+ */
+export const toggleIsStatefulDataNodeExpanded = (
+  pathToNode: string[],
+  tree: RootStatefulDataNode
+) => {
+  // Traverse the tree to find the node in question
+  let currentNode: RootStatefulDataNode | StatefulDataNode | undefined = tree;
+  for (const itemName of pathToNode) {
+    currentNode = currentNode.children.find((child) => child.name === itemName);
+    if (currentNode === undefined) return;
+  }
+  if (isStatefulDataNode(currentNode)) {
+    currentNode.isExpanded = !currentNode.isExpanded;
+  }
 };

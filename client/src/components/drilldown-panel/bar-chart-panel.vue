@@ -45,6 +45,7 @@ import {
   findMaxVisibleBarValue,
   findMinVisibleBarValue,
   constructHierarchichalDataNodeTree,
+  toggleIsStatefulDataNodeExpanded,
 } from '@/utils/bar-chart-panel-util';
 import { watch } from 'vue';
 import SortableTableHeaderCell from '@/components/widgets/sortable-table-header-cell.vue';
@@ -120,29 +121,27 @@ watch(
   { immediate: true }
 );
 
-const maxVisibleBarValue = computed(() => {
-  if (_.isNil(statefulData.value)) return 0;
-  // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
-  //  the root level.
-  return findMaxVisibleBarValue(
-    statefulData.value,
-    aggregationLevel.value + 1,
-    selectedRegionIds.value,
-    true
-  );
-});
+const maxVisibleBarValue = computed(() =>
+  statefulData.value === null
+    ? 0
+    : findMaxVisibleBarValue(
+        statefulData.value,
+        // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than the root level.
+        aggregationLevel.value + 1,
+        selectedRegionIds.value
+      )
+);
 
-const minVisibleBarValue = computed(() => {
-  if (_.isNil(statefulData.value)) return 0;
-  // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
-  //  the root level.
-  return findMinVisibleBarValue(
-    statefulData.value,
-    aggregationLevel.value + 1,
-    selectedRegionIds.value,
-    true
-  );
-});
+const minVisibleBarValue = computed(() =>
+  statefulData.value === null
+    ? 0
+    : findMinVisibleBarValue(
+        statefulData.value,
+        // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than the root level.
+        aggregationLevel.value + 1,
+        selectedRegionIds.value
+      )
+);
 
 const rowsWithData = computed(() => {
   if (_.isNil(statefulData.value)) return [];
@@ -157,15 +156,7 @@ const rowsWithData = computed(() => {
 
 const toggleExpanded = (path: string[]) => {
   if (statefulData.value === null) return;
-  // Traverse the tree to find the node in question
-  let currentNode: RootStatefulDataNode | StatefulDataNode | undefined = statefulData.value;
-  for (const itemName of path) {
-    currentNode = currentNode.children.find((child) => child.name === itemName);
-    if (currentNode === undefined) return;
-  }
-  if (isStatefulDataNode(currentNode)) {
-    currentNode.isExpanded = !currentNode.isExpanded;
-  }
+  toggleIsStatefulDataNodeExpanded(path, statefulData.value);
 };
 </script>
 
