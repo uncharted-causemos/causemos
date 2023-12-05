@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { BreakdownData } from '@/types/Datacubes';
 import { SortableTableHeaderState } from '@/types/Enums';
+import { ChecklistRowData, RootStatefulDataNode, StatefulDataNode } from '@/types/BarChartPanel';
 
 export enum SortOption {
   Name,

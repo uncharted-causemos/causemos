@@ -1,4 +1,4 @@
-interface StatefulDataNode {
+export interface StatefulDataNode {
   name: string;
   children: StatefulDataNode[];
   bars: { color: string; value: number }[];
@@ -8,11 +8,11 @@ interface StatefulDataNode {
 
 // The root of the tree. Imitates the structure of a real node
 //  to simplify the recursive functions used to traverse the tree
-interface RootStatefulDataNode {
+export interface RootStatefulDataNode {
   children: StatefulDataNode[];
 }
 
-interface ChecklistRowData {
+export interface ChecklistRowData {
   name: string;
   bars: { color: string; value: number }[];
   isExpanded: boolean;
