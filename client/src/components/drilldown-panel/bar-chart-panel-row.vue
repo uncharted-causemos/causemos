@@ -183,7 +183,7 @@ const ancestorTooltip = computed(() => {
   // Have to hardcode the label width so that all histogram
   //  bars flex to fill the same amount of space, regardless
   //  of label value
-  width: 8ch;
+  width: 12ch;
   text-align: right;
 }
 

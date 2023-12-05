@@ -142,7 +142,6 @@
           </div>
           <button class="btn btn-default"><i class="fa fa-fw fa-gear" />Map options</button>
         </div>
-        <!-- TODO: these props -->
         <BarChartPanel
           v-if="breakdownState !== null"
           class="bar-chart-panel"
@@ -151,6 +150,8 @@
           :aggregation-level="stringToAdminLevel(spatialAggregation)"
           :unit="activeOutputVariable?.unit ?? ''"
           :get-color-from-timeseries-id="getColorFromTimeseriesId"
+          :aggregation-method="spatialAggregationMethod"
+          :output-name="activeOutputVariable?.display_name ?? ''"
         />
       </div>
     </div>

@@ -1,5 +1,6 @@
 <template>
   <div class="bar-chart-panel-container">
+    <p>{{ aggregationMethod === AggregationOption.Mean ? 'Average' : 'Total' }} {{ outputName }}</p>
     <div class="sortable-headers">
       <SortableTableHeaderCell
         :active-state="getHeaderCellSortState(SortOption.Name)"
@@ -47,7 +48,7 @@ import {
 } from '@/utils/bar-chart-panel-util';
 import { watch } from 'vue';
 import SortableTableHeaderCell from '@/components/widgets/sortable-table-header-cell.vue';
-import { SortableTableHeaderState } from '@/types/Enums';
+import { AggregationOption, SortableTableHeaderState } from '@/types/Enums';
 import { BreakdownState } from '@/types/Datacube';
 import { getRegionIdsFromBreakdownState } from '@/utils/datacube-util';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
@@ -58,6 +59,8 @@ const props = defineProps<{
   unit: string;
   breakdownState: BreakdownState;
   getColorFromTimeseriesId: (timeseriesId: string) => string;
+  aggregationMethod: AggregationOption;
+  outputName: string;
 }>();
 const { rawData, aggregationLevel, breakdownState, getColorFromTimeseriesId } = toRefs(props);
 
