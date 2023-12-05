@@ -92,7 +92,7 @@ const checklistRowDataFromNode = (
   };
 };
 
-const sortHierarchy = (
+export const sortHierarchy = (
   newStatefulData: RootStatefulDataNode,
   sortValue: SortOption,
   sortDirection: SortableTableHeaderState.Up | SortableTableHeaderState.Down
