@@ -113,15 +113,16 @@ export default defineComponent({
 }
 
 .modal-header {
-  padding: 15px;
+  padding: 40px;
 }
 
 .modal-body {
-  padding: 15px;
+  padding: 40px;
+  padding-top: 0;
 }
 
 :deep(.modal-footer) {
-  padding: 15px;
+  padding: 20px 40px;
   text-align: right;
   border-top: 1px solid #e3e3e3;
 
