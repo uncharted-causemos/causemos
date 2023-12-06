@@ -143,7 +143,10 @@
           </p>
         </section>
         <section>
-          <p class="un-font-small subtitle">
+          <p
+            class="un-font-small subtitle projection-explanation-link"
+            @click="showProjectionExplanation"
+          >
             How are projections calculated? <i class="fa fa-fw fa-info-circle" />
           </p>
         </section>
@@ -204,7 +207,7 @@
     </main>
   </div>
 
-  <modal-confirmation
+  <ModalConfirmation
     v-if="isShowingConfirmInsightModal"
     @confirm="confirmUpdateStateFromInsight"
     @close="isShowingConfirmInsightModal = false"
@@ -213,7 +216,11 @@
     <template #message>
       <p>Applying this insight will remove some scenarios that don't exist in the insight.</p>
     </template>
-  </modal-confirmation>
+  </ModalConfirmation>
+  <ModalProjectionExplanation
+    v-if="isProjectionExplanationVisible"
+    @close="isProjectionExplanationVisible = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -248,6 +255,7 @@ import useScenarios from '@/composables/useScenarios';
 import useScenarioProjections from '@/composables/useScenarioProjections';
 import useHistoricalData from '@/composables/useHistoricalData';
 import useMultipleCountryProjections from '@/composables/useMultipleCountryProjections';
+import ModalProjectionExplanation from '@/components/modals/modal-projection-explanation.vue';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -659,6 +667,11 @@ const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => 
     },
   });
 };
+
+const isProjectionExplanationVisible = ref(false);
+const showProjectionExplanation = () => {
+  isProjectionExplanationVisible.value = true;
+};
 </script>
 
 <style lang="scss" scoped>
@@ -729,6 +742,13 @@ section {
 .projection-date {
   display: flex;
   gap: 5px;
+}
+
+.projection-explanation-link {
+  cursor: pointer;
+  &:hover {
+    color: black;
+  }
 }
 
 main {
