@@ -26,4 +26,5 @@
 //  styles into one file where we won't need two definitions for .btn-call-to-action
 .btn-call-to-action {
   background: $call-to-action-color;
+  border-color: $call-to-action-color;
 }

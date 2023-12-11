@@ -8,8 +8,13 @@
     </template>
     <template #footer>
       <ul class="unstyled-list">
-        <button type="button" class="btn first-button" @click.stop="close()">Cancel</button>
-        <button ref="confirm" type="button" class="btn btn-call-to-action" @click.stop="confirm()">
+        <button type="button" class="btn btn-default" @click.stop="close()">Cancel</button>
+        <button
+          ref="confirm"
+          type="button"
+          class="btn btn-default btn-call-to-action"
+          @click.stop="confirm()"
+        >
           Confirm
         </button>
       </ul>
@@ -51,7 +56,6 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-.first-button {
-  margin-right: 10px;
-}
+@import '@/styles/common';
+@import '@/styles/uncharted-design-tokens';
 </style>
