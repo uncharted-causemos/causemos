@@ -170,6 +170,7 @@ h5 {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  overflow-y: auto;
 }
 
 .sortable-headers {
