@@ -170,6 +170,7 @@ h5 {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  padding: 0 20px;
   overflow-y: auto;
 }
 

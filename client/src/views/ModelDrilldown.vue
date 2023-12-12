@@ -542,6 +542,9 @@ $configColumnButtonWidth: 122px;
   min-height: 0;
   display: flex;
   padding: 20px;
+  // The bar chart panel needs to specify its own padding so that its "sortable header" tooltips
+  //  aren't clipped for being outside of its bounding box.
+  padding-right: 0;
 }
 
 .maps {
@@ -583,6 +586,5 @@ $configColumnButtonWidth: 122px;
 
 .bar-chart-panel {
   width: 300px;
-  margin-left: 20px;
 }
 </style>
