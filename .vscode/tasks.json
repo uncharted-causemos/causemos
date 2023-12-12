@@ -36,9 +36,9 @@
     {
       "label": "Run unit tests",
       "type": "shell",
-      "command": "yarn workspace client run test:unit",
+      "command": "yarn workspace client run test",
       "problemMatcher": [],
-      "detail": "yarn workspace client run test:unit",
+      "detail": "yarn workspace client run test",
       "group": "none"
     }
   ]

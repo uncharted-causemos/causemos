@@ -71,6 +71,7 @@
               :items="spatialAggregationMethodOptions"
               :selected-item="spatialAggregationMethod"
               :is-white="true"
+              :is-dropdown-above="true"
               @item-selected="(newValue) => (spatialAggregationMethod = newValue)"
             />
           </div>
@@ -81,6 +82,7 @@
               :items="temporalResolutionOptions"
               :selected-item="temporalResolution"
               :is-white="true"
+              :is-dropdown-above="true"
               @item-selected="(newValue) => (temporalResolution = newValue)"
             />
           </div>
@@ -91,6 +93,7 @@
               :items="spatialAggregationDropdownOptions"
               :selected-item="spatialAggregation"
               :is-white="true"
+              :is-dropdown-above="true"
               @item-selected="(newValue) => (spatialAggregation = newValue)"
             />
           </div>
