@@ -111,7 +111,7 @@
     </div>
     <div class="visualization-container">
       <div class="date-selector">
-        <timeseries-chart
+        <TimeseriesChart
           v-if="timeseriesData.length > 0 && selectedTimestamp !== null"
           class="timeseries-chart"
           :timeseries-data="timeseriesData"
@@ -127,11 +127,11 @@
         <div class="maps">
           <div class="card-maps-box" v-if="breakdownState !== null && regionalData !== null">
             <NewAnalysisMap
-              v-for="(spec, index) of outputSpecs"
+              v-for="spec of outputSpecs"
               :key="spec.id"
               class="new-analysis-map"
               :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
-              :color="colorFromIndex(index)"
+              :color="getColorFromTimeseriesId(spec.id)"
               :breakdown-state="breakdownState"
               :metadata="metadata"
               :regional-data="regionalData"
@@ -145,9 +145,17 @@
           </div>
           <button class="btn btn-default"><i class="fa fa-fw fa-gear" />Map options</button>
         </div>
-        <div class="breakdown-column">
-          <!-- TODO: breakdown column-->
-        </div>
+        <BarChartPanel
+          v-if="breakdownState !== null"
+          class="bar-chart-panel"
+          :raw-data="regionalData"
+          :breakdown-state="breakdownState"
+          :aggregation-level="stringToAdminLevel(spatialAggregation)"
+          :unit="activeOutputVariable?.unit ?? ''"
+          :get-color-from-timeseries-id="getColorFromTimeseriesId"
+          :aggregation-method="spatialAggregationMethod"
+          :output-name="activeOutputVariable?.display_name ?? ''"
+        />
       </div>
     </div>
 
@@ -204,12 +212,14 @@ import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import useRegionalDataFromBreakdownState from '@/composables/useRegionalDataFromBreakdownState';
 import useOutputSpecsFromBreakdownState from '@/composables/useOutputSpecsFromBreakdownState';
-import { colorFromIndex } from '@/utils/colors-util';
 import NewAnalysisMap from '@/components/data/new-analysis-map.vue';
 import useMapBoundsFromBreakdownState from '@/composables/useMapBoundsFromBreakdownState';
 import { useAvailableRegions } from '@/composables/useAvailableRegions';
 import { useRegionalDropdownOptions } from '@/composables/useRegionalDropdownOptions';
 import DropdownButton from '@/components/dropdown-button.vue';
+import BarChartPanel from '@/components/drilldown-panel/bar-chart-panel.vue';
+import { stringToAdminLevel } from '@/utils/admin-level-util';
+import useTimeseriesIdToColorMap from '@/composables/useTimeseriesIdToColorMap';
 
 const breakdownState = ref<BreakdownState | null>(null);
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
@@ -387,6 +397,7 @@ const { regionalData } = useRegionalDataFromBreakdownState(
 );
 
 const { onMapMove, getMapBounds } = useMapBoundsFromBreakdownState(breakdownState, regionalData);
+const { getColorFromTimeseriesId } = useTimeseriesIdToColorMap(breakdownState);
 </script>
 
 <style lang="scss" scoped>
@@ -531,6 +542,9 @@ $configColumnButtonWidth: 122px;
   min-height: 0;
   display: flex;
   padding: 20px;
+  // The bar chart panel needs to specify its own padding so that its "sortable header" tooltips
+  //  aren't clipped for being outside of its bounding box.
+  padding-right: 0;
 }
 
 .maps {
@@ -570,7 +584,7 @@ $configColumnButtonWidth: 122px;
   }
 }
 
-.breakdown-column {
+.bar-chart-panel {
   width: 300px;
 }
 </style>

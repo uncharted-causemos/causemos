@@ -110,46 +110,13 @@ import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { defineComponent, PropType, toRefs, watchEffect, ref, computed } from '@vue/runtime-core';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { SpatialAggregationLevel } from '@/types/Enums';
+import { StatefulDataNode, RootStatefulDataNode, ChecklistRowData } from '@/types/BarChartPanel';
+import { isStatefulDataNode } from '@/utils/bar-chart-panel-util';
 
 const SORT_OPTIONS = {
   Name: { label: 'Name', value: 'name' },
   Value: { label: 'Value', value: 'value' },
 };
-
-interface StatefulDataNode {
-  name: string;
-  children: StatefulDataNode[];
-  bars: { color: string; value: number }[];
-  path: string[];
-  isExpanded: boolean;
-}
-
-// The root of the tree. Imitates the structure of a real node
-//  to simplify the recursive functions used to traverse the tree
-interface RootStatefulDataNode {
-  children: StatefulDataNode[];
-}
-
-// A helper function to allow TypeScript to distinguish between
-//  the the root node (that is missing several properties) and
-//  full nodes.
-function isStatefulDataNode(
-  node: RootStatefulDataNode | StatefulDataNode
-): node is StatefulDataNode {
-  return (node as StatefulDataNode).name !== undefined;
-}
-
-interface ChecklistRowData {
-  name: string;
-  bars: { color: string; value: number }[];
-  isExpanded: boolean;
-  isChecked: boolean;
-  path: string[];
-  isSelectedAggregationLevel: boolean;
-  showExpandToggle: boolean;
-  indentationCount: number;
-  hiddenAncestorNames: string[];
-}
 
 /**
  * Recursively traverses the state tree to collect the nodes that should be visible

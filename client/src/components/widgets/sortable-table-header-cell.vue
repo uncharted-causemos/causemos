@@ -1,6 +1,6 @@
 <template>
   <div class="sortable-table-header-cell-container">
-    <span>{{ props.label }}</span>
+    <span :class="{ 'un-font-small': isSmallText }">{{ props.label }}</span>
     <div class="carets">
       <i
         class="fa fa-caret-up"
@@ -11,7 +11,10 @@
         :class="[activeState === SortableTableHeaderState.Down ? 'active' : '']"
       />
     </div>
-    <dropdown-control class="dropdown-control">
+    <dropdown-control
+      class="dropdown-control"
+      :class="{ 'is-aligned-right': isDropdownAlignedRight }"
+    >
       <template #content>
         <div
           class="dropdown-option"
@@ -43,10 +46,12 @@ const props = defineProps<{
   activeState: SortableTableHeaderState;
   upLabel: string;
   downLabel: string;
+  isDropdownAlignedRight?: boolean;
+  isSmallText?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'set-sort', state: SortableTableHeaderState): void;
+  (e: 'set-sort', state: SortableTableHeaderState.Up | SortableTableHeaderState.Down): void;
 }>();
 </script>
 
@@ -120,12 +125,14 @@ const emit = defineEmits<{
     }
   }
 
+  $icon-height: 12px;
+  $padding-to-remove-within-icon: 2px;
   & > *:first-child {
-    top: 0;
+    top: calc(50% - $icon-height + $padding-to-remove-within-icon);
   }
 
   & > *:last-child {
-    bottom: 0;
+    top: calc(50% - $padding-to-remove-within-icon);
   }
 }
 .dropdown-control {
@@ -133,6 +140,11 @@ const emit = defineEmits<{
   left: 0;
   top: 100%; // Overlap the button slightly
   width: fit-content;
+
+  &.is-aligned-right {
+    left: auto;
+    right: 0;
+  }
 
   .dropdown-option {
     white-space: nowrap;

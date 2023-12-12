@@ -8,7 +8,6 @@ import { getTimestampMillis } from '@/utils/date-util';
 import {
   BreakdownState,
   BreakdownStateQualifiers,
-  BreakdownStateRegions,
   BreakdownStateYears,
   Indicator,
   Model,
@@ -176,10 +175,7 @@ const getRegionalDataYears = async (
   );
 };
 
-const getRegionalDataRegions = async (
-  breakdownState: BreakdownStateRegions,
-  outputSpecs: OutputSpecWithId[]
-) => {
+const getRegionalDataRegions = async (outputSpecs: OutputSpecWithId[]) => {
   // Only fetch regional data once for the whole world.
   const regionalAggregation = await getRegionAggregation(outputSpecs[0]);
   const regionalAggregations: RegionalAggregations = {
@@ -188,15 +184,14 @@ const getRegionalDataRegions = async (
     admin2: [],
     admin3: [],
   };
-  // Filter out any regions that aren't selected
+  // Storing the aggregated data for every region allows us to display the selected regions, while
+  //  also displaying aggregated values for their ancestors in the bar chart panel.
   Object.values(AdminLevel).forEach((adminLevel) => {
     const regionAggsAtCurrentAdminLevel = regionalAggregation[adminLevel] || [];
-    regionalAggregations[adminLevel] = regionAggsAtCurrentAdminLevel
-      .filter((regionAgg) => breakdownState.regionIds.includes(regionAgg.id))
-      .map((regionAgg) => ({
-        id: regionAgg.id,
-        values: { [regionAgg.id]: regionAgg.value },
-      }));
+    regionalAggregations[adminLevel] = regionAggsAtCurrentAdminLevel.map((regionAgg) => ({
+      id: regionAgg.id,
+      values: { [regionAgg.id]: regionAgg.value },
+    }));
   });
   return applySplitByRegion(
     regionalAggregations,
@@ -266,7 +261,7 @@ export default function useRegionalDataFromBreakdownState(
           _timestamp
         );
       } else if (isBreakdownStateRegions(_breakdownState)) {
-        result = await getRegionalDataRegions(_breakdownState, _outputSpecs);
+        result = await getRegionalDataRegions(_outputSpecs);
       } else if (isBreakdownStateQualifiers(_breakdownState)) {
         result = await getRegionalDataQualifiers(_breakdownState, _outputSpecs);
       } else {
