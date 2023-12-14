@@ -189,7 +189,7 @@ export interface ModelOrDatasetStateInsight extends NewInsightBase {
   state: ModelOrDatasetState;
 }
 
-export type NewInsight = ModelStateInsight;
+export type NewInsight = ModelOrDatasetStateInsight;
 
 export interface SectionWithInsights {
   section: AnalyticalQuestion;
