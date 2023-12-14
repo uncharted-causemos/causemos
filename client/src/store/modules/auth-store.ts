@@ -51,8 +51,12 @@ const actions: ActionTree<AuthState, any> = {
             `/app/redirect_uri?refresh=/silent-check-sso.html&access_token=${getters.userToken}`
           )
         : await fetch('/silent-check-sso.html');
-
-    if (!response.ok) {
+    // For above request, an error (e.g. token refresh failure due to expired sso session)
+    // can be added to the response url although response.ok is true.
+    // So check for the error from the url as well.
+    const parsedResUrl = new URL(response.url);
+    const error = parsedResUrl.searchParams.get('error_code');
+    if (!response.ok || error) {
       dispatch('logout');
       throw new Error('Authentication Failed');
     }
