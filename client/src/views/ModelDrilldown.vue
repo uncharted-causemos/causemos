@@ -68,22 +68,22 @@
           <div class="labelled-dropdown">
             <p class="subdued">Aggregated by</p>
             <DropdownButton
-              :items="spatialAggregationMethodOptions"
+              :items="SPATIAL_AGGREGATION_METHOD_OPTIONS"
               :selected-item="spatialAggregationMethod"
               :is-white="true"
               :is-dropdown-above="true"
-              @item-selected="(newValue) => (spatialAggregationMethod = newValue)"
+              @item-selected="setSpatialAggregationMethod"
             />
           </div>
 
           <div class="labelled-dropdown">
             <p class="subdued">Temporal resolution</p>
             <DropdownButton
-              :items="temporalResolutionOptions"
+              :items="TEMPORAL_RESOLUTION_OPTIONS"
               :selected-item="temporalResolution"
               :is-white="true"
               :is-dropdown-above="true"
-              @item-selected="(newValue) => (temporalResolution = newValue)"
+              @item-selected="setTemporalResolution"
             />
           </div>
 
@@ -94,7 +94,7 @@
               :selected-item="spatialAggregation"
               :is-white="true"
               :is-dropdown-above="true"
-              @item-selected="(newValue) => (spatialAggregation = newValue)"
+              @item-selected="setSpatialAggregation"
             />
           </div>
         </div>
@@ -175,7 +175,7 @@
       :aggregation-method="spatialAggregationMethod"
       :initial-breakdown-state="breakdownState"
       @close="isFilterAndCompareModalOpen = false"
-      @apply-breakdown-state="(newState) => (breakdownState = newState)"
+      @apply-breakdown-state="setBreakdownState"
       @set-spatial-aggregation="(newValue) => (spatialAggregation = newValue)"
     />
   </div>
@@ -186,19 +186,13 @@ import _ from 'lodash';
 import useModelMetadata from '@/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { Ref, computed, ref, watch } from 'vue';
-import {
-  AggregationOption,
-  DatacubeGeoAttributeVariableType,
-  SpatialAggregation,
-  TemporalResolutionOption,
-} from '@/types/Enums';
-import { BreakdownState, BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
+import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
+import { BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
 import {
   getFilteredScenariosFromIds,
   getOutput,
   isBreakdownStateNone,
   isBreakdownStateOutputs,
-  getFirstDefaultModelRun,
   isBreakdownStateYears,
 } from '@/utils/datacube-util';
 import useScenarioData from '@/composables/useScenarioData';
@@ -207,7 +201,6 @@ import stringUtil from '@/utils/string-util';
 import ModalSelectModelRuns from '@/components/modals/modal-select-model-runs.vue';
 import ModelRunSummaryList from '@/components/model-drilldown/model-run-summary-list.vue';
 import ModalFilterAndCompare from '@/components/modals/modal-filter-and-compare.vue';
-import { getDefaultFeature } from '@/services/datacube-service';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import useRegionalDataFromBreakdownState from '@/composables/useRegionalDataFromBreakdownState';
@@ -220,42 +213,33 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import BarChartPanel from '@/components/drilldown-panel/bar-chart-panel.vue';
 import { stringToAdminLevel } from '@/utils/admin-level-util';
 import useTimeseriesIdToColorMap from '@/composables/useTimeseriesIdToColorMap';
+import useModelDrilldownState from '@/composables/useModelDrilldownState';
 
-const breakdownState = ref<BreakdownState | null>(null);
+const SPATIAL_AGGREGATION_METHOD_OPTIONS = [AggregationOption.Mean, AggregationOption.Sum];
+const TEMPORAL_RESOLUTION_OPTIONS = [TemporalResolutionOption.Month, TemporalResolutionOption.Year];
+
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
 const metadata = useModelMetadata(modelId) as Ref<Model | null>;
 const { filteredRunData } = useScenarioData(modelId, ref({ clauses: [] }), ref([]), ref(false));
-watch([metadata, filteredRunData], () => {
-  // When enough metadata has been fetched, initialize the breakdown state
-  // TODO: load from default insight or applied insight or saved state.
-  if (metadata.value === null || filteredRunData.value.length === 0) {
-    return;
-  }
-  // If breakdown state is not null, it's already been initialized, so return.
-  if (breakdownState.value !== null) {
-    return;
-  }
-  const outputName = getDefaultFeature(metadata.value)?.name ?? null;
-  const defaultModelRun = getFirstDefaultModelRun(filteredRunData.value);
-  if (outputName === null || defaultModelRun === undefined) {
-    return;
-  }
-  const initialBreakdownState: BreakdownStateNone = {
-    outputName,
-    modelRunIds: [defaultModelRun.id],
-    comparisonSettings: {
-      baselineTimeseriesId: defaultModelRun.id,
-      shouldDisplayAbsoluteValues: true,
-      shouldUseRelativePercentage: false,
-    },
-  };
-  breakdownState.value = initialBreakdownState;
-});
+
+const {
+  breakdownState,
+  setBreakdownState,
+  spatialAggregation,
+  setSpatialAggregation,
+  spatialAggregationMethod,
+  setSpatialAggregationMethod,
+  temporalResolution,
+  setTemporalResolution,
+  temporalAggregationMethod,
+  selectedTimestamp,
+  setSelectedTimestamp,
+} = useModelDrilldownState(metadata);
 
 const isModelDetailsSectionExpanded = ref(false);
 
 const firstOutputName = computed<string | null>(() => {
-  if (metadata.value === null || breakdownState.value === null) return null;
+  if (breakdownState.value === null) return null;
   return isBreakdownStateOutputs(breakdownState.value)
     ? breakdownState.value.outputNames[0]
     : breakdownState.value.outputName;
@@ -282,20 +266,17 @@ const setSelectedModelRunIds = (newRunIds: string[]) => {
     return;
   }
   if (isBreakdownStateNone(breakdownState.value)) {
-    breakdownState.value = {
+    setBreakdownState({
       ...breakdownState.value,
       modelRunIds: [...newRunIds],
-    };
+    });
     return;
   }
   if (newRunIds.length === 1) {
-    breakdownState.value = {
+    setBreakdownState({
       ...breakdownState.value,
       modelRunId: newRunIds[0],
-    };
-  }
-  if (metadata.value === null) {
-    return;
+    });
   }
   // Handle the case where the user has a breakdown state selected that doesn't support multiple
   //  model runs.
@@ -314,27 +295,20 @@ const setSelectedModelRunIds = (newRunIds: string[]) => {
       shouldUseRelativePercentage: false,
     },
   };
-  breakdownState.value = newBreakdownState;
+  setBreakdownState(newBreakdownState);
 };
 const selectedModelRuns = computed(() =>
   getFilteredScenariosFromIds(selectedModelRunIds.value, filteredRunData.value)
 );
 
 const isSelectModelRunsModalOpen = ref(false);
-
 const isFilterAndCompareModalOpen = ref(false);
 
-const spatialAggregation = ref<SpatialAggregation>(DatacubeGeoAttributeVariableType.Country);
-const spatialAggregationMethod = ref<AggregationOption>(AggregationOption.Mean);
-const spatialAggregationMethodOptions = [AggregationOption.Mean, AggregationOption.Sum];
 const { availableRegions } = useAvailableRegions(metadata, breakdownState);
 const { spatialAggregationDropdownOptions } = useRegionalDropdownOptions(
   availableRegions,
   spatialAggregation
 );
-const temporalResolution = ref(TemporalResolutionOption.Month);
-const temporalResolutionOptions = [TemporalResolutionOption.Month, TemporalResolutionOption.Year];
-const temporalAggregationMethod = computed(() => spatialAggregationMethod.value);
 
 const { timeseriesData } = useTimeseriesDataFromBreakdownState(
   breakdownState,
@@ -344,10 +318,6 @@ const { timeseriesData } = useTimeseriesDataFromBreakdownState(
   temporalResolution
 );
 
-const selectedTimestamp = ref<number | null>(null);
-const setSelectedTimestamp = (newValue: number | null) => {
-  selectedTimestamp.value = newValue;
-};
 // There is a brief state when switching to/from "split by years" mode where the timestamp is
 //  in milliseconds or months when it should be the opposite. In those cases, reset
 //  selectedTimestamp until the new timeseries data triggers the watcher below.

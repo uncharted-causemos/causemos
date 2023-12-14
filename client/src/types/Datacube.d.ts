@@ -10,7 +10,77 @@ import {
   ModelPublishingStepID,
   FeatureQualifierRoles,
   GeoAttributeFormat,
+  SpatialAggregation,
 } from '@/types/Enums';
+
+export interface ComparisonSettings {
+  shouldDisplayAbsoluteValues: boolean;
+  // These settings only apply when shouldDisplayAbsoluteValues is false.
+  baselineTimeseriesId: string;
+  shouldUseRelativePercentage: boolean;
+}
+export interface BreakdownStateNone {
+  outputName: string;
+  modelRunIds: string[];
+  comparisonSettings: ComparisonSettings;
+}
+export interface BreakdownStateOutputs {
+  modelRunId: string;
+  outputNames: string[];
+  comparisonSettings: ComparisonSettings;
+}
+export interface BreakdownStateRegions {
+  modelRunId: string;
+  outputName: string;
+  regionIds: string[];
+  comparisonSettings: ComparisonSettings;
+}
+export interface BreakdownStateYears {
+  modelRunId: string;
+  outputName: string;
+  regionId: string | null;
+  years: string[];
+  isAllYearsReferenceTimeseriesShown: boolean;
+  isSelectedYearsReferenceTimeseriesShown: boolean;
+  comparisonSettings: ComparisonSettings;
+}
+export interface BreakdownStateQualifiers {
+  modelRunId: string;
+  outputName: string;
+  regionId: string | null;
+  qualifier: string; // e.g. "Car brand", "Car color"
+  qualifierValues: string[]; // e.g. "Honda", "Toyota", "red", "blue"
+  comparisonSettings: ComparisonSettings;
+}
+export type BreakdownState =
+  | BreakdownStateNone
+  | BreakdownStateOutputs
+  | BreakdownStateRegions
+  | BreakdownStateYears
+  | BreakdownStateQualifiers;
+
+export interface MapDisplayOptions {
+  selectedMapBaseLayer: BASE_LAYER;
+  selectedMapDataLayer: DATA_LAYER;
+  dataLayerTransparency: DATA_LAYER_TRANSPARENCY;
+  colorSchemeReversed: boolean;
+  colorSchemeName: COLOR;
+  colorScaleType: ColorScaleType;
+  numberOfColorBins: number;
+}
+
+export interface ModelOrDatasetState {
+  dataId: string;
+  breakdownState: BreakdownState;
+  mapDisplayOptions: MapDisplayOptions;
+  selectedTimestamp: number | null;
+  selectedTransform: DataTransform;
+  // Aggregation Options
+  spatialAggregationMethod: AggregationOption;
+  temporalAggregationMethod: AggregationOption;
+  spatialAggregation: SpatialAggregation;
+  temporalResolution: TemporalResolutionOption;
+}
 
 export interface DatacubeMaintainer {
   name: string;
@@ -106,6 +176,7 @@ export interface Datacube extends DatasetEditable {
   //  or use null and make the field required
   qualifier_outputs?: FeatureQualifier[] | null;
   default_view: any; // object that will contain various default view configurations such as default aggregations
+  default_state: ModelOrDatasetState;
   new_version_data_id?: string;
   sparkline?: number[];
 }
@@ -156,49 +227,3 @@ export interface DataConfig {
   temporalAggregation: AggregationOption;
   spatialAggregation: AggregationOption;
 }
-
-export interface ComparisonSettings {
-  shouldDisplayAbsoluteValues: boolean;
-  // These settings only apply when shouldDisplayAbsoluteValues is false.
-  baselineTimeseriesId: string;
-  shouldUseRelativePercentage: boolean;
-}
-export interface BreakdownStateNone {
-  outputName: string;
-  modelRunIds: string[];
-  comparisonSettings: ComparisonSettings;
-}
-export interface BreakdownStateOutputs {
-  modelRunId: string;
-  outputNames: string[];
-  comparisonSettings: ComparisonSettings;
-}
-export interface BreakdownStateRegions {
-  modelRunId: string;
-  outputName: string;
-  regionIds: string[];
-  comparisonSettings: ComparisonSettings;
-}
-export interface BreakdownStateYears {
-  modelRunId: string;
-  outputName: string;
-  regionId: string | null;
-  years: string[];
-  isAllYearsReferenceTimeseriesShown: boolean;
-  isSelectedYearsReferenceTimeseriesShown: boolean;
-  comparisonSettings: ComparisonSettings;
-}
-export interface BreakdownStateQualifiers {
-  modelRunId: string;
-  outputName: string;
-  regionId: string | null;
-  qualifier: string; // e.g. "Car brand", "Car color"
-  qualifierValues: string[]; // e.g. "Honda", "Toyota", "red", "blue"
-  comparisonSettings: ComparisonSettings;
-}
-export type BreakdownState =
-  | BreakdownStateNone
-  | BreakdownStateOutputs
-  | BreakdownStateRegions
-  | BreakdownStateYears
-  | BreakdownStateQualifiers;
