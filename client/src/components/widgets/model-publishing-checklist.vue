@@ -17,7 +17,7 @@
       :class="{ disabled: allStepsCompleted === false }"
       @click="publishModel()"
     >
-      Publish model
+      {{ isAlreadyPublished ? 'Update' : 'Publish' }} model
     </button>
   </div>
 </template>
@@ -30,6 +30,7 @@ import { TYPE } from 'vue-toastification';
 import { ModelPublishingStepID } from '@/types/Enums';
 
 const props = defineProps<{
+  isAlreadyPublished: boolean;
   publishingSteps: ModelPublishingStep[];
 }>();
 const { publishingSteps } = toRefs(props);
@@ -66,6 +67,10 @@ const publishModel = () => {
     gap: 5px;
     cursor: pointer;
     align-items: center;
+
+    &:hover span {
+      color: $selected-dark;
+    }
   }
 
   .step-icon-common {

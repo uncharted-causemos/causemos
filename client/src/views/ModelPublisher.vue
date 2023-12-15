@@ -9,10 +9,11 @@
     <ModelPublishingChecklist
       v-if="metadata && metadata.status !== DatacubeStatus.Deprecated"
       :publishingSteps="publishingSteps"
+      :is-already-published="metadata.status === DatacubeStatus.Ready"
       @navigate-to-publishing-step="jumpToPublishingStep"
       @publish-model="publishModel"
     />
-    <datacube-card
+    <DatacubeCard
       class="datacube-card"
       :isPublishing="true"
       :initial-data-config="initialDataConfig"
@@ -24,20 +25,20 @@
       @update-model-parameter="onModelParamUpdated"
     >
       <template v-slot:datacube-model-header>
-        <datacube-model-header
+        <DatacubeModelHeader
           class="scenario-header"
           :metadata="(metadata as Model | null)"
           :item-id="selectedModelId"
         />
       </template>
       <template v-slot:datacube-description>
-        <model-description
+        <ModelDescription
           :metadata="(metadata as Model | null)"
           :item-id="selectedModelId"
           @refresh-metadata="refreshMetadata"
         />
       </template>
-    </datacube-card>
+    </DatacubeCard>
   </div>
 </template>
 
@@ -98,7 +99,7 @@ const disableOverlay = () => store.dispatch('app/disableOverlay');
 
 const tabState = ref('');
 const jumpToPublishingStep = (step: ModelPublishingStepID) => {
-  // @NOTE: some strange Vue issue does not force the update to "tabState.value" to be triggered in the datacube-card
+  // HACK: some strange Vue issue does not force the update to "tabState.value" to be triggered in the datacube-card
   //         so the following hack is used
   tabState.value = '';
   nextTick(() => {
