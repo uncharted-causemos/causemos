@@ -43,54 +43,38 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
 import { Model, ModelPublishingStep } from '@/types/Datacube';
-import { defineComponent, PropType, toRefs } from 'vue';
+import { computed, toRefs } from 'vue';
 import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
+import useToaster from '@/composables/useToaster';
+import { TYPE } from 'vue-toastification';
 
-export default defineComponent({
-  name: 'ModelPublishingChecklist',
-  props: {
-    publishingSteps: {
-      type: Array as PropType<ModelPublishingStep[]>,
-      default: [],
-    },
-    currentPublishStep: {
-      default: ModelPublishingStepID.Enrich_Description,
-    },
-    metadata: {
-      type: Object as PropType<Model | null>,
-      default: null,
-    },
-  },
-  emits: ['publish-model', 'navigate-to-publishing-step'],
-  setup(props) {
-    const { metadata } = toRefs(props);
+const props = defineProps<{
+  publishingSteps: ModelPublishingStep[];
+  currentPublishStep: ModelPublishingStepID;
+  metadata: Model | null;
+}>();
+const { publishingSteps, metadata } = toRefs(props);
 
-    const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
+const emit = defineEmits<{
+  (e: 'publish-model'): void;
+  (e: 'navigate-to-publishing-step', { publishStep }: { publishStep: ModelPublishingStep }): void;
+}>();
 
-    return {
-      DatacubeStatus,
-      statusColor,
-      statusLabel,
-    };
-  },
-  computed: {
-    allStepsCompleted(): boolean {
-      return this.publishingSteps.every((s) => s.completed);
-    },
-  },
-  methods: {
-    navToPublishingStep(step: ModelPublishingStep) {
-      this.$emit('navigate-to-publishing-step', { publishStep: step });
-    },
-    publishModel() {
-      (this as any).toaster('Publishing model ...');
-      this.$emit('publish-model');
-    },
-  },
-});
+const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
+
+const allStepsCompleted = computed(() => publishingSteps.value.every((s) => s.completed));
+
+const navToPublishingStep = (step: ModelPublishingStep) =>
+  emit('navigate-to-publishing-step', { publishStep: step });
+
+const toaster = useToaster();
+const publishModel = () => {
+  toaster('Publishing model ...', TYPE.INFO, false);
+  emit('publish-model');
+};
 </script>
 
 <style lang="scss" scoped>
@@ -103,8 +87,7 @@ export default defineComponent({
 .model-publishing-checklist-container {
   display: flex;
   flex-direction: row;
-  padding: 4px;
-  justify-content: space-evenly;
+  padding: 5px 20px;
 
   .checklist-items-container {
     display: flex;
