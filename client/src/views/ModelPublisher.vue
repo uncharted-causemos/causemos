@@ -35,7 +35,6 @@
           :metadata="(metadata as Model | null)"
           :item-id="selectedModelId"
           @refresh-metadata="refreshMetadata"
-          @check-model-metadata-validity="updateModelMetadataValidity"
         />
       </template>
     </datacube-card>
@@ -80,6 +79,7 @@ import {
   convertToLegacyDataSpaceDataState,
   convertToLegacyViewState,
 } from '@/utils/legacy-data-space-state-util';
+import { isBreakdownQualifier } from '@/utils/qualifier-util';
 
 const store = useStore();
 const route = useRoute();
@@ -109,6 +109,20 @@ const jumpToPublishingStep = (step: ModelPublishingStepID) => {
   });
 };
 
+const selectedModelId = ref('');
+// Load the datacube whose ID is passed through the URL
+watch(
+  () => route.query.datacube_id,
+  (datacubeId) => {
+    if (datacubeId !== undefined) {
+      selectedModelId.value = datacubeId as string;
+    }
+  },
+  { immediate: true }
+);
+
+const metadata = useModelMetadata(selectedModelId);
+
 const publishingSteps = ref<ModelPublishingStep[]>([
   {
     id: ModelPublishingStepID.Enrich_Description,
@@ -121,15 +135,27 @@ const publishingSteps = ref<ModelPublishingStep[]>([
     completed: false,
   },
 ]);
-// Set whether the "Enrich Description" step is completed
-const updateModelMetadataValidity = (valid: boolean) => {
-  const metadataStep = publishingSteps.value.find(
-    (s) => s.id === ModelPublishingStepID.Enrich_Description
-  );
-  if (metadataStep) {
-    metadataStep.completed = valid;
-  }
-};
+// Mark the "Enrich Description" step as completed if all fields have text, or incomplete otherwise.
+watch(
+  metadata,
+  (_metadata) => {
+    if (_metadata === null) return;
+    const inputParameters = (_metadata as Model).parameters.filter((p) => !p.is_drilldown) ?? [];
+    const outputVariables = _metadata.outputs;
+    const qualifiers = _metadata.qualifier_outputs?.filter((q) => isBreakdownQualifier(q)) ?? [];
+    const invalidItems = [...inputParameters, ...outputVariables, ...qualifiers].filter(
+      (item) => item.name.length === 0 || item.description.length === 0
+    );
+    const areNamesAndDescriptionsValid = invalidItems.length === 0;
+    const metadataStep = publishingSteps.value.find(
+      (s) => s.id === ModelPublishingStepID.Enrich_Description
+    );
+    if (metadataStep) {
+      metadataStep.completed = areNamesAndDescriptionsValid;
+    }
+  },
+  { deep: true }
+);
 // Mark the "Tweak Visualization" step as completed when aggregation options are defined.
 watch(
   () => [
@@ -150,20 +176,6 @@ watch(
   }
 );
 
-const selectedModelId = ref('');
-// Load the datacube whose ID is passed through the URL
-watch(
-  () => route.query.datacube_id,
-  (datacubeId) => {
-    if (datacubeId !== undefined) {
-      selectedModelId.value = datacubeId as string;
-    }
-  },
-  { immediate: true }
-);
-
-const metadata = useModelMetadata(selectedModelId);
-
 const initialDataConfig = ref<DataSpaceDataState | null>(null);
 const initialViewConfig = ref<ViewState | null>({
   temporalAggregation: AggregationOption.None,
@@ -175,7 +187,6 @@ const initialViewConfig = ref<ViewState | null>({
 //  various fields.
 watch([metadata, selectedModelId], ([_metadata, _id]) => {
   if (!_metadata?.default_state || _id.length === 0) return;
-  console.log(_metadata.default_state);
   initialDataConfig.value = convertToLegacyDataSpaceDataState(_id, _metadata.default_state);
   initialViewConfig.value = convertToLegacyViewState(_metadata.default_state);
 });
