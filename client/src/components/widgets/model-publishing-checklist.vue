@@ -1,74 +1,48 @@
 <template>
   <div class="model-publishing-checklist-container">
     <div
-      v-if="metadata && metadata.status !== DatacubeStatus.Deprecated"
-      class="checklist-items-container"
+      v-for="step in publishingSteps"
+      :key="step.id"
+      class="checklist-item"
+      @click="navToPublishingStep(step)"
     >
-      <div
-        v-for="step in publishingSteps"
-        :key="step.id"
-        class="checklist-item"
-        @click="navToPublishingStep(step)"
-      >
-        <i
-          class="step-icon-common fa fa-lg fa-border"
-          :class="{
-            'fa-check-circle step-complete': step.completed,
-            'fa-circle step-not-complete': !step.completed,
-          }"
-        />
-        <span
-          class="checklist-item-text"
-          :class="{ 'step-selected': step.id === currentPublishStep }"
-          >{{ step.text }}</span
-        >
-      </div>
+      <span>{{ step.text }}</span>
+      <i
+        class="step-icon-common fa fa-lg fa-check-circle"
+        :class="{ 'step-complete': step.completed }"
+      />
     </div>
-    <div style="display: flex; align-items: center">
-      <span
-        v-if="metadata && metadata.status === DatacubeStatus.Deprecated"
-        style="margin: 2px; padding: 2px 5px; font-size: large; font-weight: bolder"
-        :style="{ backgroundColor: statusColor }"
-        >{{ statusLabel }}</span
-      >
-      <button
-        v-if="metadata && metadata.status !== DatacubeStatus.Deprecated"
-        class="btn btn-call-to-action"
-        :class="{ disabled: allStepsCompleted === false }"
-        @click="publishModel()"
-      >
-        Publish model
-      </button>
-    </div>
+    <button
+      class="btn btn-default btn-call-to-action"
+      :class="{ disabled: allStepsCompleted === false }"
+      @click="publishModel()"
+    >
+      Publish model
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
-import { Model, ModelPublishingStep } from '@/types/Datacube';
+import { ModelPublishingStep } from '@/types/Datacube';
 import { computed, toRefs } from 'vue';
-import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
+import { ModelPublishingStepID } from '@/types/Enums';
 
 const props = defineProps<{
   publishingSteps: ModelPublishingStep[];
-  currentPublishStep: ModelPublishingStepID;
-  metadata: Model | null;
 }>();
-const { publishingSteps, metadata } = toRefs(props);
+const { publishingSteps } = toRefs(props);
 
 const emit = defineEmits<{
   (e: 'publish-model'): void;
-  (e: 'navigate-to-publishing-step', { publishStep }: { publishStep: ModelPublishingStep }): void;
+  (e: 'navigate-to-publishing-step', step: ModelPublishingStepID): void;
 }>();
-
-const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
 const allStepsCompleted = computed(() => publishingSteps.value.every((s) => s.completed));
 
 const navToPublishingStep = (step: ModelPublishingStep) =>
-  emit('navigate-to-publishing-step', { publishStep: step });
+  emit('navigate-to-publishing-step', step.id);
 
 const toaster = useToaster();
 const publishModel = () => {
@@ -78,50 +52,32 @@ const publishModel = () => {
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/variables';
-
-.step-selected {
-  border-bottom: 2px solid gray;
-}
+@import '@/styles/variables';
+@import '@/styles/common';
 
 .model-publishing-checklist-container {
   display: flex;
   flex-direction: row;
-  padding: 5px 20px;
+  gap: 20px;
+  align-items: center;
 
-  .checklist-items-container {
+  .checklist-item {
     display: flex;
-    flex-direction: row;
+    gap: 5px;
+    cursor: pointer;
     align-items: center;
-
-    .checklist-item {
-      flex-direction: row;
-      cursor: pointer;
-      font-size: $font-size-medium;
-      padding-right: 24px;
-
-      .checklist-item-text {
-        margin-left: 5px;
-        display: inline-block;
-      }
-    }
   }
 
   .step-icon-common {
-    border-width: 1px;
-    border-style: solid;
-    border-radius: 100% 100% 100% 100%;
+    border-radius: 100%;
     padding: 0;
+    width: 16px;
+    height: 16px;
+    color: $un-color-black-20;
   }
 
   .step-complete {
-    color: green;
-    border-color: green;
-  }
-
-  .step-not-complete {
-    border-color: red;
-    color: transparent;
+    color: $vetted-state-dark;
   }
 }
 </style>
