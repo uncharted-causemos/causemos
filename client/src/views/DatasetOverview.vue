@@ -316,7 +316,6 @@ export default defineComponent({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds',
     }),
     addDomain() {
       if (!this.editedDataset.domains) {
@@ -347,10 +346,6 @@ export default defineComponent({
       filtersUtil.addSearchTerm(newFilters, 'dataId', this.dataId, 'and', false);
       filtersUtil.addSearchTerm(newFilters, 'type', 'indicator', 'and', false);
       this.indicators = (await getDatacubes(newFilters, options)) as Indicator[];
-
-      // reset to avoid invalid data fetch when a given indicator is loaded
-      // while the info of a previous indicator is cached in the store
-      this.setSelectedScenarioIds([]);
 
       // Update dataset fields using the first indicator. ALl indicators should have the same values.
       if (this.indicators[0]) {

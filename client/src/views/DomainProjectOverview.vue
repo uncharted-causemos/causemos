@@ -217,7 +217,6 @@ export default {
       disableOverlay: 'app/disableOverlay',
       setContextId: 'insightPanel/setContextId',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds',
       setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
     }),
     getDatacubeStatusInfo,
@@ -252,10 +251,6 @@ export default {
         // no datacubes were found, do not fetch any insights/questions
         this.setContextId(undefined);
       }
-
-      // reset to avoid invalid data fetch when a given instance it loaded
-      //  while the info of a previous instance is cached in the store
-      this.setSelectedScenarioIds([]);
 
       // Sort by modified_at date with latest on top
       this.sortDatacubeInstancesByMostRecentDate();

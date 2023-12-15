@@ -12,7 +12,6 @@ export interface ViewState {
   // data space specific
   spatialAggregation?: string;
   temporalAggregation?: string;
-  spatialResolution?: string;
   temporalResolution?: string;
   selectedAdminLevel?: number;
   selectedViewTab?: DatacubeViewMode;
