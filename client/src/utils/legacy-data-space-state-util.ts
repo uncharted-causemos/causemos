@@ -126,7 +126,7 @@ export const convertFromLegacyState = (
     dataLayerTransparency: viewState.dataLayerTransparency ?? DATA_LAYER_TRANSPARENCY['100%'],
     colorSchemeReversed: viewState.colorSchemeReversed ?? false,
     colorSchemeName: viewState.colorSchemeName ?? COLOR.DEFAULT,
-    colorScaleType: viewState.colorScaleType ?? ColorScaleType.Linear,
+    colorScaleType: viewState.colorScaleType ?? ColorScaleType.LinearDiscrete,
     numberOfColorBins: viewState.numberOfColorBins ?? 5,
   };
   const defaultState: ModelOrDatasetState = {
