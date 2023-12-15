@@ -1,6 +1,7 @@
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
-import { BinningOptions, RegionRankingCompositionType } from './Enums';
-import { ConceptNode, IndexProjectionSettings, IndexResultsSettings } from './Index';
+import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
+import { ConceptNode, IndexProjectionSettings, IndexResultsSettings } from '@/types/Index';
+import { ModelOrDatasetState } from '@/types/Datacube';
 
 export interface CachedDatacubeMetadata {
   featureName: string;
@@ -33,6 +34,12 @@ export interface AnalysisItem {
   dataConfig: DataSpaceDataState;
 
   selected: boolean;
+}
+
+export interface NewAnalysisItem {
+  schemaVersion: number;
+  itemId: string;
+  state: ModelOrDatasetState;
 }
 
 export interface RegionRankingItemStates {

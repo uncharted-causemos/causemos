@@ -4,6 +4,8 @@ import { DatacubeViewMode, DataTransform, InsightMetadataType } from '@/types/En
 import { Filters } from './Filters';
 import { FeatureConfig } from './Outputdata';
 import { IndexProjectionCountry, IndexProjectionScenario, SelectableIndexElementId } from './Index';
+import { ModelOrDatasetState } from '@/types/Datacube';
+import { Snippet } from '@/types/IndexDocuments';
 
 // view-specific values (no data dependency)
 export interface ViewState {
@@ -150,6 +152,44 @@ export interface AnalyticalQuestion extends Snapshot {
   modified_at?: number;
   view_state: ViewState;
 }
+
+export interface DocumentSnippetInsightMetadata extends Snippet {
+  type: InsightMetadataType.DocumentSnippet;
+}
+
+export type NewInsightMetadata = DocumentSnippetInsightMetadata;
+
+/**
+ * Abstract interface that should only be used as a base for other insight interfaces.
+ */
+export interface NewInsightBase {
+  schemaVersion: number;
+  id: string;
+  name: string;
+  description: string;
+  project_id: string;
+  modified_at?: number;
+  analytical_question: string[]; // Questions to which this insight has been assigned
+  metadata?: NewInsightMetadata;
+  annotation_state?: AnnotationState;
+  thumbnail?: string; // e.g., image url or base64 encoding
+  image: string; // e.g., image url or base64 encoding
+  // Used to save and restore the order of questions and insights in the analysis checklist
+  analyticalQuestionOrder: number;
+}
+
+export type ModelOrDatasetStateView =
+  // For when a model or dataset is opened from a data analysis (list of datacubes)
+  | { view: 'analysisItemDrilldown'; analysisId: string; analysisItemId: string }
+  // For when a model or dataset is opened from an index
+  | { view: 'indexNodeDrilldown'; indexId: string };
+export interface ModelOrDatasetStateInsight extends NewInsightBase {
+  type: 'ModelOrDatasetStateInsight';
+  view: ModelOrDatasetStateView;
+  state: ModelOrDatasetState;
+}
+
+export type NewInsight = ModelOrDatasetStateInsight;
 
 export interface SectionWithInsights {
   section: AnalyticalQuestion;
