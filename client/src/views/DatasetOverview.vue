@@ -405,7 +405,7 @@ export default defineComponent({
         const targets = this.indicators.filter((indicator) => indicator.id !== indicatorId);
         const deltas = targets.map((indicator) => ({
           id: indicator.id,
-          default_view: source.default_view,
+          default_state: source.default_state,
         }));
         const sparklineList = targets.map((indicator) =>
           this.getSparklineParams(indicator, source.default_view)
