@@ -283,10 +283,7 @@ const publishModel = async () => {
         modelToUpdate,
         defaultRun.id,
         viewState.value,
-        dataState.value,
-        selectedSpatialAggregation.value,
-        selectedTemporalAggregation.value,
-        selectedTemporalResolution.value
+        dataState.value
       );
       // Update server data
       await updateDatacube(modelToUpdate.id, modelToUpdate);

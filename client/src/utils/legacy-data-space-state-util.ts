@@ -106,10 +106,7 @@ export const convertFromLegacyState = (
   metadata: Model,
   defaultRunId: string,
   viewState: ViewState,
-  dataState: DataSpaceDataState,
-  spatialAggregationMethod: AggregationOption,
-  temporalAggregationMethod: AggregationOption,
-  temporalResolution: TemporalResolutionOption
+  dataState: DataSpaceDataState
 ) => {
   const defaultBreakdownState: BreakdownStateNone = {
     outputName: metadata.default_feature,
@@ -136,10 +133,10 @@ export const convertFromLegacyState = (
     selectedTimestamp: dataState.selectedTimestamp ?? null,
     selectedTransform: dataState.selectedTransform ?? DataTransform.None,
     // Aggregation Options
-    spatialAggregationMethod,
-    temporalAggregationMethod,
+    spatialAggregationMethod: viewState.spatialAggregation as AggregationOption,
+    temporalAggregationMethod: viewState.temporalAggregation as AggregationOption,
     spatialAggregation: adminLevelToSpatialAggregation(viewState.selectedAdminLevel ?? 0),
-    temporalResolution,
+    temporalResolution: viewState.temporalResolution as TemporalResolutionOption,
   };
   return defaultState;
 };
