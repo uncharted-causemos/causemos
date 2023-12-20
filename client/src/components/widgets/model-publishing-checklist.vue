@@ -1,144 +1,88 @@
 <template>
   <div class="model-publishing-checklist-container">
     <div
-      v-if="metadata && metadata.status !== DatacubeStatus.Deprecated"
-      class="checklist-items-container"
+      v-for="step in publishingSteps"
+      :key="step.id"
+      class="checklist-item"
+      @click="navToPublishingStep(step)"
     >
-      <div
-        v-for="step in publishingSteps"
-        :key="step.id"
-        class="checklist-item"
-        @click="navToPublishingStep(step)"
-      >
-        <i
-          class="step-icon-common fa fa-lg fa-border"
-          :class="{
-            'fa-check-circle step-complete': step.completed,
-            'fa-circle step-not-complete': !step.completed,
-          }"
-        />
-        <span
-          class="checklist-item-text"
-          :class="{ 'step-selected': step.id === currentPublishStep }"
-          >{{ step.text }}</span
-        >
-      </div>
+      <span>{{ step.text }}</span>
+      <i
+        class="step-icon-common fa fa-lg fa-check-circle"
+        :class="{ 'step-complete': step.completed }"
+      />
     </div>
-    <div style="display: flex; align-items: center">
-      <span
-        v-if="metadata && metadata.status === DatacubeStatus.Deprecated"
-        style="margin: 2px; padding: 2px 5px; font-size: large; font-weight: bolder"
-        :style="{ backgroundColor: statusColor }"
-        >{{ statusLabel }}</span
-      >
-      <button
-        v-if="metadata && metadata.status !== DatacubeStatus.Deprecated"
-        class="btn btn-call-to-action"
-        :class="{ disabled: allStepsCompleted === false }"
-        @click="publishModel()"
-      >
-        Publish model
-      </button>
-    </div>
+    <button
+      class="btn btn-default btn-call-to-action"
+      :class="{ disabled: allStepsCompleted === false }"
+      @click="publishModel()"
+    >
+      {{ isAlreadyPublished ? 'Update' : 'Publish' }} model
+    </button>
   </div>
 </template>
 
-<script lang="ts">
-import { DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
-import { Model, ModelPublishingStep } from '@/types/Datacube';
-import { defineComponent, PropType, toRefs } from 'vue';
-import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
+<script setup lang="ts">
+import { ModelPublishingStep } from '@/types/Datacube';
+import { computed, toRefs } from 'vue';
+import useToaster from '@/composables/useToaster';
+import { TYPE } from 'vue-toastification';
+import { ModelPublishingStepID } from '@/types/Enums';
 
-export default defineComponent({
-  name: 'ModelPublishingChecklist',
-  props: {
-    publishingSteps: {
-      type: Array as PropType<ModelPublishingStep[]>,
-      default: [],
-    },
-    currentPublishStep: {
-      default: ModelPublishingStepID.Enrich_Description,
-    },
-    metadata: {
-      type: Object as PropType<Model | null>,
-      default: null,
-    },
-  },
-  emits: ['publish-model', 'navigate-to-publishing-step'],
-  setup(props) {
-    const { metadata } = toRefs(props);
+const props = defineProps<{
+  isAlreadyPublished: boolean;
+  publishingSteps: ModelPublishingStep[];
+}>();
+const { publishingSteps } = toRefs(props);
 
-    const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
+const emit = defineEmits<{
+  (e: 'publish-model'): void;
+  (e: 'navigate-to-publishing-step', step: ModelPublishingStepID): void;
+}>();
 
-    return {
-      DatacubeStatus,
-      statusColor,
-      statusLabel,
-    };
-  },
-  computed: {
-    allStepsCompleted(): boolean {
-      return this.publishingSteps.every((s) => s.completed);
-    },
-  },
-  methods: {
-    navToPublishingStep(step: ModelPublishingStep) {
-      this.$emit('navigate-to-publishing-step', { publishStep: step });
-    },
-    publishModel() {
-      (this as any).toaster('Publishing model ...');
-      this.$emit('publish-model');
-    },
-  },
-});
+const allStepsCompleted = computed(() => publishingSteps.value.every((s) => s.completed));
+
+const navToPublishingStep = (step: ModelPublishingStep) =>
+  emit('navigate-to-publishing-step', step.id);
+
+const toaster = useToaster();
+const publishModel = () => {
+  toaster('Publishing model ...', TYPE.INFO, false);
+  emit('publish-model');
+};
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/variables';
-
-.step-selected {
-  border-bottom: 2px solid gray;
-}
+@import '@/styles/variables';
+@import '@/styles/common';
 
 .model-publishing-checklist-container {
   display: flex;
   flex-direction: row;
-  padding: 4px;
-  justify-content: space-evenly;
+  gap: 20px;
+  align-items: center;
 
-  .checklist-items-container {
+  .checklist-item {
     display: flex;
-    flex-direction: row;
+    gap: 5px;
+    cursor: pointer;
     align-items: center;
 
-    .checklist-item {
-      flex-direction: row;
-      cursor: pointer;
-      font-size: $font-size-medium;
-      padding-right: 24px;
-
-      .checklist-item-text {
-        margin-left: 5px;
-        display: inline-block;
-      }
+    &:hover span {
+      color: $selected-dark;
     }
   }
 
   .step-icon-common {
-    border-width: 1px;
-    border-style: solid;
-    border-radius: 100% 100% 100% 100%;
+    border-radius: 100%;
     padding: 0;
+    width: 16px;
+    height: 16px;
+    color: $un-color-black-20;
   }
 
   .step-complete {
-    color: green;
-    border-color: green;
-  }
-
-  .step-not-complete {
-    border-color: red;
-    color: transparent;
+    color: $vetted-state-dark;
   }
 }
 </style>

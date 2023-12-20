@@ -79,7 +79,7 @@
               />
             </div>
           </td>
-          <td style="padding-right: 0; padding-left: 0; display: flex; flex-direction: column">
+          <td style="display: flex; flex-direction: column">
             <div v-if="isDateParam(param) === false" class="checkbox">
               <label
                 @click="updateInputKnobVisibility(param)"
@@ -242,7 +242,7 @@ export default defineComponent({
       required: true,
     },
   },
-  emits: ['check-model-metadata-validity', 'refresh-metadata'],
+  emits: ['refresh-metadata'],
   setup(props, { emit }) {
     const { metadata, itemId } = toRefs(props);
     const store = useStore();
@@ -415,15 +415,6 @@ export default defineComponent({
       return qualifiers;
     },
   },
-  watch: {
-    metadata: {
-      handler(/* newValue, oldValue */) {
-        this.checkAndNotifyValidity();
-      },
-      immediate: true,
-      deep: true,
-    },
-  },
   methods: {
     ...mapActions({
       setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
@@ -469,26 +460,6 @@ export default defineComponent({
     },
     isValid(name: string) {
       return name && name !== '';
-    },
-    checkAndNotifyValidity() {
-      if (this.metadata === null || _.isEmpty(this.metadata)) {
-        return;
-      }
-      let isValid = true;
-      const invalidInputs = this.inputParameters.filter(
-        (p: any) => !this.isValid(p.display_name) || !this.isValid(p.description)
-      );
-      const invalidOutputs = this.outputVariables.filter(
-        (p: any) => !this.isValid(p.display_name) || !this.isValid(p.description)
-      );
-      const outputQualifiers = this.qualifiers.filter(
-        (p: any) => !this.isValid(p.display_name) || !this.isValid(p.description)
-      );
-
-      if (invalidInputs.length > 0 || invalidOutputs.length > 0 || outputQualifiers.length > 0) {
-        isValid = false;
-      }
-      this.$emit('check-model-metadata-validity', isValid);
     },
     updateInputKnobVisibility(param: ModelParameter) {
       param.is_visible = !param.is_visible;
@@ -574,8 +545,19 @@ export default defineComponent({
   gap: 2px;
 }
 
-.model-table tbody tr td {
+.model-table td,
+.model-table th {
   border-width: 0px;
+
+  &:nth-child(2) {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+}
+
+.model-table td {
+  padding-top: 20px;
+  vertical-align: top;
 }
 
 .primary-output {
