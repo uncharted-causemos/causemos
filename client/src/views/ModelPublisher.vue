@@ -145,7 +145,7 @@ watch(
     const outputVariables = _metadata.outputs;
     const qualifiers = _metadata.qualifier_outputs?.filter((q) => isBreakdownQualifier(q)) ?? [];
     const invalidItems = [...inputParameters, ...outputVariables, ...qualifiers].filter(
-      (item) => item.name.length === 0 || item.description.length === 0
+      (item) => item.display_name.length === 0 || item.description.length === 0
     );
     const areNamesAndDescriptionsValid = invalidItems.length === 0;
     const metadataStep = publishingSteps.value.find(
