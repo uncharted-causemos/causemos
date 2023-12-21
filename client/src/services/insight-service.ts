@@ -96,7 +96,6 @@ export const fetchPartialInsights = async (
   fetchParams: InsightFilterFields,
   allowList: string[]
 ): Promise<any[]> => {
-  console.log(fetchParams);
   const options = {
     includes: allowList,
     sort: [{ modified_at: { order: 'desc' } }],
