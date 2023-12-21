@@ -1,6 +1,7 @@
 import {
   BreakdownState,
   BreakdownStateNone,
+  Indicator,
   MapDisplayOptions,
   Model,
   ModelOrDatasetState,
@@ -103,7 +104,7 @@ export const convertToLegacyViewState = (state: ModelOrDatasetState) => {
 };
 
 export const convertFromLegacyState = (
-  metadata: Model,
+  metadata: Model | Indicator,
   defaultRunId: string,
   viewState: ViewState,
   dataState: DataSpaceDataState
