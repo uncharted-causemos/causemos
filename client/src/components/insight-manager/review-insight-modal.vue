@@ -248,7 +248,9 @@ export default defineComponent({
     const toaster = useToaster();
     const { questionsList, addSection, addInsightToSection } = useQuestionsData();
 
-    const updatedInsight = computed(() => store.getters['insightPanel/updatedInsight']);
+    const updatedInsight = computed<null | Insight | FullInsight>(
+      () => store.getters['insightPanel/updatedInsight']
+    );
     const isInsight = computed(() => InsightUtil.instanceOfInsight(updatedInsight.value));
 
     const insightCache = new Map<string, any>();
@@ -261,21 +263,22 @@ export default defineComponent({
       async () => {
         // FIXME: updatedInsight can be a question, an insight, or null.
         // There is nothing to fetch for a question or null.
-        if (!isInsight.value) return;
+        const _updatedInsight = updatedInsight.value as Insight;
+        if (!isInsight.value || _updatedInsight.id === undefined) return;
 
-        let cache = insightCache.get(updatedInsight.value.id);
+        let cache = insightCache.get(_updatedInsight.id);
         if (!cache) {
-          const extras = await fetchPartialInsights({ id: updatedInsight.value.id }, [
+          const extras = await fetchPartialInsights({ id: _updatedInsight.id }, [
             'id',
             'annotation_state',
             'image',
           ]);
           cache = extras[0];
-          insightCache.set(updatedInsight.value.id, cache);
+          insightCache.set(_updatedInsight.id, cache);
         }
 
-        updatedInsight.value.image = cache.image;
-        updatedInsight.value.annotation_state = cache.annotation_state;
+        (updatedInsight.value as FullInsight).image = cache.image;
+        (updatedInsight.value as FullInsight).annotation_state = cache.annotation_state;
         annotation.value = cache.annotation_state;
         imagePreview.value = null;
         nextTick(() => {
@@ -316,7 +319,7 @@ export default defineComponent({
     });
 
     const insightQuestionLabel = computed<string>(() => {
-      if (isInsight.value && updatedInsight.value.analytical_question.length === 0) {
+      if (isInsight.value && (updatedInsight.value as Insight).analytical_question.length === 0) {
         // Current item is an insight that's not linked to any section.
         return '';
       }
@@ -446,7 +449,7 @@ export default defineComponent({
         // every time the user navigates to a new insight (or removes the current insight), re-fetch the image
         // NOTE: imagePreview ideally could be a computed prop, but when in newMode the image is fetched differently
         //       plus once imagePreview is assigned its watch will apply-annotation insight if any
-        this.imagePreview = this.updatedInsight.image;
+        this.imagePreview = (this.updatedInsight as FullInsight).image;
       } else {
         this.imagePreview = null;
       }
@@ -592,7 +595,7 @@ export default defineComponent({
     },
     previewInsightDesc(): string {
       if (this.loadingImage) return '';
-      return this.updatedInsight && this.updatedInsight.description.length > 0
+      return this.updatedInsight?.description && this.updatedInsight.description.length > 0
         ? this.updatedInsight.description
         : '<Insight description missing...>';
     },
@@ -607,11 +610,6 @@ export default defineComponent({
         ? [this.currentView, 'overview', 'dataComparative']
         : ['data', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher'];
     },
-    /*,
-    annotation(): any {
-      return this.updatedInsight ? this.updatedInsight.annotation_state : undefined;
-    }
-    */
   },
   async mounted() {
     if (this.isNewModeActive) {
@@ -621,11 +619,6 @@ export default defineComponent({
       this.showMetadataPanel = true;
       this.editInsight();
     }
-    // else {
-    //   if (this.updatedInsight) {
-    //     this.imagePreview = this.updatedInsight.image;
-    //   }
-    // }
   },
   methods: {
     ...mapActions({
@@ -683,7 +676,8 @@ export default defineComponent({
     },
     removeInsight() {
       // before deletion, find the index of the insight to be removed
-      const insightIdToDelete = this.updatedInsight.id;
+      const insightIdToDelete = this.updatedInsight?.id;
+      if (insightIdToDelete === undefined) return;
       // remove the insight from the server
       removeInsight(insightIdToDelete, this.store);
 
@@ -731,8 +725,8 @@ export default defineComponent({
     editInsight() {
       this.isEditingInsight = true;
       // save current insight name/desc in case the user cancels the edit action
-      this.insightTitle = this.isNewModeActive ? '' : this.updatedInsight.name;
-      this.insightDesc = this.isNewModeActive ? '' : this.updatedInsight.description;
+      this.insightTitle = this.isNewModeActive ? '' : this.updatedInsight?.name ?? '';
+      this.insightDesc = this.isNewModeActive ? '' : this.updatedInsight?.description ?? '';
     },
     cancelInsightEdit() {
       this.isEditingInsight = false;
@@ -836,22 +830,22 @@ export default defineComponent({
           });
       } else {
         // saving an existing insight
-        if (this.updatedInsight) {
+        const insightId = this.updatedInsight?.id;
+        if (this.updatedInsight && insightId) {
           // Invalidate cache
-          this.insightCache.delete(this.updatedInsight.id);
+          this.insightCache.delete(insightId);
 
-          const updatedInsight = this.updatedInsight;
+          const updatedInsight = this.updatedInsight as FullInsight;
           updatedInsight.name = this.insightTitle;
           updatedInsight.description = this.insightDesc;
           updatedInsight.image = insightThumbnail;
           updatedInsight.annotation_state = annotationAndCropState;
           updatedInsight.analytical_question = linkedQuestions.map((q) => q.id as string);
-          updateInsight(this.updatedInsight.id, updatedInsight).then((result) => {
+          updateInsight(insightId, updatedInsight).then((result) => {
             if (result.updated === 'success') {
               this.toaster(INSIGHTS.SUCCESSFUL_UPDATE, TYPE.SUCCESS, false);
 
               // ensure when updating an insight to also update its linked questions
-              const insightId = this.updatedInsight.id;
               linkedQuestions.forEach((q) => {
                 if (!q.linked_insights.includes(insightId)) {
                   q.linked_insights.push(insightId);
@@ -866,7 +860,7 @@ export default defineComponent({
       }
     },
     selectInsight() {
-      const insight = this.updatedInsight;
+      const insight = this.updatedInsight as Insight;
       const currentURL = this.$route.fullPath;
       const finalURL = InsightUtil.jumpToInsightContext(insight, currentURL);
       if (finalURL) {
@@ -888,14 +882,14 @@ export default defineComponent({
       switch (exportType) {
         case 'Word':
           InsightUtil.exportDOCX(
-            [this.updatedInsight],
+            [this.updatedInsight as FullInsight],
             this.projectMetadata,
             undefined,
             bibliographyMap
           );
           break;
         case 'Powerpoint':
-          InsightUtil.exportPPTX([this.updatedInsight], this.projectMetadata);
+          InsightUtil.exportPPTX([this.updatedInsight as FullInsight], this.projectMetadata);
           break;
         default:
           break;

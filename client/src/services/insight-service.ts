@@ -9,7 +9,7 @@ import { TYPE } from 'vue-toastification';
 
 // This defines the fields in ES that you can filter by
 export interface InsightFilterFields {
-  id?: string[]; // allows searching by multiple IDs
+  id?: string | string[]; // allows searching by multiple IDs
   project_id?: string;
   context_id?: string;
   visibility?: string;
@@ -96,6 +96,7 @@ export const fetchPartialInsights = async (
   fetchParams: InsightFilterFields,
   allowList: string[]
 ): Promise<any[]> => {
+  console.log(fetchParams);
   const options = {
     includes: allowList,
     sort: [{ modified_at: { order: 'desc' } }],
