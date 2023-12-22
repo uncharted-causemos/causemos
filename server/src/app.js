@@ -104,11 +104,16 @@ app.use(
       //  in the frontend. Those requests do not have any keycloak auth
       //  information, so we don't  for a valid Keycloak bearer token.
       /\/api\/insights\/.+\/thumbnail/,
+
       // Theses endpoints are accessed by scripts and Jataware using basic auth
       //  so we don't check for a valid Keycloak bearer token.
+      '/api/maas/datacubes',
+      '/api/maas/model-runs',
       '/api/maas/indicators/post-process',
+      /\/api\/mass\/datacubes\/.+\//,
+      /\/api\/maas\/datacubes\/.+\/deprecate/,
       /\/api\/maas\/model-runs\/.+\/post-process/,
-      /\/api\/datacubes\/.+\//,
+      /\/api\/maas\/model-runs\/.+\/run-failed/,
 
       // These end points are called by wm-queue without the keycloak auth token
       /\/api\/maas\/pipeline-reporting\/.+/,
