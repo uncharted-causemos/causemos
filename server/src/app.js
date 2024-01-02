@@ -103,20 +103,22 @@ app.use(
       // This endpoint is accessed by the `src` attribute on an `img` element
       //  in the frontend. Those requests do not have any keycloak auth
       //  information, so we don't  for a valid Keycloak bearer token.
-      /\/api\/insights\/.+\/thumbnail/,
+      { url: /\/api\/insights\/.+\/thumbnail/, methods: ['GET'] },
 
       // Theses endpoints are accessed by scripts and Jataware using basic auth
       //  so we don't check for a valid Keycloak bearer token.
-      '/api/maas/datacubes',
-      '/api/maas/model-runs',
-      '/api/maas/indicators/post-process',
-      /\/api\/mass\/datacubes\/.+\//,
-      /\/api\/maas\/datacubes\/.+\/deprecate/,
-      /\/api\/maas\/model-runs\/.+\/post-process/,
-      /\/api\/maas\/model-runs\/.+\/run-failed/,
+      { url: '/api/maas/datacubes', methods: ['POST'] },
+      { url: /\/api\/maas\/datacubes\/.+/, methods: ['PUT'] },
+      { url: /\/api\/maas\/datacubes\/.+\/deprecate/, methods: ['PUT'] },
+
+      { url: '/api/maas/model-runs', methods: ['POST'] },
+      { url: /\/api\/maas\/model-runs\/.+\/post-process/, methods: ['POST'] },
+      { url: /\/api\/maas\/model-runs\/.+\/run-failed/, methods: ['POST'] },
+
+      { url: '/api/maas/indicators/post-process', methods: ['POST'] },
 
       // These end points are called by wm-queue without the keycloak auth token
-      /\/api\/maas\/pipeline-reporting\/.+/,
+      { url: /\/api\/maas\/pipeline-reporting\/.+/, methods: ['PUT'] },
     ],
   })
 );

@@ -1,4 +1,4 @@
-export const getDatacubeDefaultState = (dataId, defaultFeature, isIndicator = false) => {
+const getDatacubeDefaultState = (dataId, defaultFeature, isIndicator = false) => {
   return {
     dataId: dataId,
     breakdownState: {
@@ -26,4 +26,8 @@ export const getDatacubeDefaultState = (dataId, defaultFeature, isIndicator = fa
     spatialAggregation: 'country',
     temporalResolution: 'month',
   };
+};
+
+module.exports = {
+  getDatacubeDefaultState,
 };
