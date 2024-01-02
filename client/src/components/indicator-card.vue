@@ -1,23 +1,5 @@
 <template>
   <div class="indicator-card-container">
-    <modal-confirmation
-      v-if="showApplyToAllModal"
-      :autofocus-confirm="false"
-      @confirm="applyToAll"
-      @close="showApplyToAllModal = false"
-    >
-      <template #title>Apply Settings To All</template>
-      <template #message>
-        <p>
-          This will copy the visualization settings from this indicator to all indicators in this
-          dataset.
-        </p>
-        <message-display
-          :message="'Warning: Any visualization settings in the other indicators will be overwritten.'"
-          :message-type="'alert-warning'"
-        />
-      </template>
-    </modal-confirmation>
     <div v-if="!isEditingMeta" style="margin-bottom: 10px">
       <b>{{ datacube.outputs[0].display_name }}</b>
     </div>
@@ -139,9 +121,7 @@
 import { defineComponent, ref, PropType, Ref } from 'vue';
 import { mapGetters } from 'vuex';
 
-import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import MultilineDescription from '@/components/widgets/multiline-description.vue';
-import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
 import { DatacubeFeature, FeatureQualifier, Indicator } from '@/types/Datacube';
 import { DatacubeStatus } from '@/types/Enums';
@@ -154,8 +134,6 @@ import { isBreakdownQualifier } from '@/utils/qualifier-util';
 export default defineComponent({
   name: 'IndicatorCard',
   components: {
-    ModalConfirmation,
-    MessageDisplay,
     MultilineDescription,
   },
   emits: ['apply-to-all', 'toggle-hidden', 'update-meta'],
@@ -185,12 +163,10 @@ export default defineComponent({
     },
   },
   setup() {
-    const showApplyToAllModal = ref(false);
     const isEditingMeta = ref(false);
     const editedMeta = ref({}) as Ref<DatacubeFeature>;
 
     return {
-      showApplyToAllModal,
       isEditingMeta,
       editedMeta,
       DatacubeStatus,
@@ -207,10 +183,6 @@ export default defineComponent({
           projectType: this.projectType,
         },
       });
-    },
-    applyToAll() {
-      this.showApplyToAllModal = false;
-      this.$emit('apply-to-all');
     },
     toggleHiddenState() {
       this.$emit('toggle-hidden');

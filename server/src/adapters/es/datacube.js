@@ -364,6 +364,14 @@ class Datacube {
     payloadArray.forEach((doc) => {
       bulk.push({ [operationType]: { _index: this.index, _id: _keyFn(doc) } });
       if (operationType === 'update') {
+        if (doc.default_state?.breakdownState) {
+          // During this partial bulk update, when a field value is an object,
+          // it appends or modifies properties within the existing object instead of replacing the entire object with new object.
+          // However, when updating 'breakdownState', we want always completely replace it with a new object, resetting it to null first.
+          // This is necessary because 'breakdownState' can be of multiple object types.
+          bulk.push({ doc: { default_state: { breakdownState: null } } });
+          bulk.push({ [operationType]: { _index: this.index, _id: _keyFn(doc) } });
+        }
         bulk.push({ doc: doc });
       } else if (operationType === 'index' || operationType === 'create') {
         bulk.push(doc);
