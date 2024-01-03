@@ -70,6 +70,7 @@ const countDatacubes = async (filter) => {
 /**
  * Insert a new datacube.
  * Note: Currently it's only being used for model type datacube. Indicator type datacube is created by
+   services/external/maas-service.js#startIndicatorPostProcessing()
  */
 const insertDatacube = async (metadata) => {
   Logger.info(`Start insert datacube ${metadata.name} ${metadata.id}`);
