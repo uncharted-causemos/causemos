@@ -294,6 +294,15 @@ const selectedInsightQuestions = ref<string[]>([]);
 const insightQuestionInnerLabel = ref(LBL_EMPTY_INSIGHT_QUESTION);
 const loadingImage = ref(false);
 const isEditingInsight = ref(false);
+const insightTitle = ref('');
+const insightDesc = ref('');
+
+const editInsight = () => {
+  isEditingInsight.value = true;
+  // save current insight name/desc in case the user cancels the edit action
+  insightTitle.value = isNewModeActive.value ? '' : updatedInsight.value?.name ?? '';
+  insightDesc.value = isNewModeActive.value ? '' : updatedInsight.value?.description ?? '';
+};
 
 const getQuestionById = (id: string) => {
   return questionsList.value.find((q) => q.id === id);
@@ -352,8 +361,6 @@ watch(
 
 const errorMsg = ref(MSG_EMPTY_INSIGHT_NAME);
 const showMetadataPanel = ref(false);
-const insightTitle = ref('');
-const insightDesc = ref('');
 const hasError = ref(false); // true when insight name is invalid
 
 const showNewQuestion = ref(false);
@@ -631,13 +638,6 @@ const goToNextSlide = () => {
   }
   setUpdatedInsight(InsightUtil.getSlideFromPosition(insightsBySection.value, nextSlide.value));
   setPositionInReview(nextSlide.value);
-};
-
-const editInsight = () => {
-  isEditingInsight.value = true;
-  // save current insight name/desc in case the user cancels the edit action
-  insightTitle.value = isNewModeActive.value ? '' : updatedInsight.value?.name ?? '';
-  insightDesc.value = isNewModeActive.value ? '' : updatedInsight.value?.description ?? '';
 };
 const cancelInsightEdit = () => {
   isEditingInsight.value = false;
