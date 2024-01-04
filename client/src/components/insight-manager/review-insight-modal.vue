@@ -180,11 +180,11 @@
   </div>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent, nextTick, ref, watch } from 'vue';
+<script setup lang="ts">
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
-import { mapActions, mapGetters, useStore } from 'vuex';
+import { useStore } from 'vuex';
 import InsightUtil, { INSIGHT_CAPTURE_CLASS } from '@/utils/insight-util';
 import {
   Insight,
@@ -193,22 +193,21 @@ import {
   DataState,
   SectionWithInsights,
   ReviewPosition,
+  AnalyticalQuestion,
 } from '@/types/Insight';
-import router from '@/router';
 import {
   addInsight,
   updateInsight,
   fetchPartialInsights,
   extractMetadataDetails,
-  removeInsight,
+  removeInsight as insightServiceRemoveInsight,
 } from '@/services/insight-service';
 import { INSIGHTS, QUESTIONS } from '@/utils/messages-util';
 import useToaster from '@/composables/useToaster';
+import useInsightAnnotation from '@/composables/useInsightAnnotation';
 import html2canvas from 'html2canvas';
 import _ from 'lodash';
 import { ProjectType } from '@/types/Enums';
-import { MarkerArea, MarkerAreaState } from 'markerjs2';
-import { CropArea, CropAreaState } from 'cropro';
 import InsightSummary from './insight-summary.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
@@ -219,859 +218,564 @@ import MessageDisplay from '@/components/widgets/message-display.vue';
 import { fetchImageAsBase64 } from '@/services/datacube-service';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 import { TYPE } from 'vue-toastification';
+import { useRoute, useRouter } from 'vue-router';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
 const LBL_EMPTY_INSIGHT_QUESTION = 'Add to Analysis Checklist section';
 
-const METDATA_DRILLDOWN_TABS = [
-  {
-    name: 'Metadata',
-    id: 'metadata',
-    icon: 'fa-info-circle',
-  },
-];
+const store = useStore();
+const toaster = useToaster();
+const { questionsList, addSection, addInsightToSection } = useQuestionsData();
 
-export default defineComponent({
-  name: 'ReviewInsightModal',
-  components: {
-    FullScreenModalHeader,
-    Disclaimer,
-    InsightSummary,
-    DropdownButton,
-    SmallTextButton,
-    RenameModal,
-    MessageDisplay,
-  },
-  setup() {
-    const store = useStore();
-    const toaster = useToaster();
-    const { questionsList, addSection, addInsightToSection } = useQuestionsData();
+const updatedInsight = computed<null | Insight | FullInsight>(
+  () => store.getters['insightPanel/updatedInsight']
+);
+const isInsight = computed(() => InsightUtil.instanceOfInsight(updatedInsight.value));
 
-    const updatedInsight = computed(() => store.getters['insightPanel/updatedInsight']);
-    const isInsight = computed(() => InsightUtil.instanceOfInsight(updatedInsight.value));
+const insightCache = new Map<string, any>();
 
-    const insightCache = new Map<string, any>();
+const imagePreview = ref<string | null>(null);
+watch(
+  () => [updatedInsight.value],
+  async () => {
+    // FIXME: updatedInsight can be a question, an insight, or null.
+    // There is nothing to fetch for a question or null.
+    const _updatedInsight = updatedInsight.value as Insight;
+    if (!isInsight.value || _updatedInsight.id === undefined) return;
 
-    const annotation = ref<any>(null);
-    const imagePreview = ref<string | null>(null);
-
-    watch(
-      () => [updatedInsight.value],
-      async () => {
-        // FIXME: updatedInsight can be a question, an insight, or null.
-        // There is nothing to fetch for a question or null.
-        if (!isInsight.value) return;
-
-        let cache = insightCache.get(updatedInsight.value.id);
-        if (!cache) {
-          const extras = await fetchPartialInsights({ id: updatedInsight.value.id }, [
-            'id',
-            'annotation_state',
-            'image',
-          ]);
-          cache = extras[0];
-          insightCache.set(updatedInsight.value.id, cache);
-        }
-
-        updatedInsight.value.image = cache.image;
-        updatedInsight.value.annotation_state = cache.annotation_state;
-        annotation.value = cache.annotation_state;
-        imagePreview.value = null;
-        nextTick(() => {
-          imagePreview.value = cache.image;
-        });
-      },
-      { immediate: true }
-    );
-
-    const insightsBySection = computed<SectionWithInsights[]>(
-      () => store.getters['insightPanel/insightsBySection']
-    );
-    const positionInReview = computed<ReviewPosition | null>(
-      () => store.getters['insightPanel/positionInReview']
-    );
-
-    const selectedInsightQuestions = ref<string[]>([]);
-    const insightQuestionInnerLabel = ref(LBL_EMPTY_INSIGHT_QUESTION);
-    const loadingImage = ref(false);
-    const isEditingInsight = ref(false);
-
-    const getQuestionById = (id: string) => {
-      return questionsList.value.find((q) => q.id === id);
-    };
-
-    const insightLinkedQuestionsCount = computed<string>(() => {
-      if (
-        updatedInsight.value &&
-        isInsight.value &&
-        updatedInsight.value.analytical_question.length > 0
-      ) {
-        const linedQuestionsCount = (updatedInsight.value as Insight).analytical_question.length;
-        if (linedQuestionsCount > 1) {
-          return '+ ' + (linedQuestionsCount - 1).toString();
-        }
-      }
-      return '';
-    });
-
-    const insightQuestionLabel = computed<string>(() => {
-      if (isInsight.value && updatedInsight.value.analytical_question.length === 0) {
-        // Current item is an insight that's not linked to any section.
-        return '';
-      }
-      // Current item is an insight linked to one or more sections, or current
-      //  item is a section itself, or we're in the process of making a new
-      //  insight.
-      const section = positionInReview.value
-        ? getQuestionById(positionInReview.value.sectionId)
-        : null;
-      return section?.question ?? '';
-    });
-
-    watch(
-      () => [questionsList.value, isEditingInsight.value],
-      () => {
-        // if we are reviewing this insight in edit mode,
-        //  it may have a current linking with some analytical question
-        //  so we need to surface that
-        if (updatedInsight.value && isInsight.value) {
-          const initialSelection: string[] = [];
-          updatedInsight.value.analytical_question.forEach((q: string) => {
-            const questionObj = getQuestionById(q);
-            if (questionObj) {
-              initialSelection.push(questionObj.question);
-            }
-          });
-          selectedInsightQuestions.value = initialSelection;
-          if (initialSelection.length > 0) {
-            insightQuestionInnerLabel.value = '';
-          }
-        }
-      },
-      {
-        immediate: true, // need to force updating the selected list when toggling the edit mode
-      }
-    );
-
-    return {
-      toaster,
-      store,
-      questionsList,
-      addSection,
-      addInsightToSection,
-      updatedInsight,
-      annotation,
-      imagePreview,
-      selectedInsightQuestions,
-      insightQuestionInnerLabel,
-      insightQuestionLabel,
-      loadingImage,
-      isInsight,
-      insightLinkedQuestionsCount,
-      isEditingInsight,
-      insightsBySection,
-      positionInReview,
-
-      insightCache,
-    };
-  },
-  data: () => ({
-    errorMsg: MSG_EMPTY_INSIGHT_NAME,
-    drilldownTabs: METDATA_DRILLDOWN_TABS,
-    showMetadataPanel: false,
-    insightTitle: '',
-    insightDesc: '',
-    // imagePreview: null as string | null,
-    hasError: false, // true when insight name is invalid
-    //
-    markerAreaState: undefined as MarkerAreaState | undefined,
-    markerArea: undefined as MarkerArea | undefined,
-    cropArea: undefined as CropArea | undefined,
-    cropState: undefined as CropAreaState | undefined,
-    originalImagePreview: '',
-    lastCroppedImage: '',
-    lastAnnotatedImage: '',
-    showCropInfoMessage: false,
-    showNewQuestion: false,
-    messageNoData: INSIGHTS.NO_DATA,
-  }),
-  watch: {
-    insightTitle: {
-      handler(n) {
-        if (n.length === 0 || n === LBL_EMPTY_INSIGHT_NAME) {
-          this.hasError = true;
-        } else {
-          this.hasError = false;
-        }
-      },
-    },
-    isEditModeActive: {
-      handler(/* newValue, oldValue */) {
-        if (this.updatedInsight && this.isEditModeActive) {
-          this.editInsight();
-        }
-      },
-      immediate: true,
-    },
-    imagePreview() {
-      if (this.imagePreview !== null) {
-        // apply previously saved annotation, if any
-        if (this.annotation) {
-          this.originalImagePreview = this.annotation.originalImagePreview;
-          // this.lastCroppedImage = this.annotation.previewImage;
-          if (this.annotation.markerAreaState || this.annotation.cropAreaState) {
-            this.markerAreaState = this.annotation.markerAreaState;
-            this.cropState = this.annotation.cropAreaState;
-            // NOTE: REVIEW: FIXME:
-            //  restoring both annotation and/or cropping is tricky since each one calls the other
-            // if (this.markerAreaState) {
-            //   nextTick(() => {
-            //     const refAnnotatedImage = this.$refs.finalImagePreview as HTMLImageElement;
-            //     refAnnotatedImage.src = this.originalImagePreview;
-            //     this.annotateImage();
-            //     (this.markerArea as MarkerArea).startRenderAndClose();
-            //   });
-            // }
-          }
-        } else {
-          this.originalImagePreview = this.imagePreview;
-        }
-      } else {
-        this.originalImagePreview = '';
-      }
-    },
-    updatedInsight() {
-      if (this.updatedInsight) {
-        // every time the user navigates to a new insight (or removes the current insight), re-fetch the image
-        // NOTE: imagePreview ideally could be a computed prop, but when in newMode the image is fetched differently
-        //       plus once imagePreview is assigned its watch will apply-annotation insight if any
-        this.imagePreview = this.updatedInsight.image;
-      } else {
-        this.imagePreview = null;
-      }
-    },
-  },
-  computed: {
-    ...mapGetters({
-      project: 'app/project',
-      projectType: 'app/projectType',
-      currentView: 'app/currentView',
-      dataState: 'insightPanel/dataState',
-      viewState: 'insightPanel/viewState',
-      contextId: 'insightPanel/contextId',
-      snapshotUrl: 'insightPanel/snapshotUrl',
-      projectMetadata: 'app/projectMetadata',
-      currentPane: 'insightPanel/currentPane',
-      isPanelOpen: 'insightPanel/isPanelOpen',
-      countInsights: 'insightPanel/countInsights',
-    }),
-    isEditModeActive() {
-      return this.currentPane === 'review-edit-insight';
-    },
-    isNewModeActive() {
-      return this.currentPane === 'review-new-insight';
-    },
-    questionsDropdown() {
-      return [...this.questionsList.map((q) => q.question)];
-    },
-    nextSlide(): ReviewPosition | null {
-      if (this.positionInReview === null) {
-        // In the process of making a new insight.
-        return null;
-      }
-      const { sectionId, insightId } = this.positionInReview;
-      const sectionWithInsights = this.insightsBySection.find(
-        (_section) => _section.section.id === sectionId
-      );
-      // If there's no section currently selected, return null;
-      if (sectionWithInsights === undefined) {
-        return null;
-      }
-      const insightIndex = sectionWithInsights.insights.findIndex(
-        (insight) => insight.id === insightId
-      );
-      // If section has insights and current insight is not the last insight in
-      //  the current section, go to the next insight in the current section.
-      if (insightIndex !== sectionWithInsights.insights.length - 1 && insightIndex !== -1) {
-        return {
-          sectionId,
-          insightId: sectionWithInsights.insights[insightIndex + 1].id as string,
-        };
-      }
-      // Otherwise, go to the next section
-      const sectionIndex = this.insightsBySection.findIndex(
-        (_section) => _section.section.id === sectionId
-      );
-      if (sectionIndex === this.insightsBySection.length - 1) {
-        // Current section is last section
-        return null;
-      }
-      const nextSectionWithInsights = this.insightsBySection[sectionIndex + 1];
-      return nextSectionWithInsights.insights.length > 0
-        ? // Go to first insight in next section
-          {
-            sectionId: nextSectionWithInsights.section.id as string,
-            insightId: nextSectionWithInsights.insights[0].id as string,
-          }
-        : // Next section has no insights, so go to that section
-          {
-            sectionId: nextSectionWithInsights.section.id as string,
-            insightId: null,
-          };
-    },
-    previousSlide(): ReviewPosition | null {
-      if (this.positionInReview === null) {
-        // In the process of making a new insight.
-        return null;
-      }
-      const { sectionId, insightId } = this.positionInReview;
-      const sectionWithInsights = this.insightsBySection.find(
-        (_section) => _section.section.id === sectionId
-      );
-      // If there's no section currently selected, return null;
-      if (sectionWithInsights === undefined) {
-        return null;
-      }
-      const insightIndex = sectionWithInsights.insights.findIndex(
-        (insight) => insight.id === insightId
-      );
-      // If section has insights and current insight is not the first insight in
-      //  the current section, go to the previous insight in the current
-      //  section.
-      if (insightIndex !== 0 && insightIndex !== -1) {
-        return {
-          sectionId,
-          insightId: sectionWithInsights.insights[insightIndex - 1].id as string,
-        };
-      }
-      // Otherwise, go to the previous section
-      const sectionIndex = this.insightsBySection.findIndex(
-        (_section) => _section.section.id === sectionId
-      );
-      if (sectionIndex === 0) {
-        // Current section is the first section
-        return null;
-      }
-      const previousSectionWithInsights = this.insightsBySection[sectionIndex - 1];
-      return previousSectionWithInsights.insights.length > 0
-        ? // Go to last insight in next section
-          {
-            sectionId: previousSectionWithInsights.section.id as string,
-            insightId: previousSectionWithInsights.insights[
-              previousSectionWithInsights.insights.length - 1
-            ].id as string,
-          }
-        : // Previous section has no insights, so go to that section
-          {
-            sectionId: previousSectionWithInsights.section.id as string,
-            insightId: null,
-          };
-    },
-    metadataDetails(): InsightMetadata {
-      const dState: DataState | null =
-        this.isNewModeActive || this.updatedInsight === null
-          ? this.dataState
-          : this.updatedInsight.data_state;
-      const insightLastUpdate =
-        this.isNewModeActive || this.updatedInsight === null
-          ? undefined
-          : this.updatedInsight.modified_at;
-      const insightSummary = extractMetadataDetails(
-        dState,
-        this.projectMetadata,
-        insightLastUpdate
-      );
-      return insightSummary;
-    },
-    previewInsightTitle(): string {
-      if (this.loadingImage) return '';
-      return this.updatedInsight && this.updatedInsight.name.length > 0
-        ? this.updatedInsight.name
-        : LBL_EMPTY_INSIGHT_NAME;
-    },
-    previewInsightDesc(): string {
-      if (this.loadingImage) return '';
-      return this.updatedInsight && this.updatedInsight.description.length > 0
-        ? this.updatedInsight.description
-        : '<Insight description missing...>';
-    },
-    insightVisibility(): string {
-      return this.projectType === ProjectType.Analysis ? 'private' : 'public';
-    },
-    insightTargetView(): string[] {
-      // an insight created during model publication should be listed either
-      //  in the full list of insights,
-      //  or as a context specific insight when opening the page of the corresponding model family instance
-      return this.projectType === ProjectType.Analysis
-        ? [this.currentView, 'overview', 'dataComparative']
-        : ['data', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher'];
-    },
-    /*,
-    annotation(): any {
-      return this.updatedInsight ? this.updatedInsight.annotation_state : undefined;
+    let cache = insightCache.get(_updatedInsight.id);
+    if (!cache) {
+      const extras = await fetchPartialInsights({ id: _updatedInsight.id }, [
+        'id',
+        'annotation_state',
+        'image',
+      ]);
+      cache = extras[0];
+      insightCache.set(_updatedInsight.id, cache);
     }
-    */
+
+    (updatedInsight.value as FullInsight).image = cache.image;
+    (updatedInsight.value as FullInsight).annotation_state = cache.annotation_state;
+    setAnnotation(cache.annotation_state);
+    imagePreview.value = null;
+    nextTick(() => {
+      imagePreview.value = cache.image;
+    });
   },
-  async mounted() {
-    if (this.isNewModeActive) {
-      this.loadingImage = true;
-      this.imagePreview = await this.takeSnapshot();
-      this.loadingImage = false;
-      this.showMetadataPanel = true;
-      this.editInsight();
-    }
-    // else {
-    //   if (this.updatedInsight) {
-    //     this.imagePreview = this.updatedInsight.image;
-    //   }
-    // }
-  },
-  methods: {
-    ...mapActions({
-      setCurrentPane: 'insightPanel/setCurrentPane',
-      showInsightPanel: 'insightPanel/showInsightPanel',
-      setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightsBySection: 'insightPanel/setInsightsBySection',
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setCountInsights: 'insightPanel/setCountInsights',
-      setPositionInReview: 'insightPanel/setPositionInReview',
-      setShouldRefetchInsights: 'insightPanel/setShouldRefetchInsights',
-    }),
-    setInsightQuestions(questions: string[]) {
-      this.selectedInsightQuestions = questions;
-      this.insightQuestionInnerLabel = questions.length === 0 ? LBL_EMPTY_INSIGHT_QUESTION : '';
-    },
-    addNewQuestion(newQuestionText: string) {
-      this.showNewQuestion = false;
-      const handleSuccessfulAddition = () => {
-        this.toaster(QUESTIONS.SUCCESSFUL_ADDITION, TYPE.SUCCESS, false);
-        // FIXME: seems like there's a bug here. If we already have a section
-        //  assigned to the insight and we add a new one, we want to append to
-        //  the list, not replace it.
-        this.setInsightQuestions([newQuestionText]);
-      };
-      const handleFailedAddition = () => {
-        this.toaster(QUESTIONS.ERRONEOUS_ADDITION, TYPE.INFO, true);
-      };
-      this.addSection(newQuestionText, handleSuccessfulAddition, handleFailedAddition);
-    },
-    async takeSnapshot() {
-      const url = this.snapshotUrl;
-      if (url) {
-        const b64Str = await fetchImageAsBase64(url);
-        if (b64Str) {
-          return b64Str;
-        }
-        // otherwise, capture snapshot the usual way
-      }
-      const el = document.getElementsByClassName(INSIGHT_CAPTURE_CLASS)[0] as HTMLElement;
-      const image = _.isNil(el) ? null : (await html2canvas(el, { scale: 1 })).toDataURL();
-      return image;
-    },
-    closeInsightReview() {
-      if (this.isNewModeActive) {
-        this.hideInsightPanel();
-        this.setCurrentPane('');
-      } else {
-        if (this.updatedInsight) {
-          this.cancelInsightEdit();
-        }
-        this.showInsightPanel();
-        this.setCurrentPane('list-insights');
-      }
-    },
-    removeInsight() {
-      // before deletion, find the index of the insight to be removed
-      const insightIdToDelete = this.updatedInsight.id;
-      // remove the insight from the server
-      removeInsight(insightIdToDelete, this.store);
-
-      // close editing before deleting insight (this will ensure annotation/crop mode is cleaned up)
-      this.cancelInsightEdit();
-      // remove this insight from each section that contains it in the store
-      const filteredInsightsBySection = this.insightsBySection.map(({ section, insights }) => ({
-        section,
-        insights: insights.filter((insight) => insight.id !== insightIdToDelete),
-      }));
-      this.setInsightsBySection(filteredInsightsBySection);
-      // Decide which slide to show next
-      if (this.nextSlide && this.nextSlide.insightId !== insightIdToDelete) {
-        this.goToNextSlide();
-      } else if (this.previousSlide && this.previousSlide.insightId !== insightIdToDelete) {
-        this.goToPreviousSlide();
-      } else {
-        // Either there are no more insights, or we're in an edge case where we
-        //  just deleted an insight that is both the first insight of the next
-        //  section, and the last insight of the previous section.
-        // Either way, exit the review modal.
-        this.setUpdatedInsight(null);
-        this.showMetadataPanel = false;
-        this.closeInsightReview();
-      }
-    },
-    goToPreviousSlide() {
-      if (this.isEditingInsight) {
-        this.cancelInsightEdit();
-      }
-      this.setUpdatedInsight(
-        InsightUtil.getSlideFromPosition(this.insightsBySection, this.previousSlide)
-      );
-      this.setPositionInReview(this.previousSlide);
-    },
-    goToNextSlide() {
-      if (this.isEditingInsight) {
-        this.cancelInsightEdit();
-      }
-      this.setUpdatedInsight(
-        InsightUtil.getSlideFromPosition(this.insightsBySection, this.nextSlide)
-      );
-      this.setPositionInReview(this.nextSlide);
-    },
-    editInsight() {
-      this.isEditingInsight = true;
-      // save current insight name/desc in case the user cancels the edit action
-      this.insightTitle = this.isNewModeActive ? '' : this.updatedInsight.name;
-      this.insightDesc = this.isNewModeActive ? '' : this.updatedInsight.description;
-    },
-    cancelInsightEdit() {
-      this.isEditingInsight = false;
-      this.insightTitle = '';
-
-      // if annotation/cropping was enabled, we need to apply them
-      // this.revertImage();
-      if (this.markerArea?.isOpen) {
-        this.markerArea.close();
-      }
-      if (this.cropArea?.isOpen) {
-        this.cropArea.close();
-      }
-
-      if (this.isNewModeActive || this.updatedInsight === null) {
-        this.closeInsightReview();
-      }
-    },
-    confirmInsightEdit() {
-      this.isEditingInsight = false;
-
-      // save the updated insight in the backend
-      this.saveInsight();
-    },
-    getAnnotatedState(stateData: any) {
-      return !stateData
-        ? undefined
-        : {
-            markerAreaState: stateData.markerAreaState,
-            cropAreaState: stateData.cropState,
-            imagePreview: stateData.croppedNonAnnotatedImagePreview,
-            originalImagePreview: stateData.originalImagePreview,
-          };
-    },
-    saveInsight() {
-      if (this.hasError || this.insightTitle.trim().length === 0) return;
-
-      // FIXME: we should maintain the original non-cropped image for future crop edits
-      const refFinalImage = this.$refs.finalImagePreview as HTMLImageElement;
-      const annotateCropSaveObj = {
-        annotatedImagePreview: refFinalImage.src,
-        croppedNonAnnotatedImagePreview:
-          this.lastCroppedImage !== '' ? this.lastCroppedImage : this.originalImagePreview,
-        originalImagePreview: this.originalImagePreview,
-        markerAreaState: this.markerAreaState,
-        cropState: this.cropState,
-      };
-      const insightThumbnail = annotateCropSaveObj.annotatedImagePreview;
-      const annotationAndCropState = this.getAnnotatedState(annotateCropSaveObj);
-
-      const linkedQuestions = this.questionsList.filter((q) =>
-        this.selectedInsightQuestions.includes(q.question)
-      );
-
-      if (this.isNewModeActive) {
-        // saving a new insight
-        const url = this.$route.fullPath;
-
-        const newInsight: FullInsight = {
-          name: this.insightTitle,
-          description: this.insightDesc,
-          visibility: this.insightVisibility,
-          project_id: this.project,
-          context_id: this.contextId,
-          url,
-          target_view: this.insightTargetView,
-          pre_actions: null,
-          post_actions: null,
-          is_default: true,
-          analytical_question: linkedQuestions.map((q) => q.id as string),
-          image: insightThumbnail,
-          annotation_state: annotationAndCropState,
-          view_state: this.viewState,
-          data_state: this.dataState,
-        };
-        addInsight(newInsight)
-          .then((result) => {
-            const message =
-              result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
-            if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
-              this.toaster(message, TYPE.SUCCESS, false);
-              const count = this.countInsights + 1;
-              this.setCountInsights(count);
-
-              // after the insight is created and have a valid id, we need to link that to the question
-              if (linkedQuestions) {
-                const insightId = result.data.id;
-                linkedQuestions.forEach((section) => {
-                  this.addInsightToSection(insightId, section.id as string);
-                });
-              }
-            } else {
-              this.toaster(message, TYPE.INFO, true);
-            }
-            this.closeInsightReview();
-            this.setShouldRefetchInsights(true);
-          })
-          .catch(() => {
-            // just in case the call to the server fails
-            this.closeInsightReview();
-          });
-      } else {
-        // saving an existing insight
-        if (this.updatedInsight) {
-          // Invalidate cache
-          this.insightCache.delete(this.updatedInsight.id);
-
-          const updatedInsight = this.updatedInsight;
-          updatedInsight.name = this.insightTitle;
-          updatedInsight.description = this.insightDesc;
-          updatedInsight.image = insightThumbnail;
-          updatedInsight.annotation_state = annotationAndCropState;
-          updatedInsight.analytical_question = linkedQuestions.map((q) => q.id as string);
-          updateInsight(this.updatedInsight.id, updatedInsight).then((result) => {
-            if (result.updated === 'success') {
-              this.toaster(INSIGHTS.SUCCESSFUL_UPDATE, TYPE.SUCCESS, false);
-
-              // ensure when updating an insight to also update its linked questions
-              const insightId = this.updatedInsight.id;
-              linkedQuestions.forEach((q) => {
-                if (!q.linked_insights.includes(insightId)) {
-                  q.linked_insights.push(insightId);
-                  updateQuestion(q.id as string, q);
-                }
-              });
-            } else {
-              this.toaster(INSIGHTS.ERRONEOUS_UPDATE, TYPE.INFO, true);
-            }
-          });
-        }
-      }
-    },
-    selectInsight() {
-      const insight = this.updatedInsight;
-      const currentURL = this.$route.fullPath;
-      const finalURL = InsightUtil.jumpToInsightContext(insight, currentURL);
-      if (finalURL) {
-        this.$router.push(finalURL);
-      } else {
-        router
-          .push({
-            query: {
-              insight_id: insight.id,
-            },
-          })
-          .catch(() => {});
-      }
-      this.hideInsightPanel();
-    },
-    async exportInsight(exportType: string) {
-      const bibliographyMap = await getBibiographyFromCagIds([]);
-
-      switch (exportType) {
-        case 'Word':
-          InsightUtil.exportDOCX(
-            [this.updatedInsight],
-            this.projectMetadata,
-            undefined,
-            bibliographyMap
-          );
-          break;
-        case 'Powerpoint':
-          InsightUtil.exportPPTX([this.updatedInsight], this.projectMetadata);
-          break;
-        default:
-          break;
-      }
-    },
-    revertImage() {
-      if (this.markerArea?.isOpen) {
-        this.markerArea.close();
-      }
-
-      if (this.cropArea?.isOpen) {
-        this.cropArea.close();
-      }
-
-      this.markerAreaState = undefined;
-      this.cropState = undefined;
-      this.lastCroppedImage = '';
-      this.showCropInfoMessage = false;
-
-      // revert img reference to the original image
-      if (this.originalImagePreview && this.originalImagePreview !== '') {
-        const refFinalImage = this.$refs.finalImagePreview as HTMLImageElement;
-        refFinalImage.src = this.originalImagePreview;
-      }
-    },
-    annotateImage() {
-      if (this.cropArea?.isOpen) {
-        this.cropArea.close();
-      }
-
-      if (this.markerArea?.isOpen) {
-        return;
-      }
-
-      const refAnnotatedImage = this.$refs.finalImagePreview as HTMLImageElement;
-
-      // save the content of the annotated image to restore if the user cancels the annotation
-      this.lastAnnotatedImage = refAnnotatedImage.src;
-
-      // copy the cropped, non-annotated, image as the source of the annotation
-      refAnnotatedImage.src =
-        this.lastCroppedImage !== '' ? this.lastCroppedImage : this.originalImagePreview;
-
-      // create an instance of MarkerArea and pass the target image reference as a parameter
-      this.markerArea = new MarkerArea(refAnnotatedImage);
-
-      // attach the annotation UI to the parent of the image
-      this.markerArea.targetRoot = refAnnotatedImage.parentElement as HTMLElement;
-      this.markerArea.renderAtNaturalSize = true;
-
-      let annotationSaved = false;
-
-      // register an event listener for when user clicks Close in the marker.js UI
-      // NOTE: this event is also called when the user clicks OK/save in the marker.js UI
-      this.markerArea.addCloseEventListener(() => {
-        if (!annotationSaved) {
-          refAnnotatedImage.src = this.lastAnnotatedImage;
-        }
-        annotationSaved = false;
-      });
-
-      // register an event listener for when user clicks OK/save in the marker.js UI
-      this.markerArea.addRenderEventListener((dataUrl, state) => {
-        annotationSaved = true;
-
-        // we are setting the markup result to replace our original image on the page
-        // but you can set a different image or upload it to your server
-        refAnnotatedImage.src = dataUrl;
-
-        // save state
-        this.markerAreaState = state;
-      });
-
-      // finally, call the show() method and marker.js UI opens
-      this.markerArea.show();
-
-      // if previous state is present - restore it
-      if (this.markerAreaState) {
-        this.markerArea.restoreState(this.markerAreaState);
-      }
-    },
-    cropImage() {
-      if (this.markerArea?.isOpen) {
-        this.markerArea.close();
-      }
-      if (this.cropArea?.isOpen) {
-        return;
-      }
-
-      this.showCropInfoMessage = true;
-
-      const refCroppedImage = this.$refs.finalImagePreview as HTMLImageElement;
-
-      // create an instance of CropArea and pass the target image reference as a parameter
-      this.cropArea = new CropArea(refCroppedImage);
-      this.cropArea.renderAtNaturalSize = true;
-
-      // before beginning the crop mode,
-      //  we must ensure the full image is shown as the crop source
-      // @LIMITATION: we are not able to leverage a good preview of the full original image with annotations applied unless we invoke the annotate-tool and wait until it is done
-      refCroppedImage.src = this.originalImagePreview;
-
-      // attach the crop UI to the parent of the image
-      this.cropArea.targetRoot = refCroppedImage.parentElement as HTMLElement;
-
-      // ensure the whole image is visible all the time
-      this.cropArea.zoomToCropEnabled = false;
-
-      // do not allow rotation and image flipping
-      this.cropArea.styles.settings.hideBottomToolbar = true;
-
-      // hide alignment grid
-      this.cropArea.isGridVisible = false;
-
-      let croppedSaved = false;
-
-      // register an event listener for when user clicks Close in the marker.js UI
-      // NOTE: this event is also called when the user clicks OK/save in the marker.js UI
-      this.cropArea.addCloseEventListener(() => {
-        if (!croppedSaved) {
-          refCroppedImage.src = this.lastCroppedImage;
-
-          // hide the info message regarding the crop preview and the visibility of annotations
-          this.showCropInfoMessage = false;
-
-          // apply existing annotations, if any, after cancelling the image crop
-          nextTick(() => {
-            // note that this close event may be called if the user clicks Annotate while the crop mode was open
-            // so we should not request re-annotation (in the next tick)
-            //  or otherwise it would cancel the annotation mode that is being initiated
-            if (!this.markerArea?.isOpen) {
-              this.annotateImage();
-              (this.markerArea as MarkerArea).startRenderAndClose();
-            }
-          });
-        }
-        croppedSaved = false;
-      });
-
-      // register an event listener for when user clicks OK/save in the CROPRO UI
-      this.cropArea.addRenderEventListener((dataUrl, state) => {
-        // we are setting the cropping result to replace our original image on the page
-        // but you can set a different image or upload it to your server
-        refCroppedImage.src = dataUrl;
-
-        // save the cropped image (which would be used as the source of the annotation later on)
-        this.lastCroppedImage = dataUrl;
-
-        // hide the info message regarding the crop preview and the visibility of annotations
-        this.showCropInfoMessage = false;
-
-        // save state
-        this.cropState = state;
-
-        // apply existing annotations, if any, after cropping the image
-        nextTick(() => {
-          this.annotateImage();
-          (this.markerArea as MarkerArea).startRenderAndClose();
-        });
-      });
-
-      // finally, call the show() method and CROPRO UI opens
-      this.cropArea.show();
-
-      // handle previous state if present
-      if (this.cropState) {
-        //
-        // Do not restore the state and crop the image
-        // Instead, show the original image and the crop rect
-        //
-        const cropAreaTemp = this.cropArea as any;
-        cropAreaTemp.cropLayer.setCropRectangle(this.cropState.cropRect);
-      }
-    },
-  },
+  { immediate: true }
+);
+// every time the user navigates to a new insight (or removes the current insight), re-fetch the image
+// NOTE: imagePreview ideally could be a computed prop, but when in newMode the image is fetched differently
+//       plus once imagePreview is assigned its watch will apply-annotation insight if any
+watch(updatedInsight, (_updatedInsight) => {
+  imagePreview.value = _updatedInsight ? (_updatedInsight as FullInsight).image : null;
 });
+
+const {
+  finalImagePreview,
+  onCancelEdit,
+  cropImage,
+  annotateImage,
+  showCropInfoMessage,
+  annotationAndCropState,
+  insightThumbnail,
+  setAnnotation,
+} = useInsightAnnotation(imagePreview);
+
+const insightsBySection = computed<SectionWithInsights[]>(
+  () => store.getters['insightPanel/insightsBySection']
+);
+const positionInReview = computed<ReviewPosition | null>(
+  () => store.getters['insightPanel/positionInReview']
+);
+
+const selectedInsightQuestions = ref<string[]>([]);
+const insightQuestionInnerLabel = ref(LBL_EMPTY_INSIGHT_QUESTION);
+const loadingImage = ref(false);
+const isEditingInsight = ref(false);
+const insightTitle = ref('');
+const insightDesc = ref('');
+
+const editInsight = () => {
+  isEditingInsight.value = true;
+  // save current insight name/desc in case the user cancels the edit action
+  insightTitle.value = isNewModeActive.value ? '' : updatedInsight.value?.name ?? '';
+  insightDesc.value = isNewModeActive.value ? '' : updatedInsight.value?.description ?? '';
+};
+
+const getQuestionById = (id: string) => {
+  return questionsList.value.find((q) => q.id === id);
+};
+
+const insightLinkedQuestionsCount = computed<string>(() => {
+  if (
+    updatedInsight.value &&
+    isInsight.value &&
+    updatedInsight.value.analytical_question.length > 0
+  ) {
+    const linedQuestionsCount = (updatedInsight.value as Insight).analytical_question.length;
+    if (linedQuestionsCount > 1) {
+      return '+ ' + (linedQuestionsCount - 1).toString();
+    }
+  }
+  return '';
+});
+
+const insightQuestionLabel = computed<string>(() => {
+  if (isInsight.value && (updatedInsight.value as Insight).analytical_question.length === 0) {
+    // Current item is an insight that's not linked to any section.
+    return '';
+  }
+  // Current item is an insight linked to one or more sections, or current
+  //  item is a section itself, or we're in the process of making a new
+  //  insight.
+  const section = positionInReview.value ? getQuestionById(positionInReview.value.sectionId) : null;
+  return section?.question ?? '';
+});
+
+watch(
+  () => [questionsList.value, isEditingInsight.value],
+  () => {
+    // if we are reviewing this insight in edit mode,
+    //  it may have a current linking with some analytical question
+    //  so we need to surface that
+    if (updatedInsight.value && isInsight.value) {
+      const initialSelection: string[] = [];
+      updatedInsight.value.analytical_question.forEach((q: string) => {
+        const questionObj = getQuestionById(q);
+        if (questionObj) {
+          initialSelection.push(questionObj.question);
+        }
+      });
+      selectedInsightQuestions.value = initialSelection;
+      if (initialSelection.length > 0) {
+        insightQuestionInnerLabel.value = '';
+      }
+    }
+  },
+  {
+    immediate: true, // need to force updating the selected list when toggling the edit mode
+  }
+);
+
+const errorMsg = ref(MSG_EMPTY_INSIGHT_NAME);
+const showMetadataPanel = ref(false);
+const hasError = ref(false); // true when insight name is invalid
+
+const showNewQuestion = ref(false);
+const messageNoData = ref(INSIGHTS.NO_DATA);
+
+watch(insightTitle, (_insightTitle) => {
+  hasError.value = _insightTitle.length === 0 || _insightTitle === LBL_EMPTY_INSIGHT_NAME;
+});
+
+const currentPane = computed(() => store.getters['insightPanel/currentPane']);
+const setCurrentPane = (newPane: string) => store.dispatch('insightPanel/setCurrentPane', newPane);
+const isNewModeActive = computed(() => currentPane.value === 'review-new-insight');
+const isEditModeActive = computed(() => currentPane.value === 'review-edit-insight');
+watch(
+  isEditModeActive,
+  () => {
+    if (updatedInsight.value && isEditModeActive.value) {
+      editInsight();
+    }
+  },
+  { immediate: true }
+);
+
+const project = computed(() => store.getters['app/project']);
+const currentView = computed(() => store.getters['app/currentView']);
+const dataState = computed(() => store.getters['insightPanel/dataState']);
+const viewState = computed(() => store.getters['insightPanel/viewState']);
+const contextId = computed(() => store.getters['insightPanel/contextId']);
+const snapshotUrl = computed(() => store.getters['insightPanel/snapshotUrl']);
+const projectMetadata = computed(() => store.getters['app/projectMetadata']);
+
+const questionsDropdown = computed(() => [...questionsList.value.map((q) => q.question)]);
+
+const nextSlide = computed<ReviewPosition | null>(() => {
+  if (positionInReview.value === null) {
+    // In the process of making a new insight.
+    return null;
+  }
+  const { sectionId, insightId } = positionInReview.value;
+  const sectionWithInsights = insightsBySection.value.find(
+    (_section) => _section.section.id === sectionId
+  );
+  // If there's no section currently selected, return null;
+  if (sectionWithInsights === undefined) {
+    return null;
+  }
+  const insightIndex = sectionWithInsights.insights.findIndex(
+    (insight) => insight.id === insightId
+  );
+  // If section has insights and current insight is not the last insight in
+  //  the current section, go to the next insight in the current section.
+  if (insightIndex !== sectionWithInsights.insights.length - 1 && insightIndex !== -1) {
+    return {
+      sectionId,
+      insightId: sectionWithInsights.insights[insightIndex + 1].id as string,
+    };
+  }
+  // Otherwise, go to the next section
+  const sectionIndex = insightsBySection.value.findIndex(
+    (_section) => _section.section.id === sectionId
+  );
+  if (sectionIndex === insightsBySection.value.length - 1) {
+    // Current section is last section
+    return null;
+  }
+  const nextSectionWithInsights = insightsBySection.value[sectionIndex + 1];
+  return nextSectionWithInsights.insights.length > 0
+    ? // Go to first insight in next section
+      {
+        sectionId: nextSectionWithInsights.section.id as string,
+        insightId: nextSectionWithInsights.insights[0].id as string,
+      }
+    : // Next section has no insights, so go to that section
+      {
+        sectionId: nextSectionWithInsights.section.id as string,
+        insightId: null,
+      };
+});
+
+const previousSlide = computed<ReviewPosition | null>(() => {
+  if (positionInReview.value === null) {
+    // In the process of making a new insight.
+    return null;
+  }
+  const { sectionId, insightId } = positionInReview.value;
+  const sectionWithInsights = insightsBySection.value.find(
+    (_section) => _section.section.id === sectionId
+  );
+  // If there's no section currently selected, return null;
+  if (sectionWithInsights === undefined) {
+    return null;
+  }
+  const insightIndex = sectionWithInsights.insights.findIndex(
+    (insight) => insight.id === insightId
+  );
+  // If section has insights and current insight is not the first insight in
+  //  the current section, go to the previous insight in the current
+  //  section.
+  if (insightIndex !== 0 && insightIndex !== -1) {
+    return {
+      sectionId,
+      insightId: sectionWithInsights.insights[insightIndex - 1].id as string,
+    };
+  }
+  // Otherwise, go to the previous section
+  const sectionIndex = insightsBySection.value.findIndex(
+    (_section) => _section.section.id === sectionId
+  );
+  if (sectionIndex === 0) {
+    // Current section is the first section
+    return null;
+  }
+  const previousSectionWithInsights = insightsBySection.value[sectionIndex - 1];
+  return previousSectionWithInsights.insights.length > 0
+    ? // Go to last insight in next section
+      {
+        sectionId: previousSectionWithInsights.section.id as string,
+        insightId: previousSectionWithInsights.insights[
+          previousSectionWithInsights.insights.length - 1
+        ].id as string,
+      }
+    : // Previous section has no insights, so go to that section
+      {
+        sectionId: previousSectionWithInsights.section.id as string,
+        insightId: null,
+      };
+});
+
+const metadataDetails = computed<InsightMetadata>(() => {
+  const dState: DataState | null =
+    isNewModeActive.value || updatedInsight.value === null
+      ? dataState.value
+      : updatedInsight.value.data_state;
+  const insightLastUpdate =
+    isNewModeActive.value || updatedInsight.value === null
+      ? undefined
+      : updatedInsight.value.modified_at;
+  const insightSummary = extractMetadataDetails(dState, projectMetadata.value, insightLastUpdate);
+  return insightSummary;
+});
+const previewInsightTitle = computed(() => {
+  if (loadingImage.value) return '';
+  return updatedInsight.value && updatedInsight.value.name.length > 0
+    ? updatedInsight.value.name
+    : LBL_EMPTY_INSIGHT_NAME;
+});
+const previewInsightDesc = computed(() => {
+  if (loadingImage.value) return '';
+  return updatedInsight.value?.description && updatedInsight.value.description.length > 0
+    ? updatedInsight.value.description
+    : '<Insight description missing...>';
+});
+
+const projectType = computed(() => store.getters['app/projectType']);
+const insightVisibility = computed(() =>
+  projectType.value === ProjectType.Analysis ? 'private' : 'public'
+);
+const insightTargetView = computed(() =>
+  // an insight created during model publication should be listed either
+  //  in the full list of insights,
+  //  or as a context specific insight when opening the page of the corresponding model family instance
+  projectType.value === ProjectType.Analysis
+    ? [currentView.value, 'overview', 'dataComparative']
+    : ['data', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher']
+);
+
+const takeSnapshot = async () => {
+  const url = snapshotUrl.value;
+  if (url) {
+    const b64Str = await fetchImageAsBase64(url);
+    if (b64Str) {
+      return b64Str;
+    }
+    // otherwise, capture snapshot the usual way
+  }
+  const el = document.getElementsByClassName(INSIGHT_CAPTURE_CLASS)[0] as HTMLElement;
+  const image = _.isNil(el) ? null : (await html2canvas(el, { scale: 1 })).toDataURL();
+  return image;
+};
+onMounted(async () => {
+  if (isNewModeActive.value) {
+    loadingImage.value = true;
+    imagePreview.value = await takeSnapshot();
+    loadingImage.value = false;
+    showMetadataPanel.value = true;
+    editInsight();
+  }
+});
+const showInsightPanel = () => store.dispatch('insightPanel/showInsightPanel');
+const setUpdatedInsight = (newValue: null | Insight | FullInsight | AnalyticalQuestion) =>
+  store.dispatch('insightPanel/setUpdatedInsight', newValue);
+const setInsightsBySection = (newValue: SectionWithInsights[]) =>
+  store.dispatch('insightPanel/setInsightsBySection', newValue);
+const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
+
+const setShouldRefetchInsights = (newValue: boolean) =>
+  store.dispatch('insightPanel/setShouldRefetchInsights', newValue);
+
+const setInsightQuestions = (questions: string[]) => {
+  selectedInsightQuestions.value = questions;
+  insightQuestionInnerLabel.value = questions.length === 0 ? LBL_EMPTY_INSIGHT_QUESTION : '';
+};
+
+const addNewQuestion = (newQuestionText: string) => {
+  showNewQuestion.value = false;
+  const handleSuccessfulAddition = () => {
+    toaster(QUESTIONS.SUCCESSFUL_ADDITION, TYPE.SUCCESS, false);
+    // FIXME: seems like there's a bug here. If we already have a section
+    //  assigned to the insight and we add a new one, we want to append to
+    //  the list, not replace it.
+    setInsightQuestions([newQuestionText]);
+  };
+  const handleFailedAddition = () => {
+    toaster(QUESTIONS.ERRONEOUS_ADDITION, TYPE.INFO, true);
+  };
+  addSection(newQuestionText, handleSuccessfulAddition, handleFailedAddition);
+};
+
+const closeInsightReview = () => {
+  if (isNewModeActive.value) {
+    hideInsightPanel();
+    setCurrentPane('');
+  } else {
+    if (updatedInsight.value) {
+      cancelInsightEdit();
+    }
+    showInsightPanel();
+    setCurrentPane('list-insights');
+  }
+};
+
+const removeInsight = () => {
+  // before deletion, find the index of the insight to be removed
+  const insightIdToDelete = updatedInsight.value?.id;
+  if (insightIdToDelete === undefined) return;
+  // remove the insight from the server
+  insightServiceRemoveInsight(insightIdToDelete, store);
+
+  // close editing before deleting insight (this will ensure annotation/crop mode is cleaned up)
+  cancelInsightEdit();
+  // remove this insight from each section that contains it in the store
+  const filteredInsightsBySection = insightsBySection.value.map(({ section, insights }) => ({
+    section,
+    insights: insights.filter((insight) => insight.id !== insightIdToDelete),
+  }));
+  setInsightsBySection(filteredInsightsBySection);
+  // Decide which slide to show next
+  if (nextSlide.value && nextSlide.value.insightId !== insightIdToDelete) {
+    goToNextSlide();
+  } else if (previousSlide.value && previousSlide.value.insightId !== insightIdToDelete) {
+    goToPreviousSlide();
+  } else {
+    // Either there are no more insights, or we're in an edge case where we
+    //  just deleted an insight that is both the first insight of the next
+    //  section, and the last insight of the previous section.
+    // Either way, exit the review modal.
+    setUpdatedInsight(null);
+    showMetadataPanel.value = false;
+    closeInsightReview();
+  }
+};
+
+const setPositionInReview = (newPosition: ReviewPosition | null) =>
+  store.dispatch('insightPanel/setPositionInReview', newPosition);
+const goToPreviousSlide = () => {
+  if (isEditingInsight.value) {
+    cancelInsightEdit();
+  }
+  setUpdatedInsight(InsightUtil.getSlideFromPosition(insightsBySection.value, previousSlide.value));
+  setPositionInReview(previousSlide.value);
+};
+const goToNextSlide = () => {
+  if (isEditingInsight.value) {
+    cancelInsightEdit();
+  }
+  setUpdatedInsight(InsightUtil.getSlideFromPosition(insightsBySection.value, nextSlide.value));
+  setPositionInReview(nextSlide.value);
+};
+const cancelInsightEdit = () => {
+  isEditingInsight.value = false;
+  insightTitle.value = '';
+  onCancelEdit();
+  if (isNewModeActive.value || updatedInsight.value === null) {
+    closeInsightReview();
+  }
+};
+const confirmInsightEdit = () => {
+  isEditingInsight.value = false;
+
+  // save the updated insight in the backend
+  saveInsight();
+};
+const route = useRoute();
+
+const countInsights = computed(() => store.getters['insightPanel/countInsights']);
+const setCountInsights = (newCount: number) =>
+  store.dispatch('insightPanel/setCountInsights', newCount);
+
+const saveInsight = () => {
+  if (hasError.value || insightTitle.value.trim().length === 0) return;
+
+  const linkedQuestions = questionsList.value.filter((q) =>
+    selectedInsightQuestions.value.includes(q.question)
+  );
+
+  if (isNewModeActive.value) {
+    // saving a new insight
+    const url = route.fullPath;
+
+    const newInsight: FullInsight = {
+      name: insightTitle.value,
+      description: insightDesc.value,
+      visibility: insightVisibility.value,
+      project_id: project.value,
+      context_id: contextId.value,
+      url,
+      target_view: insightTargetView.value,
+      pre_actions: null,
+      post_actions: null,
+      is_default: true,
+      analytical_question: linkedQuestions.map((q) => q.id as string),
+      image: insightThumbnail.value ?? '',
+      annotation_state: annotationAndCropState.value,
+      view_state: viewState.value,
+      data_state: dataState.value,
+    };
+    addInsight(newInsight)
+      .then((result) => {
+        const message =
+          result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
+        if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
+          toaster(message, TYPE.SUCCESS, false);
+          const count = countInsights.value + 1;
+          setCountInsights(count);
+
+          // after the insight is created and have a valid id, we need to link that to the question
+          if (linkedQuestions) {
+            const insightId = result.data.id;
+            linkedQuestions.forEach((section) => {
+              addInsightToSection(insightId, section.id as string);
+            });
+          }
+        } else {
+          toaster(message, TYPE.INFO, true);
+        }
+        closeInsightReview();
+        setShouldRefetchInsights(true);
+      })
+      .catch(() => {
+        // just in case the call to the server fails
+        closeInsightReview();
+      });
+  } else {
+    // saving an existing insight
+    const insightId = updatedInsight.value?.id;
+    if (updatedInsight.value && insightId) {
+      // Invalidate cache
+      insightCache.delete(insightId);
+
+      const _updatedInsight = updatedInsight.value as FullInsight;
+      _updatedInsight.name = insightTitle.value;
+      _updatedInsight.description = insightDesc.value;
+      _updatedInsight.image = insightThumbnail.value ?? '';
+      _updatedInsight.annotation_state = annotationAndCropState.value;
+      _updatedInsight.analytical_question = linkedQuestions.map((q) => q.id as string);
+      updateInsight(insightId, _updatedInsight).then((result) => {
+        if (result.updated === 'success') {
+          toaster(INSIGHTS.SUCCESSFUL_UPDATE, TYPE.SUCCESS, false);
+
+          // ensure when updating an insight to also update its linked questions
+          linkedQuestions.forEach((q) => {
+            if (!q.linked_insights.includes(insightId)) {
+              q.linked_insights.push(insightId);
+              updateQuestion(q.id as string, q);
+            }
+          });
+        } else {
+          toaster(INSIGHTS.ERRONEOUS_UPDATE, TYPE.INFO, true);
+        }
+      });
+    }
+  }
+};
+
+const router = useRouter();
+const selectInsight = () => {
+  const insight = updatedInsight.value as Insight;
+  const currentURL = route.fullPath;
+  const finalURL = InsightUtil.jumpToInsightContext(insight, currentURL);
+  if (finalURL) {
+    router.push(finalURL);
+  } else {
+    router
+      .push({
+        query: {
+          insight_id: insight.id,
+        },
+      })
+      .catch(() => {});
+  }
+  hideInsightPanel();
+};
+const exportInsight = async (exportType: 'Powerpoint' | 'Word') => {
+  const bibliographyMap = await getBibiographyFromCagIds([]);
+  if (exportType === 'Word') {
+    InsightUtil.exportDOCX(
+      [updatedInsight.value as FullInsight],
+      projectMetadata.value,
+      undefined,
+      bibliographyMap
+    );
+  } else {
+    InsightUtil.exportPPTX([updatedInsight.value as FullInsight], projectMetadata.value);
+  }
+};
 </script>
 
 <style lang="scss" scoped>

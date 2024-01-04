@@ -9,7 +9,7 @@ import { TYPE } from 'vue-toastification';
 
 // This defines the fields in ES that you can filter by
 export interface InsightFilterFields {
-  id?: string[]; // allows searching by multiple IDs
+  id?: string | string[]; // allows searching by multiple IDs
   project_id?: string;
   context_id?: string;
   visibility?: string;
