@@ -61,7 +61,7 @@
             class="context-insight-thumbnail"
           />
           <div
-            v-if="contextInsight.description.length > 0"
+            v-if="contextInsight.description?.length ?? 0 > 0"
             class="context-insight-description"
             :class="{ 'private-insight-description': contextInsight.visibility === 'private' }"
           >
@@ -71,7 +71,7 @@
         </div>
       </div>
     </div>
-    <message-display v-else :message="messageNoData" />
+    <message-display v-else :message="MESSAGE_NO_DATA" />
     <button type="button" class="btn pane-footer" @click="openInsightsExplorer">
       <i class="fa fa-fw fa-star fa-lg" />
       Review All Insights
@@ -79,7 +79,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
 import { computed } from 'vue';
 import { mapGetters, mapActions, useStore } from 'vuex';
@@ -89,7 +89,6 @@ import ImgLazy from '@/components/widgets/img-lazy.vue';
 import { INSIGHTS } from '@/utils/messages-util';
 import InsightUtil from '@/utils/insight-util';
 
-import router from '@/router';
 import useInsightsData from '@/composables/useInsightsData';
 import { countPublicInsights, fetchFullInsights, removeInsight } from '@/services/insight-service';
 import { ProjectType } from '@/types/Enums';
@@ -97,6 +96,8 @@ import MessageDisplay from '@/components/widgets/message-display.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
+import useInsightStore from '@/composables/useInsightStore';
+import { Insight } from '@/types/Insight';
 
 export default {
   name: 'ListContextInsightPane',
@@ -113,18 +114,40 @@ export default {
     },
   },
   data: () => ({
-    messageNoData: INSIGHTS.NO_DATA,
-    selectedContextInsight: null,
+    MESSAGE_NO_DATA: INSIGHTS.NO_DATA,
+    selectedContextInsight: null as Insight | null,
   }),
   setup() {
     const store = useStore();
     // the gallery opens over top of this side panel, prevent fetches while the gallery is open
     const preventFetches = computed(() => store.getters['insightPanel/isPanelOpen']);
-    const { insights, reFetchInsights } = useInsightsData(preventFetches, undefined, true);
+    const { insights: listContextInsights, reFetchInsights } = useInsightsData(
+      preventFetches,
+      undefined,
+      true
+    );
+
+    const {
+      showInsightPanel,
+      setCurrentPane,
+      setUpdatedInsight,
+      setInsightsBySection,
+      setPositionInReview,
+      setRefreshDatacubes,
+      setSnapshotUrl,
+    } = useInsightStore();
 
     return {
-      listContextInsights: insights,
+      listContextInsights,
       reFetchInsights,
+
+      showInsightPanel,
+      setCurrentPane,
+      setUpdatedInsight,
+      setInsightsBySection,
+      setPositionInReview,
+      setRefreshDatacubes,
+      setSnapshotUrl,
     };
   },
   computed: {
@@ -133,30 +156,11 @@ export default {
       projectType: 'app/projectType',
       project: 'app/project',
     }),
-    metadataSummary() {
-      const projectCreatedDate = new Date(this.projectMetadata.created_at);
-      const projectModifiedDate = new Date(this.projectMetadata.modified_at);
-      return (
-        `Project: ${
-          this.projectMetadata.name
-        } - Created: ${projectCreatedDate.toLocaleString()} - ` +
-        `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${
-          this.projectMetadata.corpus_id
-        }`
-      );
-    },
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      showInsightPanel: 'insightPanel/showInsightPanel',
-      setCurrentPane: 'insightPanel/setCurrentPane',
-      setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightsBySection: 'insightPanel/setInsightsBySection',
-      setPositionInReview: 'insightPanel/setPositionInReview',
-      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
-      setSnapshotUrl: 'insightPanel/setSnapshotUrl',
     }),
     newInsight() {
       this.setSnapshotUrl(undefined);
@@ -168,10 +172,12 @@ export default {
       this.showInsightPanel();
       this.setCurrentPane('list-insights');
     },
-    async exportContextInsight(item) {
+    async exportContextInsight(item: 'Word' | 'Powerpoint') {
       this.enableOverlay('Preparing to export insights');
       const bibliographyMap = await getBibiographyFromCagIds([]);
-      const insights = await fetchFullInsights({ id: this.listContextInsights.map((d) => d.id) });
+      const insights = await fetchFullInsights({
+        id: this.listContextInsights.map((d) => d.id as string),
+      });
       this.disableOverlay();
 
       switch (item) {
@@ -185,7 +191,7 @@ export default {
           break;
       }
     },
-    selectContextInsight(contextInsight) {
+    selectContextInsight(contextInsight: Insight) {
       if (contextInsight === this.selectedContextInsight) {
         this.selectedContextInsight = null;
         return;
@@ -224,7 +230,7 @@ export default {
         // add 'insight_id' as a URL param so that the target page can apply it
         const finalURL = InsightUtil.getSourceUrlForExport(
           savedURL,
-          this.selectedContextInsight.id,
+          this.selectedContextInsight.id as string,
           datacubeId
         );
 
@@ -232,7 +238,7 @@ export default {
           this.$router.push(finalURL);
         } catch (e) {}
       } else {
-        router
+        this.$router
           .push({
             query: {
               insight_id: this.selectedContextInsight.id,
@@ -242,10 +248,10 @@ export default {
           .catch(() => {});
       }
     },
-    isDisabled(insight) {
+    isDisabled(insight: Insight) {
       return insight.visibility === 'public' && this.projectType === ProjectType.Analysis;
     },
-    async deleteContextInsight(insight) {
+    async deleteContextInsight(insight: Insight) {
       if (this.isDisabled(insight)) {
         return;
       }
@@ -266,12 +272,11 @@ export default {
         }
       }
 
-      const id = insight.id;
-      await removeInsight(id);
+      await removeInsight(insight.id as string);
       // refresh the latest list from the server
       this.reFetchInsights();
     },
-    editContextInsight(insight) {
+    editContextInsight(insight: Insight) {
       if (this.isDisabled(insight)) {
         return;
       }
@@ -286,8 +291,8 @@ export default {
       ];
       this.setInsightsBySection(insightsBySection);
       this.setPositionInReview({
-        sectionId: dummySection.id,
-        insightId: insight.id,
+        sectionId: dummySection.id as string,
+        insightId: insight.id as string,
       });
       this.setCurrentPane('review-edit-insight');
     },
