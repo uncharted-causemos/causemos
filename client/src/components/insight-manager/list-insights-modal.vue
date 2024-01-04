@@ -99,6 +99,7 @@ import { countPublicInsights, fetchFullInsights, removeInsight } from '@/service
 import { AnalyticalQuestion, Insight, SectionWithInsights } from '@/types/Insight';
 import useQuestionsData from '@/composables/useQuestionsData';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
+import useInsightStore from '@/composables/useInsightStore';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
@@ -156,6 +157,14 @@ export default defineComponent({
       });
     });
 
+    const {
+      setCurrentPane,
+      setInsightsBySection,
+      setRefreshDatacubes,
+      setPositionInReview,
+      setUpdatedInsight,
+    } = useInsightStore();
+
     return {
       fullInsights: insights,
       reFetchInsights,
@@ -169,6 +178,11 @@ export default defineComponent({
       questionsList,
       store,
       toaster,
+      setUpdatedInsight,
+      setCurrentPane,
+      setInsightsBySection,
+      setRefreshDatacubes,
+      setPositionInReview,
     };
   },
   computed: {
@@ -224,11 +238,6 @@ export default defineComponent({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setCurrentPane: 'insightPanel/setCurrentPane',
-      setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightsBySection: 'insightPanel/setInsightsBySection',
-      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
-      setPositionInReview: 'insightPanel/setPositionInReview',
     }),
     closeInsightPanel() {
       this.hideInsightPanel();
@@ -256,8 +265,8 @@ export default defineComponent({
       this.setUpdatedInsight(insight);
       const dummySection = InsightUtil.createEmptyChecklistSection();
       this.setPositionInReview({
-        sectionId: dummySection.id,
-        insightId: insight.id,
+        sectionId: dummySection.id as string,
+        insightId: insight.id as string,
       });
       this.setInsightsBySection([
         {
@@ -341,8 +350,8 @@ export default defineComponent({
       this.setUpdatedInsight(insight);
       const dummySection = InsightUtil.createEmptyChecklistSection();
       this.setPositionInReview({
-        sectionId: dummySection.id,
-        insightId: insight.id,
+        sectionId: dummySection.id as string,
+        insightId: insight.id as string,
       });
       this.setInsightsBySection([
         {
@@ -367,10 +376,10 @@ export default defineComponent({
           ? _section
           : this.fullInsights.find((insight) => insight.id === _insightId);
 
-      this.setUpdatedInsight(insightOrSection);
+      this.setUpdatedInsight(insightOrSection ?? null);
       this.setPositionInReview({
         sectionId: _sectionId,
-        insightId: _insightId,
+        insightId: _insightId as string,
       });
       this.setInsightsBySection(this.insightsBySection);
       this.setCurrentPane('review-insight');
