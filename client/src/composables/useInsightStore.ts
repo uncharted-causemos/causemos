@@ -11,7 +11,7 @@ export default function useInsightStore() {
   const showInsightPanel = () => {
     store.dispatch('insightPanel/showInsightPanel');
   };
-  const setUpdatedInsight = (updatedInsight: Insight | null) => {
+  const setUpdatedInsight = (updatedInsight: Insight | AnalyticalQuestion | null) => {
     store.dispatch('insightPanel/setUpdatedInsight', updatedInsight);
   };
   const setCurrentPane = (newInsightPane: string) => {
