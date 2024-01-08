@@ -19,6 +19,7 @@ import { createNewOutputIndex } from '@/utils/index-tree-util';
 import { createNewIndexResultsSettings } from '@/utils/index-results-util';
 import { createNewIndexProjectionSettings } from '@/utils/index-projection-util';
 import { DEFAULT_EARLIEST_YEAR, DEFAULT_LAST_YEAR } from '@/composables/useProjectionDates';
+import { getId } from '@/utils/analysis-util';
 
 /**
  * Get analysis by ID
@@ -206,9 +207,9 @@ export const calculateResetRegionRankingWeights = (
   const equalWeight = 100 / selectedItemCount;
   const newStates = {} as RegionRankingItemStates;
   analysisItems.forEach((item) => {
-    newStates[item.itemId] = {
+    newStates[getId(item)] = {
       weight: item.selected ? equalWeight : 0,
-      isInverted: regionRankingItemStates[item.itemId]?.isInverted ?? false,
+      isInverted: regionRankingItemStates[getId(item)]?.isInverted ?? false,
     };
   });
   return newStates;

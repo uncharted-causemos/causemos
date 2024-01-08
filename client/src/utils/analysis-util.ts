@@ -1,8 +1,15 @@
-import { AnalysisItem, CachedDatacubeMetadata } from '@/types/Analysis';
+import {
+  AnalysisItem,
+  CachedDatacubeMetadata,
+  NewAnalysisItem,
+  OldAnalysisItem,
+} from '@/types/Analysis';
 import _ from 'lodash';
 import { computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { createDataSpaceDataState } from './insight-util';
+import { ModelOrDatasetState } from '@/types/Datacube';
+import { convertFromLegacyState } from './legacy-data-space-state-util';
 
 export const MAX_ANALYSIS_DATACUBES_COUNT = 9;
 
@@ -23,6 +30,49 @@ export const createAnalysisItem = (
     viewConfig: {},
     selected: isSelected,
   };
+};
+
+export const createNewAnalysisItem = (
+  datacubeId: string,
+  dataState: ModelOrDatasetState,
+  isSelected: boolean
+): NewAnalysisItem => {
+  return {
+    id: uuidv4(),
+    datacubeId,
+    selected: isSelected,
+    state: dataState,
+  };
+};
+
+export function isNewAnalysisItem(analysisItem: AnalysisItem): analysisItem is NewAnalysisItem {
+  return (analysisItem as NewAnalysisItem).state !== undefined;
+}
+
+export const getDatacubeId = (analysisItem: AnalysisItem) => {
+  return isNewAnalysisItem(analysisItem) ? analysisItem.datacubeId : analysisItem.id;
+};
+
+export const getId = (analysisItem: AnalysisItem) => {
+  return isNewAnalysisItem(analysisItem) ? analysisItem.id : analysisItem.itemId;
+};
+
+export const duplicate = (analysisItem: AnalysisItem) => {
+  const duplicated: AnalysisItem = _.cloneDeep(analysisItem);
+  isNewAnalysisItem(duplicated) ? (duplicated.id = uuidv4()) : (duplicated.itemId = uuidv4());
+  return duplicated;
+};
+
+const getNewStateFromOldAnalysisItem = (analysisItem: OldAnalysisItem) => {
+  const featureName = analysisItem.cachedMetadata.featureName;
+  const { datacubeId, viewConfig, dataConfig } = analysisItem;
+  return convertFromLegacyState(featureName, datacubeId, '', viewConfig, dataConfig);
+};
+
+export const getState = (analysisItem: AnalysisItem) => {
+  return isNewAnalysisItem(analysisItem)
+    ? analysisItem.state
+    : getNewStateFromOldAnalysisItem(analysisItem);
 };
 
 export function updateDatacubesOutputsMap(

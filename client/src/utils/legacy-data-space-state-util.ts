@@ -1,9 +1,7 @@
 import {
   BreakdownState,
   BreakdownStateNone,
-  Indicator,
   MapDisplayOptions,
-  Model,
   ModelOrDatasetState,
 } from '@/types/Datacube';
 import {
@@ -104,14 +102,16 @@ export const convertToLegacyViewState = (state: ModelOrDatasetState) => {
 };
 
 export const convertFromLegacyState = (
-  metadata: Model | Indicator,
+  outputName: string,
+  dataId: string,
   defaultRunId: string,
   viewState: ViewState,
   dataState: DataSpaceDataState
 ) => {
   const defaultBreakdownState: BreakdownStateNone = {
-    outputName: metadata.default_feature,
-    modelRunIds: [defaultRunId],
+    // outputName: metadata.default_feature,
+    outputName,
+    modelRunIds: defaultRunId ? [defaultRunId] : [],
     comparisonSettings: {
       baselineTimeseriesId: defaultRunId,
       shouldDisplayAbsoluteValues: true,
@@ -128,7 +128,8 @@ export const convertFromLegacyState = (
     numberOfColorBins: viewState.numberOfColorBins ?? 5,
   };
   const defaultState: ModelOrDatasetState = {
-    dataId: metadata.data_id,
+    // dataId: metadata.data_id,
+    dataId,
     breakdownState: defaultBreakdownState,
     mapDisplayOptions,
     selectedTimestamp: dataState.selectedTimestamp ?? null,

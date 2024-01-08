@@ -1,7 +1,6 @@
-import { AnalysisItem, CachedDatacubeMetadata, DataAnalysisState } from '@/types/Analysis';
 import _ from 'lodash';
+import { AnalysisItem, CachedDatacubeMetadata, DataAnalysisState } from '@/types/Analysis';
 import { computed, Ref, ref, watch } from 'vue';
-import { v4 as uuidv4 } from 'uuid';
 import { DataSpaceDataState } from '@/types/Insight';
 import {
   getAnalysis,
@@ -11,7 +10,12 @@ import {
   didSelectedItemsChange,
 } from '../services/analysis-service';
 import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
-import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
+import {
+  MAX_ANALYSIS_DATACUBES_COUNT,
+  isNewAnalysisItem,
+  getId,
+  duplicate,
+} from '@/utils/analysis-util';
 
 // Whenever a change is made, wait SYNC_DELAY_MS before saving to the backend to
 //  group requests together.
@@ -57,13 +61,12 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     }
   };
   const removeAnalysisItem = (itemId: string) => {
-    setAnalysisItems(analysisItems.value.filter((item) => item.itemId !== itemId));
+    setAnalysisItems(analysisItems.value.filter((item) => getId(item) !== itemId));
   };
   const duplicateAnalysisItem = (itemId: string) => {
-    const itemToDuplicate = analysisItems.value.find((item) => item.itemId === itemId);
+    const itemToDuplicate = analysisItems.value.find((item) => getId(item) === itemId);
     if (itemToDuplicate !== undefined) {
-      const duplicatedItem = _.cloneDeep(itemToDuplicate);
-      duplicatedItem.itemId = uuidv4();
+      const duplicatedItem = duplicate(itemToDuplicate);
       if (selectedAnalysisItems.value.length >= MAX_ANALYSIS_DATACUBES_COUNT) {
         duplicatedItem.selected = false;
       }
@@ -72,7 +75,7 @@ export function useDataAnalysis(analysisId: Ref<string>) {
   };
   const toggleAnalysisItemSelected = (itemId: string) => {
     const items = _.cloneDeep(analysisItems.value);
-    const itemToToggle = items.find((i) => i.itemId === itemId);
+    const itemToToggle = items.find((i) => getId(i) === itemId);
     if (itemToToggle) {
       itemToToggle.selected = !itemToToggle.selected;
       setAnalysisItems(items);
@@ -80,16 +83,16 @@ export function useDataAnalysis(analysisId: Ref<string>) {
   };
   const setAnalysisItemViewConfig = (itemId: string, viewConfig: any) => {
     const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-    const analysisItem = updatedAnalysisItems.find((item) => item.itemId === itemId);
-    if (analysisItem) {
+    const analysisItem = updatedAnalysisItems.find((item) => getId(item) === itemId);
+    if (analysisItem && !isNewAnalysisItem(analysisItem)) {
       analysisItem.viewConfig = viewConfig;
       setAnalysisItems(updatedAnalysisItems);
     }
   };
   const setAnalysisItemDataState = (itemId: string, dataState: DataSpaceDataState) => {
     const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-    const analysisItem = updatedAnalysisItems.find((item) => item.itemId === itemId);
-    if (analysisItem) {
+    const analysisItem = updatedAnalysisItems.find((item) => getId(item) === itemId);
+    if (analysisItem && !isNewAnalysisItem(analysisItem)) {
       analysisItem.dataConfig = dataState;
       setAnalysisItems(updatedAnalysisItems);
     }
@@ -99,8 +102,8 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     partialMetadata: Partial<CachedDatacubeMetadata>
   ) => {
     const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-    const analysisItem = updatedAnalysisItems.find((item) => item.itemId === itemId);
-    if (analysisItem) {
+    const analysisItem = updatedAnalysisItems.find((item) => getId(item) === itemId);
+    if (analysisItem && !isNewAnalysisItem(analysisItem)) {
       const beforeChange = _.cloneDeep(analysisItem.cachedMetadata);
       analysisItem.cachedMetadata = {
         ...analysisItem.cachedMetadata,

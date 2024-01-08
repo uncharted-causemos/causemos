@@ -25,9 +25,13 @@ import useToaster from '@/composables/useToaster';
 import { useDataAnalysis } from '@/composables/useDataAnalysis';
 
 import { ANALYSIS } from '@/utils/messages-util';
-import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
+import {
+  createNewAnalysisItem,
+  getDatacubeId,
+  MAX_ANALYSIS_DATACUBES_COUNT,
+} from '@/utils/analysis-util';
 
-import { getDatacubeMetadataToCache, getDatacubesByIds } from '@/services/datacube-service';
+import { getDatacubesByIds } from '@/services/datacube-service';
 import {
   saveAnalysisState,
   calculateResetRegionRankingWeights,
@@ -46,7 +50,7 @@ const navBackLabel = computed(() => `Back to ${analysisName.value || 'analysis'}
 
 const selectedDatacubes = ref<Datacube[]>([]);
 watch(analysisItems, async () => {
-  const ids = analysisItems.value.map((item) => item.id);
+  const ids = analysisItems.value.map((item) => getDatacubeId(item));
   if (ids.length > 0) {
     selectedDatacubes.value = await getDatacubesByIds(ids);
   }
@@ -54,17 +58,12 @@ watch(analysisItems, async () => {
 
 // Find existing analysis item with same id and check if that item is visible(selected) item
 const isAnalysisItemVisible = (id: string) =>
-  Boolean(analysisItems.value.find((item) => item.id === id)?.selected);
+  Boolean(analysisItems.value.find((item) => getDatacubeId(item) === id)?.selected);
 
 const addToAnalysis = async (selectedDatacubes: Datacube[]) => {
   try {
-    const newAnalysisItems = selectedDatacubes.map((d) =>
-      createAnalysisItem(
-        d.id,
-        d.data_id,
-        getDatacubeMetadataToCache(d),
-        isAnalysisItemVisible(d.id)
-      )
+    const newAnalysisItems = selectedDatacubes.map((datacube) =>
+      createNewAnalysisItem(datacube.id, datacube.default_state, isAnalysisItemVisible(datacube.id))
     );
     let visibleDatacubeCount = newAnalysisItems.filter((item) => item.selected).length;
     // If visibleDatacubeCount is less than MAX_ANALYSIS_DATACUBES_COUNT, make more datacubes visible.

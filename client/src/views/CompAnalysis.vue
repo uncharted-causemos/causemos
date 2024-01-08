@@ -40,10 +40,10 @@
         <template v-if="activeTab === ComparativeAnalysisMode.List">
           <datacube-comparative-card
             v-for="(item, indx) in selectedAnalysisItems"
-            :key="item.itemId"
+            :key="getAnalysisItemId(item)"
             class="datacube-comparative-card"
             :id="item.id"
-            :item-id="item.itemId"
+            :item-id="getAnalysisItemId(item)"
             :datacube-index="indx"
             :selected-timestamp="selectedTimestamp ?? undefined"
             :selected-timestamp-range="selectedTimestampRange"
@@ -62,7 +62,7 @@
           <div class="card-maps-container">
             <div
               v-for="(item, indx) in selectedAnalysisItems"
-              :key="item.itemId"
+              :key="getAnalysisItemId(item)"
               class="card-map-container"
               :class="[
                 `card-count-${
@@ -74,7 +74,7 @@
                 :style="{ borderColor: colorFromIndex(indx) }"
                 class="card-map"
                 :id="item.id"
-                :item-id="item.itemId"
+                :item-id="getAnalysisItemId(item)"
                 :datacube-index="indx"
                 :global-timestamp="globalTimestamp ?? undefined"
                 :analysis-item="item"
@@ -109,12 +109,13 @@ import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
 import { COLOR, getColors, colorFromIndex } from '@/utils/colors-util';
 import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
+import { getId as getAnalysisItemId } from '@/utils/analysis-util';
 import { ComparativeAnalysisMode, DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
 import { getInsightById } from '@/services/insight-service';
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import router from '@/router';
-import { DataAnalysisState } from '@/types/Analysis';
+import { DataAnalysisState, OldAnalysisItem } from '@/types/Analysis';
 import { normalizeTimeseriesList } from '@/utils/timeseries-util';
 import { useRoute } from 'vue-router';
 import { useDataAnalysis } from '@/composables/useDataAnalysis';
@@ -256,12 +257,14 @@ export default defineComponent({
       }
       selectedTimestampRange.value = newTimestampRange;
     };
+    // TODO: Use New
     const cacheUpdatedMetadata = (itemId: string, metadata: Model | Indicator) => {
       updateAnalysisItemCachedMetadata(itemId, {
         datacubeName: metadata.name,
         source: metadata.maintainer.organization,
       });
     };
+    // TODO: Use New
     const cacheUpdatedFeatureName = (itemId: string, featureName: string) => {
       updateAnalysisItemCachedMetadata(itemId, { featureName });
     };
@@ -379,6 +382,7 @@ export default defineComponent({
       toggleAnalysisItemSelected,
       toggleIsItemInverted,
       isMounted,
+      getAnalysisItemId,
     };
   },
   mounted() {
@@ -424,7 +428,7 @@ export default defineComponent({
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
 
-      const item = this.selectedAnalysisItems.find((item) => item.itemId === itemId);
+      const item = this.selectedAnalysisItems.find((item) => getAnalysisItemId(item) === itemId);
       if (item === undefined) {
         // Incoming timeseries should no longer be included in the global
         //  timeseries because the corresponding datacube is no longer selected.
@@ -457,8 +461,10 @@ export default defineComponent({
             // override the timeseries id to match its owner datacube
             timeseries.id = _itemId;
             // build a map that links each timeseries to its owner datacube
-            const info = this.selectedAnalysisItems.find(
-              (item) => item.itemId === _itemId
+            const info = (
+              this.selectedAnalysisItems.find((item) => getAnalysisItemId(item) === _itemId) as
+                | OldAnalysisItem
+                | undefined
             )?.cachedMetadata;
             this.timeseriesToDatacubeMap[_itemId] = {
               datacubeName: info?.datacubeName ?? '',

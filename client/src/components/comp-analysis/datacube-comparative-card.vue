@@ -91,7 +91,7 @@
 
 <script lang="ts">
 import useModelMetadata from '@/composables/useModelMetadata';
-import { AnalysisItem } from '@/types/Analysis';
+import { AnalysisItem, OldAnalysisItem } from '@/types/Analysis';
 import { convertRegionalDataToBarData, getSelectedOutput, isModel } from '@/utils/datacube-util';
 import {
   AggregationOption,
@@ -117,6 +117,7 @@ import { getActiveRegions, popupFormatter } from '@/utils/map-util-new';
 import { BarData } from '@/types/BarChart';
 import { openDatacubeDrilldown } from '@/services/analysis-service';
 import { isDataSpaceDataState } from '@/utils/insight-util';
+import { getState as getAnalysisItemState } from '@/utils/analysis-util';
 import useDatacube from '@/composables/useDatacube';
 import { DatacubeFeature } from '@/types/Datacube';
 
@@ -267,8 +268,11 @@ export default defineComponent({
 
     const initialViewConfig = ref<ViewState | null>(null);
     const initialDataConfig = ref<DataSpaceDataState | null>(null);
-    initialViewConfig.value = analysisItem.value.viewConfig;
-    initialDataConfig.value = analysisItem.value.dataConfig;
+    initialViewConfig.value = (analysisItem.value as OldAnalysisItem).viewConfig || null;
+    initialDataConfig.value = (analysisItem.value as OldAnalysisItem).dataConfig || null;
+
+    const datacube_state = getAnalysisItemState(analysisItem.value);
+    console.log(datacube_state);
 
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) {

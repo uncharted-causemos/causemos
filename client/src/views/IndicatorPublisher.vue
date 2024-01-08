@@ -173,7 +173,8 @@ export default defineComponent({
     const updateIndicator = async () => {
       if (metadata.value) {
         const defaultState = convertFromLegacyState(
-          _.cloneDeep(metadata.value),
+          metadata.value.default_feature,
+          metadata.value.data_id,
           'indicator',
           viewState.value,
           {} as DataSpaceDataState
