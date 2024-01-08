@@ -1,24 +1,29 @@
-import { AnalyticalQuestion, DataState, Insight } from '@/types/Insight';
+import { ModelOrDatasetState } from '@/types/Datacube';
+import { AnalyticalQuestion, DataState, Insight, NewInsight } from '@/types/Insight';
+import { computed } from 'vue';
 import { useStore } from 'vuex';
 
 export default function useInsightStore() {
   const store = useStore();
   const getDataState = () => store.getters['insightPanel/dataState'];
   const getViewState = () => store.getters['insightPanel/viewState'];
+  const modelOrDatasetState = computed<ModelOrDatasetState | null>(
+    () => store.getters['insightPanel/modelOrDatasetState']
+  );
   const setSnapshotUrl = (url: any) => {
     store.dispatch('insightPanel/setSnapshotUrl', url);
   };
   const showInsightPanel = () => {
     store.dispatch('insightPanel/showInsightPanel');
   };
-  const setUpdatedInsight = (updatedInsight: Insight | AnalyticalQuestion | null) => {
+  const setUpdatedInsight = (updatedInsight: Insight | NewInsight | AnalyticalQuestion | null) => {
     store.dispatch('insightPanel/setUpdatedInsight', updatedInsight);
   };
   const setCurrentPane = (newInsightPane: string) => {
     store.dispatch('insightPanel/setCurrentPane', newInsightPane);
   };
   const setInsightsBySection = (
-    insightsBySection: { section: AnalyticalQuestion; insights: Insight[] }[]
+    insightsBySection: { section: AnalyticalQuestion; insights: (Insight | NewInsight)[] }[]
   ) => {
     store.dispatch('insightPanel/setInsightsBySection', insightsBySection);
   };
@@ -40,10 +45,14 @@ export default function useInsightStore() {
   const setViewState = (newViewState: object) => {
     store.dispatch('insightPanel/setViewState', newViewState);
   };
+  const setModelOrDatasetState = (newDataState: ModelOrDatasetState) => {
+    store.dispatch('insightPanel/setModelOrDatasetState', newDataState);
+  };
 
   return {
     getDataState,
     getViewState,
+    modelOrDatasetState,
     setSnapshotUrl,
     showInsightPanel,
     setUpdatedInsight,
@@ -55,5 +64,6 @@ export default function useInsightStore() {
     clearContextId,
     setDataState,
     setViewState,
+    setModelOrDatasetState,
   };
 }

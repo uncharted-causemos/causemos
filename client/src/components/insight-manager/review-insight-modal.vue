@@ -27,7 +27,7 @@
         <button type="button" class="btn" @click="cropImage">Crop</button>
         <button class="btn btn-extra-margin" @click="cancelInsightEdit">Cancel</button>
         <button
-          :disabled="hasError"
+          :disabled="isInsightTitleInvalid"
           type="button"
           class="btn btn-call-to-action"
           v-tooltip="'Save insight'"
@@ -63,7 +63,7 @@
             class="btn"
             v-tooltip="'Jump to live context'"
             :disabled="!isInsight"
-            @click="selectInsight"
+            @click="jumpToLiveContext"
           >
             <i class="fa fa-level-up" />
           </button>
@@ -91,9 +91,6 @@
           <div style="display: flex; align-items: baseline">
             <template v-if="!isEditingInsight">
               <div class="question-title">{{ insightQuestionLabel }}</div>
-              <div v-if="insightLinkedQuestionsCount" class="other-question-title">
-                {{ insightLinkedQuestionsCount }}
-              </div>
             </template>
             <dropdown-button
               v-else
@@ -121,7 +118,7 @@
               class="form-control"
               placeholder="Untitled insight name"
             />
-            <div v-if="isEditingInsight && hasError" class="error-msg">
+            <div v-if="isEditingInsight && isInsightTitleInvalid" class="error-msg">
               {{ errorMsg }}
             </div>
             <div v-if="!isEditingInsight" class="desc">{{ previewInsightDesc }}</div>
@@ -181,6 +178,7 @@
 </template>
 
 <script setup lang="ts">
+import { v4 as uuidv4 } from 'uuid';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
@@ -194,6 +192,8 @@ import {
   SectionWithInsights,
   ReviewPosition,
   AnalyticalQuestion,
+  NewInsight,
+  ModelOrDatasetStateInsight,
 } from '@/types/Insight';
 import {
   addInsight,
@@ -219,6 +219,7 @@ import { fetchImageAsBase64 } from '@/services/datacube-service';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 import { TYPE } from 'vue-toastification';
 import { useRoute, useRouter } from 'vue-router';
+import useInsightStore from '@/composables/useInsightStore';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
@@ -228,7 +229,7 @@ const store = useStore();
 const toaster = useToaster();
 const { questionsList, addSection, addInsightToSection } = useQuestionsData();
 
-const updatedInsight = computed<null | Insight | FullInsight>(
+const updatedInsight = computed<null | Insight | FullInsight | AnalyticalQuestion | NewInsight>(
   () => store.getters['insightPanel/updatedInsight']
 );
 const isInsight = computed(() => InsightUtil.instanceOfInsight(updatedInsight.value));
@@ -239,10 +240,10 @@ const imagePreview = ref<string | null>(null);
 watch(
   () => [updatedInsight.value],
   async () => {
-    // FIXME: updatedInsight can be a question, an insight, or null.
+    // UpdatedInsight can be a question, an insight, or null.
     // There is nothing to fetch for a question or null.
-    const _updatedInsight = updatedInsight.value as Insight;
-    if (!isInsight.value || _updatedInsight.id === undefined) return;
+    const _updatedInsight = updatedInsight.value;
+    if (!InsightUtil.instanceOfInsight(_updatedInsight) || _updatedInsight.id === undefined) return;
 
     let cache = insightCache.get(_updatedInsight.id);
     if (!cache) {
@@ -255,8 +256,8 @@ watch(
       insightCache.set(_updatedInsight.id, cache);
     }
 
-    (updatedInsight.value as FullInsight).image = cache.image;
-    (updatedInsight.value as FullInsight).annotation_state = cache.annotation_state;
+    (updatedInsight.value as FullInsight | NewInsight).image = cache.image;
+    (updatedInsight.value as FullInsight | NewInsight).annotation_state = cache.annotation_state;
     setAnnotation(cache.annotation_state);
     imagePreview.value = null;
     nextTick(() => {
@@ -269,7 +270,7 @@ watch(
 // NOTE: imagePreview ideally could be a computed prop, but when in newMode the image is fetched differently
 //       plus once imagePreview is assigned its watch will apply-annotation insight if any
 watch(updatedInsight, (_updatedInsight) => {
-  imagePreview.value = _updatedInsight ? (_updatedInsight as FullInsight).image : null;
+  imagePreview.value = _updatedInsight ? (_updatedInsight as FullInsight | NewInsight).image : null;
 });
 
 const {
@@ -300,30 +301,25 @@ const insightDesc = ref('');
 const editInsight = () => {
   isEditingInsight.value = true;
   // save current insight name/desc in case the user cancels the edit action
-  insightTitle.value = isNewModeActive.value ? '' : updatedInsight.value?.name ?? '';
-  insightDesc.value = isNewModeActive.value ? '' : updatedInsight.value?.description ?? '';
+  const _updatedInsight = updatedInsight.value;
+  // ASSUMPTION: If we're saving a new insight, updatedInsight will be `null`.
+  //  So title and description should be set to ''
+  insightTitle.value = InsightUtil.instanceOfInsight(_updatedInsight) ? _updatedInsight.name : '';
+  insightDesc.value = InsightUtil.instanceOfInsight(_updatedInsight)
+    ? _updatedInsight.description ?? ''
+    : '';
 };
 
 const getQuestionById = (id: string) => {
   return questionsList.value.find((q) => q.id === id);
 };
 
-const insightLinkedQuestionsCount = computed<string>(() => {
-  if (
-    updatedInsight.value &&
-    isInsight.value &&
-    updatedInsight.value.analytical_question.length > 0
-  ) {
-    const linedQuestionsCount = (updatedInsight.value as Insight).analytical_question.length;
-    if (linedQuestionsCount > 1) {
-      return '+ ' + (linedQuestionsCount - 1).toString();
-    }
-  }
-  return '';
-});
-
 const insightQuestionLabel = computed<string>(() => {
-  if (isInsight.value && (updatedInsight.value as Insight).analytical_question.length === 0) {
+  const _updatedInsight = updatedInsight.value;
+  if (
+    InsightUtil.instanceOfInsight(_updatedInsight) &&
+    _updatedInsight.analytical_question.length === 0
+  ) {
     // Current item is an insight that's not linked to any section.
     return '';
   }
@@ -340,9 +336,10 @@ watch(
     // if we are reviewing this insight in edit mode,
     //  it may have a current linking with some analytical question
     //  so we need to surface that
-    if (updatedInsight.value && isInsight.value) {
+    const _updatedInsight = updatedInsight.value;
+    if (InsightUtil.instanceOfInsight(_updatedInsight)) {
       const initialSelection: string[] = [];
-      updatedInsight.value.analytical_question.forEach((q: string) => {
+      _updatedInsight.analytical_question.forEach((q: string) => {
         const questionObj = getQuestionById(q);
         if (questionObj) {
           initialSelection.push(questionObj.question);
@@ -361,14 +358,9 @@ watch(
 
 const errorMsg = ref(MSG_EMPTY_INSIGHT_NAME);
 const showMetadataPanel = ref(false);
-const hasError = ref(false); // true when insight name is invalid
 
 const showNewQuestion = ref(false);
 const messageNoData = ref(INSIGHTS.NO_DATA);
-
-watch(insightTitle, (_insightTitle) => {
-  hasError.value = _insightTitle.length === 0 || _insightTitle === LBL_EMPTY_INSIGHT_NAME;
-});
 
 const currentPane = computed(() => store.getters['insightPanel/currentPane']);
 const setCurrentPane = (newPane: string) => store.dispatch('insightPanel/setCurrentPane', newPane);
@@ -490,21 +482,25 @@ const previousSlide = computed<ReviewPosition | null>(() => {
 });
 
 const metadataDetails = computed<InsightMetadata>(() => {
+  const _updatedInsight = updatedInsight.value;
   const dState: DataState | null =
-    isNewModeActive.value || updatedInsight.value === null
+    isNewModeActive.value ||
+    !InsightUtil.instanceOfInsight(_updatedInsight) ||
+    InsightUtil.instanceOfNewInsight(_updatedInsight)
       ? dataState.value
-      : updatedInsight.value.data_state;
+      : _updatedInsight.data_state;
   const insightLastUpdate =
-    isNewModeActive.value || updatedInsight.value === null
+    isNewModeActive.value || !InsightUtil.instanceOfInsight(_updatedInsight)
       ? undefined
-      : updatedInsight.value.modified_at;
+      : _updatedInsight.modified_at;
   const insightSummary = extractMetadataDetails(dState, projectMetadata.value, insightLastUpdate);
   return insightSummary;
 });
 const previewInsightTitle = computed(() => {
   if (loadingImage.value) return '';
-  return updatedInsight.value && updatedInsight.value.name.length > 0
-    ? updatedInsight.value.name
+  const _updatedInsight = updatedInsight.value;
+  return InsightUtil.instanceOfInsight(_updatedInsight) && _updatedInsight.name.length > 0
+    ? _updatedInsight.name
     : LBL_EMPTY_INSIGHT_NAME;
 });
 const previewInsightDesc = computed(() => {
@@ -549,11 +545,8 @@ onMounted(async () => {
     editInsight();
   }
 });
-const showInsightPanel = () => store.dispatch('insightPanel/showInsightPanel');
-const setUpdatedInsight = (newValue: null | Insight | FullInsight | AnalyticalQuestion) =>
-  store.dispatch('insightPanel/setUpdatedInsight', newValue);
-const setInsightsBySection = (newValue: SectionWithInsights[]) =>
-  store.dispatch('insightPanel/setInsightsBySection', newValue);
+const { setUpdatedInsight, setInsightsBySection, showInsightPanel, modelOrDatasetState } =
+  useInsightStore();
 const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
 
 const setShouldRefetchInsights = (newValue: boolean) =>
@@ -659,8 +652,11 @@ const countInsights = computed(() => store.getters['insightPanel/countInsights']
 const setCountInsights = (newCount: number) =>
   store.dispatch('insightPanel/setCountInsights', newCount);
 
+const isInsightTitleInvalid = computed(
+  () => insightTitle.value.trim().length === 0 || insightTitle.value === LBL_EMPTY_INSIGHT_NAME
+);
 const saveInsight = () => {
-  if (hasError.value || insightTitle.value.trim().length === 0) return;
+  if (isInsightTitleInvalid.value) return;
 
   const linkedQuestions = questionsList.value.filter((q) =>
     selectedInsightQuestions.value.includes(q.question)
@@ -670,7 +666,7 @@ const saveInsight = () => {
     // saving a new insight
     const url = route.fullPath;
 
-    const newInsight: FullInsight = {
+    let newInsight: FullInsight | ModelOrDatasetStateInsight = {
       name: insightTitle.value,
       description: insightDesc.value,
       visibility: insightVisibility.value,
@@ -687,6 +683,35 @@ const saveInsight = () => {
       view_state: viewState.value,
       data_state: dataState.value,
     };
+
+    // FIXME: HACK: determine whether we should use the new insight schema depending on the page
+    //  URL that the new insight was taken from
+    if (url.includes('/model/')) {
+      newInsight = {
+        schemaVersion: 2,
+        id: uuidv4(),
+        name: insightTitle.value,
+        description: insightDesc.value,
+        project_id: project.value,
+        analytical_question: linkedQuestions.map((q) => q.id as string),
+        image: insightThumbnail.value ?? '',
+        annotation_state: annotationAndCropState.value,
+        type: 'ModelOrDatasetStateInsight',
+        view: {
+          view: 'analysisItemDrilldown',
+          analysisId: 'TODO: analysisId',
+          analysisItemId: 'TODO: analysisItemId',
+        },
+        context_id: contextId.value,
+        // ASSUMPTION: state has been set before the new insight flow began, so modelOrDatasetState
+        //  is not null
+        state: modelOrDatasetState.value,
+        // FIXME: HACK: This is required for new insights to show up in the list of all insights in
+        //  a project. It can be removed when public insights are removed and all insights are private.
+        visibility: 'private',
+      } as ModelOrDatasetStateInsight;
+    }
+
     addInsight(newInsight)
       .then((result) => {
         const message =
@@ -720,7 +745,7 @@ const saveInsight = () => {
       // Invalidate cache
       insightCache.delete(insightId);
 
-      const _updatedInsight = updatedInsight.value as FullInsight;
+      const _updatedInsight = updatedInsight.value as FullInsight | NewInsight;
       _updatedInsight.name = insightTitle.value;
       _updatedInsight.description = insightDesc.value;
       _updatedInsight.image = insightThumbnail.value ?? '';
@@ -746,8 +771,8 @@ const saveInsight = () => {
 };
 
 const router = useRouter();
-const selectInsight = () => {
-  const insight = updatedInsight.value as Insight;
+const jumpToLiveContext = () => {
+  const insight = updatedInsight.value as Insight | NewInsight;
   const currentURL = route.fullPath;
   const finalURL = InsightUtil.jumpToInsightContext(insight, currentURL);
   if (finalURL) {
@@ -767,13 +792,16 @@ const exportInsight = async (exportType: 'Powerpoint' | 'Word') => {
   const bibliographyMap = await getBibiographyFromCagIds([]);
   if (exportType === 'Word') {
     InsightUtil.exportDOCX(
-      [updatedInsight.value as FullInsight],
+      [updatedInsight.value as FullInsight | NewInsight],
       projectMetadata.value,
       undefined,
       bibliographyMap
     );
   } else {
-    InsightUtil.exportPPTX([updatedInsight.value as FullInsight], projectMetadata.value);
+    InsightUtil.exportPPTX(
+      [updatedInsight.value as FullInsight | NewInsight],
+      projectMetadata.value
+    );
   }
 };
 </script>
@@ -851,14 +879,6 @@ const exportInsight = async (exportType: 'Powerpoint' | 'Word') => {
       font-size: 2rem;
       flex: 1;
       color: black;
-    }
-    .other-question-title {
-      font-size: 2rem;
-      color: darkgray;
-      padding-left: 1rem;
-      padding-right: 1rem;
-      border-style: solid;
-      border-radius: 50%;
     }
     .title {
       font-size: $font-size-extra-large;

@@ -1,3 +1,4 @@
+import { ModelOrDatasetState } from '@/types/Datacube';
 import {
   AnalyticalQuestion,
   DataState,
@@ -13,6 +14,7 @@ interface InsightState {
   countInsights: number;
   viewState: any;
   dataState: DataState | null;
+  modelOrDatasetState: ModelOrDatasetState | null;
   contextId: string[] | undefined;
   analysisId: string;
   snapshotUrl: string | undefined;
@@ -39,6 +41,7 @@ const state: InsightState = {
   countInsights: 0,
   viewState: {},
   dataState: null,
+  modelOrDatasetState: null,
   contextId: undefined,
   analysisId: '',
   snapshotUrl: undefined,
@@ -55,6 +58,7 @@ const getters: GetterTree<InsightState, any> = {
   countInsights: (state) => state.countInsights,
   viewState: (state) => state.viewState,
   dataState: (state) => state.dataState,
+  modelOrDatasetState: (state) => state.modelOrDatasetState,
   contextId: (state) => state.contextId,
   analysisId: (state) => state.analysisId,
   snapshotUrl: (state) => state.snapshotUrl,
@@ -83,6 +87,9 @@ const actions: ActionTree<InsightState, any> = {
   },
   setDataState: ({ commit }, newValue) => {
     commit('setDataState', newValue);
+  },
+  setModelOrDatasetState: ({ commit }, newValue) => {
+    commit('setModelOrDatasetState', newValue);
   },
   setContextId: ({ commit }, newValue) => {
     commit('setContextId', newValue);
@@ -128,6 +135,9 @@ const mutations: MutationTree<InsightState> = {
   },
   setDataState(state, value) {
     state.dataState = value;
+  },
+  setModelOrDatasetState(state, value) {
+    state.modelOrDatasetState = value;
   },
   setContextId(state, value) {
     state.contextId = value;

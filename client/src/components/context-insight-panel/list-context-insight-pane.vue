@@ -30,7 +30,10 @@
         <div class="context-insight-header">
           <div
             class="context-insight-title"
-            :class="{ 'private-insight-title': contextInsight.visibility === 'private' }"
+            :class="{
+              'private-insight-title':
+                instanceOfNewInsight(contextInsight) || contextInsight.visibility === 'private',
+            }"
           >
             {{ contextInsight.name }}
           </div>
@@ -63,7 +66,10 @@
           <div
             v-if="contextInsight.description?.length ?? 0 > 0"
             class="context-insight-description"
-            :class="{ 'private-insight-description': contextInsight.visibility === 'private' }"
+            :class="{
+              'private-insight-description':
+                instanceOfNewInsight(contextInsight) || contextInsight.visibility === 'private',
+            }"
           >
             {{ contextInsight.description }}
           </div>
@@ -97,7 +103,7 @@ import OptionsButton from '@/components/widgets/options-button.vue';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 import useInsightStore from '@/composables/useInsightStore';
-import { Insight } from '@/types/Insight';
+import { Insight, NewInsight } from '@/types/Insight';
 
 export default {
   name: 'ListContextInsightPane',
@@ -115,7 +121,7 @@ export default {
   },
   data: () => ({
     MESSAGE_NO_DATA: INSIGHTS.NO_DATA,
-    selectedContextInsight: null as Insight | null,
+    selectedContextInsight: null as Insight | NewInsight | null,
   }),
   setup() {
     const store = useStore();
@@ -148,6 +154,8 @@ export default {
       setPositionInReview,
       setRefreshDatacubes,
       setSnapshotUrl,
+
+      instanceOfNewInsight: InsightUtil.instanceOfNewInsight,
     };
   },
   computed: {
@@ -191,53 +199,37 @@ export default {
           break;
       }
     },
-    selectContextInsight(contextInsight: Insight) {
+    selectContextInsight(contextInsight: Insight | NewInsight) {
       if (contextInsight === this.selectedContextInsight) {
         this.selectedContextInsight = null;
         return;
       }
       this.selectedContextInsight = contextInsight;
 
-      let savedURL = this.selectedContextInsight.url;
       const currentURL = this.$route.fullPath;
 
-      // NOTE: applying an insight should not automatically set a specific datacube_id as a query param
-      //  because, for example, the comparative analysis (region-ranking) page does not
-      //  need/understand a specific datacube_id,
-      //  and setting it regardless may have a negative side effect
-      const datacubeId = savedURL.includes('/dataComparative/')
-        ? undefined
-        : _.first(contextInsight.context_id);
+      const finalURL = InsightUtil.jumpToInsightContext(
+        this.selectedContextInsight,
+        currentURL,
+        this.project,
+        this.projectType,
+        this.$route.params.analysisId as string | undefined
+      );
 
-      if (savedURL !== currentURL) {
-        // special case
-        if (
-          this.projectType === ProjectType.Analysis &&
-          this.selectedContextInsight.visibility === 'public'
-        ) {
-          // this is an insight created by the domain modeler during model publication:
-          // for applying this insight, do not redirect to the domain project page,
-          // instead use the current context and rehydrate the view
-          savedURL = '/analysis/' + this.project + '/data/' + this.$route.params.analysisId;
-        }
-
-        if (this.projectType === ProjectType.Model) {
-          // this is an insight created by the domain modeler during model publication:
-          //  needed since an existing url may have insight_id with old/invalid value
-          savedURL = '/model/' + this.project + '/model-publishing-experiment';
-        }
-
-        // add 'insight_id' as a URL param so that the target page can apply it
-        const finalURL = InsightUtil.getSourceUrlForExport(
-          savedURL,
-          this.selectedContextInsight.id as string,
-          datacubeId
-        );
-
+      if (finalURL) {
         try {
           this.$router.push(finalURL);
         } catch (e) {}
       } else {
+        // NOTE: applying an insight should not automatically set a specific datacube_id as a query param
+        //  because, for example, the comparative analysis (region-ranking) page does not
+        //  need/understand a specific datacube_id,
+        //  and setting it regardless may have a negative side effect
+        const datacubeId =
+          InsightUtil.instanceOfNewInsight(contextInsight) ||
+          contextInsight.url.includes('/dataComparative/')
+            ? undefined
+            : _.first(contextInsight.context_id);
         this.$router
           .push({
             query: {
@@ -248,16 +240,21 @@ export default {
           .catch(() => {});
       }
     },
-    isDisabled(insight: Insight) {
-      return insight.visibility === 'public' && this.projectType === ProjectType.Analysis;
+    isDisabled(insight: Insight | NewInsight) {
+      return (
+        !InsightUtil.instanceOfNewInsight(insight) &&
+        insight.visibility === 'public' &&
+        this.projectType === ProjectType.Analysis
+      );
     },
-    async deleteContextInsight(insight: Insight) {
+    async deleteContextInsight(insight: Insight | NewInsight) {
       if (this.isDisabled(insight)) {
         return;
       }
 
       // are removing a public insight (from the context panel within a domain project)?
       if (
+        !InsightUtil.instanceOfNewInsight(insight) &&
         insight.visibility === 'public' &&
         Array.isArray(insight.context_id) &&
         insight.context_id.length > 0
@@ -276,7 +273,7 @@ export default {
       // refresh the latest list from the server
       this.reFetchInsights();
     },
-    editContextInsight(insight: Insight) {
+    editContextInsight(insight: Insight | NewInsight) {
       if (this.isDisabled(insight)) {
         return;
       }
