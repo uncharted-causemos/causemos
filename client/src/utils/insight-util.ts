@@ -126,7 +126,6 @@ function jumpToInsightContext(
   projectType?: string,
   analysisId?: string
 ): string | RouteLocationRaw | undefined {
-  console.log(insight, instanceOfNewInsight(insight));
   if (instanceOfNewInsight(insight)) {
     // TODO: If insight was taken within a "CompAnalysis" item,
     //  return object containing analysisId and analysisItemId and insight ID
