@@ -3,6 +3,7 @@ const { v4: uuid } = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = require('#@/adapters/es/adapter.js');
 const { processFilteredData, removeUnwantedData } = require('#@/util/post-processing-util.js');
 const requestAsPromise = require('#@/util/request-as-promise.js');
+const { getDatacubeDefaultState } = require('#@/util/datacube-util.js');
 const {
   sendToPipeline,
   getFlowStatus,
@@ -462,6 +463,12 @@ const startIndicatorPostProcessing = async (
     clonedMetadata.ontology_matches = _.sortedUniqBy(
       _.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']),
       'name'
+    );
+    // Add default state
+    clonedMetadata.default_state = getDatacubeDefaultState(
+      clonedMetadata.data_id,
+      clonedMetadata.default_feature,
+      true
     );
     return clonedMetadata;
   });
