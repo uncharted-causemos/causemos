@@ -280,11 +280,11 @@ const publishModel = async () => {
 
       const defaultRun = await getDefaultModelRunMetadata(modelToUpdate.id);
       modelToUpdate.default_state = convertFromLegacyState(
-        modelToUpdate.default_feature,
         modelToUpdate.data_id,
         defaultRun.id,
         viewState.value,
-        dataState.value
+        dataState.value,
+        modelToUpdate.default_feature
       );
       // Update server data
       await updateDatacube(modelToUpdate.id, modelToUpdate);

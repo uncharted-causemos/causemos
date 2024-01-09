@@ -102,16 +102,21 @@ export const convertToLegacyViewState = (state: ModelOrDatasetState) => {
 };
 
 export const convertFromLegacyState = (
-  outputName: string,
   dataId: string,
   defaultRunId: string,
   viewState: ViewState,
-  dataState: DataSpaceDataState
+  dataState: DataSpaceDataState | null,
+  defaultFeature: string
 ) => {
+  // Note: For state from analysis items,in some cases dataState isn't populated. In that case fallback to use default feature and states from viewState.
+  let modelRunIds = [];
+  if (defaultRunId) modelRunIds.push(defaultRunId); // if defaultRunId isn't empty
+  if (dataState?.selectedScenarioIds?.length) modelRunIds = dataState?.selectedScenarioIds;
+  const selectedOutputIndex = viewState.selectedOutputIndex ?? 0;
+  const selectedOutput = dataState?.activeFeatures[selectedOutputIndex];
   const defaultBreakdownState: BreakdownStateNone = {
-    // outputName: metadata.default_feature,
-    outputName,
-    modelRunIds: defaultRunId ? [defaultRunId] : [],
+    outputName: selectedOutput?.name ?? defaultFeature,
+    modelRunIds,
     comparisonSettings: {
       baselineTimeseriesId: defaultRunId,
       shouldDisplayAbsoluteValues: true,
@@ -128,12 +133,11 @@ export const convertFromLegacyState = (
     numberOfColorBins: viewState.numberOfColorBins ?? 5,
   };
   const defaultState: ModelOrDatasetState = {
-    // dataId: metadata.data_id,
     dataId,
     breakdownState: defaultBreakdownState,
     mapDisplayOptions,
-    selectedTimestamp: dataState.selectedTimestamp ?? null,
-    selectedTransform: dataState.selectedTransform ?? DataTransform.None,
+    selectedTimestamp: dataState?.selectedTimestamp ?? null,
+    selectedTransform: selectedOutput?.transform ?? dataState?.selectedTransform ?? '',
     // Aggregation Options
     spatialAggregationMethod: viewState.spatialAggregation as AggregationOption,
     temporalAggregationMethod: viewState.temporalAggregation as AggregationOption,
