@@ -46,7 +46,6 @@
             :item-id="getAnalysisItemId(item)"
             :datacube-index="indx"
             :selected-timestamp="selectedTimestamp ?? undefined"
-            :selected-timestamp-range="selectedTimestampRange"
             :analysis-item="item"
             :analysis-id="analysisId"
             @loaded-timeseries="onLoadedTimeseries"

@@ -28,14 +28,11 @@
     <main>
       <div class="chart-and-footer">
         <timeseries-chart
-          v-if="
-            timeseriesDataForSelection.length > 0 && timeseriesDataForSelection[0].points.length > 0
-          "
+          v-if="timeseriesData.length > 0 && selectedTimestamp !== null"
           class="timeseries-chart"
-          :timeseries-data="timeseriesDataForSelection"
-          :selected-temporal-resolution="selectedTemporalResolution"
-          :selected-timestamp="selectedTimestamp"
-          :selected-timestamp-range="selectedTimestampRange"
+          :timeseries-data="timeseriesData"
+          :selected-temporal-resolution="TemporalResolutionOption.Month"
+          :selected-timestamp="computedSelectedTimestamp"
           :breakdown-option="breakdownOption"
           @select-timestamp="setSelectedTimestamp"
         >
@@ -125,6 +122,8 @@ import { isDataSpaceDataState } from '@/utils/insight-util';
 import { getState as getAnalysisItemState } from '@/utils/analysis-util';
 import useDatacube from '@/composables/useDatacube';
 import { DatacubeFeature } from '@/types/Datacube';
+import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
+import { getTimestampRange } from '@/utils/timeseries-util';
 
 export default defineComponent({
   name: 'DatacubeComparativeCard',
@@ -150,10 +149,6 @@ export default defineComponent({
       type: Number,
       default: 0,
     },
-    selectedTimestampRange: {
-      type: Object as PropType<{ start: number; end: number } | null>,
-      default: null,
-    },
     analysisItem: {
       type: Object as PropType<AnalysisItem>,
       required: true,
@@ -175,12 +170,64 @@ export default defineComponent({
   setup(props, { emit }) {
     const { itemId, id, selectedTimestamp, datacubeIndex, analysisItem } = toRefs(props);
 
+    // Fetch datacube metadata
     const metadata = useModelMetadata(id);
     watchEffect(() => {
       if (metadata.value !== null) {
         emit('loaded-metadata', itemId.value, metadata.value);
       }
     });
+
+    // Load state
+    const analysisItemState = computed(() => getAnalysisItemState(analysisItem.value));
+    const breakdownState = computed(() => analysisItemState.value.breakdownState);
+    const spatialAggregationMethod = computed(
+      () => analysisItemState.value.spatialAggregationMethod
+    );
+    const temporalAggregationMethod = computed(
+      () => analysisItemState.value.temporalAggregationMethod
+    );
+    const temporalResolution = computed(() => analysisItemState.value.temporalResolution);
+
+    // Fetch timeseries data
+    const { timeseriesData: _timeseriesData } = useTimeseriesDataFromBreakdownState(
+      breakdownState,
+      metadata,
+      spatialAggregationMethod,
+      temporalAggregationMethod,
+      temporalResolution
+    );
+    // Override the color of all loaded timeseries
+    const timeseriesData = computed(() =>
+      _timeseriesData.value.map((timeseries) => ({
+        ...timeseries,
+        color: colorFromIndex(datacubeIndex.value),
+      }))
+    );
+
+    // Handle selected timestamp
+    const defaultSelectedTimestamp = computed(
+      () => analysisItemState.value.selectedTimestamp || getTimestampRange(timeseriesData.value).end
+    );
+    const computedSelectedTimestamp = computed(
+      () => selectedTimestamp.value || defaultSelectedTimestamp.value
+    );
+    const setSelectedTimestamp = (value: number) => {
+      if (selectedTimestamp.value === value) {
+        return;
+      }
+      // emit the timestamp so that the parent component can set and sync others
+      emit('select-timestamp', value);
+    };
+
+    // Handle timeseries(scenario) selection for region map data
+    const selectedScenarioIndex = ref(0);
+    const regionRunsScenarios = computed(() =>
+      timeseriesData.value.map((timeseries) => ({
+        name: timeseries.name,
+        color: timeseries.color,
+      }))
+    );
 
     // FIXME: this watcher is extremely error prone. Seems like its jobs are to:
     // - Search if there's an entry in the store for the current itemId
@@ -257,7 +304,7 @@ export default defineComponent({
       numberOfColorBins,
       finalColorScheme,
       datacubeHierarchy,
-      timeseriesData,
+      // timeseriesData,
       timeseriesDataForSelection,
       visibleTimeseriesData,
       regionalData,
@@ -283,14 +330,6 @@ export default defineComponent({
       console.log(datacube_state.breakdownState.outputName);
     }
     console.log(datacube_state.breakdownState);
-
-    const setSelectedTimestamp = (value: number) => {
-      if (selectedTimestamp.value === value) {
-        return;
-      }
-      // emit the timestamp so that the parent component can set and sync others
-      emit('select-timestamp', value);
-    };
 
     watch(
       () => [initialViewConfig.value, metadata.value],
@@ -421,7 +460,7 @@ export default defineComponent({
             ) {
               initialSelectedGlobalTimestamp.value = initialDataConfig.value.selectedTimestamp;
             } else {
-              setSelectedTimestamp(initialDataConfig.value?.selectedTimestamp as number);
+              // setSelectedTimestamp(initialDataConfig.value?.selectedTimestamp as number);
             }
           }
           if (initialDataConfig.value.selectedRegionIdsAtAllLevels !== undefined) {
@@ -463,28 +502,28 @@ export default defineComponent({
 
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
-    const selectedScenarioIndex = ref(0);
-    const regionRunsScenarios = ref([] as { name: string; color: string }[]);
+    // const selectedScenarioIndex = ref(0);
+    // const regionRunsScenarios = ref([] as { name: string; color: string }[]);
 
-    watchEffect(() => {
-      if (metadata.value) {
-        const timeseriesList = timeseriesDataForSelection.value;
+    // watchEffect(() => {
+    //   if (metadata.value) {
+    //     const timeseriesList = timeseriesDataForSelection.value;
 
-        if (timeseriesList.length > 0) {
-          // override the color of all loaded timeseries
-          timeseriesList.forEach((timeseries) => {
-            timeseries.color = colorFromIndex(datacubeIndex.value);
-          });
+    //     if (timeseriesList.length > 0) {
+    //       // override the color of all loaded timeseries
+    //       timeseriesList.forEach((timeseries) => {
+    //         timeseries.color = colorFromIndex(datacubeIndex.value);
+    //       });
 
-          regionRunsScenarios.value = timeseriesList.map((timeseries) => ({
-            name: timeseries.name,
-            color: timeseries.color,
-          }));
+    //       regionRunsScenarios.value = timeseriesList.map((timeseries) => ({
+    //         name: timeseries.name,
+    //         color: timeseries.color,
+    //       }));
 
-          emit('loaded-timeseries', itemId.value, timeseriesList);
-        }
-      }
-    });
+    //       emit('loaded-timeseries', itemId.value, timeseriesList);
+    //     }
+    //   }
+    // });
 
     return {
       selectedTemporalResolution,
@@ -513,6 +552,8 @@ export default defineComponent({
       popupFormatter: (feature: any) => popupFormatter(feature, false),
       selectedScenarioIndex,
       regionRunsScenarios,
+      TemporalResolutionOption,
+      computedSelectedTimestamp,
     };
   },
   methods: {
