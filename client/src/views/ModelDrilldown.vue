@@ -1,45 +1,7 @@
 <template>
   <div class="model-drilldown-container insight-capture">
     <div class="config-column">
-      <header>
-        <h3>{{ metadata?.name }}</h3>
-        <div
-          class="model-details"
-          :class="{ expanded: isModelDetailsSectionExpanded }"
-          @click="isModelDetailsSectionExpanded = !isModelDetailsSectionExpanded"
-        >
-          <p class="subdued un-font-small">
-            {{ metadata?.description ?? '...' }}
-          </p>
-          <p
-            v-if="isModelDetailsSectionExpanded && metadata !== null"
-            class="subdued un-font-small"
-          >
-            Source: {{ metadata.maintainer.organization }} (<a
-              v-if="stringUtil.isValidUrl(metadata.maintainer.website)"
-              :href="metadata.maintainer.website"
-              target="_blank"
-              rel="noopener noreferrer"
-              @click.stop
-            >
-              {{ metadata.maintainer.website }} </a
-            >)
-          </p>
-          <p
-            v-if="isModelDetailsSectionExpanded && metadata !== null"
-            class="subdued un-font-small"
-          >
-            Registered by: {{ metadata.maintainer.name }} ({{ metadata.maintainer.email }})
-          </p>
-          <span class="expand-collapse-controls subdued un-font-small">
-            <i
-              class="fa"
-              :class="[isModelDetailsSectionExpanded ? 'fa-angle-up' : 'fa-angle-down']"
-            />
-            {{ isModelDetailsSectionExpanded ? 'Show less' : 'Show more' }}</span
-          >
-        </div>
-      </header>
+      <ModelOrDatasetMetadata :metadata="metadata" />
       <section v-if="metadata !== null" class="model-run-parameters-section">
         <div class="section-header">
           <h4>Model run parameters</h4>
@@ -48,7 +10,7 @@
           </button>
         </div>
 
-        <model-run-summary-list :metadata="metadata" :model-runs="selectedModelRuns" />
+        <ModelRunSummaryList :metadata="metadata" :model-runs="selectedModelRuns" />
       </section>
       <section>
         <h4>Displayed output</h4>
@@ -196,7 +158,6 @@ import {
 } from '@/utils/datacube-util';
 import useScenarioData from '@/composables/useScenarioData';
 import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
-import stringUtil from '@/utils/string-util';
 import ModalSelectModelRuns from '@/components/modals/modal-select-model-runs.vue';
 import ModelRunSummaryList from '@/components/model-drilldown/model-run-summary-list.vue';
 import ModalFilterAndCompare from '@/components/modals/modal-filter-and-compare.vue';
@@ -214,6 +175,7 @@ import { stringToAdminLevel } from '@/utils/admin-level-util';
 import useTimeseriesIdToColorMap from '@/composables/useTimeseriesIdToColorMap';
 import useModelDrilldownState from '@/composables/useModelDrilldownState';
 import useInsightStore from '@/composables/useInsightStore';
+import ModelOrDatasetMetadata from '@/components/model-drilldown/model-or-dataset-metadata.vue';
 
 const SPATIAL_AGGREGATION_METHOD_OPTIONS = [AggregationOption.Mean, AggregationOption.Sum];
 const TEMPORAL_RESOLUTION_OPTIONS = [TemporalResolutionOption.Month, TemporalResolutionOption.Year];
@@ -244,8 +206,6 @@ const {
   selectedTimestamp,
   setSelectedTimestamp,
 } = useModelDrilldownState(metadata);
-
-const isModelDetailsSectionExpanded = ref(false);
 
 const firstOutputName = computed<string | null>(() => {
   if (breakdownState.value === null) return null;
@@ -403,7 +363,6 @@ $configColumnButtonWidth: 122px;
     margin-bottom: 10px;
   }
 
-  header,
   section {
     padding: 20px;
   }
@@ -428,39 +387,6 @@ $configColumnButtonWidth: 122px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.model-details {
-  cursor: pointer;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-
-  &:not(.expanded) p {
-    // Show only the first 3 lines. Supported with -webkit- prefix in all modern browsers.
-    // https://caniuse.com/?search=line-clamp
-    overflow-y: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-  }
-
-  .expand-collapse-controls {
-    opacity: 0;
-    display: inline-block;
-    position: absolute;
-    top: 100%;
-    width: 100%;
-    text-align: center;
-  }
-
-  &:hover {
-    .expand-collapse-controls {
-      opacity: 1;
-    }
-  }
 }
 
 .output-variables {
