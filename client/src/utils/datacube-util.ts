@@ -27,10 +27,11 @@ import { ModelRun } from '@/types/ModelRun';
 import { RegionAgg, RegionalAggregations } from '@/types/Outputdata';
 import { DATA_LAYER_TRANSPARENCY } from './map-util-new';
 import { BarData } from '@/types/BarChart';
-import { adminLevelToString } from './admin-level-util';
+import { adminLevelToString, getLevelFromRegionId } from './admin-level-util';
 import { normalize } from './value-util';
 import _ from 'lodash';
 import * as d3 from 'd3';
+import { AdminRegionSets } from '@/types/Datacubes';
 
 export const DEFAULT_DATE_RANGE_DELIMETER = '__';
 
@@ -506,6 +507,25 @@ export const getRegionIdsFromBreakdownState = (breakdownState: BreakdownState | 
     breakdownState.regionId !== null
     ? [breakdownState.regionId]
     : [];
+};
+
+export const getAdminRegionSetsFromBreakdownState = (breakdownState: BreakdownState | null) => {
+  const sets: AdminRegionSets = {
+    country: new Set(),
+    admin1: new Set(),
+    admin2: new Set(),
+    admin3: new Set(),
+  };
+  const keys: (keyof AdminRegionSets)[] = ['country', 'admin1', 'admin2', 'admin3'];
+  const regionIds = getRegionIdsFromBreakdownState(breakdownState);
+  regionIds.forEach((id) => sets[keys[getLevelFromRegionId(id)]].add(id));
+  return sets;
+};
+
+export const getOutputNamesFromBreakdownState = (breakdownState: BreakdownState | null) => {
+  if (!breakdownState) return [] as string[];
+  if (isBreakdownStateOutputs(breakdownState)) return [...breakdownState.outputNames];
+  return [breakdownState.outputName];
 };
 
 export default {

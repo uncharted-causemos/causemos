@@ -1,5 +1,5 @@
 import { AdminRegionSets, BreakdownData } from '@/types/Datacubes';
-import { AdminLevel, DatacubeGeoAttributeVariableType } from '@/types/Enums';
+import { AdminLevel, DatacubeGeoAttributeVariableType, SpatialAggregation } from '@/types/Enums';
 import { RegionalAggregations } from '@/types/Outputdata';
 import _ from 'lodash';
 
@@ -171,4 +171,12 @@ export function getLevelFromRegionId(regionId: string) {
 
 export function getRegionIdDisplayName(regionId: string) {
   return regionId.split(REGION_ID_DELIMETER).pop() ?? regionId;
+}
+
+export function getAdminLevelFromSpatialAggregation(aggregation: SpatialAggregation) {
+  if (aggregation === DatacubeGeoAttributeVariableType.Country) return 0;
+  if (aggregation === DatacubeGeoAttributeVariableType.Admin1) return 1;
+  if (aggregation === DatacubeGeoAttributeVariableType.Admin2) return 2;
+  if (aggregation === DatacubeGeoAttributeVariableType.Admin3) return 3;
+  return null;
 }

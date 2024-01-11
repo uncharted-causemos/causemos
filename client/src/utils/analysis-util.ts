@@ -64,17 +64,11 @@ export const duplicate = (analysisItem: AnalysisItem) => {
 };
 
 const getNewStateFromOldAnalysisItem = (analysisItem: OldAnalysisItem) => {
-  const {
-    id,
-    datacubeId,
-    viewConfig,
-    dataConfig,
-    cachedMetadata: { featureName },
-  } = analysisItem;
-  // We can assume that analysis item is for model datacube if id === datacubeId
-  // (id refers to ES datacube document `id` and datacubeId refers to `data_id` and for model datacube, `data_id` is also used for datacube document `id`)
-  const defaultRunId = id === datacubeId ? '' : 'indicator';
-  return convertFromLegacyState(datacubeId, defaultRunId, viewConfig, dataConfig, featureName);
+  const { datacubeId, viewConfig, dataConfig } = analysisItem;
+  // default(initial) feature and run ID are missing from old analysis item. Set them to "" to tell they are empty
+  const defaultRunId = '';
+  const defaultFeature = '';
+  return convertFromLegacyState(datacubeId, defaultRunId, viewConfig, dataConfig, defaultFeature);
 };
 
 export const getState = (analysisItem: AnalysisItem) => {

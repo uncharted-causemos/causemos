@@ -1,8 +1,10 @@
+import _ from 'lodash';
 import {
   BreakdownState,
   BreakdownStateNone,
   MapDisplayOptions,
   ModelOrDatasetState,
+  ComparisonSettings,
 } from '@/types/Datacube';
 import {
   getRegionIdsFromBreakdownState,
@@ -73,7 +75,7 @@ export const convertToLegacyDataSpaceDataState = (id: string, state: ModelOrData
   return dataState;
 };
 
-const getBreakdownOptionFromBreakdownState = (state: BreakdownState) => {
+export const getBreakdownOptionFromBreakdownState = (state: BreakdownState) => {
   if (isBreakdownStateOutputs(state)) return SPLIT_BY_VARIABLE;
   if (isBreakdownStateQualifiers(state)) return state.qualifier;
   if (isBreakdownStateRegions(state)) return SpatialAggregationLevel.Region;
@@ -101,6 +103,68 @@ export const convertToLegacyViewState = (state: ModelOrDatasetState) => {
   return viewState;
 };
 
+const getBreakdownState = (
+  breakdownOption: string | null,
+  runIds: string[],
+  outputName: string,
+  dataState: DataSpaceDataState | null
+): BreakdownState => {
+  const baselineTimeseriesId = dataState?.relativeTo ?? '';
+  const comparisonSettings: ComparisonSettings = {
+    shouldDisplayAbsoluteValues: baselineTimeseriesId === '',
+    baselineTimeseriesId,
+    shouldUseRelativePercentage: true,
+  };
+  const noBreakdownState: BreakdownStateNone = {
+    outputName,
+    modelRunIds: runIds,
+    comparisonSettings,
+  };
+  if (!runIds.length) return noBreakdownState;
+
+  if (breakdownOption === 'region')
+    return {
+      modelRunId: runIds[0],
+      outputName,
+      regionIds: dataState?.selectedRegionIds ?? [],
+      comparisonSettings,
+    };
+
+  if (breakdownOption === 'year')
+    return {
+      modelRunId: runIds[0],
+      outputName,
+      regionId: dataState?.selectedRegionIds[0] ?? null,
+      years: dataState?.selectedYears ?? [],
+      isAllYearsReferenceTimeseriesShown: (dataState?.activeReferenceOptions ?? []).includes(
+        'allYears'
+      ),
+      isSelectedYearsReferenceTimeseriesShown: (dataState?.activeReferenceOptions ?? []).includes(
+        'selectYears'
+      ),
+      comparisonSettings,
+    };
+
+  if (breakdownOption === 'variable')
+    return {
+      modelRunId: runIds[0],
+      outputNames: dataState?.selectedOutputVariables ?? [],
+      comparisonSettings,
+    };
+
+  // Qualifier
+  if (_.isString(breakdownOption) && breakdownOption.length > 0)
+    return {
+      modelRunId: runIds[0],
+      outputName,
+      regionId: dataState?.selectedRegionIds[0] ?? null,
+      qualifier: breakdownOption,
+      qualifierValues: dataState?.selectedQualifierValues || [],
+      comparisonSettings,
+    };
+  return noBreakdownState;
+};
+
 export const convertFromLegacyState = (
   dataId: string,
   defaultRunId: string,
@@ -111,18 +175,11 @@ export const convertFromLegacyState = (
   // Note: For state from analysis items,in some cases dataState isn't populated. In that case fallback to use default feature and states from viewState.
   let modelRunIds = [];
   if (defaultRunId) modelRunIds.push(defaultRunId); // if defaultRunId isn't empty
-  if (dataState?.selectedScenarioIds?.length) modelRunIds = dataState?.selectedScenarioIds;
+  if (dataState?.selectedScenarioIds?.length) modelRunIds = dataState.selectedScenarioIds;
   const selectedOutputIndex = viewState.selectedOutputIndex ?? 0;
   const selectedOutput = dataState?.activeFeatures[selectedOutputIndex];
-  const defaultBreakdownState: BreakdownStateNone = {
-    outputName: selectedOutput?.name ?? defaultFeature,
-    modelRunIds,
-    comparisonSettings: {
-      baselineTimeseriesId: defaultRunId,
-      shouldDisplayAbsoluteValues: true,
-      shouldUseRelativePercentage: false,
-    },
-  };
+  const outputName = selectedOutput?.name ?? defaultFeature;
+
   const mapDisplayOptions: MapDisplayOptions = {
     selectedMapBaseLayer: viewState.selectedMapBaseLayer ?? BASE_LAYER.DEFAULT,
     selectedMapDataLayer: viewState.selectedMapDataLayer ?? DATA_LAYER.ADMIN,
@@ -132,19 +189,28 @@ export const convertFromLegacyState = (
     colorScaleType: viewState.colorScaleType ?? ColorScaleType.LinearDiscrete,
     numberOfColorBins: viewState.numberOfColorBins ?? 5,
   };
-  const defaultState: ModelOrDatasetState = {
+  const state: ModelOrDatasetState = {
     dataId,
-    breakdownState: defaultBreakdownState,
+    breakdownState: getBreakdownState(
+      viewState?.breakdownOption || null,
+      modelRunIds,
+      outputName,
+      dataState
+    ),
     mapDisplayOptions,
     selectedTimestamp: dataState?.selectedTimestamp ?? null,
     selectedTransform: selectedOutput?.transform ?? dataState?.selectedTransform ?? '',
     // Aggregation Options
-    spatialAggregationMethod: viewState.spatialAggregation as AggregationOption,
-    temporalAggregationMethod: viewState.temporalAggregation as AggregationOption,
+    spatialAggregationMethod:
+      (viewState.spatialAggregation as AggregationOption) ?? AggregationOption.Mean,
+    temporalAggregationMethod:
+      (viewState.temporalAggregation as AggregationOption) ?? AggregationOption.Mean,
     spatialAggregation: adminLevelToSpatialAggregation(viewState.selectedAdminLevel ?? 0),
-    temporalResolution: viewState.temporalResolution as TemporalResolutionOption,
+    temporalResolution:
+      (viewState.temporalResolution as TemporalResolutionOption) ?? TemporalResolutionOption.Month,
   };
-  return defaultState;
+  console.log(state);
+  return state;
 };
 
 export function adminLevelToSpatialAggregation(level: number): SpatialAggregation {
