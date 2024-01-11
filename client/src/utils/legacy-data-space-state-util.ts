@@ -146,9 +146,16 @@ const getBreakdownState = (
     };
 
   if (breakdownOption === 'variable')
+    // Note: selectedOutputVariables in DataSpaceDataState are display output names not output names.
+    // Re map the display names to output names.
     return {
       modelRunId: runIds[0],
-      outputNames: dataState?.selectedOutputVariables ?? [],
+      outputNames: (dataState?.selectedOutputVariables ?? [])
+        .map(
+          (displayName) =>
+            dataState?.activeFeatures.find((f) => f.display_name === displayName)?.name
+        )
+        .filter((v) => v !== undefined) as string[],
       comparisonSettings,
     };
 
@@ -209,6 +216,8 @@ export const convertFromLegacyState = (
     temporalResolution:
       (viewState.temporalResolution as TemporalResolutionOption) ?? TemporalResolutionOption.Month,
   };
+  console.log(viewState);
+  console.log(dataState);
   console.log(state);
   return state;
 };

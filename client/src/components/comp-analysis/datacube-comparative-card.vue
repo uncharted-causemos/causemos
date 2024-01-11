@@ -83,8 +83,10 @@
 import _ from 'lodash';
 import { useStore } from 'vuex';
 import router from '@/router';
-import useModelMetadata from '@/composables/useModelMetadata';
+import { AggregationOption, TemporalResolutionOption, DatacubeStatus } from '@/types/Enums';
 import { AnalysisItem } from '@/types/Analysis';
+import { BarData } from '@/types/BarChart';
+import { ModelRun } from '@/types/ModelRun';
 import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
 import {
   convertRegionalDataToBarData,
@@ -93,22 +95,20 @@ import {
   isBreakdownStateNone,
 } from '@/utils/datacube-util';
 import { getDefaultModelRunMetadata } from '@/services/datacube-service';
-import { AggregationOption, TemporalResolutionOption, DatacubeStatus } from '@/types/Enums';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import { colorFromIndex, getColorScheme } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { popupFormatter } from '@/utils/map-util-new';
-import { BarData } from '@/types/BarChart';
 import { openDatacubeDrilldown } from '@/services/analysis-service';
 import { getState as getAnalysisItemState } from '@/utils/analysis-util';
 import { BreakdownState, BreakdownStateNone } from '@/types/Datacube';
+import useModelMetadata from '@/composables/useModelMetadata';
 import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
 import useRegionalDataFromBreakdownState from '@/composables/useRegionalDataFromBreakdownState';
 import useOutputSpecsFromBreakdownState from '@/composables/useOutputSpecsFromBreakdownState';
 import { getTimestampRange } from '@/utils/timeseries-util';
-import { ModelRun } from '@/types/ModelRun';
 import { getBreakdownOptionFromBreakdownState } from '@/utils/legacy-data-space-state-util';
 import useMapBoundsFromBreakdownState from '@/composables/useMapBoundsFromBreakdownState';
 import {
@@ -297,7 +297,6 @@ export default defineComponent({
       if (regionalData.value === null) return [];
       if (timeseriesData.value.length === 0) return [];
       const timeseriesId = timeseriesData.value[selectedTimeseriesIndex.value].id;
-
       const {
         numberOfColorBins,
         dataLayerTransparency,
