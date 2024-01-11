@@ -89,6 +89,7 @@ import QualifierTab from './modal-filter-and-compare/qualifier-tab.vue';
 import { computed, onMounted, ref, toRefs, watch } from 'vue';
 import RadioButtonGroup, { RadioButtonSpec } from '../widgets/radio-button-group.vue';
 import {
+  getValidatedOutputs,
   isBreakdownStateNone,
   isBreakdownStateOutputs,
   isBreakdownStateRegions,
@@ -145,7 +146,7 @@ const qualifiers = computed(() =>
 );
 
 const tabs = computed<RadioButtonSpec[]>(() => {
-  return [
+  const allTabs = [
     { value: NO_FILTERS, label: NO_FILTERS },
     { value: OUTPUTS, label: OUTPUTS, isDisabled: areTabsDisabled.value },
     { value: REGIONS, label: REGIONS, isDisabled: areTabsDisabled.value },
@@ -156,6 +157,12 @@ const tabs = computed<RadioButtonSpec[]>(() => {
       isDisabled: areTabsDisabled.value,
     })),
   ];
+  // All indicators and some models only have one output. In these cases, don't display the "split
+  //  by output" tab.
+  if (getValidatedOutputs(metadata.value.outputs).length === 1) {
+    return allTabs.filter((tab) => tab.value !== OUTPUTS);
+  }
+  return allTabs;
 });
 
 const namesOfSplitByOptions = computed(() => {
