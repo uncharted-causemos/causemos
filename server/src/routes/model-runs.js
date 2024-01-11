@@ -13,7 +13,9 @@ const authUtil = require('#@/util/auth-util.js');
  */
 router.post(
   '/',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // This endpoint is accessed by Jataware using basic auth, so we don't check
+  //  the user role here.
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, maasService.submitModelRun, [req.body]);
   })
@@ -53,7 +55,9 @@ router.post(
  */
 router.post(
   '/:runId/run-failed',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // This endpoint is accessed by scripts and Jataware using basic auth, so we
+  //  don't check the user role here.
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, maasService.markModelRunFailed, [req.body]);
   })

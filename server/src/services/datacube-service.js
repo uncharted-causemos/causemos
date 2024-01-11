@@ -5,6 +5,7 @@ const domainProjectService = require('#@/services/domain-project-service.js');
 const { getFlowStatus, getFlowLogs } = require('#@/services/external/prefect-queue-service.js');
 const { processFilteredData, removeUnwantedData } = require('#@/util/post-processing-util.js');
 const { correctIncompleteTimeseries } = require('#@/util/incomplete-data-detection.js');
+const { getDatacubeDefaultState } = require('#@/util/datacube-util.js');
 const Logger = require('#@/config/logger.js');
 
 const config = require('#@/config/yargs-wrapper.js');
@@ -67,7 +68,9 @@ const countDatacubes = async (filter) => {
 };
 
 /**
- * Insert a new datacube
+ * Insert a new datacube.
+ * Note: Currently it's only being used for model type datacube. Indicator type datacube is created by
+   services/external/maas-service.js#startIndicatorPostProcessing()
  */
 const insertDatacube = async (metadata) => {
   Logger.info(`Start insert datacube ${metadata.name} ${metadata.id}`);
@@ -120,6 +123,13 @@ const insertDatacube = async (metadata) => {
       variable.ontologies = undefined;
     });
   });
+
+  // Add default state
+  metadata.default_state = getDatacubeDefaultState(
+    metadata.data_id,
+    metadata.default_feature,
+    false
+  );
 
   // a new datacube (model or indicator) is being added
   // ensure for each newly registered datacube a corresponding domain project

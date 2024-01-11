@@ -14,7 +14,9 @@ const authUtil = require('#@/util/auth-util.js');
  */
 router.post(
   '/',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // This endpoint is accessed by Jataware using basic auth, so we don't check
+  //  the user role here.
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     await respondUsingCode(res, datacubeService.insertDatacube, [req.body]);
   })
@@ -42,7 +44,9 @@ router.put(
  */
 router.put(
   '/:datacubeId/deprecate',
-  authUtil.checkRole([authUtil.ROLES.USER]),
+  // This endpoint is accessed by Jataware using basic auth, so we don't check
+  //  the user role here.
+  // authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const oldDatacubeId = req.params.datacubeId;
     const newVersionId = req.body.new_version_id;
