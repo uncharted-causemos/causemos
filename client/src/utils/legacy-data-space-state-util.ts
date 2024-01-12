@@ -5,6 +5,8 @@ import {
   MapDisplayOptions,
   ModelOrDatasetState,
   ComparisonSettings,
+  Indicator,
+  Model,
 } from '@/types/Datacube';
 import {
   getRegionIdsFromBreakdownState,
@@ -29,6 +31,7 @@ import { DataSpaceDataState, ViewState } from '@/types/Insight';
 import { stringToAdminLevel } from './admin-level-util';
 import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from './map-util-new';
 import { COLOR, ColorScaleType } from './colors-util';
+import { ModelRun } from '@/types/ModelRun';
 
 export const convertToLegacyDataSpaceDataState = (id: string, state: ModelOrDatasetState) => {
   const bdState = state.breakdownState;
@@ -220,6 +223,25 @@ export const convertFromLegacyState = (
   console.log(dataState);
   console.log(state);
   return state;
+};
+
+export const fixIncompleteDefaultBreakdownState = (
+  breakdownState: BreakdownState,
+  metadata: Model | Indicator | null,
+  defaultModelRun: ModelRun | 'indicator' | null
+) => {
+  // Output name can be empty if the state is converted from initial old analysis item state (due to missing data state),
+  // in that case, get default output name from the loaded metadata
+  if (!isBreakdownStateNone(breakdownState)) return breakdownState;
+  if (breakdownState.outputName && breakdownState.modelRunIds.length > 0) return breakdownState;
+  if (!metadata) return null;
+  if (metadata.type === 'model' && !defaultModelRun) return null;
+  const defaultState: BreakdownStateNone = {
+    ...breakdownState,
+    outputName: breakdownState.outputName || metadata.default_feature,
+    modelRunIds: metadata.type === 'model' ? [(defaultModelRun as ModelRun).id] : ['indicator'],
+  };
+  return defaultState;
 };
 
 export function adminLevelToSpatialAggregation(level: number): SpatialAggregation {

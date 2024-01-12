@@ -91,8 +91,7 @@ import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'v
 import {
   convertRegionalDataToBarData,
   getAdminRegionSetsFromBreakdownState,
-  getOutputNamesFromBreakdownState,
-  isBreakdownStateNone,
+  getOutputDisplayNamesForBreakdownState,
 } from '@/utils/datacube-util';
 import { getDefaultModelRunMetadata } from '@/services/datacube-service';
 import OptionsButton from '@/components/widgets/options-button.vue';
@@ -103,13 +102,16 @@ import RegionMap from '@/components/widgets/region-map.vue';
 import { popupFormatter } from '@/utils/map-util-new';
 import { openDatacubeDrilldown } from '@/services/analysis-service';
 import { getState as getAnalysisItemState } from '@/utils/analysis-util';
-import { BreakdownState, BreakdownStateNone } from '@/types/Datacube';
+import { BreakdownState } from '@/types/Datacube';
 import useModelMetadata from '@/composables/useModelMetadata';
 import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
 import useRegionalDataFromBreakdownState from '@/composables/useRegionalDataFromBreakdownState';
 import useOutputSpecsFromBreakdownState from '@/composables/useOutputSpecsFromBreakdownState';
 import { getTimestampRange } from '@/utils/timeseries-util';
-import { getBreakdownOptionFromBreakdownState } from '@/utils/legacy-data-space-state-util';
+import {
+  fixIncompleteDefaultBreakdownState,
+  getBreakdownOptionFromBreakdownState,
+} from '@/utils/legacy-data-space-state-util';
 import useMapBoundsFromBreakdownState from '@/composables/useMapBoundsFromBreakdownState';
 import {
   getAdminLevelFromSpatialAggregation,
@@ -180,37 +182,35 @@ export default defineComponent({
     });
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
+    const isMetadataLoaded = ref(false);
+
     // Fetch default model run for model datacube
     const defaultModelRun = ref<ModelRun | null>(null);
     watchEffect(async () => {
-      if (metadata.value?.type !== 'model') return;
-      defaultModelRun.value = (await getDefaultModelRunMetadata(metadata.value.data_id)) ?? null;
+      if (metadata.value?.type === 'model') {
+        isMetadataLoaded.value = false;
+        defaultModelRun.value = (await getDefaultModelRunMetadata(metadata.value.data_id)) ?? null;
+      }
+      isMetadataLoaded.value = !!metadata.value;
     });
 
     // =========== Analysis item and breakdown state ===========
 
     const analysisItemState = computed(() => getAnalysisItemState(analysisItem.value));
-    const breakdownState = computed(() => {
-      // Output name can be empty if the state is converted from initial old analysis item state (with missing data state),
-      // in that case, get default output name from the loaded metadata
-      // TODO: remove this default fallback once fully migrated to use new data analysis item
-      const breakdownState = analysisItemState.value.breakdownState;
-      if (!isBreakdownStateNone(breakdownState)) return breakdownState;
-      if (breakdownState.outputName && breakdownState.modelRunIds.length > 0) return breakdownState;
-      if (!metadata.value) return null;
-      if (metadata.value.type === 'model' && !defaultModelRun.value) return null;
-      const defaultState: BreakdownStateNone = {
-        ...breakdownState,
-        outputName: breakdownState.outputName || metadata.value.default_feature,
-        modelRunIds:
-          metadata.value.type === 'model'
-            ? [(defaultModelRun.value as ModelRun).id]
-            : ['indicator'],
-      };
-      return defaultState;
-    });
+    const breakdownState = computed(() =>
+      fixIncompleteDefaultBreakdownState(
+        analysisItemState.value.breakdownState,
+        metadata.value,
+        defaultModelRun.value
+      )
+    );
     const breakdownOption = computed(() =>
       getBreakdownOptionFromBreakdownState(breakdownState.value ?? ({} as BreakdownState))
+    );
+    const outputDisplayName = computed(
+      () =>
+        getOutputDisplayNamesForBreakdownState(breakdownState.value, metadata.value?.outputs)[0] ??
+        ''
     );
 
     const spatialAggregationMethod = computed(
@@ -221,15 +221,6 @@ export default defineComponent({
     );
     const temporalResolution = computed(() => analysisItemState.value.temporalResolution);
 
-    const outputDisplayName = computed(() => {
-      if (!metadata.value) return '';
-      const outputDisplayNames = getOutputNamesFromBreakdownState(breakdownState.value).map(
-        (outputName) =>
-          (metadata.value?.outputs ?? []).find((output) => output.name === outputName)?.display_name
-      );
-      return outputDisplayNames[0] ?? '';
-    });
-
     // =========== Timeseries data ===========
 
     const { timeseriesData: _timeseriesData } = useTimeseriesDataFromBreakdownState(
@@ -239,6 +230,13 @@ export default defineComponent({
       temporalAggregationMethod,
       temporalResolution
     );
+    watchEffect(() => {
+      if (isMetadataLoaded.value)
+        emit('loaded-timeseries', itemId.value, _timeseriesData.value, {
+          outputDisplayName: outputDisplayName.value,
+          datacubeName: metadata.value?.name,
+        });
+    });
     // Override the color of all loaded timeseries
     const timeseriesData = computed(() =>
       _timeseriesData.value.map((timeseries) => ({

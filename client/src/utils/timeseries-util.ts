@@ -525,7 +525,7 @@ const _getMinMaxTimestamp = (timeseriesData: Timeseries[], fn: 'max' | 'min') =>
     .map((timeseries) => timeseries.points)
     .flat()
     .map((point) => point.timestamp);
-  const lastTimestamp = _[fn](allTimestamps) ?? 0;
+  const lastTimestamp = _[fn](allTimestamps) ?? null;
   return lastTimestamp;
 };
 export const getMaxTimestamp = (timeseriesData: Timeseries[]) =>

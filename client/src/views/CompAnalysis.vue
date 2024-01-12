@@ -29,9 +29,8 @@
         v-if="globalTimeseries.length > 0 && activeTab === ComparativeAnalysisMode.Overlay"
         :timeseriesData="globalTimeseries"
         :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
-        :selected-timestamp="globalTimestamp ?? undefined"
+        :selected-timestamp="(globalTimestamp || initialSelectedTimestamp) ?? undefined"
         @select-timestamp="setSelectedGlobalTimestamp"
-        @select-timestamp-range="handleTimestampRangeSelection"
       />
       <!--
         listing individual datacube cards
@@ -75,7 +74,7 @@
                 :id="item.id"
                 :item-id="getAnalysisItemId(item)"
                 :datacube-index="indx"
-                :global-timestamp="globalTimestamp ?? undefined"
+                :global-timestamp="(globalTimestamp || initialSelectedTimestamp) ?? undefined"
                 :analysis-item="item"
                 :analysis-id="analysisId"
                 @loaded-timeseries="onLoadedTimeseries"
@@ -114,8 +113,8 @@ import { BarData } from '@/types/BarChart';
 import { getInsightById } from '@/services/insight-service';
 import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import router from '@/router';
-import { DataAnalysisState, OldAnalysisItem } from '@/types/Analysis';
-import { normalizeTimeseriesList } from '@/utils/timeseries-util';
+import { DataAnalysisState } from '@/types/Analysis';
+import { normalizeTimeseriesList, getTimestampRange } from '@/utils/timeseries-util';
 import { useRoute } from 'vue-router';
 import { useDataAnalysis } from '@/composables/useDataAnalysis';
 import { isDataAnalysisState } from '@/utils/insight-util';
@@ -175,8 +174,10 @@ export default defineComponent({
     const globalBbox = ref<number[][] | undefined>(undefined);
 
     const allTimeseriesMap = ref<{ [key: string]: Timeseries[] }>({});
-    const globalTimeseries = ref([]) as Ref<Timeseries[]>;
-    const reCalculateGlobalTimeseries = ref(true);
+    const allTimestampRangeMap = ref<{
+      [key: string]: { start: number | null; end: number | null };
+    }>({});
+    const globalTimeseries = computed(() => Object.values(allTimeseriesMap.value).flat());
     const timeseriesToDatacubeMap = ref<{
       [timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string };
     }>({});
@@ -185,13 +186,14 @@ export default defineComponent({
     const globalBarsData = ref([]) as Ref<BarData[]>;
 
     const selectedTimestamp = ref(null) as Ref<number | null>;
-    // FIXME: seems like selectedTimestampRange is always set to the full range
-    //  and never affects any behaviour. Investigate and remove.
-    const selectedTimestampRange = ref(null) as Ref<{ start: number; end: number } | null>;
 
     const globalTimestamp = ref(null) as Ref<number | null>;
-    const initialSelectedTimestamp = ref(null) as Ref<number | null>;
-    const initialSelectedTimestampRange = ref({}) as Ref<{ start: number; end: number }>;
+    const initialSelectedTimestamp = computed(() => {
+      const allLastTimestamps = Object.values(allTimestampRangeMap.value)
+        .map((v) => v.end)
+        .filter((v) => v !== null) as number[];
+      return allLastTimestamps.length > 0 ? Math.max(...allLastTimestamps) : null;
+    });
 
     onMounted(async () => {
       store.dispatch('app/setAnalysisName', '');
@@ -213,11 +215,9 @@ export default defineComponent({
           // no datacubes in this analysis, so do not fetch any insights/questions
           store.dispatch('insightPanel/setContextId', undefined);
         }
-        // clear overlay global timeseries
-        globalTimeseries.value = [];
         allTimeseriesMap.value = {};
+        allTimestampRangeMap.value = {};
         timeseriesToDatacubeMap.value = {};
-        reCalculateGlobalTimeseries.value = true;
         // clear region ranking results
         globalBarsData.value = [];
         allRegionalRankingMap.value = {};
@@ -245,17 +245,6 @@ export default defineComponent({
       globalTimestamp.value = value;
     };
 
-    const handleTimestampRangeSelection = (
-      newTimestampRange: { start: number; end: number } | null
-    ) => {
-      if (
-        selectedTimestampRange.value?.start === newTimestampRange?.start &&
-        selectedTimestampRange.value?.end === newTimestampRange?.end
-      ) {
-        return;
-      }
-      selectedTimestampRange.value = newTimestampRange;
-    };
     // TODO: Use New
     const cacheUpdatedMetadata = (itemId: string, metadata: Model | Indicator) => {
       updateAnalysisItemCachedMetadata(itemId, {
@@ -267,18 +256,6 @@ export default defineComponent({
     const cacheUpdatedFeatureName = (itemId: string, featureName: string) => {
       updateAnalysisItemCachedMetadata(itemId, { featureName });
     };
-
-    watch(
-      () => [activeTab.value, initialSelectedTimestampRange.value],
-      () => {
-        if (activeTab.value === ComparativeAnalysisMode.Overlay) {
-          handleTimestampRangeSelection(initialSelectedTimestampRange.value);
-        } else {
-          // reset the active selected range non-overlay views
-          handleTimestampRangeSelection(null);
-        }
-      }
-    );
 
     const availableAdminLevelTitles = ref(
       Object.values(DatacubeGeoAttributeVariableType).map(
@@ -316,7 +293,7 @@ export default defineComponent({
           dataState.selectedTimestamp !== null &&
           dataState.activeTab === ComparativeAnalysisMode.Overlay
         ) {
-          initialSelectedTimestamp.value = dataState.selectedTimestamp;
+          globalTimestamp.value = dataState.selectedTimestamp;
         }
       }
     };
@@ -337,19 +314,16 @@ export default defineComponent({
       analysisItems,
       selectedAnalysisItems,
       allTimeseriesMap,
+      allTimestampRangeMap,
       cacheUpdatedMetadata,
       cacheUpdatedFeatureName,
       globalTimeseries,
       globalBbox,
       selectedTimestamp,
       setSelectedTimestamp,
-      handleTimestampRangeSelection,
       globalTimestamp,
       setSelectedGlobalTimestamp,
-      selectedTimestampRange,
-      reCalculateGlobalTimeseries,
       initialSelectedTimestamp,
-      initialSelectedTimestampRange,
       activeDrilldownTab,
       setColorBinCount,
       colorBinCount,
@@ -422,11 +396,11 @@ export default defineComponent({
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
     }),
-    onLoadedTimeseries(itemId: string, timeseriesList: Timeseries[]) {
-      // we should only set the global timeseries one time
-      //  once all individual datacubes' timeseries have been loaded
-      if (!this.reCalculateGlobalTimeseries) return;
-
+    onLoadedTimeseries(
+      itemId: string,
+      timeseriesList: Timeseries[],
+      metadata: { outputDisplayName: string; datacubeName: string }
+    ) {
       const item = this.selectedAnalysisItems.find((item) => getAnalysisItemId(item) === itemId);
       if (item === undefined) {
         // Incoming timeseries should no longer be included in the global
@@ -434,80 +408,32 @@ export default defineComponent({
         return;
       }
 
+      this.timeseriesToDatacubeMap[itemId] = {
+        datacubeName: metadata.datacubeName ?? '',
+        datacubeOutputVariable: metadata.outputDisplayName ?? '',
+      };
+
       // Clone and save the incoming timeseries into a map object.
       // This will be used when calculating global timeseries after all
       //  timeseries are loaded.
-      this.allTimeseriesMap[itemId] = _.cloneDeep(timeseriesList);
-      if (this.selectedAnalysisItems.length === Object.keys(this.allTimeseriesMap).length) {
-        // Timeseries data has been loaded for all datacubes so calculate the
-        //  global timeseries.
-        this.reCalculateGlobalTimeseries = false;
-        const flatMap: Array<Timeseries[]> = [];
-        Object.keys(this.allTimeseriesMap).forEach((_itemId) => {
-          const timeseriesList: Timeseries[] = this.allTimeseriesMap[_itemId];
+      // Also, override the timeseries id to match its owner analysis item id
+      const timeseriesData = _.cloneDeep(timeseriesList).map((timeseries) => ({
+        ...timeseries,
+        id: itemId,
+      }));
 
-          // normalize the timeseries values for better y-axis scaling when multiple
-          //  timeseries from different datacubes are shown together
-          // i.e., re-map all timestamp point values to a range of [0: 1]
-          //
-          // NOTE: each timeseriesList represents the list of timeseries,
-          //  where each timeseries in that list reflects the timeseries of one model run,
-          //  and also noting that all the timeseries in that list share
-          //  the same scale/range since they all relate to a single datacube (variable)
-          normalizeTimeseriesList(timeseriesList);
+      // normalize the timeseries values for better y-axis scaling when multiple
+      //  timeseries from different datacubes are shown together
+      // i.e., re-map all timestamp point values to a range of [0: 1]
+      //
+      // NOTE: each timeseriesList represents the list of timeseries,
+      //  where each timeseries in that list reflects the timeseries of one model run,
+      //  and also noting that all the timeseries in that list share
+      //  the same scale/range since they all relate to a single datacube (variable)
+      normalizeTimeseriesList(timeseriesData);
 
-          timeseriesList.forEach((timeseries) => {
-            // override the timeseries id to match its owner datacube
-            timeseries.id = _itemId;
-            // build a map that links each timeseries to its owner datacube
-            const info = (
-              this.selectedAnalysisItems.find((item) => getAnalysisItemId(item) === _itemId) as
-                | OldAnalysisItem
-                | undefined
-            )?.cachedMetadata;
-            this.timeseriesToDatacubeMap[_itemId] = {
-              datacubeName: info?.datacubeName ?? '',
-              datacubeOutputVariable: info?.featureName ?? '',
-            };
-          });
-
-          // add to the global list of timeseries
-          flatMap.push(timeseriesList);
-        });
-
-        //
-        // set timeseries data
-        //
-        this.globalTimeseries = flatMap.flat();
-        //
-        // also, set the initial global selectedTimestamp and range
-        //
-        if (this.globalTimeseries && this.globalTimeseries.length > 0) {
-          const allTimestamps = this.globalTimeseries
-            .map((timeseries) => timeseries.points)
-            .flat()
-            .map((point) => point.timestamp);
-
-          // select the last timestamp as the initial value
-          const lastTimestamp = _.max(allTimestamps);
-          if (lastTimestamp !== undefined) {
-            // set initial timestamp selection
-            if (this.initialSelectedTimestamp === null) {
-              this.globalTimestamp = lastTimestamp;
-            } else {
-              this.globalTimestamp = this.initialSelectedTimestamp;
-              this.initialSelectedTimestamp = null;
-            }
-          }
-          // select the timestamp range as the full data extend
-          const firstTimestamp = _.min(allTimestamps);
-          if (lastTimestamp !== undefined && firstTimestamp !== undefined) {
-            // set initial timestamp selection range
-            const newTimestampRange = { start: firstTimestamp, end: lastTimestamp };
-            this.initialSelectedTimestampRange = newTimestampRange;
-          }
-        }
-      }
+      this.allTimeseriesMap[itemId] = timeseriesData;
+      this.allTimestampRangeMap[itemId] = getTimestampRange(timeseriesData);
     },
   },
 });

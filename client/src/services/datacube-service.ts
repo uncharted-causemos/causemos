@@ -269,6 +269,14 @@ export const getDefaultModelRunMetadata = async (dataId: string) => {
   return data[0];
 };
 
+export const getModelRunsByRunIds = async (runIds: string[]) => {
+  const filter = JSON.stringify([{ field: 'id', value: runIds }]);
+  const { data } = await API.get<ModelRun[]>('/maas/model-runs', {
+    params: { filter },
+  });
+  return data;
+};
+
 /**
  * Find suggested terms for the specified string, looking in the provided field
  *

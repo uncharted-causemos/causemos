@@ -231,6 +231,9 @@ export function getOutput(metadata: Datacube, name: string) {
 export const getOutputDescription = (outputs: DatacubeFeature[], outputName: string) =>
   outputs.find((output) => output.name === outputName)?.description ?? '';
 
+export const getOutputDisplayName = (outputs: DatacubeFeature[], outputName: string) =>
+  outputs.find((output) => output.name === outputName)?.display_name ?? '';
+
 export function getSelectedOutput(metadata: Datacube, index: number) {
   const outputs = getOutputs(metadata);
   if (index >= 0 && index < outputs.length) {
@@ -526,6 +529,15 @@ export const getOutputNamesFromBreakdownState = (breakdownState: BreakdownState 
   if (!breakdownState) return [] as string[];
   if (isBreakdownStateOutputs(breakdownState)) return [...breakdownState.outputNames];
   return [breakdownState.outputName];
+};
+
+export const getOutputDisplayNamesForBreakdownState = (
+  breakdownState: BreakdownState | null,
+  outputs: DatacubeFeature[] = []
+) => {
+  return getOutputNamesFromBreakdownState(breakdownState).map((name) =>
+    getOutputDisplayName(outputs, name)
+  );
 };
 
 export default {
