@@ -136,7 +136,7 @@ export default defineComponent({
     },
     selectedTimestamp: {
       type: Number,
-      default: 0,
+      default: null,
     },
     datacubeIndex: {
       type: Number,
@@ -250,10 +250,10 @@ export default defineComponent({
 
     // Handle selected timestamp
     const defaultSelectedTimestamp = computed(
-      () => analysisItemState.value.selectedTimestamp || getTimestampRange(timeseriesData.value).end
+      () => analysisItemState.value.selectedTimestamp ?? getTimestampRange(timeseriesData.value).end
     );
     const computedSelectedTimestamp = computed(
-      () => selectedTimestamp.value || defaultSelectedTimestamp.value
+      () => selectedTimestamp.value ?? defaultSelectedTimestamp.value
     );
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) {

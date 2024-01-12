@@ -29,7 +29,7 @@
         v-if="globalTimeseries.length > 0 && activeTab === ComparativeAnalysisMode.Overlay"
         :timeseriesData="globalTimeseries"
         :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
-        :selected-timestamp="(globalTimestamp || initialSelectedTimestamp) ?? undefined"
+        :selected-timestamp="globalTimestamp ?? initialSelectedTimestamp ?? undefined"
         @select-timestamp="setSelectedGlobalTimestamp"
       />
       <!--
@@ -74,7 +74,7 @@
                 :id="item.id"
                 :item-id="getAnalysisItemId(item)"
                 :datacube-index="indx"
-                :global-timestamp="(globalTimestamp || initialSelectedTimestamp) ?? undefined"
+                :global-timestamp="globalTimestamp ?? initialSelectedTimestamp ?? undefined"
                 :analysis-item="item"
                 :analysis-id="analysisId"
                 @loaded-timeseries="onLoadedTimeseries"
