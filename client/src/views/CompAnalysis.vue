@@ -41,7 +41,7 @@
             v-for="(item, indx) in selectedAnalysisItems"
             :key="getAnalysisItemId(item)"
             class="datacube-comparative-card"
-            :id="item.id"
+            :id="getDatacubeId(item)"
             :item-id="getAnalysisItemId(item)"
             :datacube-index="indx"
             :selected-timestamp="selectedTimestamp ?? undefined"
@@ -71,7 +71,7 @@
               <datacube-comparative-overlay-region
                 :style="{ borderColor: colorFromIndex(indx) }"
                 class="card-map"
-                :id="item.id"
+                :id="getDatacubeId(item)"
                 :item-id="getAnalysisItemId(item)"
                 :datacube-index="indx"
                 :global-timestamp="globalTimestamp ?? initialSelectedTimestamp ?? undefined"
@@ -107,7 +107,7 @@ import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
 import { COLOR, getColors, colorFromIndex } from '@/utils/colors-util';
 import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
-import { getId as getAnalysisItemId } from '@/utils/analysis-util';
+import { getId as getAnalysisItemId, getDatacubeId } from '@/utils/analysis-util';
 import { ComparativeAnalysisMode, DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
 import { getInsightById } from '@/services/insight-service';
@@ -356,6 +356,7 @@ export default defineComponent({
       toggleIsItemInverted,
       isMounted,
       getAnalysisItemId,
+      getDatacubeId,
     };
   },
   mounted() {

@@ -315,6 +315,7 @@ export default defineComponent({
     return {
       project,
       metadata,
+      breakdownState,
       statusColor,
       statusLabel,
       outputDisplayName,
