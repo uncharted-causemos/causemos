@@ -44,43 +44,43 @@ const { analysisName, analysisState, analysisItems } = useDataAnalysis(analysisI
 
 const navBackLabel = computed(() => `Back to ${analysisName.value || 'analysis'}`);
 
+const uniqueDatacubeIdsFromAnalysisItems = computed(() =>
+  analysisItems.value.map((item) => item.id)
+);
+
 const selectedDatacubes = ref<Datacube[]>([]);
 watch(analysisItems, async () => {
-  const ids = analysisItems.value.map((item) => item.id);
-  if (ids.length > 0) {
-    selectedDatacubes.value = await getDatacubesByIds(ids);
+  if (uniqueDatacubeIdsFromAnalysisItems.value.length > 0) {
+    selectedDatacubes.value = await getDatacubesByIds(uniqueDatacubeIdsFromAnalysisItems.value);
   }
 });
 
-// Find existing analysis item with same id and check if that item is visible(selected) item
-const isAnalysisItemVisible = (id: string) =>
-  Boolean(analysisItems.value.find((item) => item.id === id)?.selected);
-
 const addToAnalysis = async (selectedDatacubes: Datacube[]) => {
   try {
-    const newAnalysisItems = selectedDatacubes.map((d) =>
-      createAnalysisItem(
-        d.id,
-        d.data_id,
-        getDatacubeMetadataToCache(d),
-        isAnalysisItemVisible(d.id)
-      )
+    const newDatacubes = selectedDatacubes.filter(
+      (selected) =>
+        uniqueDatacubeIdsFromAnalysisItems.value.find((id) => id === selected.id) === undefined
     );
-    let visibleDatacubeCount = newAnalysisItems.filter((item) => item.selected).length;
+    const newAnalysisItems = newDatacubes.map((d) =>
+      createAnalysisItem(d.id, d.data_id, getDatacubeMetadataToCache(d), false)
+    );
+    // Remove analysis items with unselected datacube
+    const filteredExistingAnalysisItems = analysisItems.value.filter((item) =>
+      selectedDatacubes.find((d) => d.id === item.id)
+    );
+    let visibleDatacubeCount = filteredExistingAnalysisItems.filter((item) => item.selected).length;
     // If visibleDatacubeCount is less than MAX_ANALYSIS_DATACUBES_COUNT, make more datacubes visible.
-    newAnalysisItems
-      .filter((item) => !item.selected)
-      .forEach((item) => {
-        if (visibleDatacubeCount < MAX_ANALYSIS_DATACUBES_COUNT) {
-          item.selected = true;
-          visibleDatacubeCount += 1;
-        }
-      });
+    newAnalysisItems.forEach((item) => {
+      if (visibleDatacubeCount < MAX_ANALYSIS_DATACUBES_COUNT) {
+        item.selected = true;
+        visibleDatacubeCount += 1;
+      }
+    });
 
     // Save updated list of analysisItems to the backend
     const newState: DataAnalysisState = {
       ...analysisState.value,
-      analysisItems: newAnalysisItems,
+      analysisItems: [...filteredExistingAnalysisItems, ...newAnalysisItems],
     };
     // If the list of selected datacubes changed, reset region ranking
     //  weights.
