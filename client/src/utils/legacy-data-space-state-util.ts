@@ -7,9 +7,13 @@ import {
   ComparisonSettings,
   Indicator,
   Model,
+  DatacubeFeature,
 } from '@/types/Datacube';
 import {
   getRegionIdsFromBreakdownState,
+  getOutputNamesFromBreakdownState,
+  getOutputDisplayNamesForBreakdownState,
+  getOutputDisplayName,
   isBreakdownStateNone,
   isBreakdownStateOutputs,
   isBreakdownStateQualifiers,
@@ -33,19 +37,22 @@ import { BASE_LAYER, DATA_LAYER, DATA_LAYER_TRANSPARENCY } from './map-util-new'
 import { COLOR, ColorScaleType } from './colors-util';
 import { ModelRun } from '@/types/ModelRun';
 
-export const convertToLegacyDataSpaceDataState = (id: string, state: ModelOrDatasetState) => {
+export const convertToLegacyDataSpaceDataState = (
+  id: string,
+  state: ModelOrDatasetState,
+  features: DatacubeFeature[]
+) => {
   const bdState = state.breakdownState;
-  const selectedOutputVariables = isBreakdownStateOutputs(bdState)
-    ? bdState.outputNames
-    : [bdState.outputName];
-  const activeFeatures = selectedOutputVariables.map((outputName) => ({
+  const activeFeatures = getOutputNamesFromBreakdownState(bdState).map((outputName) => ({
     name: outputName,
-    display_name: outputName,
+    display_name: getOutputDisplayName(features, outputName),
     temporalResolution: state.temporalResolution,
     temporalAggregation: state.temporalAggregationMethod,
     spatialAggregation: state.spatialAggregationMethod,
     transform: DataTransform.None,
   }));
+  // Note: selectedOutputVariables from old `DataSpaceDataState` uses output display names
+  const selectedOutputVariables = getOutputDisplayNamesForBreakdownState(bdState, features);
   const selectedRegionIds = getRegionIdsFromBreakdownState(bdState);
   const selectedRegionIdsAtAllLevels = {
     country: [] as string[],

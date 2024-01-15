@@ -188,7 +188,11 @@ const initialViewConfig = ref<ViewState | null>({
 //  various fields.
 watch([metadata, selectedModelId], ([_metadata, _id]) => {
   if (!_metadata?.default_state || _id.length === 0) return;
-  initialDataConfig.value = convertToLegacyDataSpaceDataState(_id, _metadata.default_state);
+  initialDataConfig.value = convertToLegacyDataSpaceDataState(
+    _id,
+    _metadata.default_state,
+    metadata.value?.outputs ?? []
+  );
   initialViewConfig.value = convertToLegacyViewState(_metadata.default_state);
 });
 
