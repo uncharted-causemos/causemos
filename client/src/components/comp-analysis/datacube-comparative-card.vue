@@ -182,16 +182,12 @@ export default defineComponent({
     });
     const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
-    const isMetadataLoaded = ref(false);
-
     // Fetch default model run for model datacube
     const defaultModelRun = ref<ModelRun | null>(null);
     watchEffect(async () => {
       if (metadata.value?.type === 'model') {
-        isMetadataLoaded.value = false;
         defaultModelRun.value = (await getDefaultModelRunMetadata(metadata.value.data_id)) ?? null;
       }
-      isMetadataLoaded.value = !!metadata.value;
     });
 
     // =========== Analysis item and breakdown state ===========
@@ -239,11 +235,10 @@ export default defineComponent({
       }))
     );
     watchEffect(() => {
-      if (isMetadataLoaded.value)
-        emit('loaded-timeseries', itemId.value, timeseriesData.value, {
-          outputDisplayName: outputDisplayName.value,
-          datacubeName: metadata.value?.name,
-        });
+      emit('loaded-timeseries', itemId.value, timeseriesData.value, {
+        outputDisplayName: outputDisplayName.value,
+        datacubeName: metadata.value?.name,
+      });
     });
 
     // Handle timeseries(scenario) selection for region map data

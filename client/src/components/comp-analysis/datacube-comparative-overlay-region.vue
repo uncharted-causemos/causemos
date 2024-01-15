@@ -173,11 +173,6 @@ export default defineComponent({
       if (metadata.value?.type !== 'model') return;
       defaultModelRun.value = (await getDefaultModelRunMetadata(metadata.value.data_id)) ?? null;
     });
-    const isMetadataLoaded = computed(
-      () =>
-        metadata.value !== null &&
-        (metadata.value.type === 'model' ? defaultModelRun.value !== null : true)
-    );
 
     // =========== Analysis item and breakdown state ===========
     const analysisItemState = computed(() => getAnalysisItemState(analysisItem.value));
@@ -224,11 +219,10 @@ export default defineComponent({
       }))
     );
     watchEffect(() => {
-      if (isMetadataLoaded.value)
-        emit('loaded-timeseries', itemId.value, timeseriesData.value, {
-          outputDisplayName: outputDisplayName.value,
-          datacubeName: metadata.value?.name,
-        });
+      emit('loaded-timeseries', itemId.value, timeseriesData.value, {
+        outputDisplayName: outputDisplayName.value,
+        datacubeName: metadata.value?.name,
+      });
     });
     // =====================
 
