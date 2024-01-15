@@ -219,9 +219,6 @@ export const convertFromLegacyState = (
     temporalResolution:
       (viewState.temporalResolution as TemporalResolutionOption) ?? TemporalResolutionOption.Month,
   };
-  console.log(viewState);
-  console.log(dataState);
-  console.log(state);
   return state;
 };
 
