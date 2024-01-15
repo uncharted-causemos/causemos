@@ -49,7 +49,7 @@ const uniqueDatacubeIdsFromAnalysisItems = computed(() =>
 );
 
 const selectedDatacubes = ref<Datacube[]>([]);
-watch(analysisItems, async () => {
+watch(uniqueDatacubeIdsFromAnalysisItems, async () => {
   if (uniqueDatacubeIdsFromAnalysisItems.value.length > 0) {
     selectedDatacubes.value = await getDatacubesByIds(uniqueDatacubeIdsFromAnalysisItems.value);
   }
