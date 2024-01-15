@@ -47,7 +47,6 @@
             :selected-timestamp="selectedTimestamp ?? undefined"
             :analysis-item="item"
             :analysis-id="analysisId"
-            @loaded-timeseries="onLoadedTimeseries"
             @loaded-metadata="cacheUpdatedMetadata"
             @updated-feature-display-name="cacheUpdatedFeatureName"
             @select-timestamp="setSelectedTimestamp"

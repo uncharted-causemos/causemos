@@ -153,7 +153,6 @@ export default defineComponent({
   },
   emits: [
     'select-timestamp',
-    'loaded-timeseries',
     'loaded-metadata',
     'updated-feature-display-name',
     'set-analysis-item-view-config',
@@ -234,12 +233,6 @@ export default defineComponent({
         color: colorFromIndex(datacubeIndex.value),
       }))
     );
-    watchEffect(() => {
-      emit('loaded-timeseries', itemId.value, timeseriesData.value, {
-        outputDisplayName: outputDisplayName.value,
-        datacubeName: metadata.value?.name,
-      });
-    });
 
     // Handle timeseries(scenario) selection for region map data
     const selectedTimeseriesIndex = ref(0);
