@@ -208,12 +208,20 @@ export default defineComponent({
     // Note: although this component doesn't need timeseries data, parent component is relying this component to provide
     // the timeseries data by sending an event. This seems to create unnecessary coupling but until we refactor CompAnalysis.vue file,
     // this is needed.
-    const { timeseriesData } = useTimeseriesDataFromBreakdownState(
+    const { timeseriesData: _timeseriesData } = useTimeseriesDataFromBreakdownState(
       breakdownState,
       metadata,
       spatialAggregationMethod,
       temporalAggregationMethod,
       temporalResolution
+    );
+    // Override the color of all loaded timeseries
+    const timeseriesData = computed(() =>
+      _timeseriesData.value.map((timeseries) => ({
+        ...timeseries,
+        name: timeseries.id === 'indicator' ? 'indicator' : timeseries.name,
+        color: colorFromIndex(datacubeIndex.value),
+      }))
     );
     watchEffect(() => {
       if (isMetadataLoaded.value)

@@ -230,13 +230,6 @@ export default defineComponent({
       temporalAggregationMethod,
       temporalResolution
     );
-    watchEffect(() => {
-      if (isMetadataLoaded.value)
-        emit('loaded-timeseries', itemId.value, _timeseriesData.value, {
-          outputDisplayName: outputDisplayName.value,
-          datacubeName: metadata.value?.name,
-        });
-    });
     // Override the color of all loaded timeseries
     const timeseriesData = computed(() =>
       _timeseriesData.value.map((timeseries) => ({
@@ -245,6 +238,14 @@ export default defineComponent({
         color: colorFromIndex(datacubeIndex.value),
       }))
     );
+    watchEffect(() => {
+      if (isMetadataLoaded.value)
+        emit('loaded-timeseries', itemId.value, timeseriesData.value, {
+          outputDisplayName: outputDisplayName.value,
+          datacubeName: metadata.value?.name,
+        });
+    });
+
     // Handle timeseries(scenario) selection for region map data
     const selectedTimeseriesIndex = ref(0);
 
