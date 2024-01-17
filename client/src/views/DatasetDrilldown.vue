@@ -111,7 +111,7 @@
       </div>
     </div>
 
-    <modal-filter-and-compare
+    <ModalFilterAndCompare
       v-if="isFilterAndCompareModalOpen && metadata !== null && breakdownState !== null"
       :metadata="metadata"
       :spatial-aggregation="spatialAggregation"
