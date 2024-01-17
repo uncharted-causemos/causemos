@@ -170,11 +170,11 @@ export interface NewInsightBase {
   modified_at?: number;
   analytical_question: string[]; // Questions to which this insight has been assigned
   metadata?: NewInsightMetadata;
-  annotation_state?: AnnotationState;
-  thumbnail?: string; // e.g., image url or base64 encoding
   image: string; // e.g., image url or base64 encoding
-  // Used to save and restore the order of questions and insights in the analysis checklist
-  analyticalQuestionOrder: number;
+  annotation_state?: AnnotationState;
+  // A list (usually with one item) of artifact IDs that is used to determine whether this insight
+  //  should be displayed in the insight list for a particular analysis item, index, etc.
+  context_id: string[];
 }
 
 export type ModelOrDatasetStateView =
@@ -192,7 +192,7 @@ export type NewInsight = ModelOrDatasetStateInsight;
 
 export interface SectionWithInsights {
   section: AnalyticalQuestion;
-  insights: FullInsight[];
+  insights: (FullInsight | NewInsight)[];
 }
 
 export interface ReviewPosition {

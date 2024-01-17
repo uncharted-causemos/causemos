@@ -30,7 +30,10 @@
         <div class="context-insight-header">
           <div
             class="context-insight-title"
-            :class="{ 'private-insight-title': contextInsight.visibility === 'private' }"
+            :class="{
+              'private-insight-title':
+                instanceOfNewInsight(contextInsight) || contextInsight.visibility === 'private',
+            }"
           >
             {{ contextInsight.name }}
           </div>
@@ -61,9 +64,12 @@
             class="context-insight-thumbnail"
           />
           <div
-            v-if="contextInsight.description.length > 0"
+            v-if="contextInsight.description?.length ?? 0 > 0"
             class="context-insight-description"
-            :class="{ 'private-insight-description': contextInsight.visibility === 'private' }"
+            :class="{
+              'private-insight-description':
+                instanceOfNewInsight(contextInsight) || contextInsight.visibility === 'private',
+            }"
           >
             {{ contextInsight.description }}
           </div>
@@ -71,7 +77,7 @@
         </div>
       </div>
     </div>
-    <message-display v-else :message="messageNoData" />
+    <message-display v-else :message="MESSAGE_NO_DATA" />
     <button type="button" class="btn pane-footer" @click="openInsightsExplorer">
       <i class="fa fa-fw fa-star fa-lg" />
       Review All Insights
@@ -79,7 +85,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
 import { computed } from 'vue';
 import { mapGetters, mapActions, useStore } from 'vuex';
@@ -89,7 +95,6 @@ import ImgLazy from '@/components/widgets/img-lazy.vue';
 import { INSIGHTS } from '@/utils/messages-util';
 import InsightUtil from '@/utils/insight-util';
 
-import router from '@/router';
 import useInsightsData from '@/composables/useInsightsData';
 import { countPublicInsights, fetchFullInsights, removeInsight } from '@/services/insight-service';
 import { ProjectType } from '@/types/Enums';
@@ -97,6 +102,8 @@ import MessageDisplay from '@/components/widgets/message-display.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
+import useInsightStore from '@/composables/useInsightStore';
+import { Insight, NewInsight } from '@/types/Insight';
 
 export default {
   name: 'ListContextInsightPane',
@@ -113,18 +120,42 @@ export default {
     },
   },
   data: () => ({
-    messageNoData: INSIGHTS.NO_DATA,
-    selectedContextInsight: null,
+    MESSAGE_NO_DATA: INSIGHTS.NO_DATA,
+    selectedContextInsight: null as Insight | NewInsight | null,
   }),
   setup() {
     const store = useStore();
     // the gallery opens over top of this side panel, prevent fetches while the gallery is open
     const preventFetches = computed(() => store.getters['insightPanel/isPanelOpen']);
-    const { insights, reFetchInsights } = useInsightsData(preventFetches, undefined, true);
+    const { insights: listContextInsights, reFetchInsights } = useInsightsData(
+      preventFetches,
+      undefined,
+      true
+    );
+
+    const {
+      showInsightPanel,
+      setCurrentPane,
+      setUpdatedInsight,
+      setInsightsBySection,
+      setPositionInReview,
+      setRefreshDatacubes,
+      setSnapshotUrl,
+    } = useInsightStore();
 
     return {
-      listContextInsights: insights,
+      listContextInsights,
       reFetchInsights,
+
+      showInsightPanel,
+      setCurrentPane,
+      setUpdatedInsight,
+      setInsightsBySection,
+      setPositionInReview,
+      setRefreshDatacubes,
+      setSnapshotUrl,
+
+      instanceOfNewInsight: InsightUtil.instanceOfNewInsight,
     };
   },
   computed: {
@@ -133,30 +164,11 @@ export default {
       projectType: 'app/projectType',
       project: 'app/project',
     }),
-    metadataSummary() {
-      const projectCreatedDate = new Date(this.projectMetadata.created_at);
-      const projectModifiedDate = new Date(this.projectMetadata.modified_at);
-      return (
-        `Project: ${
-          this.projectMetadata.name
-        } - Created: ${projectCreatedDate.toLocaleString()} - ` +
-        `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${
-          this.projectMetadata.corpus_id
-        }`
-      );
-    },
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      showInsightPanel: 'insightPanel/showInsightPanel',
-      setCurrentPane: 'insightPanel/setCurrentPane',
-      setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightsBySection: 'insightPanel/setInsightsBySection',
-      setPositionInReview: 'insightPanel/setPositionInReview',
-      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
-      setSnapshotUrl: 'insightPanel/setSnapshotUrl',
     }),
     newInsight() {
       this.setSnapshotUrl(undefined);
@@ -168,10 +180,12 @@ export default {
       this.showInsightPanel();
       this.setCurrentPane('list-insights');
     },
-    async exportContextInsight(item) {
+    async exportContextInsight(item: 'Word' | 'Powerpoint') {
       this.enableOverlay('Preparing to export insights');
       const bibliographyMap = await getBibiographyFromCagIds([]);
-      const insights = await fetchFullInsights({ id: this.listContextInsights.map((d) => d.id) });
+      const insights = await fetchFullInsights({
+        id: this.listContextInsights.map((d) => d.id as string),
+      });
       this.disableOverlay();
 
       switch (item) {
@@ -185,54 +199,38 @@ export default {
           break;
       }
     },
-    selectContextInsight(contextInsight) {
+    selectContextInsight(contextInsight: Insight | NewInsight) {
       if (contextInsight === this.selectedContextInsight) {
         this.selectedContextInsight = null;
         return;
       }
       this.selectedContextInsight = contextInsight;
 
-      let savedURL = this.selectedContextInsight.url;
       const currentURL = this.$route.fullPath;
 
-      // NOTE: applying an insight should not automatically set a specific datacube_id as a query param
-      //  because, for example, the comparative analysis (region-ranking) page does not
-      //  need/understand a specific datacube_id,
-      //  and setting it regardless may have a negative side effect
-      const datacubeId = savedURL.includes('/dataComparative/')
-        ? undefined
-        : _.first(contextInsight.context_id);
+      const finalURL = InsightUtil.jumpToInsightContext(
+        this.selectedContextInsight,
+        currentURL,
+        this.project,
+        this.projectType,
+        this.$route.params.analysisId as string | undefined
+      );
 
-      if (savedURL !== currentURL) {
-        // special case
-        if (
-          this.projectType === ProjectType.Analysis &&
-          this.selectedContextInsight.visibility === 'public'
-        ) {
-          // this is an insight created by the domain modeler during model publication:
-          // for applying this insight, do not redirect to the domain project page,
-          // instead use the current context and rehydrate the view
-          savedURL = '/analysis/' + this.project + '/data/' + this.$route.params.analysisId;
-        }
-
-        if (this.projectType === ProjectType.Model) {
-          // this is an insight created by the domain modeler during model publication:
-          //  needed since an existing url may have insight_id with old/invalid value
-          savedURL = '/model/' + this.project + '/model-publishing-experiment';
-        }
-
-        // add 'insight_id' as a URL param so that the target page can apply it
-        const finalURL = InsightUtil.getSourceUrlForExport(
-          savedURL,
-          this.selectedContextInsight.id,
-          datacubeId
-        );
-
+      if (finalURL) {
         try {
           this.$router.push(finalURL);
         } catch (e) {}
       } else {
-        router
+        // NOTE: applying an insight should not automatically set a specific datacube_id as a query param
+        //  because, for example, the comparative analysis (region-ranking) page does not
+        //  need/understand a specific datacube_id,
+        //  and setting it regardless may have a negative side effect
+        const datacubeId =
+          InsightUtil.instanceOfNewInsight(contextInsight) ||
+          contextInsight.url.includes('/dataComparative/')
+            ? undefined
+            : _.first(contextInsight.context_id);
+        this.$router
           .push({
             query: {
               insight_id: this.selectedContextInsight.id,
@@ -242,16 +240,21 @@ export default {
           .catch(() => {});
       }
     },
-    isDisabled(insight) {
-      return insight.visibility === 'public' && this.projectType === ProjectType.Analysis;
+    isDisabled(insight: Insight | NewInsight) {
+      return (
+        !InsightUtil.instanceOfNewInsight(insight) &&
+        insight.visibility === 'public' &&
+        this.projectType === ProjectType.Analysis
+      );
     },
-    async deleteContextInsight(insight) {
+    async deleteContextInsight(insight: Insight | NewInsight) {
       if (this.isDisabled(insight)) {
         return;
       }
 
       // are removing a public insight (from the context panel within a domain project)?
       if (
+        !InsightUtil.instanceOfNewInsight(insight) &&
         insight.visibility === 'public' &&
         Array.isArray(insight.context_id) &&
         insight.context_id.length > 0
@@ -266,12 +269,11 @@ export default {
         }
       }
 
-      const id = insight.id;
-      await removeInsight(id);
+      await removeInsight(insight.id as string);
       // refresh the latest list from the server
       this.reFetchInsights();
     },
-    editContextInsight(insight) {
+    editContextInsight(insight: Insight | NewInsight) {
       if (this.isDisabled(insight)) {
         return;
       }
@@ -286,8 +288,8 @@ export default {
       ];
       this.setInsightsBySection(insightsBySection);
       this.setPositionInReview({
-        sectionId: dummySection.id,
-        insightId: insight.id,
+        sectionId: dummySection.id as string,
+        insightId: insight.id as string,
       });
       this.setCurrentPane('review-edit-insight');
     },

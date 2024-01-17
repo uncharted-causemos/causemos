@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import API from '@/api/api';
-import { AnalyticalQuestion, Insight } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, NewInsight } from '@/types/Insight';
 import { getInsightById, updateInsight } from '@/services/insight-service';
 
 export const getQuestionById = async (question_id: string) => {
@@ -34,10 +34,11 @@ export const addInsightToQuestion = async (questionId: string, insightId: string
   // Note: Insight update is not an atomic update. It can be rare but it's possible there might be data inconsistency resulting
   // unexpected results especially when multiple update operations on a same insight at the same time concurrently.
   // In that case, the last update received by the database will overwrite the previous ones.
-  const [question, insight]: [AnalyticalQuestion, Partial<Insight>] = await Promise.all([
-    getQuestionById(questionId),
-    getInsightById(insightId, ['analytical_question']),
-  ]);
+  const [question, insight]: [AnalyticalQuestion, Partial<Insight | NewInsight>] =
+    await Promise.all([
+      getQuestionById(questionId),
+      getInsightById(insightId, ['analytical_question']),
+    ]);
   question.linked_insights = _.uniq([...question.linked_insights, insightId]);
   insight.analytical_question = _.uniq([...(insight.analytical_question || []), questionId]);
   await Promise.all([updateQuestion(questionId, question), updateInsight(insightId, insight)]);
@@ -49,10 +50,11 @@ export const removeInsightFromQuestion = async (questionId: string, insightId: s
   // Note: Insight update is not an atomic update. It can be rare but it's possible there might be data inconsistency resulting
   // unexpected results especially when multiple update operations on a same insight at the same time concurrently.
   // In that case, the last update received by the database will overwrite the previous ones.
-  const [question, insight]: [AnalyticalQuestion, Partial<Insight>] = await Promise.all([
-    getQuestionById(questionId),
-    getInsightById(insightId, ['analytical_question']),
-  ]);
+  const [question, insight]: [AnalyticalQuestion, Partial<Insight | NewInsight>] =
+    await Promise.all([
+      getQuestionById(questionId),
+      getInsightById(insightId, ['analytical_question']),
+    ]);
   question.linked_insights = _.uniq([...question.linked_insights.filter((i) => i !== insightId)]);
   insight.analytical_question = _.uniq([
     ...(insight.analytical_question || []).filter((q) => q !== questionId),

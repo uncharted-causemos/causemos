@@ -1,6 +1,5 @@
 <template>
-  <div class="model-drilldown-container">
-    <!-- TODO: insights -->
+  <div class="model-drilldown-container insight-capture">
     <div class="config-column">
       <header>
         <h3>{{ metadata?.name }}</h3>
@@ -185,7 +184,7 @@
 import _ from 'lodash';
 import useModelMetadata from '@/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import { Ref, computed, ref, watch } from 'vue';
+import { Ref, computed, onMounted, ref, watch } from 'vue';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
 import {
@@ -214,6 +213,7 @@ import BarChartPanel from '@/components/drilldown-panel/bar-chart-panel.vue';
 import { stringToAdminLevel } from '@/utils/admin-level-util';
 import useTimeseriesIdToColorMap from '@/composables/useTimeseriesIdToColorMap';
 import useModelDrilldownState from '@/composables/useModelDrilldownState';
+import useInsightStore from '@/composables/useInsightStore';
 
 const SPATIAL_AGGREGATION_METHOD_OPTIONS = [AggregationOption.Mean, AggregationOption.Sum];
 const TEMPORAL_RESOLUTION_OPTIONS = [TemporalResolutionOption.Month, TemporalResolutionOption.Year];
@@ -221,6 +221,15 @@ const TEMPORAL_RESOLUTION_OPTIONS = [TemporalResolutionOption.Month, TemporalRes
 const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
 const metadata = useModelMetadata(modelId) as Ref<Model | null>;
 const { filteredRunData } = useScenarioData(modelId, ref({ clauses: [] }), ref([]), ref(false));
+
+const { setContextId } = useInsightStore();
+onMounted(() => {
+  // TODO: if loading analysis item, use the analysis item ID as the context ID.
+  // If loading from an index node, use the node ID.
+  // This is used to determine which insights should be displayed in the navbar dropdown for this
+  //  page.
+  setContextId('analysis item ID goes here');
+});
 
 const {
   breakdownState,

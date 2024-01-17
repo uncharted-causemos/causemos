@@ -1,5 +1,5 @@
 import { ProjectType } from '@/types/Enums';
-import { Insight, InsightImage } from '@/types/Insight';
+import { Insight, InsightImage, NewInsight } from '@/types/Insight';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import {
@@ -14,10 +14,10 @@ export default function useInsightsData(
   fieldAllowList?: string[],
   isContextInsightPanelOpen = false
 ) {
-  const insightMap = ref<Map<string, Insight>>(new Map<string, Insight>());
+  const insightMap = ref(new Map<string, Insight | NewInsight>());
   const insightImageMap = ref<Map<string, InsightImage>>(new Map<string, InsightImage>());
 
-  const insights = computed<Insight[]>(() => Array.from(insightMap.value.values()));
+  const insights = computed<(Insight | NewInsight)[]>(() => Array.from(insightMap.value.values()));
 
   const insightsFetchedAt = ref(0);
 

@@ -60,7 +60,11 @@ const createInsight = async (
   dataState,
   // eslint-disable-next-line camelcase
   annotation_state,
-  metadata
+  metadata,
+  schemaVersion,
+  type,
+  view,
+  state
 ) => {
   const newId = uuid();
   Logger.info('Creating insight entry: ' + newId);
@@ -93,6 +97,10 @@ const createInsight = async (
       data_state: dataState,
       annotation_state: annotation_state,
       metadata,
+      schemaVersion,
+      type,
+      view,
+      state,
     },
     keyFn
   );
