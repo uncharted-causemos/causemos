@@ -1,17 +1,8 @@
 <template>
-  <div class="model-drilldown-container insight-capture">
+  <div class="dataset-drilldown-container insight-capture">
     <div class="config-column">
       <ModelOrDatasetMetadata :metadata="metadata" />
-      <section v-if="metadata !== null" class="model-run-parameters-section">
-        <div class="section-header">
-          <h4>Model run parameters</h4>
-          <button @click="isSelectModelRunsModalOpen = true" class="btn btn-default btn-white">
-            Select model runs
-          </button>
-        </div>
 
-        <ModelRunSummaryList :metadata="metadata" :model-runs="selectedModelRuns" />
-      </section>
       <section>
         <h4>Displayed output</h4>
 
@@ -120,16 +111,7 @@
       </div>
     </div>
 
-    <modal-select-model-runs
-      v-if="isSelectModelRunsModalOpen && metadata !== null && firstOutputName !== null"
-      :metadata="metadata"
-      :current-output-name="firstOutputName"
-      :initial-selected-model-run-ids="selectedModelRunIds"
-      @close="isSelectModelRunsModalOpen = false"
-      @update-selected-model-runs="setSelectedModelRunIds"
-    />
-
-    <modal-filter-and-compare
+    <ModalFilterAndCompare
       v-if="isFilterAndCompareModalOpen && metadata !== null && breakdownState !== null"
       :metadata="metadata"
       :spatial-aggregation="spatialAggregation"
@@ -148,21 +130,11 @@ import useModelMetadata from '@/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { Ref, computed, onMounted, ref, watch } from 'vue';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
-import { BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
-import {
-  getFilteredScenariosFromIds,
-  getOutput,
-  isBreakdownStateNone,
-  isBreakdownStateOutputs,
-  isBreakdownStateYears,
-} from '@/utils/datacube-util';
-import useScenarioData from '@/composables/useScenarioData';
+import { DatacubeFeature, Indicator } from '@/types/Datacube';
+import { getOutput, isBreakdownStateOutputs, isBreakdownStateYears } from '@/utils/datacube-util';
 import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
-import ModalSelectModelRuns from '@/components/modals/modal-select-model-runs.vue';
-import ModelRunSummaryList from '@/components/model-drilldown/model-run-summary-list.vue';
+
 import ModalFilterAndCompare from '@/components/modals/modal-filter-and-compare.vue';
-import useToaster from '@/composables/useToaster';
-import { TYPE } from 'vue-toastification';
 import useRegionalDataFromBreakdownState from '@/composables/useRegionalDataFromBreakdownState';
 import useOutputSpecsFromBreakdownState from '@/composables/useOutputSpecsFromBreakdownState';
 import NewAnalysisMap from '@/components/data/new-analysis-map.vue';
@@ -180,9 +152,8 @@ import ModelOrDatasetMetadata from '@/components/model-drilldown/model-or-datase
 const SPATIAL_AGGREGATION_METHOD_OPTIONS = [AggregationOption.Mean, AggregationOption.Sum];
 const TEMPORAL_RESOLUTION_OPTIONS = [TemporalResolutionOption.Month, TemporalResolutionOption.Year];
 
-const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
-const metadata = useModelMetadata(modelId) as Ref<Model | null>;
-const { filteredRunData } = useScenarioData(modelId, ref({ clauses: [] }), ref([]), ref(false));
+const datasetId = ref('4e00827e-0726-4a0e-b386-9172a1ad89fc');
+const metadata = useModelMetadata(datasetId) as Ref<Indicator | null>;
 
 const { setContextId } = useInsightStore();
 onMounted(() => {
@@ -213,7 +184,6 @@ const firstOutputName = computed<string | null>(() => {
     ? breakdownState.value.outputNames[0]
     : breakdownState.value.outputName;
 });
-// TODO: add support for multiple selected output variables
 const activeOutputVariable = computed<DatacubeFeature | null>(() => {
   if (metadata.value === null || firstOutputName.value === null) {
     return null;
@@ -221,56 +191,6 @@ const activeOutputVariable = computed<DatacubeFeature | null>(() => {
   return getOutput(metadata.value, firstOutputName.value) ?? null;
 });
 
-const toast = useToaster();
-const selectedModelRunIds = computed(() => {
-  if (breakdownState.value === null) {
-    return [];
-  }
-  return isBreakdownStateNone(breakdownState.value)
-    ? breakdownState.value.modelRunIds
-    : [breakdownState.value.modelRunId];
-});
-const setSelectedModelRunIds = (newRunIds: string[]) => {
-  if (breakdownState.value === null) {
-    return;
-  }
-  if (isBreakdownStateNone(breakdownState.value)) {
-    setBreakdownState({
-      ...breakdownState.value,
-      modelRunIds: [...newRunIds],
-    });
-    return;
-  }
-  if (newRunIds.length === 1) {
-    setBreakdownState({
-      ...breakdownState.value,
-      modelRunId: newRunIds[0],
-    });
-  }
-  // Handle the case where the user has a breakdown state selected that doesn't support multiple
-  //  model runs.
-  toast(
-    'Resetting "Filter and compare" configuration, since you selected multiple runs.',
-    TYPE.INFO
-  );
-  const newBreakdownState: BreakdownStateNone = {
-    outputName: isBreakdownStateOutputs(breakdownState.value)
-      ? breakdownState.value.outputNames[0]
-      : breakdownState.value.outputName,
-    modelRunIds: newRunIds,
-    comparisonSettings: {
-      baselineTimeseriesId: newRunIds[0],
-      shouldDisplayAbsoluteValues: true,
-      shouldUseRelativePercentage: false,
-    },
-  };
-  setBreakdownState(newBreakdownState);
-};
-const selectedModelRuns = computed(() =>
-  getFilteredScenariosFromIds(selectedModelRunIds.value, filteredRunData.value)
-);
-
-const isSelectModelRunsModalOpen = ref(false);
 const isFilterAndCompareModalOpen = ref(false);
 
 const { availableRegions } = useAvailableRegions(metadata, breakdownState);
@@ -346,7 +266,7 @@ const { getColorFromTimeseriesId } = useTimeseriesIdToColorMap(breakdownState);
 
 $configColumnButtonWidth: 122px;
 
-.model-drilldown-container {
+.dataset-drilldown-container {
   height: $content-full-height;
   display: flex;
   overflow: hidden;
@@ -363,6 +283,7 @@ $configColumnButtonWidth: 122px;
     margin-bottom: 10px;
   }
 
+  header,
   section {
     padding: 20px;
   }
@@ -376,17 +297,6 @@ $configColumnButtonWidth: 122px;
     flex-direction: column;
     gap: 20px;
   }
-}
-
-.model-run-parameters-section {
-  flex-shrink: 1;
-  overflow-y: auto;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 
 .output-variables {

@@ -686,7 +686,7 @@ const saveInsight = () => {
 
     // FIXME: HACK: determine whether we should use the new insight schema depending on the page
     //  URL that the new insight was taken from
-    if (url.includes('/model/')) {
+    if (url.includes('/model/') || url.includes('/dataset/')) {
       newInsight = {
         schemaVersion: 2,
         id: uuidv4(),

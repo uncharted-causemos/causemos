@@ -35,6 +35,7 @@ import pptxgen from 'pptxgenjs';
 import { DataTransform, ProjectType } from '@/types/Enums';
 import { DataAnalysisState, IndexAnalysisState } from '@/types/Analysis';
 import { RouteLocationRaw } from 'vue-router';
+import { isBreakdownStateNone } from './datacube-util';
 
 // Used to label elements that should be captured in a screenshot when an insight is taken
 export const INSIGHT_CAPTURE_CLASS = 'insight-capture';
@@ -119,6 +120,14 @@ export function isIndexAnalysisState(
   return (dataState as IndexAnalysisState | undefined)?.index !== undefined;
 }
 
+export function isModelDrilldownInsight(insight: NewInsight) {
+  const breakdownState = insight.state.breakdownState;
+  if (isBreakdownStateNone(breakdownState)) {
+    return breakdownState.modelRunIds.length !== 1 || breakdownState.modelRunIds[0] !== 'indicator';
+  }
+  return breakdownState.modelRunId !== 'indicator';
+}
+
 function jumpToInsightContext(
   insight: Insight | NewInsight,
   currentURL: string,
@@ -131,7 +140,7 @@ function jumpToInsightContext(
     //  return object containing analysisId and analysisItemId and insight ID
     // if (insight.view.view === 'analysisItemDrilldown') {
     // return {
-    //   name: 'modelDrilldown',
+    //   name: isModelDrilldownInsight(insight) ? 'modelDrilldown' : 'datasetDrilldown',
     //   params: {
     //     project: insight.project_id,
     //     projectType: ProjectType.Analysis,
@@ -144,12 +153,26 @@ function jumpToInsightContext(
     //   }
     // };
     // }
+    if (isModelDrilldownInsight(insight)) {
+      return {
+        name: 'modelDrilldown',
+        params: {
+          project: insight.project_id,
+          projectType: ProjectType.Analysis,
+          modelId: insight.state.dataId,
+        },
+        query: {
+          insight_id: insight.id,
+        },
+      };
+    }
+
     return {
-      name: 'modelDrilldown',
+      name: 'datasetDrilldown',
       params: {
         project: insight.project_id,
         projectType: ProjectType.Analysis,
-        modelId: insight.state.dataId,
+        datasetId: insight.state.dataId,
       },
       query: {
         insight_id: insight.id,
