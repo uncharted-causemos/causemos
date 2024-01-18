@@ -14,7 +14,6 @@ router.post(
   '/',
   authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
-    // FIXME: add support for analysisId field
     const {
       name,
       description,
@@ -33,6 +32,10 @@ router.post(
       data_state,
       annotation_state,
       metadata,
+      schemaVersion,
+      type,
+      view,
+      state,
     } = req.body;
     const result = await insightService.createInsight(
       name,
@@ -50,7 +53,11 @@ router.post(
       view_state,
       data_state,
       annotation_state,
-      metadata
+      metadata,
+      schemaVersion,
+      type,
+      view,
+      state
     );
     res.json(result);
   })

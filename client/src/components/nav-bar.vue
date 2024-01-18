@@ -190,9 +190,25 @@ export default defineComponent({
         analysisProjectItem.value,
         { icon: 'fa-book', route: null, text: 'Explore documents' },
       ],
+      // TODO: expose these once you can navigate to the new data space from an analysis
+      // modelDrilldown: [
+      //   analysisProjectItem.value,
+      //   quantitativeAnalysisItem.value,
+      //   { route: null, text: 'Flee: Agent Based Refugee Model' }, // TODO: get the model name
+      // ],
+      // datasetDrilldown: [
+      //   analysisProjectItem.value,
+      //   quantitativeAnalysisItem.value,
+      //   { route: null, text: 'Armed Forces Percentage of the Country Population' }, // TODO: get the dataset name
+      // ],
+      // TODO: remove these once you can navigate to the new data space from an analysis
       modelDrilldown: [
         analysisProjectItem.value,
         { route: null, text: 'Flee: Agent Based Refugee Model' }, // TODO: get the model name
+      ],
+      datasetDrilldown: [
+        analysisProjectItem.value,
+        { route: null, text: 'Armed Forces Percentage of the Country Population' }, // TODO: get the dataset name
       ],
     }));
 
@@ -204,6 +220,7 @@ export default defineComponent({
       'indexResults',
       'indexProjections',
       'modelDrilldown',
+      'datasetDrilldown',
     ];
     const showNavbarInsightsPanelButton = computed(() =>
       VIEWS_WITH_NAVBAR_INSIGHTS_PANEL.includes(currentView.value)

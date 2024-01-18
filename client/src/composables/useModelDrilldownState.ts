@@ -1,4 +1,4 @@
-import { BreakdownState, Model, ModelOrDatasetState } from '@/types/Datacube';
+import { BreakdownState, Indicator, Model, ModelOrDatasetState } from '@/types/Datacube';
 import {
   AggregationOption,
   DatacubeGeoAttributeVariableType,
@@ -7,21 +7,29 @@ import {
 } from '@/types/Enums';
 import _ from 'lodash';
 import { Ref, computed, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import useInsightStore from './useInsightStore';
+import { getInsightById } from '@/services/insight-service';
+import { ModelOrDatasetStateInsight } from '@/types/Insight';
 
 /**
- * Loads the initial state for a given model datacube, and updates it if an insight is applied.
+ * Loads the initial state for a given model or dataset, and updates it if an insight is applied.
  * Initial state can come from three places, in order of priority:
  *  - an insight that the user is trying to apply
- *  - the saved state of the model within a data analysis (list of model datacubes)
- *  - the default state of the model, saved when the model is first ingested into the system by the pipeline
- * @param metadata The metadata of a model datacube as fetched from the `datacube` ElasticSearch index
+ *  - the saved state of the model or dataset within a data analysis (list of datacubes)
+ *  - the default state of the model or dataset, saved when the model or dataset is first ingested
+ *    into the system by the pipeline
+ * @param metadata The metadata of a datacube as fetched from the `datacube` ElasticSearch index
  * @returns The ModelOrDatasetState ref as long as computed properties and setters for its fields.
  */
-export default function useModelState(metadata: Ref<Model | null>) {
+export default function useModelOrDatasetDrilldownState(metadata: Ref<Model | Indicator | null>) {
   const state = ref<ModelOrDatasetState | null>(null);
+
+  const { setModelOrDatasetState } = useInsightStore();
   const setState = (newState: ModelOrDatasetState) => {
     state.value = newState;
+    // Save to insight store
+    setModelOrDatasetState(newState);
   };
   const updateState = (partialState: Partial<ModelOrDatasetState>) => {
     if (state.value === null) return;
@@ -63,15 +71,21 @@ export default function useModelState(metadata: Ref<Model | null>) {
   };
 
   const route = useRoute();
+  const router = useRouter();
   // Any time an insight is applied (either on first page load or after applying an insight from this
   //  page), immediately update the state and remove it from the URL
   watch(
     () => route.query.insight_id,
-    (insightId) => {
-      if (insightId !== undefined) {
-        // TODO: const newState = getStateFromInsight(insightId);
-        // TODO: setState(newState);
-        // TODO: remove insightId from the route once state is applied
+    async (insightId) => {
+      if (typeof insightId === 'string') {
+        const insight = (await getInsightById(insightId)) as ModelOrDatasetStateInsight;
+        setState(insight.state);
+        // Remove insightId from the route once state is applied
+        router.push({
+          query: {
+            insight_id: undefined,
+          },
+        });
       }
     },
     { immediate: true }
@@ -93,8 +107,8 @@ export default function useModelState(metadata: Ref<Model | null>) {
     { immediate: true }
   );
 
-  // Initialize default state for this model, unless state should be applied from an insight or an
-  //  analysis item.
+  // Initialize default state for this model or dataset, unless state should be applied from an
+  //  insight or an analysis item.
   watch(
     [() => route.query.insight_id, () => route.query.analysisId, metadata],
     async ([insightId, analysisId, _metadata]) => {
@@ -103,10 +117,8 @@ export default function useModelState(metadata: Ref<Model | null>) {
       if (breakdownState.value !== null) return;
       // When enough metadata has been fetched, initialize the breakdown state
       if (_metadata === null) return;
-      // TODO: clean this up when default_state is standardized
-      const defaultState = (_metadata as any).default_state;
+      const defaultState = _metadata.default_state;
       if (defaultState === undefined) return;
-      console.log('Successfully loaded defaultState:', defaultState);
       setState(defaultState);
     },
     { immediate: true }

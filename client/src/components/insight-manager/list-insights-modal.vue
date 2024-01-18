@@ -96,9 +96,10 @@ import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
 import { countPublicInsights, fetchFullInsights, removeInsight } from '@/services/insight-service';
-import { AnalyticalQuestion, Insight, SectionWithInsights } from '@/types/Insight';
+import { AnalyticalQuestion, Insight, NewInsight, SectionWithInsights } from '@/types/Insight';
 import useQuestionsData from '@/composables/useQuestionsData';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
+import useInsightStore from '@/composables/useInsightStore';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
@@ -156,6 +157,14 @@ export default defineComponent({
       });
     });
 
+    const {
+      setCurrentPane,
+      setInsightsBySection,
+      setRefreshDatacubes,
+      setPositionInReview,
+      setUpdatedInsight,
+    } = useInsightStore();
+
     return {
       fullInsights: insights,
       reFetchInsights,
@@ -169,6 +178,11 @@ export default defineComponent({
       questionsList,
       store,
       toaster,
+      setUpdatedInsight,
+      setCurrentPane,
+      setInsightsBySection,
+      setRefreshDatacubes,
+      setPositionInReview,
     };
   },
   computed: {
@@ -192,7 +206,7 @@ export default defineComponent({
         },
       ];
     },
-    searchedInsights(): Insight[] {
+    searchedInsights(): (Insight | NewInsight)[] {
       if (this.search.length > 0) {
         const result = this.fullInsights.filter((insight) => {
           return insight.name.toLowerCase().includes(this.search.toLowerCase());
@@ -202,7 +216,7 @@ export default defineComponent({
         return this.fullInsights;
       }
     },
-    selectedInsights(): Insight[] {
+    selectedInsights(): (Insight | NewInsight)[] {
       if (this.curatedInsightIds.length > 0) {
         const curatedSet = this.fullInsights.filter((i) =>
           this.curatedInsightIds.find((e) => e === i.id)
@@ -224,17 +238,12 @@ export default defineComponent({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setCurrentPane: 'insightPanel/setCurrentPane',
-      setUpdatedInsight: 'insightPanel/setUpdatedInsight',
-      setInsightsBySection: 'insightPanel/setInsightsBySection',
-      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
-      setPositionInReview: 'insightPanel/setPositionInReview',
     }),
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsightId = null;
     },
-    startDrag(evt: DragEvent, insight: Insight) {
+    startDrag(evt: DragEvent, insight: Insight | NewInsight) {
       if (evt.dataTransfer === null || !(evt.currentTarget instanceof HTMLElement)) {
         return;
       }
@@ -252,12 +261,12 @@ export default defineComponent({
     dragEnd(evt: DragEvent) {
       (evt.currentTarget as HTMLElement).style.border = 'none';
     },
-    editInsight(insight: Insight) {
+    editInsight(insight: Insight | NewInsight) {
       this.setUpdatedInsight(insight);
       const dummySection = InsightUtil.createEmptyChecklistSection();
       this.setPositionInReview({
-        sectionId: dummySection.id,
-        insightId: insight.id,
+        sectionId: dummySection.id as string,
+        insightId: insight.id as string,
       });
       this.setInsightsBySection([
         {
@@ -268,9 +277,10 @@ export default defineComponent({
       // open the preview in the edit mode
       this.setCurrentPane('review-edit-insight');
     },
-    async removeInsight(insight: Insight) {
+    async removeInsight(insight: Insight | NewInsight) {
       // are removing a public insight?
       if (
+        !InsightUtil.instanceOfNewInsight(insight) &&
         insight.visibility === 'public' &&
         Array.isArray(insight.context_id) &&
         insight.context_id.length > 0
@@ -336,13 +346,13 @@ export default defineComponent({
     removeCuration(id: string) {
       this.curatedInsightIds = this.curatedInsightIds.filter((ci) => ci !== id);
     },
-    reviewInsight(insight: Insight) {
+    reviewInsight(insight: Insight | NewInsight) {
       // open review modal (i.e., insight gallery view)
       this.setUpdatedInsight(insight);
       const dummySection = InsightUtil.createEmptyChecklistSection();
       this.setPositionInReview({
-        sectionId: dummySection.id,
-        insightId: insight.id,
+        sectionId: dummySection.id as string,
+        insightId: insight.id as string,
       });
       this.setInsightsBySection([
         {
@@ -367,10 +377,10 @@ export default defineComponent({
           ? _section
           : this.fullInsights.find((insight) => insight.id === _insightId);
 
-      this.setUpdatedInsight(insightOrSection);
+      this.setUpdatedInsight(insightOrSection ?? null);
       this.setPositionInReview({
         sectionId: _sectionId,
-        insightId: _insightId,
+        insightId: _insightId as string,
       });
       this.setInsightsBySection(this.insightsBySection);
       this.setCurrentPane('review-insight');

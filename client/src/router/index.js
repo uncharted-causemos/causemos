@@ -9,6 +9,7 @@ import IndexStructure from '@/views/IndexStructure.vue';
 import IndexResults from '@/views/IndexResults.vue';
 import IndexProjections from '@/views/IndexProjections.vue';
 import ModelDrilldown from '@/views/ModelDrilldown.vue';
+import DatasetDrilldown from '@/views/DatasetDrilldown.vue';
 import NotFound from '@/views/NotFound.vue';
 import DatacubeDrilldown from '@/views/DatacubeDrilldown.vue';
 import Documents from '@/views/Documents.vue';
@@ -112,10 +113,27 @@ const routes = [
     name: 'indexProjections',
     component: IndexProjections,
   },
+  // TODO: expose these once you can navigate to the new data space from an analysis
+  // {
+  //   path: '/:projectType/:project/model/:analysisItemId',
+  //   name: 'modelDrilldown',
+  //   component: ModelDrilldown,
+  // },
+  // {
+  //   path: '/:projectType/:project/dataset/:analysisItemId',
+  //   name: 'datasetDrilldown',
+  //   component: DatasetDrilldown,
+  // },
+  // TODO: remove these once you can navigate to the new data space from an analysis
   {
     path: '/:projectType/:project/model/:modelId',
     name: 'modelDrilldown',
     component: ModelDrilldown,
+  },
+  {
+    path: '/:projectType/:project/dataset/:datasetId',
+    name: 'datasetDrilldown',
+    component: DatasetDrilldown,
   },
   {
     path: '/:projectType/:project/model-publishing-experiment',

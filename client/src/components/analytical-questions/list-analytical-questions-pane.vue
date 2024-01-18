@@ -112,7 +112,8 @@
               <span
                 class="insight-name"
                 :class="{
-                  'private-insight-name': insight.visibility === 'private',
+                  'private-insight-name':
+                    instanceOfNewInsight(insight) || insight.visibility === 'private',
                   clickable: canClickChecklistItems,
                 }"
                 @click="$emit('item-click', sectionWithInsights.section, insight.id)"
@@ -155,13 +156,20 @@ import _ from 'lodash';
 import useInsightsData from '@/composables/useInsightsData';
 import { updateInsight } from '@/services/insight-service';
 import { ProjectType } from '@/types/Enums';
-import { AnalyticalQuestion, FullInsight, Insight, SectionWithInsights } from '@/types/Insight';
+import {
+  AnalyticalQuestion,
+  FullInsight,
+  Insight,
+  NewInsight,
+  SectionWithInsights,
+} from '@/types/Insight';
 import { QUESTIONS } from '@/utils/messages-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
+import insightUtil from '@/utils/insight-util';
 
 type PartialInsight = {
   id: string;
@@ -222,6 +230,7 @@ export default defineComponent({
       getInsightById,
       questionsExpanded,
       toaster,
+      instanceOfNewInsight: insightUtil.instanceOfNewInsight,
     };
   },
   emits: [
@@ -367,7 +376,7 @@ export default defineComponent({
         );
         updatedList.push(targetSection.id as string);
         insight.analytical_question = updatedList;
-        await updateInsight(droppedInsightId, insight as Insight);
+        await updateInsight(droppedInsightId, insight as Insight | NewInsight);
         this.reFetchInsights();
       } else if (types.includes('section_id')) {
         // Move dropped section above targetSection
@@ -396,7 +405,7 @@ export default defineComponent({
         evt.currentTarget.classList.remove(...Object.values(HOVER_CLASS));
       }
     },
-    startDraggingInsight(event: DragEvent, insight: FullInsight, sectionId: string) {
+    startDraggingInsight(event: DragEvent, insight: FullInsight | NewInsight, sectionId: string) {
       event.stopPropagation();
       if (event.dataTransfer === null || !(event.currentTarget instanceof HTMLElement)) {
         return;
@@ -469,7 +478,7 @@ export default defineComponent({
       );
       updatedList.push(targetSection.id as string);
       insight.analytical_question = updatedList;
-      await updateInsight(droppedInsightId, insight as Insight);
+      await updateInsight(droppedInsightId, insight as Insight | NewInsight);
       this.reFetchInsights();
     },
     removeRelationBetweenInsightAndQuestion(
@@ -494,7 +503,7 @@ export default defineComponent({
         insight.analytical_question = insight?.analytical_question.filter(
           (qid: string) => qid !== questionItem.id
         );
-        await updateInsight(insightId, insight as Insight);
+        await updateInsight(insightId, insight as Insight | NewInsight);
         this.reFetchInsights();
       }
     },

@@ -12,6 +12,7 @@ import {
   IndexStructureDataState,
   IndexResultsDataState,
   IndexProjectionsDataState,
+  NewInsight,
 } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import {
@@ -31,8 +32,10 @@ import {
 } from 'docx';
 import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
-import { DataTransform } from '@/types/Enums';
+import { DataTransform, ProjectType } from '@/types/Enums';
 import { DataAnalysisState, IndexAnalysisState } from '@/types/Analysis';
+import { RouteLocationRaw } from 'vue-router';
+import { isBreakdownStateNone } from './datacube-util';
 
 // Used to label elements that should be captured in a screenshot when an insight is taken
 export const INSIGHT_CAPTURE_CLASS = 'insight-capture';
@@ -117,8 +120,67 @@ export function isIndexAnalysisState(
   return (dataState as IndexAnalysisState | undefined)?.index !== undefined;
 }
 
-function jumpToInsightContext(insight: Insight, currentURL: string) {
-  const savedURL = insight.url;
+export function isModelDrilldownInsight(insight: NewInsight) {
+  const breakdownState = insight.state.breakdownState;
+  if (isBreakdownStateNone(breakdownState)) {
+    return breakdownState.modelRunIds.length !== 1 || breakdownState.modelRunIds[0] !== 'indicator';
+  }
+  return breakdownState.modelRunId !== 'indicator';
+}
+
+function jumpToInsightContext(
+  insight: Insight | NewInsight,
+  currentURL: string,
+  project?: string,
+  projectType?: string,
+  analysisId?: string
+): string | RouteLocationRaw | undefined {
+  if (instanceOfNewInsight(insight)) {
+    // TODO: If insight was taken within a "CompAnalysis" item,
+    //  return object containing analysisId and analysisItemId and insight ID
+    // if (insight.view.view === 'analysisItemDrilldown') {
+    // return {
+    //   name: isModelDrilldownInsight(insight) ? 'modelDrilldown' : 'datasetDrilldown',
+    //   params: {
+    //     project: insight.project_id,
+    //     projectType: ProjectType.Analysis,
+    //     analysisId: insight.view.analysisId,
+    //     analysisItemId: insight.view.analysisItemId,
+    //     insightId: insight.id,
+    //   },
+    //   query: {
+    //     insightId: insight.id
+    //   }
+    // };
+    // }
+    if (isModelDrilldownInsight(insight)) {
+      return {
+        name: 'modelDrilldown',
+        params: {
+          project: insight.project_id,
+          projectType: ProjectType.Analysis,
+          modelId: insight.state.dataId,
+        },
+        query: {
+          insight_id: insight.id,
+        },
+      };
+    }
+
+    return {
+      name: 'datasetDrilldown',
+      params: {
+        project: insight.project_id,
+        projectType: ProjectType.Analysis,
+        datasetId: insight.state.dataId,
+      },
+      query: {
+        insight_id: insight.id,
+      },
+    };
+  }
+
+  let savedURL = insight.url;
   const insightId = insight.id ?? '';
   // NOTE: applying an insight should not automatically set a specific datacube_id as a query param
   //  because, for example, the comparative analysis (region-ranking) page does not
@@ -131,6 +193,20 @@ function jumpToInsightContext(insight: Insight, currentURL: string) {
   if (savedURL !== currentURL) {
     // FIXME: applying (private) insights that belong to analyses that no longer exist
     // TODO LATER: consider removing (private) insights once their owner (analysis or cag) is removed
+
+    // FIXME: this code can be removed when public insights no longer exist
+    if (projectType === ProjectType.Analysis && insight.visibility === 'public') {
+      // this is an insight created by the domain modeler during model publication:
+      // for applying this insight, do not redirect to the domain project page,
+      // instead use the current context and rehydrate the view
+      savedURL = '/analysis/' + project + '/data/' + analysisId;
+    }
+
+    if (projectType === ProjectType.Model) {
+      // this is an insight created by the domain modeler during model publication:
+      //  needed since an existing url may have insight_id with old/invalid value
+      savedURL = '/model/' + project + '/model-publishing-experiment';
+    }
 
     // add 'insight_id' as a URL param so that the target page can apply it
     // /data/ will be in the url if we are in the datacube drilldown page in which case datacube_id should be in the route.
@@ -188,13 +264,13 @@ function getMetadataSummary(projectMetadata: any) {
 // the function that can be used to export something in the order expected from
 // analysis checklist.
 function parseReportFromQuestionsAndInsights(
-  insights: Insight[],
+  insights: (Insight | NewInsight)[],
   questions: AnalyticalQuestion[]
-): (AnalyticalQuestion | Insight)[] {
+): (AnalyticalQuestion | Insight | NewInsight)[] {
   if (questions.length === 0) return insights;
 
-  const report: (Insight | AnalyticalQuestion)[] = [];
-  const insightMap = new Map<string, Insight>();
+  const report: (Insight | NewInsight | AnalyticalQuestion)[] = [];
+  const insightMap = new Map<string, Insight | NewInsight>();
   insights.forEach((i) => insightMap.set(i.id ?? '', i));
 
   questions.forEach((question) => {
@@ -223,7 +299,7 @@ function createEmptyChecklistSection(): AnalyticalQuestion {
 function getSlideFromPosition(
   sections: SectionWithInsights[],
   position: ReviewPosition | null
-): FullInsight | AnalyticalQuestion | null {
+): FullInsight | NewInsight | AnalyticalQuestion | null {
   if (position === null) {
     return null;
   }
@@ -237,12 +313,16 @@ function getSlideFromPosition(
   return section.insights.find((insight) => insight.id === position.insightId) ?? null;
 }
 
-function instanceOfInsight(data: any): data is Insight {
+function instanceOfInsight(data: any): data is Insight | NewInsight {
   return data !== null && 'name' in data && 'analytical_question' in data;
 }
 
 function instanceOfFullInsight(data: any): data is FullInsight {
   return instanceOfInsight(data) && 'image' in data;
+}
+
+function instanceOfNewInsight(insight: Insight | NewInsight): insight is NewInsight {
+  return (insight as NewInsight).schemaVersion === 2;
 }
 
 function instanceOfQuestion(data: any): data is AnalyticalQuestion {
@@ -421,7 +501,7 @@ function generateQuestionDOCX(
 // }
 
 async function generateAppendixDOCX(
-  insights: Insight[],
+  insights: (Insight | NewInsight)[],
   metadataSummary: string,
   bibliography: any
 ) {
@@ -481,7 +561,7 @@ async function generateAppendixDOCX(
 }
 
 async function exportDOCX(
-  insights: FullInsight[],
+  insights: (FullInsight | NewInsight)[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[],
   bibliography?: any
@@ -495,6 +575,8 @@ async function exportDOCX(
       acc.push(generateInsightDOCX(item, metadataSummary, newPage));
     } else if (instanceOfQuestion(item)) {
       acc.push(generateQuestionDOCX(item, metadataSummary));
+    } else if (instanceOfNewInsight(item)) {
+      // TODO: generate entry
     }
     return acc;
   }, <ISectionOptions[]>[]);
@@ -614,7 +696,7 @@ function generateQuestionPPTX(question: AnalyticalQuestion, pres: pptxgen) {
 }
 
 function exportPPTX(
-  insights: FullInsight[],
+  insights: (FullInsight | NewInsight)[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[]
 ) {
@@ -638,6 +720,8 @@ function exportPPTX(
       generateInsightPPTX(item, pres, metadataSummary);
     } else if (instanceOfQuestion(item)) {
       generateQuestionPPTX(item, pres);
+    } else if (instanceOfNewInsight(item)) {
+      // TODO: generate entry
     }
   });
 
@@ -649,6 +733,7 @@ function exportPPTX(
 export default {
   instanceOfInsight,
   instanceOfFullInsight,
+  instanceOfNewInsight,
   instanceOfQuestion,
   createEmptyChecklistSection,
   getSlideFromPosition,

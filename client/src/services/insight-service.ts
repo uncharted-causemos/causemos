@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { FullInsight, Insight, InsightMetadata, DataState } from '@/types/Insight';
+import { FullInsight, Insight, InsightMetadata, DataState, NewInsight } from '@/types/Insight';
 import { isDataAnalysisState } from '@/utils/insight-util';
 
 import { INSIGHTS } from '@/utils//messages-util';
@@ -23,18 +23,18 @@ export const getInsightById = async (insight_id: string, fieldAllowList?: string
   return result.data;
 };
 
-export const addInsight = async (insight: Insight) => {
+export const addInsight = async (insight: FullInsight | NewInsight) => {
   const result = await API.post('insights', insight);
   return result;
 };
 
 // Alias to addInsight but it returns the data
-export const createInsight = async (insight: Insight) => {
+export const createInsight = async (insight: FullInsight | NewInsight) => {
   const { data } = await API.post('insights', insight);
   return data as { id: string };
 };
 
-export const updateInsight = async (insight_id: string, insight: Partial<Insight>) => {
+export const updateInsight = async (insight_id: string, insight: Partial<Insight | NewInsight>) => {
   const result = await API.put(`insights/${insight_id}`, insight, {
     headers: {
       'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<I
 export const fetchFullInsights = async (
   fetchParams: InsightFilterFields,
   includeAnnotationState = false
-): Promise<FullInsight[]> => {
+): Promise<(FullInsight | NewInsight)[]> => {
   const excludes = ['thumbnail'];
   if (!includeAnnotationState) excludes.push('annotation_state');
   const options = {
