@@ -11,6 +11,7 @@ import {
   BreakdownStateRegions,
   BreakdownStateYears,
   BreakdownStateQualifiers,
+  ComparisonSettings,
 } from '@/types/Datacube';
 import {
   AggregationOption,
@@ -506,6 +507,26 @@ export const getRegionIdsFromBreakdownState = (breakdownState: BreakdownState | 
     breakdownState.regionId !== null
     ? [breakdownState.regionId]
     : [];
+};
+
+/**
+ * Ensure the baseline timeseries is found within the selected timeseries IDs.
+ * @param comparisonSettings Contains the comparison baseline ID
+ * @param timeseriesIds The list of IDs for all selected timeseries.
+ * @returns The same comparisonSettings object if the baseline is represented in the selected timeseries IDs, or a new ComparisonSettings object with an updated baselineTimeseriesId value.
+ * Note: You can check whether the baseline was changed with "inputComparisonSettings === returnValue".
+ * A new object will not be created unless the baseline is not found in the selected timeseries.
+ */
+export const ensureBaselineFoundInTimeseriesIds = (
+  comparisonSettings: ComparisonSettings,
+  timeseriesIds: string[]
+) => {
+  const validatedComparisonSettings: ComparisonSettings = { ...comparisonSettings };
+  if (timeseriesIds.includes(validatedComparisonSettings.baselineTimeseriesId) === false) {
+    validatedComparisonSettings.baselineTimeseriesId = timeseriesIds[0];
+    return validatedComparisonSettings;
+  }
+  return comparisonSettings;
 };
 
 export default {

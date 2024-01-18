@@ -81,10 +81,11 @@
       </div>
     </section>
 
-    <comparison-settings-vue
+    <ComparisonSettingsVue
       v-if="breakdownState.qualifierValues.length > 1"
       :comparison-baseline-options="comparisonBaselineOptions"
       :comparison-settings="breakdownState.comparisonSettings"
+      :unit="unit"
       @set-comparison-settings="setComparisonSettings"
     />
   </div>
@@ -99,7 +100,7 @@ import { getDefaultDataConfig, getDefaultFeature } from '@/services/datacube-ser
 import { getQualifierBreakdown } from '@/services/outputdata-service';
 import { BreakdownStateQualifiers, ComparisonSettings, Indicator, Model } from '@/types/Datacube';
 import { AggregationOption, SpatialAggregation, TemporalResolutionOption } from '@/types/Enums';
-import { getOutputDescription } from '@/utils/datacube-util';
+import { ensureBaselineFoundInTimeseriesIds, getOutputDescription } from '@/utils/datacube-util';
 import { computed, ref, toRefs, watch } from 'vue';
 
 const props = defineProps<{
@@ -241,13 +242,39 @@ const comparisonBaselineOptions = computed<DropdownItem[]>(() =>
     displayName: qualifierValue,
   }))
 );
+
 const setComparisonSettings = (newComparisonSettings: ComparisonSettings) => {
+  const validatedComparisonSettings = ensureBaselineFoundInTimeseriesIds(
+    newComparisonSettings,
+    breakdownState.value.qualifierValues
+  );
   const newState: BreakdownStateQualifiers = {
     ...breakdownState.value,
-    comparisonSettings: newComparisonSettings,
+    comparisonSettings: validatedComparisonSettings,
   };
   emit('set-breakdown-state', newState);
 };
+watch(breakdownState, () => {
+  const validatedComparisonSettings = ensureBaselineFoundInTimeseriesIds(
+    breakdownState.value.comparisonSettings,
+    breakdownState.value.qualifierValues
+  );
+  if (validatedComparisonSettings === breakdownState.value.comparisonSettings) {
+    // Baseline was already found in region IDs
+    return;
+  }
+  const newState: BreakdownStateQualifiers = {
+    ...breakdownState.value,
+    comparisonSettings: validatedComparisonSettings,
+  };
+  emit('set-breakdown-state', newState);
+});
+
+const unit = computed(
+  () =>
+    metadata.value.outputs.find((output) => output.name === breakdownState.value.outputName)
+      ?.unit ?? ''
+);
 </script>
 
 <style lang="scss" scoped>
