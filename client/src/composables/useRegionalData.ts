@@ -8,6 +8,7 @@ import { DatacubeGeography } from '@/types/Common';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { BreakdownData } from '@/types/Datacubes';
 import { getTimestampMillis } from '@/utils/date-util';
+import { BASELINE_VALUE_PROPERTY } from '@/utils/map-util-new';
 
 const applySplitByRegion = (
   regionalData: RegionalAggregations,
@@ -57,7 +58,6 @@ const applySplitByRegion = (
     );
   });
   // When relativeTo mode is on, add baseline value to each region
-  // '_baseline' property is special private property to store the baseline value
   if (!relativeTo) return clonedData;
   // Find baseline value
   const baselineValue = selectedAdminLevels.reduce(
@@ -73,10 +73,11 @@ const applySplitByRegion = (
     undefined
   );
 
+  // BASELINE_VALUE_PROPERTY property is special private property to store the baseline value
   selectedAdminLevels.forEach((selectedAdminLevel) => {
     (clonedData[selectedAdminLevel] || []).forEach(({ id: regionId, values }) => {
       if (baselineValue && timeseriesIds.includes(regionId)) {
-        values._baseline = baselineValue;
+        values[BASELINE_VALUE_PROPERTY] = baselineValue;
       }
     });
   });

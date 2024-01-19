@@ -24,6 +24,7 @@ import {
   getRegionAggregation,
   getRegionAggregationWithQualifiers,
 } from '@/services/outputdata-service';
+import { BASELINE_VALUE_PROPERTY } from '@/utils/map-util-new';
 
 const combineRegionAggregationList = (
   regionAggregationList: RegionalAggregation[],
@@ -108,7 +109,6 @@ const applySplitByRegion = (
     );
   });
   // When relativeTo mode is on, add baseline value to each region
-  // '_baseline' property is special private property to store the baseline value
   if (!relativeTo) return clonedData;
   // Find baseline value
   const baselineValue = selectedAdminLevels.reduce(
@@ -121,10 +121,11 @@ const applySplitByRegion = (
     },
     undefined
   );
+  // BASELINE_VALUE_PROPERTY property is special private property to store the baseline value
   selectedAdminLevels.forEach((selectedAdminLevel) => {
     (clonedData[selectedAdminLevel] || []).forEach(({ id: regionId, values }) => {
       if (baselineValue && timeseriesIds.includes(regionId)) {
-        values._baseline = baselineValue;
+        values[BASELINE_VALUE_PROPERTY] = baselineValue;
       }
     });
   });

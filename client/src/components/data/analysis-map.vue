@@ -76,7 +76,12 @@ import {
   STYLE_URL_PREFIX,
 } from '@/utils/map-util';
 import { convertRawDataToGeoJson, pickQualifiers } from '@/utils/outputdata-util';
-import { BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
+import {
+  BASE_LAYER,
+  SOURCE_LAYERS,
+  SOURCE_LAYER,
+  BASELINE_VALUE_PROPERTY,
+} from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
 import { REGION_ID_DELIMETER, adminLevelToString } from '@/utils/admin-level-util';
 import { capitalize, exponentFormatter } from '@/utils/string-util';
@@ -92,7 +97,7 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
   const getter = useFeatureState ? 'feature-state' : 'get';
   relativeTo &&
     caseRelativeToMissing.push(
-      ['all', ['==', null, [getter, relativeTo]], ['==', null, [getter, '_baseline']]],
+      ['all', ['==', null, [getter, relativeTo]], ['==', null, [getter, BASELINE_VALUE_PROPERTY]]],
       1
     );
   if (useFeatureState) {
@@ -527,7 +532,7 @@ export default defineComponent({
       // But once new state, lets's say {b: 4} is set by setFetureState afterwards, it just extends previous state instead of setting it to new state resulting something like
       // { id: 'Ethiopia', state: {a: 1, b:4, c:3 } where we don't want 'a' and 'c'
       // To work around above issue, explitly set undefined to each output value by default since removeFeatureState doesn't seem very reliable.
-      const featureStateBase = { _baseline: undefined };
+      const featureStateBase = { [BASELINE_VALUE_PROPERTY]: undefined };
       this.outputSourceSpecs.forEach((spec) => {
         featureStateBase[spec.id] = undefined;
       });
@@ -673,7 +678,7 @@ export default defineComponent({
       if (this.baselineSpec) {
         const baselineValue = _.isFinite(prop[this.baselineSpec.id])
           ? prop[this.baselineSpec.id]
-          : prop._baseline;
+          : prop[BASELINE_VALUE_PROPERTY];
         const diff = calculateDiff(baselineValue, prop[this.valueProp], this.showPercentChange);
         const diffString = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}${
           this.showPercentChange ? '%' : ' ' + this.unit
