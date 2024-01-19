@@ -222,6 +222,7 @@ export default function useScenarioData(
     allModelRunData.value.find((runData) => runData.id === runId);
 
   return {
+    allModelRunData,
     fetchModelRuns,
     filteredRunData,
     getModelRunById,
