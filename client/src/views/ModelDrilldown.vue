@@ -79,7 +79,7 @@
           :selected-timestamp="selectedTimestamp"
           :breakdown-option="null"
           :selected-temporal-resolution="TemporalResolutionOption.Month"
-          :unit="activeOutputVariable?.unit ?? ''"
+          :unit="originalUnit"
           @select-timestamp="setSelectedTimestamp"
         />
         <p class="selected-date"><span class="subdued">Selected date:</span> December 2012</p>
@@ -98,7 +98,8 @@
               :regional-data="regionalData"
               :output-specs="outputSpecs"
               :output-spec-id="spec.id"
-              :unit="activeOutputVariable?.unit ?? ''"
+              :original-unit="originalUnit"
+              :unit-with-comparison-state-applied="unitWithComparisonStateApplied"
               :spatial-aggregation="spatialAggregation"
               :map-bounds="getMapBounds(spec.id)"
               @map-move="onMapMove"
@@ -111,7 +112,7 @@
           class="bar-chart-panel"
           :raw-data="regionalData"
           :aggregation-level="stringToAdminLevel(spatialAggregation)"
-          :unit="activeOutputVariable?.unit ?? ''"
+          :unit="originalUnit"
           :get-color-from-timeseries-id="getColorFromTimeseriesId"
           :aggregation-method="spatialAggregationMethod"
           :output-name="activeOutputVariable?.display_name ?? ''"
@@ -176,6 +177,7 @@ import useTimeseriesIdToColorMap from '@/composables/useTimeseriesIdToColorMap';
 import useModelDrilldownState from '@/composables/useModelDrilldownState';
 import useInsightStore from '@/composables/useInsightStore';
 import ModelOrDatasetMetadata from '@/components/model-drilldown/model-or-dataset-metadata.vue';
+import useModelOrDatasetUnits from '@/composables/useModelOrDatasetUnits';
 
 const SPATIAL_AGGREGATION_METHOD_OPTIONS = [AggregationOption.Mean, AggregationOption.Sum];
 const TEMPORAL_RESOLUTION_OPTIONS = [TemporalResolutionOption.Month, TemporalResolutionOption.Year];
@@ -220,6 +222,12 @@ const activeOutputVariable = computed<DatacubeFeature | null>(() => {
   }
   return getOutput(metadata.value, firstOutputName.value) ?? null;
 });
+
+const { originalUnit, unitWithComparisonStateApplied } = useModelOrDatasetUnits(
+  breakdownState,
+  metadata,
+  activeOutputVariable
+);
 
 const toast = useToaster();
 const selectedModelRunIds = computed(() => {

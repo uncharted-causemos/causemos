@@ -24,7 +24,8 @@
       :grid-layer-stats="gridLayerStats"
       :points-layer-stats="pointsLayerStats"
       :selected-base-layer="selectedBaseLayer"
-      :unit="unit"
+      :original-unit="originalUnit"
+      :unit-with-comparison-state-applied="unitWithComparisonStateApplied"
       :color-options="mapColorOptions"
       :show-percent-change="breakdownState.comparisonSettings.shouldUseRelativePercentage"
       @sync-bounds="(bounds: BoundingBox) => emit('map-move', bounds)"
@@ -69,7 +70,8 @@ const props = defineProps<{
   spatialAggregation: SpatialAggregation;
   regionalData: RegionalAggregations;
   metadata: Model | Indicator | null;
-  unit: string;
+  originalUnit: string;
+  unitWithComparisonStateApplied: string;
   mapBounds?: MapBounds;
 }>();
 const { breakdownState, outputSpecs, spatialAggregation, regionalData, metadata } = toRefs(props);

@@ -31,7 +31,7 @@
       class="un-font-small radio-button-group"
       v-if="!comparisonSettings.shouldDisplayAbsoluteValues"
     >
-      in
+      as
       <RadioButtonGroup
         :buttons="radioButtonGroupOptions"
         :selected-button-value="comparisonSettings.shouldUseRelativePercentage"
@@ -75,7 +75,7 @@ const relativePercentageDisplayString = computed(() => {
   const baselineTimeseriesName =
     comparisonBaselineOptions.value.find((option) => option.value === baselineId)?.displayName ??
     'baseline';
-  return `% of ${baselineTimeseriesName}`;
+  return `% change from ${baselineTimeseriesName}`;
 });
 
 const radioButtonGroupOptions = computed<RadioButtonSpec[]>(() => [

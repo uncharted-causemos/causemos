@@ -224,7 +224,11 @@ export default defineComponent({
       type: String,
       required: true,
     },
-    unit: {
+    originalUnit: {
+      type: String,
+      default: null,
+    },
+    unitWithComparisonStateApplied: {
       type: String,
       default: null,
     },
@@ -674,18 +678,19 @@ export default defineComponent({
       if (_.isNil(prop && prop[this.valueProp])) return null;
       const format = (v) => this.numberFormatter(v);
       const value = prop[this.valueProp];
-      const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
+      const rows = [`${format(value)} ${this.originalUnit ?? ''}`];
       if (this.baselineSpec) {
         const baselineValue = _.isFinite(prop[this.baselineSpec.id])
           ? prop[this.baselineSpec.id]
           : prop[BASELINE_VALUE_PROPERTY];
         const diff = calculateDiff(baselineValue, prop[this.valueProp], this.showPercentChange);
-        const diffString = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}${
-          this.showPercentChange ? '%' : ' ' + this.unit
-        }`;
+        const formattedDiff = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}`;
+        const diffString = this.showPercentChange
+          ? `${this.unitWithComparisonStateApplied}: ${formattedDiff}`
+          : `${formattedDiff} ${this.originalUnit}`;
         const text = _.isNaN(diff)
-          ? 'Diff: Baseline has no data or is zero for this area'
-          : 'Diff: ' + diffString;
+          ? 'Change: Baseline has no data or is zero for this area'
+          : diffString;
         rows.push(text);
       }
       if (this.isAdminMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
