@@ -138,7 +138,10 @@ const applyInsight = (insight: Insight | NewInsight) => {
 
   if (finalURL) {
     try {
-      router.push(finalURL);
+      // Note: when applying insight will navigate to same page as current page, insight state will overwrite current state of the page.
+      // In that case going back to the previous page has no point and will results same page content.
+      // So just use router.replace instead of router.push in that case
+      route.name === (finalURL as any).name ? router.replace(finalURL) : router.push(finalURL);
     } catch (e) {}
   } else {
     // NOTE: applying an insight should not automatically set a specific datacube_id as a query param

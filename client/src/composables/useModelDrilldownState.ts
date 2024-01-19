@@ -98,8 +98,9 @@ export default function useModelOrDatasetDrilldownState(metadata: Ref<Model | In
         const insight = (await getInsightById(insightId)) as ModelOrDatasetStateInsight;
         setState(insight.state);
         // Remove insightId from the route once state is applied
-        router.push({
+        router.replace({
           query: {
+            ...route.query,
             insight_id: undefined,
           },
         });

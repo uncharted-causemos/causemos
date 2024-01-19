@@ -136,48 +136,24 @@ function jumpToInsightContext(
   analysisId?: string
 ): string | RouteLocationRaw | undefined {
   if (instanceOfNewInsight(insight)) {
-    // TODO: If insight was taken within a "CompAnalysis" item,
-    //  return object containing analysisId and analysisItemId and insight ID
-    // if (insight.view.view === 'analysisItemDrilldown') {
-    // return {
-    //   name: isModelDrilldownInsight(insight) ? 'modelDrilldown' : 'datasetDrilldown',
-    //   params: {
-    //     project: insight.project_id,
-    //     projectType: ProjectType.Analysis,
-    //     analysisId: insight.view.analysisId,
-    //     analysisItemId: insight.view.analysisItemId,
-    //     insightId: insight.id,
-    //   },
-    //   query: {
-    //     insightId: insight.id
-    //   }
-    // };
-    // }
-    if (isModelDrilldownInsight(insight)) {
+    if (insight.view.view === 'analysisItemDrilldown') {
       return {
-        name: 'modelDrilldown',
+        name: isModelDrilldownInsight(insight) ? 'modelDrilldown' : 'datasetDrilldown',
         params: {
           project: insight.project_id,
           projectType: ProjectType.Analysis,
-          modelId: insight.state.dataId,
+          datacubeId: insight.view.datacubeId,
         },
         query: {
           insight_id: insight.id,
+          analysis_id: insight.view.analysisId,
+          analysis_item_id: insight.view.analysisItemId,
         },
       };
+    } else {
+      // TODO: if view is other than 'analysisItemDrilldown'
+      return;
     }
-
-    return {
-      name: 'datasetDrilldown',
-      params: {
-        project: insight.project_id,
-        projectType: ProjectType.Analysis,
-        datasetId: insight.state.dataId,
-      },
-      query: {
-        insight_id: insight.id,
-      },
-    };
   }
 
   let savedURL = insight.url;
