@@ -138,9 +138,9 @@ const applyInsight = (insight: Insight | NewInsight) => {
 
   if (finalURL) {
     try {
-      // Note: when applying insight will navigate to same page as current page, insight state will overwrite current state of the page.
-      // In that case going back to the previous page has no point and will results same page content.
-      // So just use router.replace instead of router.push in that case
+      // Note: when applying insight navigates to same page as current page, insight state will overwrite the current state of the page.
+      // In that case, going back to the previous page resulting same view is unnecessary.
+      // So just use router.replace instead of router.push in that case.
       route.name === (finalURL as any).name ? router.replace(finalURL) : router.push(finalURL);
     } catch (e) {}
   } else {
