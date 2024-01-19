@@ -24,12 +24,20 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, defineComponent, PropType, toRefs, ref, watchEffect } from 'vue';
 
 import { useStore } from 'vuex';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { AnalysisItem } from '@/types/Analysis';
-import { MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
+import {
+  MAX_ANALYSIS_DATACUBES_COUNT,
+  getId,
+  getDatacubeId,
+  getState,
+} from '@/utils/analysis-util';
+import { getOutputDisplayNamesForBreakdownState } from '@/utils/datacube-util';
+import { Datacube } from '@/types/Datacube';
+import { getDatacubesByIds } from '@/services/datacube-service';
 
 export default defineComponent({
   name: 'ListDatacubesDrawerPane',
@@ -51,29 +59,46 @@ export default defineComponent({
     const { analysisItems } = toRefs(props);
     const store = useStore();
 
+    const metadataMap = ref<{ [datacubeId: string]: Partial<Datacube> }>({});
+    watchEffect(async () => {
+      // Only fetch datacubes with necessary fields specified in `includes`
+      const result = await getDatacubesByIds(_.uniq(analysisItems.value.map(getDatacubeId)), {
+        includes: ['id', 'name', 'maintainer.organization', 'outputs.name', 'outputs.display_name'],
+      });
+      result.forEach((datacube) => (metadataMap.value[datacube.id] = datacube));
+    });
+
     const canSelectItem = computed(() => {
       return (
         analysisItems.value.filter((item) => item.selected).length < MAX_ANALYSIS_DATACUBES_COUNT
       );
     });
 
+    const getDisplayName = (item: AnalysisItem) => {
+      const metadata = metadataMap.value[getDatacubeId(item)] ?? {};
+      const outputDisplayName = getOutputDisplayNamesForBreakdownState(
+        getState(item).breakdownState,
+        metadata.outputs
+      );
+      return [outputDisplayName, metadata.name ?? '', metadata.maintainer?.organization ?? '']
+        .filter((text) => text !== '')
+        .join(' - ');
+    };
+
     return {
       store,
       canSelectItem,
+      getDisplayName,
     };
   },
   methods: {
     toggleItemSelection(item: AnalysisItem) {
       if (item.selected || this.canSelectItem) {
-        this.$emit('toggle-analysis-item-selected', item.itemId);
+        this.$emit('toggle-analysis-item-selected', getId(item));
       }
     },
     removeItem(item: AnalysisItem) {
-      this.$emit('remove-analysis-item', item.itemId);
-    },
-    getDisplayName(item: AnalysisItem) {
-      const { datacubeName, featureName, source } = item.cachedMetadata;
-      return [featureName, datacubeName, source].filter((text) => text !== '').join(' - ');
+      this.$emit('remove-analysis-item', getId(item));
     },
   },
 });

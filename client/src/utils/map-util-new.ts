@@ -1,7 +1,13 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import { OutputStatsResult, RegionalAggregations, RawOutputDataPoint } from '@/types/Outputdata';
-import { AnalysisMapStats, BoundingBox, MapLayerStats, MapLegendColor } from '@/types/Common';
+import {
+  AnalysisMapColorOptions,
+  AnalysisMapStats,
+  BoundingBox,
+  MapLayerStats,
+  MapLegendColor,
+} from '@/types/Common';
 import { calculateDiff } from '@/utils/value-util';
 import {
   isSelectionEmpty,
@@ -12,6 +18,15 @@ import {
 import { getBboxFromRegionIds } from '@/services/geo-service';
 import { AdminRegionSets } from '@/types/Datacubes';
 import { DiscreteOuputScale } from '@/types/Enums';
+import { MapDisplayOptions } from '@/types/Datacube';
+import {
+  COLOR_SCHEME,
+  ColorScaleType,
+  SCALE_FUNCTION,
+  getColorScheme,
+  isDiscreteScale,
+  isDivergingScheme,
+} from './colors-util';
 
 export const BOUNDS_GLOBAL: BoundingBox = [
   [-180, -90],
@@ -348,4 +363,25 @@ export const createMapLegendDataWithDiscreteOutputScale = (
       maxLabel: max,
     };
   });
+};
+
+export const getAnalysisMapColorOptionsFromMapDisplayOptions = (
+  mapDisplayOptions: MapDisplayOptions
+) => {
+  const {
+    numberOfColorBins,
+    dataLayerTransparency,
+    colorScaleType,
+    colorSchemeName,
+    colorSchemeReversed,
+  } = mapDisplayOptions;
+  const options: AnalysisMapColorOptions = {
+    scheme: getColorScheme(colorScaleType, colorSchemeName, numberOfColorBins, colorSchemeReversed),
+    relativeToSchemes: [COLOR_SCHEME.GREYS_7, COLOR_SCHEME.PIYG_7],
+    scaleFn: SCALE_FUNCTION[colorScaleType as ColorScaleType],
+    isContinuous: !isDiscreteScale(colorScaleType),
+    isDiverging: isDivergingScheme(colorSchemeName),
+    opacity: Number(dataLayerTransparency),
+  };
+  return options;
 };

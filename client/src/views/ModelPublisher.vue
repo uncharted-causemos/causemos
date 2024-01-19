@@ -188,7 +188,11 @@ const initialViewConfig = ref<ViewState | null>({
 //  various fields.
 watch([metadata, selectedModelId], ([_metadata, _id]) => {
   if (!_metadata?.default_state || _id.length === 0) return;
-  initialDataConfig.value = convertToLegacyDataSpaceDataState(_id, _metadata.default_state);
+  initialDataConfig.value = convertToLegacyDataSpaceDataState(
+    _id,
+    _metadata.default_state,
+    metadata.value?.outputs ?? []
+  );
   initialViewConfig.value = convertToLegacyViewState(_metadata.default_state);
 });
 
@@ -280,10 +284,11 @@ const publishModel = async () => {
 
       const defaultRun = await getDefaultModelRunMetadata(modelToUpdate.id);
       modelToUpdate.default_state = convertFromLegacyState(
-        modelToUpdate,
+        modelToUpdate.data_id,
         defaultRun.id,
         viewState.value,
-        dataState.value
+        dataState.value,
+        modelToUpdate.default_feature
       );
       // Update server data
       await updateDatacube(modelToUpdate.id, modelToUpdate);

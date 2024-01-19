@@ -3,10 +3,10 @@ import {
   COLOR,
   ColorScaleType,
   COLOR_SCHEME,
-  getColors,
   isDiscreteScale,
   isDivergingScheme,
   SCALE_FUNCTION,
+  getColorScheme,
 } from '@/utils/colors-util';
 import { DATA_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
 import _ from 'lodash';
@@ -44,10 +44,12 @@ export default function useDatacubeColorScheme() {
 
   // Final color scheme represents the list of final colors that should be used, for example, in the map and its legend
   const finalColorScheme = computed(() => {
-    const scheme = isDiscreteScale(selectedColorScaleType.value)
-      ? getColors(selectedColorSchemeName.value, numberOfColorBins.value)
-      : _.clone(COLOR_SCHEME[selectedColorSchemeName.value]);
-    return colorSchemeReversed.value ? scheme.reverse() : scheme;
+    return getColorScheme(
+      selectedColorScaleType.value,
+      selectedColorSchemeName.value,
+      numberOfColorBins.value,
+      colorSchemeReversed.value
+    );
   });
 
   const isContinuousScale = computed(() => {

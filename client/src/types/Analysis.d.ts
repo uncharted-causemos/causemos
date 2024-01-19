@@ -8,7 +8,7 @@ export interface CachedDatacubeMetadata {
   datacubeName: string;
   source: string;
 }
-export interface AnalysisItem {
+export interface OldAnalysisItem {
   // Generally a UUID that uniquely identifies one instance of a datacube in the
   //  analysis. However, under some circumstances this can be the the datacube's
   //  `id` or `data_id`. In those cases a UUID is not required to uniquely
@@ -37,10 +37,13 @@ export interface AnalysisItem {
 }
 
 export interface NewAnalysisItem {
-  schemaVersion: number;
-  itemId: string;
+  id: string; // Analysis item id
+  datacubeId: string; // Datacube ES document id
+  selected: boolean;
   state: ModelOrDatasetState;
 }
+
+export type AnalysisItem = OldAnalysisItem | NewAnalysisItem;
 
 export interface RegionRankingItemStates {
   [itemId: string]: { isInverted: boolean; weight: number };

@@ -25,9 +25,13 @@ import useToaster from '@/composables/useToaster';
 import { useDataAnalysis } from '@/composables/useDataAnalysis';
 
 import { ANALYSIS } from '@/utils/messages-util';
-import { createAnalysisItem, MAX_ANALYSIS_DATACUBES_COUNT } from '@/utils/analysis-util';
+import {
+  createNewAnalysisItem,
+  getDatacubeId,
+  MAX_ANALYSIS_DATACUBES_COUNT,
+} from '@/utils/analysis-util';
 
-import { getDatacubeMetadataToCache, getDatacubesByIds } from '@/services/datacube-service';
+import { getDatacubesByIds } from '@/services/datacube-service';
 import {
   saveAnalysisState,
   calculateResetRegionRankingWeights,
@@ -45,7 +49,7 @@ const { analysisName, analysisState, analysisItems } = useDataAnalysis(analysisI
 const navBackLabel = computed(() => `Back to ${analysisName.value || 'analysis'}`);
 
 const uniqueDatacubeIdsFromAnalysisItems = computed(() =>
-  analysisItems.value.map((item) => item.id)
+  analysisItems.value.map((item) => getDatacubeId(item))
 );
 
 const selectedDatacubes = ref<Datacube[]>([]);
@@ -62,11 +66,11 @@ const addToAnalysis = async (selectedDatacubes: Datacube[]) => {
         uniqueDatacubeIdsFromAnalysisItems.value.find((id) => id === selected.id) === undefined
     );
     const newAnalysisItems = newDatacubes.map((d) =>
-      createAnalysisItem(d.id, d.data_id, getDatacubeMetadataToCache(d), false)
+      createNewAnalysisItem(d.id, d.default_state, false)
     );
     // Remove analysis items with unselected datacube
     const filteredExistingAnalysisItems = analysisItems.value.filter((item) =>
-      selectedDatacubes.find((d) => d.id === item.id)
+      selectedDatacubes.find((d) => d.id === getDatacubeId(item))
     );
     let visibleDatacubeCount = filteredExistingAnalysisItems.filter((item) => item.selected).length;
     // If visibleDatacubeCount is less than MAX_ANALYSIS_DATACUBES_COUNT, make more datacubes visible.

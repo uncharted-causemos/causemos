@@ -148,10 +148,10 @@ export const getDatacubeById = async (datacubeId: string): Promise<Model | Indic
  * Get  datacubes by ids
  * @param {string[]} datacubeIds
  */
-export const getDatacubesByIds = async (datacubeIds: string[]) => {
+export const getDatacubesByIds = async (datacubeIds: string[], options = {}) => {
   const filters = fu.newFilters();
   fu.setClause(filters, 'id', datacubeIds, 'or', false);
-  const cubes = await getDatacubes(filters);
+  const cubes = await getDatacubes(filters, options);
   return cubes;
 };
 
@@ -267,6 +267,14 @@ export const getDefaultModelRunMetadata = async (dataId: string) => {
     params: { filter },
   });
   return data[0];
+};
+
+export const getModelRunsByRunIds = async (runIds: string[]) => {
+  const filter = JSON.stringify([{ field: 'id', value: runIds }]);
+  const { data } = await API.get<ModelRun[]>('/maas/model-runs', {
+    params: { filter },
+  });
+  return data;
 };
 
 /**

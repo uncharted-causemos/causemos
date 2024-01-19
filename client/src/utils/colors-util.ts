@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import * as d3 from 'd3';
 
 export enum COLOR {
@@ -114,6 +115,18 @@ export function isDiscreteScale(scaleType: ColorScaleType) {
 export function isDivergingScheme(schemeName: COLOR) {
   return DIVERGING_SCALES.includes(schemeName);
 }
+
+export const getColorScheme = (
+  colorScaleType: ColorScaleType,
+  colorSchemeName: COLOR,
+  numColors: number,
+  isReversed: boolean
+) => {
+  const scheme = isDiscreteScale(colorScaleType)
+    ? getColors(colorSchemeName, numColors)
+    : _.clone(COLOR_SCHEME[colorSchemeName]);
+  return isReversed ? scheme.reverse() : scheme;
+};
 
 export default {
   COLORS,
