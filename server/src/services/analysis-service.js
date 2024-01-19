@@ -53,8 +53,15 @@ const updateAnalysis = async (id, payload) => {
 
 const getAnalysisItem = async (analysisId, analysisItemId) => {
   const connection = Adapter.get(RESOURCE.ANALYSIS);
-  const analysis = await connection.findOne([{ field: 'id', value: analysisId }]);
-  return analysis;
+  const analysis = await connection.findOne([{ field: 'id', value: analysisId }], {
+    includes: 'state.analysisItems',
+  });
+  // TODO: Analysis item id is `id` for new analysis item schema and `itemId` for old schema. Once fully migrated to new schema, remove the usage of `itemId`
+  return (
+    (analysis?.state?.analysisItems || []).find(
+      (item) => item.id === analysisItemId || item.itemId === analysisItemId
+    ) || null
+  );
 };
 
 // Note: Use this function for updating individual analysis items instead of `updateAnalysis`.
@@ -63,12 +70,21 @@ const getAnalysisItem = async (analysisId, analysisItemId) => {
 // by fetching the latest document just before making the update.
 const updateAnalysisItem = async (analysisId, analysisItemId, analysisItemPayload) => {
   const connection = Adapter.get(RESOURCE.ANALYSIS);
-  const analysis = await connection.findOne([{ field: 'id', value: analysisId }]);
-  const items = analysis.analysisItems || [];
+  // Note for future improvement: For better optimization, consider using `script update` to update document in one round trip instead of two round trip by
+  // fetching and sending update request. More details on script update: https://www.elastic.co/guide/en/elasticsearch/reference/7.17/docs-update.html
+  // Details on managing nested objects: https://iridakos.com/programming/2019/05/02/add-update-delete-elasticsearch-nested-objects
+  const analysis = await connection.findOne([{ field: 'id', value: analysisId }], {
+    includes: 'state.analysisItems',
+  });
+  const items = analysis?.state?.analysisItems ?? [];
+  // TODO: Analysis item id is `id` for new analysis item schema and `itemId` for old schema. Once fully migrated to new schema, remove the usage of `itemId`
   const newItems = items.map((item) =>
-    item.id === analysisItemId ? { ...item, ...analysisItemPayload } : item
+    item.id === analysisItemId || item.itemId === analysisId
+      ? { ...item, ...analysisItemPayload }
+      : item
   );
-  return await updateAnalysis(analysisId, { analysisItems: newItems });
+  const result = await updateAnalysis(analysisId, { state: { analysisItems: newItems } });
+  return result;
 };
 
 const deleteAnalysis = async (id) => {
