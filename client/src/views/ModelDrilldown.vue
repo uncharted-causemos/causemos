@@ -249,6 +249,7 @@ const setSelectedModelRunIds = (newRunIds: string[]) => {
       ...breakdownState.value,
       modelRunId: newRunIds[0],
     });
+    return;
   }
   // Handle the case where the user has a breakdown state selected that doesn't support multiple
   //  model runs.
