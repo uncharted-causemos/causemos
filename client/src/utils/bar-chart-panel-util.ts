@@ -3,6 +3,8 @@ import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { BreakdownData } from '@/types/Datacubes';
 import { SortableTableHeaderState } from '@/types/Enums';
 import { ChecklistRowData, RootStatefulDataNode, StatefulDataNode } from '@/types/BarChartPanel';
+import { ComparisonSettings } from '@/types/Datacube';
+import { calculateDiff } from './value-util';
 
 export enum SortOption {
   Name,
@@ -157,7 +159,8 @@ export const constructHierarchichalDataNodeTree = (
   rawData: BreakdownData,
   getColorFromTimeseriesId: (timeseriesId: string) => string,
   sortValue: SortOption,
-  sortDirection: SortableTableHeaderState.Up | SortableTableHeaderState.Down
+  sortDirection: SortableTableHeaderState.Up | SortableTableHeaderState.Down,
+  comparisonSettings: ComparisonSettings
 ) => {
   // Whenever the raw data changes, construct a hierarchical data structure
   //  out of it, augmented with a boolean 'expanded' property to keep
@@ -187,14 +190,29 @@ export const constructHierarchichalDataNodeTree = (
         }
         pointer = nextNode.children;
       });
+      // If the user has selected to display values relative to a comparison baseline, find the
+      //  value from the baseline data for this node (e.g. region).
+      let baselineValue: undefined | number;
+      if (comparisonSettings.shouldDisplayAbsoluteValues === false) {
+        baselineValue = values[comparisonSettings.baselineTimeseriesId];
+      }
       // Convert values from { [timeseriesId]: value } to an array where
-      //  the value of each timeseries is augmented with its color
+      //  - the comparison settings have been applied and
+      //  - the value of each timeseries is augmented with its color
       const valueArray = Object.keys(values)
-        .filter((key) => key !== '_baseline')
+        .filter((key) => key !== comparisonSettings.baselineTimeseriesId)
         .map((timeseriesId) => {
+          // If baselineValue is defined, apply comparison settings
+          const value = baselineValue
+            ? calculateDiff(
+                baselineValue,
+                values[timeseriesId],
+                comparisonSettings.shouldUseRelativePercentage
+              )
+            : values[timeseriesId];
           return {
             color: getColorFromTimeseriesId(timeseriesId),
-            value: values[timeseriesId],
+            value,
           };
         });
       // Create stateful node and insert it into its place in the tree

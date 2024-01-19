@@ -8,6 +8,7 @@ import { getTimestampMillis } from '@/utils/date-util';
 import {
   BreakdownState,
   BreakdownStateQualifiers,
+  BreakdownStateRegions,
   BreakdownStateYears,
   Indicator,
   Model,
@@ -62,7 +63,7 @@ const combineRegionAggregationList = (
 const applySplitByRegion = (
   regionalData: RegionalAggregations,
   specs: OutputSpecWithId[],
-  relativeTo?: string | null,
+  relativeTo: string | null,
   referenceOptions?: string[] | null
 ) => {
   if (specs.length === 0) return regionalData;
@@ -175,7 +176,10 @@ const getRegionalDataYears = async (
   );
 };
 
-const getRegionalDataRegions = async (outputSpecs: OutputSpecWithId[]) => {
+const getRegionalDataRegions = async (
+  breakdownState: BreakdownStateRegions,
+  outputSpecs: OutputSpecWithId[]
+) => {
   // Only fetch regional data once for the whole world.
   const regionalAggregation = await getRegionAggregation(outputSpecs[0]);
   const regionalAggregations: RegionalAggregations = {
@@ -193,10 +197,12 @@ const getRegionalDataRegions = async (outputSpecs: OutputSpecWithId[]) => {
       values: { [regionAgg.id]: regionAgg.value },
     }));
   });
+  const { shouldDisplayAbsoluteValues, baselineTimeseriesId } = breakdownState.comparisonSettings;
+  const comparisonBaseline = shouldDisplayAbsoluteValues === false ? baselineTimeseriesId : null;
   return applySplitByRegion(
     regionalAggregations,
     outputSpecs,
-    undefined, // TODO: relativeTo && relativeTo.value,
+    comparisonBaseline,
     undefined // TODO: referenceOptions && referenceOptions.value
   );
 };
@@ -261,7 +267,7 @@ export default function useRegionalDataFromBreakdownState(
           _timestamp
         );
       } else if (isBreakdownStateRegions(_breakdownState)) {
-        result = await getRegionalDataRegions(_outputSpecs);
+        result = await getRegionalDataRegions(_breakdownState, _outputSpecs);
       } else if (isBreakdownStateQualifiers(_breakdownState)) {
         result = await getRegionalDataQualifiers(_breakdownState, _outputSpecs);
       } else {

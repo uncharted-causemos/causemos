@@ -155,10 +155,12 @@ const getMapLegend = () => {
   if (
     mapLegendData.value.length === 2 &&
     breakdownState.value.comparisonSettings.shouldDisplayAbsoluteValues === false &&
-    props.outputSpecId === breakdownState.value.comparisonSettings.baselineTimeseriesId
+    props.outputSpecId !== breakdownState.value.comparisonSettings.baselineTimeseriesId
   ) {
+    // Use "relative to" diverging color scale
     return mapLegendData.value[1];
   }
+  // Use default color scale
   return mapLegendData.value[0];
 };
 

@@ -101,12 +101,12 @@
           v-if="breakdownState !== null"
           class="bar-chart-panel"
           :raw-data="regionalData"
-          :breakdown-state="breakdownState"
           :aggregation-level="stringToAdminLevel(spatialAggregation)"
           :unit="activeOutputVariable?.unit ?? ''"
           :get-color-from-timeseries-id="getColorFromTimeseriesId"
           :aggregation-method="spatialAggregationMethod"
           :output-name="activeOutputVariable?.display_name ?? ''"
+          :comparison-settings="breakdownState.comparisonSettings"
         />
       </div>
     </div>
