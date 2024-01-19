@@ -94,13 +94,17 @@ export default function useModelOrDatasetDrilldownState(metadata: Ref<Model | In
   // Any time the analysisId or analysisItem changes, update the state as long as there is no insight
   //  that should be applied instead.
   watch(
-    [() => route.query.insight_id, () => route.query.analysisId, () => route.query.item_id],
+    [
+      () => route.query.insight_id,
+      () => route.query.analysis_id,
+      () => route.query.analysis_item_id,
+    ],
     ([insightId, analysisId, analysisItemId], [, previousAnalysisId, previousAnalysisItemId]) => {
       if (insightId !== undefined) {
         return;
       }
       if (analysisId !== previousAnalysisId || analysisItemId !== previousAnalysisItemId) {
-        // TODO: const newState = getStateFromAnalysisItem(analysisId, analysisItemId);
+        // const newState = getStateFromAnalysisItem(analysisId, analysisItemId);
         // TODO: setState(newState);
       }
     },

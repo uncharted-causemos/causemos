@@ -12,7 +12,6 @@ import {
 import {
   BinningOptions,
   ComparativeAnalysisMode,
-  ProjectType,
   RegionRankingCompositionType,
 } from '@/types/Enums';
 import { createNewOutputIndex } from '@/utils/index-tree-util';
@@ -234,27 +233,4 @@ export const createAnalysis = async (
     }
   );
   return result.data;
-};
-
-export const openDatacubeDrilldown = async (
-  id: string,
-  itemId: string,
-  router: any,
-  project: string,
-  analysisId: string
-) => {
-  router
-    .push({
-      name: 'data',
-      params: {
-        project,
-        analysisId,
-        projectType: ProjectType.Analysis,
-      },
-      query: {
-        datacube_id: id,
-        item_id: itemId,
-      },
-    })
-    .catch(() => {});
 };

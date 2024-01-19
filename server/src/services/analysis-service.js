@@ -51,6 +51,26 @@ const updateAnalysis = async (id, payload) => {
   }
 };
 
+const getAnalysisItem = async (analysisId, analysisItemId) => {
+  const connection = Adapter.get(RESOURCE.ANALYSIS);
+  const analysis = await connection.findOne([{ field: 'id', value: analysisId }]);
+  return analysis;
+};
+
+// Note: Use this function for updating individual analysis items instead of `updateAnalysis`.
+// `updateAnalysis` replaces the entire `analysisItems` list, risking unexpected results in race conditions.
+// While this function doesn't guarantee atomic updates, it reduces the chance of lost updates
+// by fetching the latest document just before making the update.
+const updateAnalysisItem = async (analysisId, analysisItemId, analysisItemPayload) => {
+  const connection = Adapter.get(RESOURCE.ANALYSIS);
+  const analysis = await connection.findOne([{ field: 'id', value: analysisId }]);
+  const items = analysis.analysisItems || [];
+  const newItems = items.map((item) =>
+    item.id === analysisItemId ? { ...item, ...analysisItemPayload } : item
+  );
+  return await updateAnalysis(analysisId, { analysisItems: newItems });
+};
+
 const deleteAnalysis = async (id) => {
   const connection = Adapter.get(RESOURCE.ANALYSIS);
 
@@ -66,4 +86,6 @@ module.exports = {
   createAnalysis,
   updateAnalysis,
   deleteAnalysis,
+  getAnalysisItem,
+  updateAnalysisItem,
 };

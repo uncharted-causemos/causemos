@@ -88,9 +88,8 @@ import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import { colorFromIndex, getColorScheme, isDiscreteScale } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { BarData } from '@/types/BarChart';
-import { openDatacubeDrilldown } from '@/services/analysis-service';
 import MapLegend from '@/components/widgets/map-legend.vue';
-import { getState as getAnalysisItemState } from '@/utils/analysis-util';
+import { getState as getAnalysisItemState, openDatacubeDrilldown } from '@/utils/analysis-util';
 import {
   getAnalysisMapColorOptionsFromMapDisplayOptions,
   popupFormatter,
@@ -359,7 +358,13 @@ export default defineComponent({
   },
   methods: {
     openDrilldown() {
-      openDatacubeDrilldown(this.id, this.itemId, router, this.project, this.analysisId);
+      openDatacubeDrilldown(
+        router,
+        this.project,
+        this.analysisId,
+        this.analysisItem,
+        this.metadata?.type === 'model'
+      );
     },
     clickRemove() {
       this.$emit('remove-analysis-item', this.itemId);

@@ -144,6 +144,7 @@
 
 <script setup lang="ts">
 import _ from 'lodash';
+import { useRoute } from 'vue-router';
 import useModelMetadata from '@/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { Ref, computed, onMounted, ref, watch } from 'vue';
@@ -180,9 +181,11 @@ import ModelOrDatasetMetadata from '@/components/model-drilldown/model-or-datase
 const SPATIAL_AGGREGATION_METHOD_OPTIONS = [AggregationOption.Mean, AggregationOption.Sum];
 const TEMPORAL_RESOLUTION_OPTIONS = [TemporalResolutionOption.Month, TemporalResolutionOption.Year];
 
-const modelId = ref('2c461d67-35d9-4518-9974-30083a63bae5');
-const metadata = useModelMetadata(modelId) as Ref<Model | null>;
-const { filteredRunData } = useScenarioData(modelId, ref({ clauses: [] }), ref([]), ref(false));
+const route = useRoute();
+const datacubeId = computed(() => route.params.datacubeId as string);
+
+const metadata = useModelMetadata(datacubeId) as Ref<Model | null>;
+const { filteredRunData } = useScenarioData(datacubeId, ref({ clauses: [] }), ref([]), ref(false));
 
 const { setContextId } = useInsightStore();
 onMounted(() => {
@@ -190,7 +193,7 @@ onMounted(() => {
   // If loading from an index node, use the node ID.
   // This is used to determine which insights should be displayed in the navbar dropdown for this
   //  page.
-  setContextId('analysis item ID goes here');
+  if (route.query.analysis_item_id) setContextId(route.query.analysis_item_id as string);
 });
 
 const {
