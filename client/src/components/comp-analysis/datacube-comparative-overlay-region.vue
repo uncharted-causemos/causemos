@@ -25,18 +25,18 @@
         <i class="fa fa-fw fa-expand drilldown-btn" />
       </h5>
 
-      <options-button :dropdown-below="true">
+      <OptionsButton :dropdown-below="true">
         <template #content>
           <div class="dropdown-option" @click="emit('remove-analysis-item', itemId)">Remove</div>
           <div class="dropdown-option" @click="emit('duplicate-analysis-item', itemId)">
             Duplicate
           </div>
         </template>
-      </options-button>
+      </OptionsButton>
     </header>
     <main>
       <div class="card-maps-box">
-        <region-map
+        <RegionMap
           :data="regionMapData"
           :map-bounds="getMapBounds(outputsMetadata[selectedOutputIndex]?.id)"
           :popup-Formatter="(feature: any) => popupFormatter(feature, false)"
@@ -44,7 +44,7 @@
           :selected-admin-level="selectedAdminLevel"
           :disable-pan-zoom="true"
         />
-        <map-legend
+        <MapLegend
           v-if="mapLegendData.length > 0"
           :ramp="mapLegendData[0]"
           :isContinuous="isContinuousScale"
@@ -144,7 +144,6 @@ const { datacubeId, analysisId, analysisItem, itemId, itemIndex, globalTimestamp
 
 const emit = defineEmits([
   'select-timestamp',
-  'loaded-metadata',
   'loaded-timeseries',
   'remove-analysis-item',
   'duplicate-analysis-item',
@@ -156,11 +155,6 @@ const project = computed(() => store.getters['app/project']);
 // =========== Datacube metadata ===========
 
 const metadata = useModelMetadata(datacubeId);
-watchEffect(() => {
-  if (metadata.value !== null) {
-    emit('loaded-metadata', itemId.value, metadata.value);
-  }
-});
 const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
 // Fetch default model run for model datacube

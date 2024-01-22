@@ -150,12 +150,7 @@ const props = defineProps<Props>();
 const { datacubeId, analysisId, analysisItem, itemId, itemIndex, selectedTimestamp } =
   toRefs(props);
 
-const emit = defineEmits([
-  'select-timestamp',
-  'loaded-metadata',
-  'remove-analysis-item',
-  'duplicate-analysis-item',
-]);
+const emit = defineEmits(['select-timestamp', 'remove-analysis-item', 'duplicate-analysis-item']);
 
 const store = useStore();
 const project = computed(() => store.getters['app/project']);
@@ -163,11 +158,6 @@ const project = computed(() => store.getters['app/project']);
 // =========== Datacube metadata ===========
 
 const metadata = useModelMetadata(datacubeId);
-watchEffect(() => {
-  if (metadata.value !== null) {
-    emit('loaded-metadata', itemId.value, metadata.value);
-  }
-});
 const { statusColor, statusLabel } = useDatacubeVersioning(metadata);
 
 // Fetch default model run for model datacube

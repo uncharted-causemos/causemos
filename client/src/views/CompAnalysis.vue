@@ -47,7 +47,6 @@
             :selected-timestamp="selectedTimestamp ?? 0"
             :analysis-item="item"
             :analysis-id="analysisId"
-            @loaded-metadata="cacheUpdatedMetadata"
             @select-timestamp="setSelectedTimestamp"
             @remove-analysis-item="removeAnalysisItem"
             @duplicate-analysis-item="duplicateAnalysisItem"
@@ -75,7 +74,6 @@
                 :analysis-item="item"
                 :analysis-id="analysisId"
                 @loaded-timeseries="onLoadedTimeseries"
-                @loaded-metadata="cacheUpdatedMetadata"
                 @remove-analysis-item="removeAnalysisItem"
                 @duplicate-analysis-item="duplicateAnalysisItem"
               />
@@ -104,7 +102,7 @@ import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
 import { COLOR, getColors, colorFromIndex } from '@/utils/colors-util';
 import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
-import { getId as getAnalysisItemId, getDatacubeId } from '@/utils/analysis-util';
+import { getId as getAnalysisItemId, getDatacubeId, getId } from '@/utils/analysis-util';
 import { ComparativeAnalysisMode, DatacubeGeoAttributeVariableType } from '@/types/Enums';
 import { BarData } from '@/types/BarChart';
 import { getInsightById } from '@/services/insight-service';
@@ -115,7 +113,6 @@ import { normalizeTimeseriesList, getTimestampRange } from '@/utils/timeseries-u
 import { useRoute } from 'vue-router';
 import { useDataAnalysis } from '@/composables/useDataAnalysis';
 import { isDataAnalysisState } from '@/utils/insight-util';
-import { Indicator, Model } from '@/types/Datacube';
 
 export default defineComponent({
   name: 'CompAnalysis',
@@ -146,7 +143,6 @@ export default defineComponent({
       activeTab,
       setActiveTab,
       setAnalysisItemViewConfig,
-      updateAnalysisItemCachedMetadata,
       removeAnalysisItem,
       duplicateAnalysisItem,
       toggleAnalysisItemSelected,
@@ -206,7 +202,7 @@ export default defineComponent({
         if (analysisItems && analysisItems.length > 0) {
           // set context-ids to fetch insights correctly for all datacubes
           //  (even the non-selected ones) in this analysis
-          const contextIDs = analysisItems.map((dc) => dc.id); // FIXME is it id or datacubeId or itemId?
+          const contextIDs = analysisItems.map((item) => getId(item));
           store.dispatch('insightPanel/setContextId', contextIDs);
         } else {
           // no datacubes in this analysis, so do not fetch any insights/questions
@@ -240,18 +236,6 @@ export default defineComponent({
     const setSelectedGlobalTimestamp = (value: number) => {
       if (globalTimestamp.value === value) return;
       globalTimestamp.value = value;
-    };
-
-    // TODO: Use New
-    const cacheUpdatedMetadata = (itemId: string, metadata: Model | Indicator) => {
-      updateAnalysisItemCachedMetadata(itemId, {
-        datacubeName: metadata.name,
-        source: metadata.maintainer.organization,
-      });
-    };
-    // TODO: Use New
-    const cacheUpdatedFeatureName = (itemId: string, featureName: string) => {
-      updateAnalysisItemCachedMetadata(itemId, { featureName });
     };
 
     const availableAdminLevelTitles = ref(
@@ -312,8 +296,6 @@ export default defineComponent({
       selectedAnalysisItems,
       allTimeseriesMap,
       allTimestampRangeMap,
-      cacheUpdatedMetadata,
-      cacheUpdatedFeatureName,
       globalTimeseries,
       globalBbox,
       selectedTimestamp,
