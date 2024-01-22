@@ -6,6 +6,7 @@ import { INSIGHTS } from '@/utils//messages-util';
 import useToaster from '@/composables/useToaster';
 import { computed } from 'vue';
 import { TYPE } from 'vue-toastification';
+import { isNewAnalysisItem } from '@/utils/analysis-util';
 
 // This defines the fields in ES that you can filter by
 export interface InsightFilterFields {
@@ -169,7 +170,9 @@ export const extractMetadataDetails = (
       outputName: string;
       source: string;
     }[] = [];
-    dataState.analysisItems.forEach(({ cachedMetadata }) => {
+    dataState.analysisItems.forEach((item) => {
+      if (isNewAnalysisItem(item)) return;
+      const { cachedMetadata } = item;
       datacubes.push({
         datasetName: cachedMetadata.datacubeName,
         outputName: cachedMetadata.featureName,

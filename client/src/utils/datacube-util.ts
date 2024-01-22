@@ -28,10 +28,11 @@ import { ModelRun } from '@/types/ModelRun';
 import { RegionAgg, RegionalAggregations } from '@/types/Outputdata';
 import { DATA_LAYER_TRANSPARENCY } from './map-util-new';
 import { BarData } from '@/types/BarChart';
-import { adminLevelToString } from './admin-level-util';
+import { adminLevelToString, getLevelFromRegionId } from './admin-level-util';
 import { normalize } from './value-util';
 import _ from 'lodash';
 import * as d3 from 'd3';
+import { AdminRegionSets } from '@/types/Datacubes';
 
 export const DEFAULT_DATE_RANGE_DELIMETER = '__';
 
@@ -230,6 +231,9 @@ export function getOutput(metadata: Datacube, name: string) {
 
 export const getOutputDescription = (outputs: DatacubeFeature[], outputName: string) =>
   outputs.find((output) => output.name === outputName)?.description ?? '';
+
+export const getOutputDisplayName = (outputs: DatacubeFeature[], outputName: string) =>
+  outputs.find((output) => output.name === outputName)?.display_name ?? '';
 
 export function getSelectedOutput(metadata: Datacube, index: number) {
   const outputs = getOutputs(metadata);
@@ -527,6 +531,34 @@ export const ensureBaselineFoundInTimeseriesIds = (
     return validatedComparisonSettings;
   }
   return comparisonSettings;
+};
+
+export const getAdminRegionSetsFromBreakdownState = (breakdownState: BreakdownState | null) => {
+  const sets: AdminRegionSets = {
+    country: new Set(),
+    admin1: new Set(),
+    admin2: new Set(),
+    admin3: new Set(),
+  };
+  const keys: (keyof AdminRegionSets)[] = ['country', 'admin1', 'admin2', 'admin3'];
+  const regionIds = getRegionIdsFromBreakdownState(breakdownState);
+  regionIds.forEach((id) => sets[keys[getLevelFromRegionId(id)]].add(id));
+  return sets;
+};
+
+export const getOutputNamesFromBreakdownState = (breakdownState: BreakdownState | null) => {
+  if (!breakdownState) return [] as string[];
+  if (isBreakdownStateOutputs(breakdownState)) return [...breakdownState.outputNames];
+  return [breakdownState.outputName];
+};
+
+export const getOutputDisplayNamesForBreakdownState = (
+  breakdownState: BreakdownState | null,
+  outputs: DatacubeFeature[] = []
+) => {
+  return getOutputNamesFromBreakdownState(breakdownState).map((name) =>
+    getOutputDisplayName(outputs, name)
+  );
 };
 
 export default {

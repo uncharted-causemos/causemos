@@ -52,7 +52,7 @@ import {
   DatacubeStatus,
   TemporalResolution,
 } from '@/types/Enums';
-import { DataSpaceDataState, ViewState } from '@/types/Insight';
+import { ViewState } from '@/types/Insight';
 import {
   getSelectedOutput,
   getValidatedOutputs,
@@ -173,10 +173,11 @@ export default defineComponent({
     const updateIndicator = async () => {
       if (metadata.value) {
         const defaultState = convertFromLegacyState(
-          _.cloneDeep(metadata.value),
+          metadata.value.data_id,
           'indicator',
           viewState.value,
-          {} as DataSpaceDataState
+          null,
+          metadata.value.default_feature
         );
         const deltas = [
           {

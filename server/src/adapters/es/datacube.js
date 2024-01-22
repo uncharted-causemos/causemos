@@ -337,14 +337,14 @@ class Datacube {
       });
       searchPayload.body.sort = sort;
     }
+    if (options.excludes || options.includes) {
+      searchPayload.body._source = {};
+    }
     if (options.excludes) {
-      searchPayload.body._source = {
-        excludes: options.excludes,
-      };
-    } else if (options.includes) {
-      searchPayload.body._source = {
-        includes: options.includes,
-      };
+      searchPayload.body._source.excludes = options.excludes;
+    }
+    if (options.includes) {
+      searchPayload.body._source.includes = options.includes;
     }
     if (options.collapse) {
       searchPayload.body.collapse = options.collapse;

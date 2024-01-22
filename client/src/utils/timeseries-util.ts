@@ -519,3 +519,20 @@ export const timeseriesExtrema = (timeseriesList: ProjectionTimeseries[]) => {
 };
 
 export const MAX_TIMESERIES_LABEL_CHAR_LENGTH = 10;
+
+const _getMinMaxTimestamp = (timeseriesData: Timeseries[], fn: 'max' | 'min') => {
+  const allTimestamps = timeseriesData
+    .map((timeseries) => timeseries.points)
+    .flat()
+    .map((point) => point.timestamp);
+  const lastTimestamp = _[fn](allTimestamps) ?? null;
+  return lastTimestamp;
+};
+export const getMaxTimestamp = (timeseriesData: Timeseries[]) =>
+  _getMinMaxTimestamp(timeseriesData, 'max');
+export const getMinTimestamp = (timeseriesData: Timeseries[]) =>
+  _getMinMaxTimestamp(timeseriesData, 'min');
+export const getTimestampRange = (timeseriesData: Timeseries[]) => ({
+  start: getMinTimestamp(timeseriesData),
+  end: getMaxTimestamp(timeseriesData),
+});
