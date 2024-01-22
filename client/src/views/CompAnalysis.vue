@@ -100,13 +100,10 @@ import { Insight } from '@/types/Insight';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
-import { COLOR, getColors, colorFromIndex } from '@/utils/colors-util';
-import { ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
+import { colorFromIndex } from '@/utils/colors-util';
 import { getId as getAnalysisItemId, getDatacubeId, getId } from '@/utils/analysis-util';
-import { ComparativeAnalysisMode, DatacubeGeoAttributeVariableType } from '@/types/Enums';
-import { BarData } from '@/types/BarChart';
+import { ComparativeAnalysisMode } from '@/types/Enums';
 import { getInsightById } from '@/services/insight-service';
-import { computeMapBoundsForCountries } from '@/utils/map-util-new';
 import router from '@/router';
 import { DataAnalysisState } from '@/types/Analysis';
 import { normalizeTimeseriesList, getTimestampRange } from '@/utils/timeseries-util';
@@ -142,29 +139,11 @@ export default defineComponent({
       selectedAnalysisItems,
       activeTab,
       setActiveTab,
-      setAnalysisItemViewConfig,
       removeAnalysisItem,
       duplicateAnalysisItem,
       toggleAnalysisItemSelected,
-      selectedAdminLevel,
-      setSelectedAdminLevel,
-      colorBinCount,
-      setColorBinCount,
-      colorBinType,
-      setColorBinType,
-      barCountLimit,
-      setBarCountLimit,
-      isBarCountLimitApplied,
-      toggleIsBarCountLimitApplied,
-      toggleIsItemInverted,
-      highlightedRegionId,
-      setHighlightedRegionId,
       setAnalysisState,
     } = useDataAnalysis(analysisId);
-
-    const activeDrilldownTab = ref<string | null>('region-settings');
-
-    const globalBbox = ref<number[][] | undefined>(undefined);
 
     const allTimeseriesMap = ref<{ [key: string]: Timeseries[] }>({});
     const allTimestampRangeMap = ref<{
@@ -174,9 +153,6 @@ export default defineComponent({
     const timeseriesToDatacubeMap = ref<{
       [timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string };
     }>({});
-
-    const allRegionalRankingMap = ref<{ [key: string]: BarData[] }>({});
-    const globalBarsData = ref([]) as Ref<BarData[]>;
 
     const selectedTimestamp = ref(null) as Ref<number | null>;
 
@@ -211,9 +187,6 @@ export default defineComponent({
         allTimeseriesMap.value = {};
         allTimestampRangeMap.value = {};
         timeseriesToDatacubeMap.value = {};
-        // clear region ranking results
-        globalBarsData.value = [];
-        allRegionalRankingMap.value = {};
       },
       { immediate: true }
     );
@@ -237,24 +210,6 @@ export default defineComponent({
       if (globalTimestamp.value === value) return;
       globalTimestamp.value = value;
     };
-
-    const availableAdminLevelTitles = ref(
-      Object.values(DatacubeGeoAttributeVariableType).map(
-        (adminLevel) => ADMIN_LEVEL_TITLES[adminLevel]
-      )
-    );
-
-    //
-    // color scheme options
-    //
-    const finalColorScheme = computed(() => getColors(COLOR.PRIORITIZATION, colorBinCount.value));
-
-    watchEffect(async () => {
-      const countries = highlightedRegionId.value
-        ? [highlightedRegionId.value.split('__')[0]]
-        : [...new Set(globalBarsData.value.map((d) => d.label.split('__')[0]))];
-      globalBbox.value = (await computeMapBoundsForCountries(countries)) || undefined;
-    });
 
     const updateStateFromInsight = async (insight_id: string) => {
       const loadedInsight: Insight = await getInsightById(insight_id);
@@ -294,48 +249,30 @@ export default defineComponent({
     return {
       analysisItems,
       selectedAnalysisItems,
-      allTimeseriesMap,
-      allTimestampRangeMap,
       globalTimeseries,
-      globalBbox,
+      globalTimestamp,
       selectedTimestamp,
       setSelectedTimestamp,
-      globalTimestamp,
       setSelectedGlobalTimestamp,
       initialSelectedTimestamp,
-      activeDrilldownTab,
-      setColorBinCount,
-      colorBinCount,
-      finalColorScheme,
-      selectedAdminLevel,
-      setSelectedAdminLevel,
-      availableAdminLevelTitles,
-      globalBarsData,
-      allRegionalRankingMap,
-      setBarCountLimit,
-      barCountLimit,
-      isBarCountLimitApplied,
-      toggleIsBarCountLimitApplied,
-      colorBinType,
-      setColorBinType,
-      highlightedRegionId,
-      setHighlightedRegionId,
       ComparativeAnalysisMode,
-      updateStateFromInsight,
       timeseriesToDatacubeMap,
       colorFromIndex,
       shownDatacubesCountLabel,
       activeTab,
       analysisId,
       setActiveTab,
-      setAnalysisItemViewConfig,
       removeAnalysisItem,
       duplicateAnalysisItem,
       toggleAnalysisItemSelected,
-      toggleIsItemInverted,
       isMounted,
       getAnalysisItemId,
       getDatacubeId,
+
+      // methods
+      updateStateFromInsight,
+      allTimeseriesMap,
+      allTimestampRangeMap,
     };
   },
   mounted() {
