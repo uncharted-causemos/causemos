@@ -2,7 +2,7 @@
   <div
     class="aggregation-checklist-bar"
     :class="{ 'is-wrapped': isWrapped }"
-    :style="histogramPaddingStyle(barValue)"
+    :style="histogramContainerStyle(barValue)"
   >
     <div
       class="zero-tick"
@@ -56,33 +56,29 @@ export default defineComponent({
       required: true,
     },
   },
-  computed: {
-    totalBarLength(): number {
-      return this.maxVisibleBarValue - this.minVisibleBarValue;
-    },
-    maxBarLength(): number {
-      return Math.max(this.maxVisibleBarValue, -this.minVisibleBarValue);
-    },
-  },
   methods: {
-    calculateWidth(value: number) {
-      return this.minVisibleBarValue < 0
-        ? ((value / this.maxBarLength) * 100) / 2
-        : (value / this.totalBarLength) * 100;
-    },
-    histogramPaddingStyle(value: number) {
-      const paddingLeft =
-        value < 0
-          ? // Bar extends from the center(50%) to partway through the left half
-            `${this.calculateWidth(value + this.maxBarLength)}%`
-          : // If there are negative values, bar extends fom the center(50%) to partway through the right half
-            // Otherwise bar extends from the left(0%) to partway through the entire length
-            `${this.minVisibleBarValue < 0 ? 50 : 0}%`;
-      return { 'padding-left': paddingLeft };
+    histogramContainerStyle(value: number) {
+      if (value < 0) {
+        // Bar extends from the center(50%) to partway through the left half
+        return {
+          'padding-right': '50%',
+          'justify-content': 'flex-end',
+        };
+      }
+      // `value` is positive
+      // If there are negative values, bar extends fom the center(50%) to partway through the right half
+      // Otherwise bar extends from the left(0%) to partway through the entire length
+      return {
+        'padding-left': `${this.minVisibleBarValue < 0 ? 50 : 0}%`,
+        'justify-content': 'flex-start',
+      };
     },
     histogramBarStyle(value: number, color: string) {
-      const percentage = this.calculateWidth(Math.abs(value));
-      return { width: `${percentage}%`, background: color };
+      const lengthOfLongestVisibleBar = Math.max(this.maxVisibleBarValue, -this.minVisibleBarValue);
+      const fractionOfLongestVisibleBar = Math.abs(value) / lengthOfLongestVisibleBar;
+      // Note that when padding-left or -right is 50%, CSS treats the bar width percentage
+      //  calculated below as "X% of the remaining 50% (non-padding) space".
+      return { width: `${fractionOfLongestVisibleBar * 100}%`, background: color };
     },
   },
 });
