@@ -1,21 +1,21 @@
 <template>
   <div class="comp-analysis-container">
-    <teleport to="#navbar-trailing-teleport-destination" v-if="isMounted">
-      <analysis-options-button :analysis-id="analysisId" />
-    </teleport>
-    <analytical-questions-and-insights-panel
+    <Teleport to="#navbar-trailing-teleport-destination" v-if="isMounted">
+      <AnalysisOptionsButton :analysis-id="analysisId" />
+    </Teleport>
+    <AnalyticalQuestionsAndInsightsPanel
       class="side-panel"
       :analysis-items="analysisItems"
       @remove-analysis-item="removeAnalysisItem"
       @toggle-analysis-item-selected="toggleAnalysisItemSelected"
     >
       <template #below-tabs>
-        <analysis-comments-button :analysis-id="analysisId" />
+        <AnalysisCommentsButton :analysis-id="analysisId" />
       </template>
-    </analytical-questions-and-insights-panel>
+    </AnalyticalQuestionsAndInsightsPanel>
     <main class="insight-capture">
       <div class="action-bar-container">
-        <action-bar
+        <ActionBar
           :active-tab="activeTab"
           :analysisId="analysisId"
           @set-active-tab="setActiveTab"
@@ -25,7 +25,7 @@
       </div>
 
       <!-- overlay view content -->
-      <datacube-comparative-timeline-sync
+      <DatacubeComparativeTimelineSync
         v-if="globalTimeseries.length > 0 && activeTab === ComparativeAnalysisMode.Overlay"
         :timeseriesData="globalTimeseries"
         :timeseriesToDatacubeMap="timeseriesToDatacubeMap"
@@ -37,7 +37,7 @@
       -->
       <div v-if="selectedAnalysisItems.length" class="column">
         <template v-if="activeTab === ComparativeAnalysisMode.List">
-          <datacube-comparative-card
+          <DatacubeComparativeCard
             v-for="(item, indx) in selectedAnalysisItems"
             :key="getAnalysisItemId(item)"
             class="datacube-comparative-card"
@@ -64,7 +64,7 @@
                 }`,
               ]"
             >
-              <datacube-comparative-overlay-region
+              <DatacubeComparativeOverlayRegion
                 :style="{ borderColor: colorFromIndex(indx) }"
                 class="card-map"
                 :datacube-id="getDatacubeId(item)"
@@ -86,274 +86,218 @@
   </div>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
-import { mapActions, mapGetters, useStore } from 'vuex';
+<script setup lang="ts">
+import _ from 'lodash';
+import { computed, onMounted, Ref, ref, watch, watchEffect } from 'vue';
+import { useStore } from 'vuex';
+import { useRoute } from 'vue-router';
+
+import router from '@/router';
+
+import { ComparativeAnalysisMode } from '@/types/Enums';
+import { Timeseries } from '@/types/Timeseries';
+import { Insight } from '@/types/Insight';
+import { DataAnalysisState } from '@/types/Analysis';
+
 import DatacubeComparativeCard from '@/components/comp-analysis/datacube-comparative-card.vue';
 import DatacubeComparativeOverlayRegion from '@/components/comp-analysis/datacube-comparative-overlay-region.vue';
 import ActionBar from '@/components/data/action-bar.vue';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
-import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
-import _ from 'lodash';
-import { Insight } from '@/types/Insight';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
-import { getAnalysis } from '@/services/analysis-service';
 import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
+
+import { useDataAnalysis } from '@/composables/useDataAnalysis';
+
 import { colorFromIndex } from '@/utils/colors-util';
 import { getId as getAnalysisItemId, getDatacubeId, getId } from '@/utils/analysis-util';
-import { ComparativeAnalysisMode } from '@/types/Enums';
-import { getInsightById } from '@/services/insight-service';
-import router from '@/router';
-import { DataAnalysisState } from '@/types/Analysis';
 import { normalizeTimeseriesList, getTimestampRange } from '@/utils/timeseries-util';
-import { useRoute } from 'vue-router';
-import { useDataAnalysis } from '@/composables/useDataAnalysis';
 import { isDataAnalysisState } from '@/utils/insight-util';
 
-export default defineComponent({
-  name: 'CompAnalysis',
-  components: {
-    DatacubeComparativeCard,
-    DatacubeComparativeOverlayRegion,
-    AnalysisCommentsButton,
-    ActionBar,
-    AnalyticalQuestionsAndInsightsPanel,
-    DatacubeComparativeTimelineSync,
-    AnalysisOptionsButton,
-  },
-  setup() {
-    // This is required because teleported components require their teleport destination to be mounted
-    //  before they can be rendered.
-    const isMounted = ref(false);
-    onMounted(() => {
-      isMounted.value = true;
-    });
+import { getAnalysis } from '@/services/analysis-service';
+import { getInsightById } from '@/services/insight-service';
 
-    const store = useStore();
-    const route = useRoute();
-    const analysisId = computed(() => route.params.analysisId as string);
-    const {
-      analysisState,
-      analysisItems,
-      selectedAnalysisItems,
-      activeTab,
-      setActiveTab,
-      removeAnalysisItem,
-      duplicateAnalysisItem,
-      toggleAnalysisItemSelected,
-      setAnalysisState,
-    } = useDataAnalysis(analysisId);
-
-    const allTimeseriesMap = ref<{ [key: string]: Timeseries[] }>({});
-    const allTimestampRangeMap = ref<{
-      [key: string]: { start: number | null; end: number | null };
-    }>({});
-    const globalTimeseries = computed(() => Object.values(allTimeseriesMap.value).flat());
-    const timeseriesToDatacubeMap = ref<{
-      [timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string };
-    }>({});
-
-    const selectedTimestamp = ref(null) as Ref<number | null>;
-
-    const globalTimestamp = ref(null) as Ref<number | null>;
-    const initialSelectedTimestamp = computed(() => {
-      const allLastTimestamps = Object.values(allTimestampRangeMap.value)
-        .map((v) => v.end)
-        .filter((v) => v !== null) as number[];
-      return allLastTimestamps.length > 0 ? Math.max(...allLastTimestamps) : null;
-    });
-
-    onMounted(async () => {
-      store.dispatch('app/setAnalysisName', '');
-      const result = await getAnalysis(analysisId.value);
-      if (result) {
-        store.dispatch('app/setAnalysisName', result.title);
-      }
-    });
-
-    watch(
-      () => analysisItems.value,
-      (analysisItems) => {
-        if (analysisItems && analysisItems.length > 0) {
-          // set context-ids to fetch insights correctly for all datacubes
-          //  (even the non-selected ones) in this analysis
-          const contextIDs = analysisItems.map((item) => getId(item));
-          store.dispatch('insightPanel/setContextId', contextIDs);
-        } else {
-          // no datacubes in this analysis, so do not fetch any insights/questions
-          store.dispatch('insightPanel/setContextId', undefined);
-        }
-        allTimeseriesMap.value = {};
-        allTimestampRangeMap.value = {};
-        timeseriesToDatacubeMap.value = {};
-      },
-      { immediate: true }
-    );
-
-    const shownDatacubesCountLabel = computed(() => {
-      return (
-        'Selected ' +
-        selectedAnalysisItems.value.length +
-        ' / ' +
-        analysisItems.value.length +
-        ' datacubes'
-      );
-    });
-
-    const setSelectedTimestamp = (value: number) => {
-      if (selectedTimestamp.value === value) return;
-      selectedTimestamp.value = value;
-    };
-
-    const setSelectedGlobalTimestamp = (value: number) => {
-      if (globalTimestamp.value === value) return;
-      globalTimestamp.value = value;
-    };
-
-    const updateStateFromInsight = async (insight_id: string) => {
-      const loadedInsight: Insight = await getInsightById(insight_id);
-      // FIXME: before applying the insight, which will overwrite current state,
-      //  consider pushing current state to the url to support browser hsitory
-      //  in case the user wants to navigate to the original state using back button
-      if (!loadedInsight) {
-        return;
-      }
-      const dataState = loadedInsight.data_state;
-      if (dataState && isDataAnalysisState(dataState)) {
-        setAnalysisState(dataState);
-
-        // Remember the insight's selected timestamp to be applied when the last
-        //  timeseries loads.
-        if (
-          dataState.selectedTimestamp !== null &&
-          dataState.activeTab === ComparativeAnalysisMode.Overlay
-        ) {
-          globalTimestamp.value = dataState.selectedTimestamp;
-        }
-      }
-    };
-
-    watchEffect(() => {
-      const newDataState: DataAnalysisState = _.cloneDeep(analysisState.value);
-      // Only save the selected timestamp when overlap mode is active
-      newDataState.selectedTimestamp =
-        activeTab.value === ComparativeAnalysisMode.Overlay ? globalTimestamp.value : null;
-      store.dispatch('insightPanel/setDataState', newDataState);
-      // No view state for this page. Set it to an empty object so that any view
-      //  state from previous pages is cleared and not associated with insights
-      //  taken from this page.
-      store.dispatch('insightPanel/setViewState', {});
-    });
-
-    return {
-      analysisItems,
-      selectedAnalysisItems,
-      globalTimeseries,
-      globalTimestamp,
-      selectedTimestamp,
-      setSelectedTimestamp,
-      setSelectedGlobalTimestamp,
-      initialSelectedTimestamp,
-      ComparativeAnalysisMode,
-      timeseriesToDatacubeMap,
-      colorFromIndex,
-      shownDatacubesCountLabel,
-      activeTab,
-      analysisId,
-      setActiveTab,
-      removeAnalysisItem,
-      duplicateAnalysisItem,
-      toggleAnalysisItemSelected,
-      isMounted,
-      getAnalysisItemId,
-      getDatacubeId,
-
-      // methods
-      updateStateFromInsight,
-      allTimeseriesMap,
-      allTimestampRangeMap,
-    };
-  },
-  mounted() {
-    // ensure the insight explorer panel is closed in case the user has
-    //  previously opened it and clicked the browser back button
-    this.hideInsightPanel();
-  },
-  computed: {
-    ...mapGetters({
-      project: 'app/project',
-    }),
-  },
-  watch: {
-    $route: {
-      handler(/* newValue, oldValue */) {
-        // NOTE:  this is only valid when the route is focused on the 'dataComparative' space
-        if (this.$route.name === 'dataComparative' && this.$route.query) {
-          const insight_id = this.$route.query.insight_id as any;
-          if (insight_id !== undefined) {
-            this.updateStateFromInsight(insight_id);
-            // remove the insight_id from the url,
-            //  so that (1) future insight capture is valid and (2) enable re-applying the same insight
-            // FIXME: review to avoid double history later
-            router
-              .push({
-                query: {
-                  insight_id: undefined,
-                },
-              })
-              .catch(() => {});
-          }
-        }
-      },
-      immediate: true,
-    },
-  },
-  methods: {
-    ...mapActions({
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
-    }),
-    onLoadedTimeseries(
-      itemId: string,
-      timeseriesList: Timeseries[],
-      metadata: { outputDisplayName: string; datacubeName: string }
-    ) {
-      const item = this.selectedAnalysisItems.find((item) => getAnalysisItemId(item) === itemId);
-      if (item === undefined) {
-        // Incoming timeseries should no longer be included in the global
-        //  timeseries because the corresponding datacube is no longer selected.
-        return;
-      }
-
-      this.timeseriesToDatacubeMap[itemId] = {
-        datacubeName: metadata.datacubeName ?? '',
-        datacubeOutputVariable: metadata.outputDisplayName ?? '',
-      };
-
-      // Clone and save the incoming timeseries into a map object.
-      // This will be used when calculating global timeseries after all
-      //  timeseries are loaded.
-      // Also, override the timeseries id to match its owner analysis item id
-      const timeseriesData = _.cloneDeep(timeseriesList).map((timeseries) => ({
-        ...timeseries,
-        id: itemId,
-      }));
-
-      // normalize the timeseries values for better y-axis scaling when multiple
-      //  timeseries from different datacubes are shown together
-      // i.e., re-map all timestamp point values to a range of [0: 1]
-      //
-      // NOTE: each timeseriesList represents the list of timeseries,
-      //  where each timeseries in that list reflects the timeseries of one model run,
-      //  and also noting that all the timeseries in that list share
-      //  the same scale/range since they all relate to a single datacube (variable)
-      normalizeTimeseriesList(timeseriesData);
-
-      this.allTimeseriesMap[itemId] = timeseriesData;
-      this.allTimestampRangeMap[itemId] = getTimestampRange(timeseriesData);
-    },
-  },
+// This is required because teleported components require their teleport destination to be mounted
+//  before they can be rendered.
+const isMounted = ref(false);
+onMounted(() => {
+  isMounted.value = true;
+  store.dispatch('insightPanel/hideInsightPanel');
 });
+
+const store = useStore();
+const route = useRoute();
+const analysisId = computed(() => route.params.analysisId as string);
+const {
+  analysisState,
+  analysisItems,
+  selectedAnalysisItems,
+  activeTab,
+  setActiveTab,
+  removeAnalysisItem,
+  duplicateAnalysisItem,
+  toggleAnalysisItemSelected,
+  setAnalysisState,
+} = useDataAnalysis(analysisId);
+
+const allTimeseriesMap = ref<{ [key: string]: Timeseries[] }>({});
+const allTimestampRangeMap = ref<{
+  [key: string]: { start: number | null; end: number | null };
+}>({});
+const globalTimeseries = computed(() => Object.values(allTimeseriesMap.value).flat());
+const timeseriesToDatacubeMap = ref<{
+  [timeseriesId: string]: { datacubeName: string; datacubeOutputVariable: string };
+}>({});
+
+const selectedTimestamp = ref(null) as Ref<number | null>;
+
+const globalTimestamp = ref(null) as Ref<number | null>;
+const initialSelectedTimestamp = computed(() => {
+  const allLastTimestamps = Object.values(allTimestampRangeMap.value)
+    .map((v) => v.end)
+    .filter((v) => v !== null) as number[];
+  return allLastTimestamps.length > 0 ? Math.max(...allLastTimestamps) : null;
+});
+
+onMounted(async () => {
+  store.dispatch('app/setAnalysisName', '');
+  const result = await getAnalysis(analysisId.value);
+  if (result) {
+    store.dispatch('app/setAnalysisName', result.title);
+  }
+});
+
+watch(
+  () => analysisItems.value,
+  (analysisItems) => {
+    if (analysisItems && analysisItems.length > 0) {
+      // set context-ids to fetch insights correctly for all datacubes
+      //  (even the non-selected ones) in this analysis
+      const contextIDs = analysisItems.map((item) => getId(item));
+      store.dispatch('insightPanel/setContextId', contextIDs);
+    } else {
+      // no datacubes in this analysis, so do not fetch any insights/questions
+      store.dispatch('insightPanel/setContextId', undefined);
+    }
+    allTimeseriesMap.value = {};
+    allTimestampRangeMap.value = {};
+    timeseriesToDatacubeMap.value = {};
+  },
+  { immediate: true }
+);
+
+const shownDatacubesCountLabel = computed(() => {
+  return (
+    'Selected ' +
+    selectedAnalysisItems.value.length +
+    ' / ' +
+    analysisItems.value.length +
+    ' datacubes'
+  );
+});
+
+const setSelectedTimestamp = (value: number) => {
+  if (selectedTimestamp.value === value) return;
+  selectedTimestamp.value = value;
+};
+
+const setSelectedGlobalTimestamp = (value: number) => {
+  if (globalTimestamp.value === value) return;
+  globalTimestamp.value = value;
+};
+
+const updateStateFromInsight = async (insight_id: string) => {
+  const loadedInsight: Insight = await getInsightById(insight_id);
+  // FIXME: before applying the insight, which will overwrite current state,
+  //  consider pushing current state to the url to support browser hsitory
+  //  in case the user wants to navigate to the original state using back button
+  if (!loadedInsight) {
+    return;
+  }
+  const dataState = loadedInsight.data_state;
+  if (dataState && isDataAnalysisState(dataState)) {
+    setAnalysisState(dataState);
+
+    // Remember the insight's selected timestamp to be applied when the last
+    //  timeseries loads.
+    if (
+      dataState.selectedTimestamp !== null &&
+      dataState.activeTab === ComparativeAnalysisMode.Overlay
+    ) {
+      globalTimestamp.value = dataState.selectedTimestamp;
+    }
+  }
+};
+// Any time an insight is applied (either on first page load or after applying an insight from this
+//  page), immediately update the state and remove it from the URL
+watch(
+  () => route.query.insight_id,
+  async (insightId) => {
+    if (typeof insightId === 'string') {
+      updateStateFromInsight(insightId);
+      // Remove insightId from the route once state is applied
+      router.replace({
+        query: {
+          ...route.query,
+          insight_id: undefined,
+        },
+      });
+    }
+  },
+  { immediate: true }
+);
+
+watchEffect(() => {
+  const newDataState: DataAnalysisState = _.cloneDeep(analysisState.value);
+  // Only save the selected timestamp when overlap mode is active
+  newDataState.selectedTimestamp =
+    activeTab.value === ComparativeAnalysisMode.Overlay ? globalTimestamp.value : null;
+  store.dispatch('insightPanel/setDataState', newDataState);
+  // No view state for this page. Set it to an empty object so that any view
+  //  state from previous pages is cleared and not associated with insights
+  //  taken from this page.
+  store.dispatch('insightPanel/setViewState', {});
+});
+
+const onLoadedTimeseries = (
+  itemId: string,
+  timeseriesList: Timeseries[],
+  metadata: { outputDisplayName: string; datacubeName: string }
+) => {
+  const item = selectedAnalysisItems.value.find((item) => getAnalysisItemId(item) === itemId);
+  if (item === undefined) {
+    // Incoming timeseries should no longer be included in the global
+    //  timeseries because the corresponding datacube is no longer selected.
+    return;
+  }
+
+  timeseriesToDatacubeMap.value[itemId] = {
+    datacubeName: metadata.datacubeName ?? '',
+    datacubeOutputVariable: metadata.outputDisplayName ?? '',
+  };
+
+  // Clone and save the incoming timeseries into a map object.
+  // This will be used when calculating global timeseries after all
+  //  timeseries are loaded.
+  // Also, override the timeseries id to match its owner analysis item id
+  const timeseriesData = _.cloneDeep(timeseriesList).map((timeseries) => ({
+    ...timeseries,
+    id: itemId,
+  }));
+
+  // normalize the timeseries values for better y-axis scaling when multiple
+  //  timeseries from different datacubes are shown together
+  // i.e., re-map all timestamp point values to a range of [0: 1]
+  //
+  // NOTE: each timeseriesList represents the list of timeseries,
+  //  where each timeseries in that list reflects the timeseries of one model run,
+  //  and also noting that all the timeseries in that list share
+  //  the same scale/range since they all relate to a single datacube (variable)
+  normalizeTimeseriesList(timeseriesData);
+
+  allTimeseriesMap.value[itemId] = timeseriesData;
+  allTimestampRangeMap.value[itemId] = getTimestampRange(timeseriesData);
+};
 </script>
 
 <style lang="scss" scoped>
