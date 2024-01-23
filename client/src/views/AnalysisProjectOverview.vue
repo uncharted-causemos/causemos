@@ -215,6 +215,7 @@ import { STATUS, TYPE as FILTERS_FIELD_TYPE, isIndicator } from '@/utils/datacub
 import ToolCardWithAnalyses from '@/components/home/tool-card-with-analyses.vue';
 import useInsightStore from '@/composables/useInsightStore';
 import { getDatacubeById } from '@/services/datacube-service';
+import { getDatacubeId } from '@/utils/analysis-util';
 
 const router = useRouter();
 
@@ -250,7 +251,7 @@ const toAnalysisObject = async (analysis: AnalysisBackendDocument): Promise<Anal
     //  to sort the analyses into "collections of datasets" and "collections of models".
     // If the analysis has no datacubes, leave it flagged as "doesn't contain indicators".
     if (state.analysisItems.length > 0) {
-      const modelOrIndicator = await getDatacubeById(state.analysisItems[0].id);
+      const modelOrIndicator = await getDatacubeById(getDatacubeId(state.analysisItems[0]));
       if (isIndicator(modelOrIndicator)) {
         item.isFirstDatacubeAnIndicator = true;
       }
