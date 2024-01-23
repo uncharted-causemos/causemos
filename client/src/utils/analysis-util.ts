@@ -10,6 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { createDataSpaceDataState } from './insight-util';
 import { ModelOrDatasetState } from '@/types/Datacube';
 import { convertFromLegacyState } from './legacy-data-space-state-util';
+import { ProjectType } from '@/types/Enums';
+import { Router } from 'vue-router';
 
 export const MAX_ANALYSIS_DATACUBES_COUNT = 9;
 
@@ -89,3 +91,45 @@ export function updateDatacubesOutputsMap(
   updatedCurrentOutputsMap[datacubeKey] = newOutputIndex;
   store.dispatch('app/setDatacubeCurrentOutputsMap', updatedCurrentOutputsMap);
 }
+
+export const openDatacubeDrilldown = async (
+  router: Router,
+  project: string,
+  analysisId: string,
+  analysisItem: AnalysisItem,
+  isModel: boolean
+) => {
+  const isNewItem = isNewAnalysisItem(analysisItem);
+  const datacubeId = getDatacubeId(analysisItem);
+  const analysisItemId = getId(analysisItem);
+  if (isNewItem) {
+    return router
+      .push({
+        name: isModel ? 'modelDrilldown' : 'datasetDrilldown',
+        params: {
+          projectType: ProjectType.Analysis,
+          project,
+          datacubeId,
+        },
+        query: {
+          analysis_id: analysisId,
+          analysis_item_id: analysisItemId,
+        },
+      })
+      .catch(() => {});
+  }
+  router
+    .push({
+      name: 'data',
+      params: {
+        project,
+        analysisId,
+        projectType: ProjectType.Analysis,
+      },
+      query: {
+        datacube_id: datacubeId,
+        item_id: analysisItemId,
+      },
+    })
+    .catch(() => {});
+};

@@ -684,9 +684,9 @@ const saveInsight = () => {
       data_state: dataState.value,
     };
 
-    // FIXME: HACK: determine whether we should use the new insight schema depending on the page
-    //  URL that the new insight was taken from
-    if (url.includes('/model/') || url.includes('/dataset/')) {
+    // FIXME: HACK: determine whether we should use the new insight schema depending on the route
+    //  name that the new insight was taken from
+    if (['modelDrilldown', 'datasetDrilldown'].includes(route.name as string)) {
       newInsight = {
         schemaVersion: 2,
         id: uuidv4(),
@@ -699,8 +699,9 @@ const saveInsight = () => {
         type: 'ModelOrDatasetStateInsight',
         view: {
           view: 'analysisItemDrilldown',
-          analysisId: 'TODO: analysisId',
-          analysisItemId: 'TODO: analysisItemId',
+          analysisId: route.query.analysis_id,
+          analysisItemId: route.query.analysis_item_id,
+          datacubeId: route.params.datacubeId,
         },
         context_id: contextId.value,
         // ASSUMPTION: state has been set before the new insight flow began, so modelOrDatasetState

@@ -12,14 +12,14 @@ import {
 import {
   BinningOptions,
   ComparativeAnalysisMode,
-  ProjectType,
   RegionRankingCompositionType,
 } from '@/types/Enums';
 import { createNewOutputIndex } from '@/utils/index-tree-util';
 import { createNewIndexResultsSettings } from '@/utils/index-results-util';
 import { createNewIndexProjectionSettings } from '@/utils/index-projection-util';
 import { DEFAULT_EARLIEST_YEAR, DEFAULT_LAST_YEAR } from '@/composables/useProjectionDates';
-import { getId } from '@/utils/analysis-util';
+import { getId, getState } from '@/utils/analysis-util';
+import { ModelOrDatasetState } from '@/types/Datacube';
 
 /**
  * Get analysis by ID
@@ -125,6 +125,46 @@ export const duplicateAnalysis = async (analysisId: string, newName = '') => {
  */
 export const deleteAnalysis = (analysisId: string) => {
   return API.delete(`analyses/${analysisId}`);
+};
+
+/**
+ * Get analysis item by anaylsis ID and analysis item ID
+ * @param {string} analysisId Analysis Id
+ * @param {string} analysisItemId Analysis Item Id
+ */
+export const getAnalysisItem = async (
+  analysisId: string,
+  analysisItemId: string
+): Promise<AnalysisItem> => {
+  const result = await API.get(`analyses/${analysisId}/analysisitems/${analysisItemId}`);
+  return result.data;
+};
+
+/**
+ * Get analysis item state (ModelOrDatasetState) by anaylsis ID and analysis item ID
+ * @param {string} analysisId Analysis Id
+ * @param {string} analysisItemId Analysis Item Id
+ */
+export const getAnalysisItemState = async (
+  analysisId: string,
+  analysisItemId: string
+): Promise<ModelOrDatasetState> => {
+  const analysisItem = await getAnalysisItem(analysisId, analysisItemId);
+  return getState(analysisItem);
+};
+
+/**
+ * Update analysis item state for the analysis with given analysisId and analysisItemId
+ * @param analysisId  Analysis Id
+ * @param analysisItemId  Analysis Item Id
+ * @param state ModelOrDatasetState
+ */
+export const updateAnalysisItemState = async (
+  analysisId: string,
+  analysisItemId: string,
+  state: ModelOrDatasetState
+) => {
+  return await API.put(`analyses/${analysisId}/analysisitems/${analysisItemId}`, { state });
 };
 
 /**
@@ -234,27 +274,4 @@ export const createAnalysis = async (
     }
   );
   return result.data;
-};
-
-export const openDatacubeDrilldown = async (
-  id: string,
-  itemId: string,
-  router: any,
-  project: string,
-  analysisId: string
-) => {
-  router
-    .push({
-      name: 'data',
-      params: {
-        project,
-        analysisId,
-        projectType: ProjectType.Analysis,
-      },
-      query: {
-        datacube_id: id,
-        item_id: itemId,
-      },
-    })
-    .catch(() => {});
 };

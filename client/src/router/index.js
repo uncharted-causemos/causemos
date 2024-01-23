@@ -113,25 +113,13 @@ const routes = [
     name: 'indexProjections',
     component: IndexProjections,
   },
-  // TODO: expose these once you can navigate to the new data space from an analysis
-  // {
-  //   path: '/:projectType/:project/model/:analysisItemId',
-  //   name: 'modelDrilldown',
-  //   component: ModelDrilldown,
-  // },
-  // {
-  //   path: '/:projectType/:project/dataset/:analysisItemId',
-  //   name: 'datasetDrilldown',
-  //   component: DatasetDrilldown,
-  // },
-  // TODO: remove these once you can navigate to the new data space from an analysis
   {
-    path: '/:projectType/:project/model/:modelId',
+    path: '/:projectType/:project/model/:datacubeId',
     name: 'modelDrilldown',
     component: ModelDrilldown,
   },
   {
-    path: '/:projectType/:project/dataset/:datasetId',
+    path: '/:projectType/:project/dataset/:datacubeId',
     name: 'datasetDrilldown',
     component: DatasetDrilldown,
   },
