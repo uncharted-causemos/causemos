@@ -79,4 +79,35 @@ router.delete(
   })
 );
 
+/**
+ * GET find analysis item by analysisId and item id
+ */
+router.get(
+  '/:analysisId/analysisitems/:analysisItemId',
+  authUtil.checkRole([authUtil.ROLES.USER]),
+  asyncHandler(async (req, res) => {
+    const analysisId = req.params.analysisId;
+    const analysisItemId = req.params.analysisItemId;
+    const result = await analysisService.getAnalysisItem(analysisId, analysisItemId);
+    if (!result) {
+      res.json(null);
+    }
+    res.json(result);
+  })
+);
+
+/**
+ * PUT update an analysis item
+ */
+router.put(
+  '/:analysisId/analysisitems/:analysisItemId',
+  authUtil.checkRole([authUtil.ROLES.USER]),
+  asyncHandler(async (req, res) => {
+    const analysisId = req.params.analysisId;
+    const analysisItemId = req.params.analysisItemId;
+    const payload = req.body;
+    await analysisService.updateAnalysisItem(analysisId, analysisItemId, payload);
+    res.status(200).send({ updateToken: new Date().getTime() });
+  })
+);
 module.exports = router;

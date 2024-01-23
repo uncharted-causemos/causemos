@@ -11,6 +11,16 @@ import { useRoute, useRouter } from 'vue-router';
 import useInsightStore from './useInsightStore';
 import { getInsightById } from '@/services/insight-service';
 import { ModelOrDatasetStateInsight } from '@/types/Insight';
+import { getAnalysisItemState, updateAnalysisItemState } from '@/services/analysis-service';
+
+const SAVE_ANALYSIS_ITEM_STATE_DEBOUNCE_DELAY = 500;
+// Wrap `updateAnalysisItemState` with debounce function to allow only the last update call to be made when multiple calls are being called within short period of time.
+const _saveAnalysisItemState = _.debounce(
+  (analysisId: string, analysisItemId: string, state: ModelOrDatasetState) => {
+    if (analysisId && analysisItemId) updateAnalysisItemState(analysisId, analysisItemId, state);
+  },
+  SAVE_ANALYSIS_ITEM_STATE_DEBOUNCE_DELAY
+);
 
 /**
  * Loads the initial state for a given model or dataset, and updates it if an insight is applied.
@@ -25,11 +35,20 @@ import { ModelOrDatasetStateInsight } from '@/types/Insight';
 export default function useModelOrDatasetDrilldownState(metadata: Ref<Model | Indicator | null>) {
   const state = ref<ModelOrDatasetState | null>(null);
 
+  const route = useRoute();
+  const router = useRouter();
+
   const { setModelOrDatasetState } = useInsightStore();
   const setState = (newState: ModelOrDatasetState) => {
     state.value = newState;
     // Save to insight store
     setModelOrDatasetState(newState);
+    // Save analysis item state to the backend
+    _saveAnalysisItemState(
+      (route.query.analysis_id as string) ?? '',
+      (route.query.analysis_item_id as string) ?? '',
+      newState
+    );
   };
   const updateState = (partialState: Partial<ModelOrDatasetState>) => {
     if (state.value === null) return;
@@ -70,8 +89,6 @@ export default function useModelOrDatasetDrilldownState(metadata: Ref<Model | In
     updateState({ selectedTimestamp: newValue });
   };
 
-  const route = useRoute();
-  const router = useRouter();
   // Any time an insight is applied (either on first page load or after applying an insight from this
   //  page), immediately update the state and remove it from the URL
   watch(
@@ -81,8 +98,9 @@ export default function useModelOrDatasetDrilldownState(metadata: Ref<Model | In
         const insight = (await getInsightById(insightId)) as ModelOrDatasetStateInsight;
         setState(insight.state);
         // Remove insightId from the route once state is applied
-        router.push({
+        router.replace({
           query: {
+            ...route.query,
             insight_id: undefined,
           },
         });
@@ -94,14 +112,21 @@ export default function useModelOrDatasetDrilldownState(metadata: Ref<Model | In
   // Any time the analysisId or analysisItem changes, update the state as long as there is no insight
   //  that should be applied instead.
   watch(
-    [() => route.query.insight_id, () => route.query.analysisId, () => route.query.item_id],
-    ([insightId, analysisId, analysisItemId], [, previousAnalysisId, previousAnalysisItemId]) => {
+    [
+      () => route.query.insight_id,
+      () => route.query.analysis_id,
+      () => route.query.analysis_item_id,
+    ],
+    async (
+      [insightId, analysisId, analysisItemId],
+      [, previousAnalysisId, previousAnalysisItemId]
+    ) => {
       if (insightId !== undefined) {
         return;
       }
       if (analysisId !== previousAnalysisId || analysisItemId !== previousAnalysisItemId) {
-        // TODO: const newState = getStateFromAnalysisItem(analysisId, analysisItemId);
-        // TODO: setState(newState);
+        const newState = await getAnalysisItemState(analysisId as string, analysisItemId as string);
+        setState(newState);
       }
     },
     { immediate: true }

@@ -100,8 +100,7 @@ import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
 import { colorFromIndex, getColorScheme } from '@/utils/colors-util';
 import RegionMap from '@/components/widgets/region-map.vue';
 import { popupFormatter } from '@/utils/map-util-new';
-import { openDatacubeDrilldown } from '@/services/analysis-service';
-import { getState as getAnalysisItemState } from '@/utils/analysis-util';
+import { getState as getAnalysisItemState, openDatacubeDrilldown } from '@/utils/analysis-util';
 import { BreakdownState } from '@/types/Datacube';
 import useModelMetadata from '@/composables/useModelMetadata';
 import useTimeseriesDataFromBreakdownState from '@/composables/useTimeseriesDataFromBreakdownState';
@@ -327,7 +326,13 @@ export default defineComponent({
   },
   methods: {
     openDrilldown() {
-      openDatacubeDrilldown(this.id, this.itemId, router, this.project, this.analysisId);
+      openDatacubeDrilldown(
+        router,
+        this.project,
+        this.analysisId,
+        this.analysisItem,
+        this.metadata?.type === 'model'
+      );
     },
     clickRemove() {
       this.$emit('remove-analysis-item', this.itemId);

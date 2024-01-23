@@ -59,7 +59,7 @@ class Base {
    * @param {array} simpleFilters - Basic filters to look up by fields
    * @param {object} options - see buildSearch
    */
-  async findOne(simpleFilters, options) {
+  async findOne(simpleFilters, options = {}) {
     options.size = 1; // Force size 1
     const result = await this._search(simpleFilters, options);
     if (_.isEmpty(result.hits.hits)) return null;
@@ -71,7 +71,7 @@ class Base {
    * @param {array} simpleFilters - Basic filters to look up by fields
    * @param {object} options - see buildSearch
    */
-  async find(simpleFilters, options) {
+  async find(simpleFilters, options = {}) {
     const result = await this._search(simpleFilters, options);
     return result.hits.hits.map((d) => d._source);
   }
@@ -255,14 +255,14 @@ class Base {
     if (!_.isNil(options.size)) searchPayload.size = +options.size;
     if (!_.isNil(options.from)) searchPayload.from = +options.from;
     if (options.sort) searchPayload.body.sort = options.sort;
+    if (options.excludes || options.includes) {
+      searchPayload.body._source = {};
+    }
+    if (options.excludes) {
+      searchPayload.body._source.excludes = options.excludes;
+    }
     if (options.includes) {
-      searchPayload.body._source = {
-        includes: options.includes,
-      };
-    } else if (options.excludes) {
-      searchPayload.body._source = {
-        excludes: options.excludes,
-      };
+      searchPayload.body._source.includes = options.includes;
     }
     if (options.version) {
       searchPayload.body.version = options.version;
