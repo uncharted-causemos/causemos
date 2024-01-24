@@ -150,7 +150,7 @@ import useModelMetadata from '@/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { Ref, computed, onMounted, ref, watch } from 'vue';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
-import { BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
+import { BreakdownStateNone, ComparisonSettings, DatacubeFeature, Model } from '@/types/Datacube';
 import {
   getFilteredScenariosFromIds,
   getOutput,
@@ -246,8 +246,16 @@ const setSelectedModelRunIds = (newRunIds: string[]) => {
     return;
   }
   if (isBreakdownStateNone(breakdownState.value)) {
+    // If we're changing the selected run IDs while "BreakdownStateNone" ("split by model runs")
+    //  is active, ensure that "relative to" mode is disabled to avoid an invalid state where the
+    //  baseline model run is no longer among the selected runs, or there is only one run selected.
+    const newComparisonSettings: ComparisonSettings = {
+      ...breakdownState.value.comparisonSettings,
+      shouldDisplayAbsoluteValues: true,
+    };
     setBreakdownState({
       ...breakdownState.value,
+      comparisonSettings: newComparisonSettings,
       modelRunIds: [...newRunIds],
     });
     return;
