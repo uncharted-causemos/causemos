@@ -58,7 +58,11 @@
 <script setup lang="ts">
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { BreakdownStateOutputs, ComparisonSettings, Indicator, Model } from '@/types/Datacube';
-import { ensureBaselineFoundInTimeseriesIds, getOutputDescription } from '@/utils/datacube-util';
+import {
+  ensureBaselineFoundInTimeseriesIds,
+  getOutputDescription,
+  getOutputDisplayName,
+} from '@/utils/datacube-util';
 import { computed, toRefs, watch } from 'vue';
 import ComparisonSettingsVue from './comparison-settings.vue';
 
@@ -96,14 +100,12 @@ const removeOutput = (positionInSelectedOutputsList: number) => {
   emit('set-breakdown-state', newState);
 };
 
-const comparisonBaselineOptions = computed<DropdownItem[]>(() => {
-  const getDisplayName = (outputName: string) =>
-    metadata.value.outputs.find((output) => output.name === outputName)?.display_name ?? outputName;
-  return breakdownState.value.outputNames.map((outputName) => ({
+const comparisonBaselineOptions = computed<DropdownItem[]>(() =>
+  breakdownState.value.outputNames.map((outputName) => ({
     value: outputName,
-    displayName: getDisplayName(outputName),
-  }));
-});
+    displayName: getOutputDisplayName(metadata.value.outputs, outputName),
+  }))
+);
 
 const setComparisonSettings = (newComparisonSettings: ComparisonSettings) => {
   const validatedComparisonSettings = ensureBaselineFoundInTimeseriesIds(
