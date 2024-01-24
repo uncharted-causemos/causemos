@@ -10,43 +10,49 @@
       />
       Display absolute values
     </label>
-    <label class="un-font-small">
+    <label class="un-font-small relative-to-radio-button-row">
       <input
-        disabled
         type="radio"
         name="display-absolute-values"
         :checked="comparisonSettings.shouldDisplayAbsoluteValues === false"
         @input="setComparisonSettings(false)"
       />
       Display values relative to
+      <DropdownButton
+        :items="comparisonBaselineOptions"
+        :selected-item="comparisonSettings.baselineTimeseriesId"
+        class="fixed-width-input"
+        @item-selected="
+          (timeseriesId: string) =>setComparisonSettings(false, timeseriesId)
+        "
+      />
     </label>
-    <!-- TODO: change baseline and units -->
-    <!-- <dropdown-button
-          :items="comparisonBaselineOptions"
-          :selected-item="comparisonSettings.baselineTimeseriesId"
-          class="fixed-width-input"
-          @item-selected="
-            (timeseriesId: string) =>
-              setComparisonSettings(
-                false,
-                timeseriesId,
-                breakdownState.comparisonSettings.shouldUseRelativePercentage
-              )
-          "
-        /> -->
+    <div
+      class="un-font-small radio-button-group"
+      v-if="!comparisonSettings.shouldDisplayAbsoluteValues"
+    >
+      as
+      <RadioButtonGroup
+        :buttons="radioButtonGroupOptions"
+        :selected-button-value="comparisonSettings.shouldUseRelativePercentage"
+        @button-clicked="setShouldUseRelativePercentage"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { DropdownItem } from '@/components/dropdown-button.vue';
+import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import RadioButtonGroup, { RadioButtonSpec } from '@/components/widgets/radio-button-group.vue';
 import { ComparisonSettings } from '@/types/Datacube';
-import { toRefs } from 'vue';
+import { computed, toRefs } from 'vue';
 
 const props = defineProps<{
   comparisonSettings: ComparisonSettings;
   comparisonBaselineOptions: DropdownItem[];
+  unit: string;
 }>();
-const { comparisonSettings } = toRefs(props);
+const { comparisonSettings, comparisonBaselineOptions, unit } = toRefs(props);
 const emit = defineEmits<{ (e: 'set-comparison-settings', newState: ComparisonSettings): void }>();
 
 const setComparisonSettings = (
@@ -63,6 +69,24 @@ const setComparisonSettings = (
   };
   emit('set-comparison-settings', newState);
 };
+
+const relativePercentageDisplayString = computed(() => {
+  const baselineId = comparisonSettings.value.baselineTimeseriesId;
+  const baselineTimeseriesName =
+    comparisonBaselineOptions.value.find((option) => option.value === baselineId)?.displayName ??
+    'baseline';
+  return `% change from ${baselineTimeseriesName}`;
+});
+
+const radioButtonGroupOptions = computed<RadioButtonSpec[]>(() => [
+  { value: false, label: unit.value },
+  { value: true, label: relativePercentageDisplayString.value },
+]);
+
+const setShouldUseRelativePercentage = (newValue: boolean) => {
+  const { shouldDisplayAbsoluteValues, baselineTimeseriesId } = comparisonSettings.value;
+  setComparisonSettings(shouldDisplayAbsoluteValues, baselineTimeseriesId, newValue);
+};
 </script>
 
 <style lang="scss" scoped>
@@ -74,9 +98,16 @@ const setComparisonSettings = (
   border: 1px solid $un-color-black-10;
   gap: 10px;
 
-  label {
+  label,
+  .radio-button-group {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
+    align-items: center;
+  }
+
+  .radio-button-group {
+    margin-left: 24px;
   }
 }
 </style>

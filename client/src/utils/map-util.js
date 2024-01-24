@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import mapboxgl from 'maplibre-gl';
-import { BASE_LAYER } from '@/utils/map-util-new';
+import { BASELINE_VALUE_PROPERTY, BASE_LAYER } from '@/utils/map-util-new';
 import { COLOR_PALETTE_SIZE } from '@/utils/colors-util';
 import authStore from '@/store/modules/auth-store';
 
@@ -249,7 +249,7 @@ function colorExpr(
     'case',
     ['!=', null, [getter, relativeTo]],
     [getter, relativeTo],
-    [getter, '_baseline'],
+    [getter, BASELINE_VALUE_PROPERTY],
   ];
   const valueExpr = !_.isNil(relativeTo)
     ? diffExpr(baselineValueExpr, [getter, property], showPercentChange)
@@ -347,7 +347,7 @@ export function createHeatmapLayerStyle(
         [
           'all',
           ['==', null, ['feature-state', relativeTo]],
-          ['==', null, ['feature-state', '_baseline']],
+          ['==', null, ['feature-state', BASELINE_VALUE_PROPERTY]],
         ],
         0.0
       );
@@ -355,7 +355,7 @@ export function createHeatmapLayerStyle(
       'case',
       ['!=', null, ['feature-state', relativeTo]],
       ['feature-state', relativeTo],
-      ['feature-state', '_baseline'],
+      ['feature-state', BASELINE_VALUE_PROPERTY],
     ];
     const propertyGetter = _.isNil(relativeTo)
       ? ['feature-state', property]

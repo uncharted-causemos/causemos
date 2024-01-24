@@ -39,15 +39,32 @@
       <button class="btn btn-default fixed-width-input" @click="addOutput">
         <i class="fa fa-fw fa-plus" />Compare with another output
       </button>
+      <p v-if="shouldShowWarning" class="warning un-font-small">
+        <i class="fa fa-fw fa-exclamation-triangle"></i>
+        The selected outputs have different units. Direct comparison may be invalid.
+      </p>
+
+      <ComparisonSettingsVue
+        v-if="breakdownState.outputNames.length > 1"
+        :comparison-baseline-options="comparisonBaselineOptions"
+        :comparison-settings="breakdownState.comparisonSettings"
+        :unit="shouldShowWarning ? '(outputs have different units)' : units[0]"
+        @set-comparison-settings="setComparisonSettings"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
-import { BreakdownStateOutputs, Indicator, Model } from '@/types/Datacube';
-import { getOutputDescription } from '@/utils/datacube-util';
-import { computed, toRefs } from 'vue';
+import { BreakdownStateOutputs, ComparisonSettings, Indicator, Model } from '@/types/Datacube';
+import {
+  ensureBaselineFoundInTimeseriesIds,
+  getOutputDescription,
+  getOutputDisplayName,
+} from '@/utils/datacube-util';
+import { computed, toRefs, watch } from 'vue';
+import ComparisonSettingsVue from './comparison-settings.vue';
 
 const props = defineProps<{
   breakdownState: BreakdownStateOutputs;
@@ -82,6 +99,52 @@ const removeOutput = (positionInSelectedOutputsList: number) => {
   };
   emit('set-breakdown-state', newState);
 };
+
+const comparisonBaselineOptions = computed<DropdownItem[]>(() =>
+  breakdownState.value.outputNames.map((outputName) => ({
+    value: outputName,
+    displayName: getOutputDisplayName(metadata.value.outputs, outputName),
+  }))
+);
+
+const setComparisonSettings = (newComparisonSettings: ComparisonSettings) => {
+  const validatedComparisonSettings = ensureBaselineFoundInTimeseriesIds(
+    newComparisonSettings,
+    breakdownState.value.outputNames
+  );
+  const newState: BreakdownStateOutputs = {
+    ...breakdownState.value,
+    comparisonSettings: validatedComparisonSettings,
+  };
+  emit('set-breakdown-state', newState);
+};
+watch(breakdownState, () => {
+  const validatedComparisonSettings = ensureBaselineFoundInTimeseriesIds(
+    breakdownState.value.comparisonSettings,
+    breakdownState.value.outputNames
+  );
+  if (validatedComparisonSettings === breakdownState.value.comparisonSettings) {
+    // Baseline was already found in region IDs
+    return;
+  }
+  const newState: BreakdownStateOutputs = {
+    ...breakdownState.value,
+    comparisonSettings: validatedComparisonSettings,
+  };
+  emit('set-breakdown-state', newState);
+});
+
+const units = computed(() =>
+  breakdownState.value.outputNames.map(
+    (outputName) => metadata.value.outputs.find((output) => output.name === outputName)?.unit ?? ''
+  )
+);
+
+const shouldShowWarning = computed(() => {
+  const set = new Set<string>();
+  units.value.forEach((unit) => set.add(unit));
+  return set.size > 1;
+});
 </script>
 
 <style lang="scss" scoped>
@@ -94,5 +157,8 @@ const removeOutput = (positionInSelectedOutputsList: number) => {
 }
 .outputs {
   gap: 15px;
+}
+.warning {
+  color: $un-color-feedback-warning;
 }
 </style>

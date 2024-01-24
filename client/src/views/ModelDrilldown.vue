@@ -79,7 +79,7 @@
           :selected-timestamp="selectedTimestamp"
           :breakdown-option="null"
           :selected-temporal-resolution="TemporalResolutionOption.Month"
-          :unit="activeOutputVariable?.unit ?? ''"
+          :unit="originalUnit"
           @select-timestamp="setSelectedTimestamp"
         />
         <p class="selected-date"><span class="subdued">Selected date:</span> December 2012</p>
@@ -98,7 +98,8 @@
               :regional-data="regionalData"
               :output-specs="outputSpecs"
               :output-spec-id="spec.id"
-              :unit="activeOutputVariable?.unit ?? ''"
+              :original-unit="originalUnit"
+              :unit-with-comparison-state-applied="unitWithComparisonStateApplied"
               :spatial-aggregation="spatialAggregation"
               :map-bounds="getMapBounds(spec.id)"
               @map-move="onMapMove"
@@ -110,12 +111,12 @@
           v-if="breakdownState !== null"
           class="bar-chart-panel"
           :raw-data="regionalData"
-          :breakdown-state="breakdownState"
           :aggregation-level="stringToAdminLevel(spatialAggregation)"
-          :unit="activeOutputVariable?.unit ?? ''"
+          :unit="originalUnit"
           :get-color-from-timeseries-id="getColorFromTimeseriesId"
           :aggregation-method="spatialAggregationMethod"
           :output-name="activeOutputVariable?.display_name ?? ''"
+          :comparison-settings="breakdownState.comparisonSettings"
         />
       </div>
     </div>
@@ -149,7 +150,7 @@ import useModelMetadata from '@/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { Ref, computed, onMounted, ref, watch } from 'vue';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
-import { BreakdownStateNone, DatacubeFeature, Model } from '@/types/Datacube';
+import { BreakdownStateNone, ComparisonSettings, DatacubeFeature, Model } from '@/types/Datacube';
 import {
   getFilteredScenariosFromIds,
   getOutput,
@@ -177,6 +178,7 @@ import useTimeseriesIdToColorMap from '@/composables/useTimeseriesIdToColorMap';
 import useModelDrilldownState from '@/composables/useModelDrilldownState';
 import useInsightStore from '@/composables/useInsightStore';
 import ModelOrDatasetMetadata from '@/components/model-drilldown/model-or-dataset-metadata.vue';
+import useModelOrDatasetUnits from '@/composables/useModelOrDatasetUnits';
 
 const SPATIAL_AGGREGATION_METHOD_OPTIONS = [AggregationOption.Mean, AggregationOption.Sum];
 const TEMPORAL_RESOLUTION_OPTIONS = [TemporalResolutionOption.Month, TemporalResolutionOption.Year];
@@ -224,6 +226,12 @@ const activeOutputVariable = computed<DatacubeFeature | null>(() => {
   return getOutput(metadata.value, firstOutputName.value) ?? null;
 });
 
+const { originalUnit, unitWithComparisonStateApplied } = useModelOrDatasetUnits(
+  breakdownState,
+  metadata,
+  activeOutputVariable
+);
+
 const toast = useToaster();
 const selectedModelRunIds = computed(() => {
   if (breakdownState.value === null) {
@@ -238,8 +246,16 @@ const setSelectedModelRunIds = (newRunIds: string[]) => {
     return;
   }
   if (isBreakdownStateNone(breakdownState.value)) {
+    // If we're changing the selected run IDs while "BreakdownStateNone" ("split by model runs")
+    //  is active, ensure that "relative to" mode is disabled to avoid an invalid state where the
+    //  baseline model run is no longer among the selected runs, or there is only one run selected.
+    const newComparisonSettings: ComparisonSettings = {
+      ...breakdownState.value.comparisonSettings,
+      shouldDisplayAbsoluteValues: true,
+    };
     setBreakdownState({
       ...breakdownState.value,
+      comparisonSettings: newComparisonSettings,
       modelRunIds: [...newRunIds],
     });
     return;

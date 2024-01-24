@@ -112,6 +112,7 @@ import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { SpatialAggregationLevel } from '@/types/Enums';
 import { StatefulDataNode, RootStatefulDataNode, ChecklistRowData } from '@/types/BarChartPanel';
 import { isStatefulDataNode } from '@/utils/bar-chart-panel-util';
+import { BASELINE_VALUE_PROPERTY } from '@/utils/map-util-new';
 
 const SORT_OPTIONS = {
   Name: { label: 'Name', value: 'name' },
@@ -376,7 +377,7 @@ export default defineComponent({
           // Convert values from { [timeseriesId]: value } to an array where
           //  the value of each timeseries is augmented with its color
           const valueArray = Object.keys(values)
-            .filter((key) => key !== '_baseline')
+            .filter((key) => key !== BASELINE_VALUE_PROPERTY)
             .map((timeseriesId) => {
               return {
                 color: getColorFromTimeseriesId(timeseriesId),
