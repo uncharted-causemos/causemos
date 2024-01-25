@@ -652,6 +652,7 @@ const dataWarnings = computed(() =>
 );
 
 const handleNavigateToDataset = (datacubeId: string) => {
+  if (!selectedNodeId.value) return;
   router.push({
     name: 'datasetDrilldown',
     params: {
@@ -661,6 +662,7 @@ const handleNavigateToDataset = (datacubeId: string) => {
     },
     query: {
       analysis_id: analysisId.value,
+      index_projection_node_id: selectedNodeId.value,
     },
   });
 };

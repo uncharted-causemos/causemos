@@ -123,7 +123,8 @@ const handleKey = (evt: KeyboardEvent) => {
   }
 };
 
-const handleNavigateToDataset = (datacubeId: string) => {
+const handleNavigateToDataset = (datacubeId: string, indexElementId: SelectableIndexElementId) => {
+  if (isEdge(indexElementId)) return;
   router.push({
     name: 'datasetDrilldown',
     params: {
@@ -133,6 +134,7 @@ const handleNavigateToDataset = (datacubeId: string) => {
     },
     query: {
       analysis_id: analysisId.value,
+      index_node_id: indexElementId,
     },
   });
 };
