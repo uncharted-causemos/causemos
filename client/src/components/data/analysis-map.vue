@@ -687,7 +687,7 @@ export default defineComponent({
         const formattedDiff = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}`;
         const diffString = this.showPercentChange
           ? `${this.unitWithComparisonStateApplied}: ${formattedDiff}`
-          : `${formattedDiff} ${this.originalUnit}`;
+          : `${formattedDiff} ${this.unitWithComparisonStateApplied}`;
         const text = _.isNaN(diff)
           ? 'Change: Baseline has no data or is zero for this area'
           : diffString;

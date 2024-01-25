@@ -1,6 +1,6 @@
 <template>
   <div class="bar-chart-panel-container">
-    <p>{{ aggregationMethod === AggregationOption.Mean ? 'Average' : 'Total' }} {{ outputName }}</p>
+    <p>{{ aggregationMethod === AggregationOption.Mean ? 'Average' : 'Total' }} {{ unit }}</p>
     <div class="sortable-headers">
       <SortableTableHeaderCell
         :active-state="getHeaderCellSortState(SortOption.Name)"
@@ -60,7 +60,6 @@ const props = defineProps<{
   unit: string;
   getColorFromTimeseriesId: (timeseriesId: string) => string;
   aggregationMethod: AggregationOption;
-  outputName: string;
   comparisonSettings: ComparisonSettings;
 }>();
 const { rawData, aggregationLevel, getColorFromTimeseriesId, comparisonSettings } = toRefs(props);
