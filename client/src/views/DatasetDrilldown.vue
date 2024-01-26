@@ -147,7 +147,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import BarChartPanel from '@/components/drilldown-panel/bar-chart-panel.vue';
 import { stringToAdminLevel } from '@/utils/admin-level-util';
 import useTimeseriesIdToColorMap from '@/composables/useTimeseriesIdToColorMap';
-import useModelDrilldownState from '@/composables/useModelDrilldownState';
+import useModelDrilldownState from '@/composables/useModelOrDatasetDrilldownState';
 import useInsightStore from '@/composables/useInsightStore';
 import ModelOrDatasetMetadata from '@/components/model-drilldown/model-or-dataset-metadata.vue';
 import useModelOrDatasetUnits from '@/composables/useModelOrDatasetUnits';
