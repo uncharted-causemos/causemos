@@ -181,6 +181,8 @@ import useModelDrilldownState from '@/composables/useModelDrilldownState';
 import useInsightStore from '@/composables/useInsightStore';
 import ModelOrDatasetMetadata from '@/components/model-drilldown/model-or-dataset-metadata.vue';
 import useModelOrDatasetUnits from '@/composables/useModelOrDatasetUnits';
+import { useStore } from 'vuex';
+import { getAnalysis } from '@/services/analysis-service';
 
 const SPATIAL_AGGREGATION_METHOD_OPTIONS = [AggregationOption.Mean, AggregationOption.Sum];
 const TEMPORAL_RESOLUTION_OPTIONS = [TemporalResolutionOption.Month, TemporalResolutionOption.Year];
@@ -198,6 +200,17 @@ onMounted(() => {
   // This is used to determine which insights should be displayed in the navbar dropdown for this
   //  page.
   if (route.query.analysis_item_id) setContextId(route.query.analysis_item_id as string);
+});
+
+const store = useStore();
+onMounted(async () => {
+  store.dispatch('app/setAnalysisName', '');
+  const analysisId = route.query.analysis_id as string | undefined;
+  if (analysisId === undefined) return;
+  const result = await getAnalysis(analysisId);
+  if (result) {
+    store.dispatch('app/setAnalysisName', result.title);
+  }
 });
 
 const {
