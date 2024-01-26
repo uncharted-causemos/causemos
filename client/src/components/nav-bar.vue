@@ -60,6 +60,7 @@ import { useRoute } from 'vue-router';
 import { mapActions, useStore } from 'vuex';
 import NavbarInsightsPanel from '@/components/insight-manager/navbar-insights-panel.vue';
 import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
+import useModelOrDatasetName from '@/composables/useModelOrDatasetName';
 
 interface NavBarItem {
   route: { name: string; params: any } | null;
@@ -79,6 +80,9 @@ export default defineComponent({
     const route = useRoute();
     const analysisId = computed(() => route.params.analysisId as string);
     const analysisName = computed(() => store.getters['app/analysisName']);
+
+    const datacubeId = computed(() => (route.params.datacubeId as string) ?? null);
+    const modelOrDatasetName = useModelOrDatasetName(datacubeId);
 
     const analysisProjectItem = computed<NavBarItem>(() => ({
       text: projectMetadata.value.name,
@@ -190,25 +194,13 @@ export default defineComponent({
         analysisProjectItem.value,
         { icon: 'fa-book', route: null, text: 'Explore documents' },
       ],
-      // TODO: expose these once you can navigate to the new data space from an analysis
-      // modelDrilldown: [
-      //   analysisProjectItem.value,
-      //   quantitativeAnalysisItem.value,
-      //   { route: null, text: 'Flee: Agent Based Refugee Model' }, // TODO: get the model name
-      // ],
-      // datasetDrilldown: [
-      //   analysisProjectItem.value,
-      //   quantitativeAnalysisItem.value,
-      //   { route: null, text: 'Armed Forces Percentage of the Country Population' }, // TODO: get the dataset name
-      // ],
-      // TODO: remove these once you can navigate to the new data space from an analysis
       modelDrilldown: [
         analysisProjectItem.value,
-        { route: null, text: 'Flee: Agent Based Refugee Model' }, // TODO: get the model name
+        { route: null, text: modelOrDatasetName.value ?? 'Model drilldown' },
       ],
       datasetDrilldown: [
         analysisProjectItem.value,
-        { route: null, text: 'Armed Forces Percentage of the Country Population' }, // TODO: get the dataset name
+        { route: null, text: modelOrDatasetName.value ?? 'Dataset drilldown' },
       ],
     }));
 
