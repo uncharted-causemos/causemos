@@ -28,6 +28,11 @@ import {
   isDivergingScheme,
 } from './colors-util';
 
+// This is the name of a special property added to regional data when "split by region" is active.
+// It stores the value of the region that is being used as the comparison baseline and is used in
+//  the map and bar chart panel to calculate the relative values that should be displayed.
+export const BASELINE_VALUE_PROPERTY = '_baseline';
+
 export const BOUNDS_GLOBAL: BoundingBox = [
   [-180, -90],
   [180, 90],
@@ -172,7 +177,7 @@ export function computeRegionalStats(
   for (const [key, data] of Object.entries(regionData)) {
     const values = [];
     for (const v of data || []) {
-      values.push(...Object.values(_.omit(v.values, '_baseline')));
+      values.push(...Object.values(_.omit(v.values, BASELINE_VALUE_PROPERTY)));
     }
     if (values.length) {
       globalStats[key] = { min: Math.min(...values), max: Math.max(...values) };
@@ -197,7 +202,7 @@ export function computeRegionalStats(
       (data || []).forEach((v) => {
         const baselineValue = _.isFinite(v.values[baselineProp])
           ? v.values[baselineProp]
-          : v.values._baseline;
+          : v.values[BASELINE_VALUE_PROPERTY];
         const diffs = Object.values(v.values).map((value) =>
           calculateDiff(baselineValue, value, showPercentChange)
         );

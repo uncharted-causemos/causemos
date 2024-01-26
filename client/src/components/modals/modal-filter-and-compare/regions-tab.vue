@@ -61,10 +61,11 @@
       </div>
     </section>
 
-    <comparison-settings-vue
+    <ComparisonSettingsVue
       v-if="breakdownState.regionIds.length > 1"
       :comparison-baseline-options="comparisonBaselineOptions"
       :comparison-settings="breakdownState.comparisonSettings"
+      :unit="unit"
       @set-comparison-settings="setComparisonSettings"
     />
   </div>
@@ -75,7 +76,7 @@ import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { BreakdownStateRegions, ComparisonSettings, Indicator, Model } from '@/types/Datacube';
 import { SpatialAggregation } from '@/types/Enums';
 import { getRegionIdDisplayName } from '@/utils/admin-level-util';
-import { getOutputDescription } from '@/utils/datacube-util';
+import { ensureBaselineFoundInTimeseriesIds, getOutputDescription } from '@/utils/datacube-util';
 import { computed, toRefs, watch } from 'vue';
 import ComparisonSettingsVue from './comparison-settings.vue';
 import { useAvailableRegions } from '@/composables/useAvailableRegions';
@@ -150,13 +151,39 @@ const comparisonBaselineOptions = computed<DropdownItem[]>(() =>
     displayName: getRegionIdDisplayName(regionId),
   }))
 );
+
 const setComparisonSettings = (newComparisonSettings: ComparisonSettings) => {
+  const validatedComparisonSettings = ensureBaselineFoundInTimeseriesIds(
+    newComparisonSettings,
+    breakdownState.value.regionIds
+  );
   const newState: BreakdownStateRegions = {
     ...breakdownState.value,
-    comparisonSettings: newComparisonSettings,
+    comparisonSettings: validatedComparisonSettings,
   };
   emit('set-breakdown-state', newState);
 };
+watch(breakdownState, () => {
+  const validatedComparisonSettings = ensureBaselineFoundInTimeseriesIds(
+    breakdownState.value.comparisonSettings,
+    breakdownState.value.regionIds
+  );
+  if (validatedComparisonSettings === breakdownState.value.comparisonSettings) {
+    // Baseline was already found in region IDs
+    return;
+  }
+  const newState: BreakdownStateRegions = {
+    ...breakdownState.value,
+    comparisonSettings: validatedComparisonSettings,
+  };
+  emit('set-breakdown-state', newState);
+});
+
+const unit = computed(
+  () =>
+    metadata.value.outputs.find((output) => output.name === breakdownState.value.outputName)
+      ?.unit ?? ''
+);
 </script>
 
 <style lang="scss" scoped>

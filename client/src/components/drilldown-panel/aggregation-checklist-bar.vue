@@ -2,9 +2,10 @@
   <div
     class="aggregation-checklist-bar"
     :class="{ 'is-wrapped': isWrapped }"
-    :style="histogramMarginStyle(barValue)"
+    :style="histogramContainerStyle(barValue)"
   >
-    <aggregation-checklist-rectangle
+    <div
+      class="zero-tick"
       v-if="isSelectedAggregationLevel && minVisibleBarValue < 0 && barValue >= 0"
     />
     <div
@@ -13,7 +14,8 @@
       :class="{ faded: !isChecked }"
       :style="histogramBarStyle(barValue, barColor)"
     />
-    <aggregation-checklist-rectangle
+    <div
+      class="zero-tick"
       v-if="isSelectedAggregationLevel && minVisibleBarValue < 0 && barValue < 0"
     />
   </div>
@@ -21,13 +23,9 @@
 
 <script lang="ts">
 import { defineComponent } from '@vue/runtime-core';
-import AggregationChecklistRectangle from '@/components/drilldown-panel/aggregation-checklist-rectangle.vue';
 
 export default defineComponent({
   name: 'aggregation-checklist-bar',
-  components: {
-    AggregationChecklistRectangle,
-  },
   props: {
     barColor: {
       type: String,
@@ -58,32 +56,29 @@ export default defineComponent({
       required: true,
     },
   },
-  computed: {
-    totalBarLength(): number {
-      return this.maxVisibleBarValue - this.minVisibleBarValue;
-    },
-    maxBarLength(): number {
-      return Math.max(this.maxVisibleBarValue, -this.minVisibleBarValue);
-    },
-  },
   methods: {
-    calculateWidth(value: number) {
-      return this.minVisibleBarValue < 0
-        ? ((value / this.maxBarLength) * 100) / 2
-        : (value / this.totalBarLength) * 100;
-    },
-    histogramMarginStyle(value: number) {
+    histogramContainerStyle(value: number) {
       if (value < 0) {
-        const marginLeft = `${this.calculateWidth(value + this.maxBarLength)}%`;
-        return { 'margin-left': marginLeft };
-      } else {
-        const marginLeft = `${this.minVisibleBarValue < 0 ? 50 : 0}%`;
-        return { 'margin-left': marginLeft };
+        // Bar extends from the center(50%) to partway through the left half
+        return {
+          'padding-right': '50%',
+          'justify-content': 'flex-end',
+        };
       }
+      // `value` is positive
+      // If there are negative values, bar extends fom the center(50%) to partway through the right half
+      // Otherwise bar extends from the left(0%) to partway through the entire length
+      return {
+        'padding-left': `${this.minVisibleBarValue < 0 ? 50 : 0}%`,
+        'justify-content': 'flex-start',
+      };
     },
     histogramBarStyle(value: number, color: string) {
-      const percentage = this.calculateWidth(Math.abs(value));
-      return { width: `${percentage}%`, background: color };
+      const lengthOfLongestVisibleBar = Math.max(this.maxVisibleBarValue, -this.minVisibleBarValue);
+      const fractionOfLongestVisibleBar = Math.abs(value) / lengthOfLongestVisibleBar;
+      // Note that when padding-left or -right is 50%, CSS treats the bar width percentage
+      //  calculated below as "X% of the remaining 50% (non-padding) space".
+      return { width: `${fractionOfLongestVisibleBar * 100}%`, background: color };
     },
   },
 });
@@ -103,6 +98,7 @@ $bar-height-half: 2px;
   display: flex;
   flex-direction: row;
   background: $un-color-black-5;
+  align-items: center;
   span.faded {
     opacity: 50%;
   }
@@ -116,5 +112,11 @@ $bar-height-half: 2px;
   &.faded {
     opacity: 25%;
   }
+}
+
+.zero-tick {
+  background: $subdued;
+  height: calc(100% + 2px);
+  width: 1px;
 }
 </style>

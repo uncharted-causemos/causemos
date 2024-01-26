@@ -5,24 +5,27 @@
     </template>
     <template #body>
       <RadioButtonGroup
-        class="radio-button-group"
+        class="modal-filter-and-compare-radio-button-group"
         :buttons="tabs"
         :selected-button-value="selectedTab"
         @button-clicked="selectTab"
       />
 
-      <no-filters-tab
+      <NoFiltersTab
         v-if="selectedTab === NO_FILTERS"
         :are-tabs-disabled="areTabsDisabled"
         :names-of-split-by-options="namesOfSplitByOptions"
+        :breakdown-state="breakdownStateNone"
+        :metadata="metadata"
+        @set-breakdown-state="(newState) => (breakdownStateNone = newState)"
       />
-      <outputs-tab
+      <OutputsTab
         v-else-if="selectedTab === OUTPUTS"
         :breakdown-state="breakdownStateOutputs"
         :metadata="metadata"
         @set-breakdown-state="(newState) => (breakdownStateOutputs = newState)"
       />
-      <regions-tab
+      <RegionsTab
         v-else-if="selectedTab === REGIONS"
         :breakdown-state="breakdownStateRegions"
         :metadata="metadata"
@@ -30,7 +33,7 @@
         @set-breakdown-state="(newState) => (breakdownStateRegions = newState)"
         @set-spatial-aggregation="setSpatialAggregation"
       />
-      <years-tab
+      <YearsTab
         v-else-if="selectedTab === YEARS"
         :breakdown-state="breakdownStateYears"
         :metadata="metadata"
@@ -40,7 +43,7 @@
         @set-spatial-aggregation="setSpatialAggregation"
       />
 
-      <qualifier-tab
+      <QualifierTab
         v-else
         :breakdown-state="breakdownStatesQualifier[selectedTab]"
         :metadata="metadata"
@@ -265,7 +268,7 @@ onMounted(() => {
 @import '@/styles/common';
 @import '@/styles/uncharted-design-tokens';
 
-:deep(.radio-button-group button) {
+:deep(.modal-filter-and-compare-radio-button-group button) {
   width: 100px;
 }
 </style>

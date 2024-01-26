@@ -218,9 +218,13 @@ export default function useScenarioData(
     window.clearInterval(timerHandler as number);
   });
 
+  const getModelRunById = (runId: string) =>
+    allModelRunData.value.find((runData) => runData.id === runId);
+
   return {
+    allModelRunData,
     fetchModelRuns,
     filteredRunData,
-    allModelRunData,
+    getModelRunById,
   };
 }

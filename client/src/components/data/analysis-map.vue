@@ -76,7 +76,12 @@ import {
   STYLE_URL_PREFIX,
 } from '@/utils/map-util';
 import { convertRawDataToGeoJson, pickQualifiers } from '@/utils/outputdata-util';
-import { BASE_LAYER, SOURCE_LAYERS, SOURCE_LAYER } from '@/utils/map-util-new';
+import {
+  BASE_LAYER,
+  SOURCE_LAYERS,
+  SOURCE_LAYER,
+  BASELINE_VALUE_PROPERTY,
+} from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
 import { REGION_ID_DELIMETER, adminLevelToString } from '@/utils/admin-level-util';
 import { capitalize, exponentFormatter } from '@/utils/string-util';
@@ -92,7 +97,7 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
   const getter = useFeatureState ? 'feature-state' : 'get';
   relativeTo &&
     caseRelativeToMissing.push(
-      ['all', ['==', null, [getter, relativeTo]], ['==', null, [getter, '_baseline']]],
+      ['all', ['==', null, [getter, relativeTo]], ['==', null, [getter, BASELINE_VALUE_PROPERTY]]],
       1
     );
   if (useFeatureState) {
@@ -219,7 +224,11 @@ export default defineComponent({
       type: String,
       required: true,
     },
-    unit: {
+    originalUnit: {
+      type: String,
+      default: null,
+    },
+    unitWithComparisonStateApplied: {
       type: String,
       default: null,
     },
@@ -527,7 +536,7 @@ export default defineComponent({
       // But once new state, lets's say {b: 4} is set by setFetureState afterwards, it just extends previous state instead of setting it to new state resulting something like
       // { id: 'Ethiopia', state: {a: 1, b:4, c:3 } where we don't want 'a' and 'c'
       // To work around above issue, explitly set undefined to each output value by default since removeFeatureState doesn't seem very reliable.
-      const featureStateBase = { _baseline: undefined };
+      const featureStateBase = { [BASELINE_VALUE_PROPERTY]: undefined };
       this.outputSourceSpecs.forEach((spec) => {
         featureStateBase[spec.id] = undefined;
       });
@@ -669,18 +678,19 @@ export default defineComponent({
       if (_.isNil(prop && prop[this.valueProp])) return null;
       const format = (v) => this.numberFormatter(v);
       const value = prop[this.valueProp];
-      const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
+      const rows = [`${format(value)} ${this.originalUnit ?? ''}`];
       if (this.baselineSpec) {
         const baselineValue = _.isFinite(prop[this.baselineSpec.id])
           ? prop[this.baselineSpec.id]
-          : prop._baseline;
+          : prop[BASELINE_VALUE_PROPERTY];
         const diff = calculateDiff(baselineValue, prop[this.valueProp], this.showPercentChange);
-        const diffString = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}${
-          this.showPercentChange ? '%' : ' ' + this.unit
-        }`;
+        const formattedDiff = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}`;
+        const diffString = this.showPercentChange
+          ? `${this.unitWithComparisonStateApplied}: ${formattedDiff}`
+          : `${formattedDiff} ${this.unitWithComparisonStateApplied}`;
         const text = _.isNaN(diff)
-          ? 'Diff: Baseline has no data or is zero for this area'
-          : 'Diff: ' + diffString;
+          ? 'Change: Baseline has no data or is zero for this area'
+          : diffString;
         rows.push(text);
       }
       if (this.isAdminMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));

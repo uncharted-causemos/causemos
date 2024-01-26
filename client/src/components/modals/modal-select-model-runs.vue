@@ -131,16 +131,15 @@ const selectedSpatialAggregation = ref(AggregationOption.Sum);
 const selectedTemporalAggregation = ref(AggregationOption.Sum);
 
 const selectedModelId = computed(() => metadata.value?.id ?? null);
-const modelRunSearchFilters = ref<Filters>({ clauses: [] });
 const currentOutputIndex = computed(() => {
   const outputs = getOutputs(metadata.value);
   return outputs.findIndex((output) => output.name === currentOutputName.value);
 });
 const { dimensions } = useDatacubeDimensions(metadata, currentOutputIndex);
 const isNewRunsModeActive = ref(false);
-const { fetchModelRuns, allModelRunData, filteredRunData } = useScenarioData(
+const { fetchModelRuns, getModelRunById, filteredRunData } = useScenarioData(
   selectedModelId,
-  modelRunSearchFilters,
+  ref<Filters>({ clauses: [] }),
   dimensions,
   ref(true)
 );
@@ -259,8 +258,6 @@ const modelRunsInProgress = computed(() => {
   return _.sortBy(runsWithoutDrilldownParameters, (run) => run.status);
 });
 
-const getModelRunById = (runId: string) =>
-  allModelRunData.value.find((runData) => runData.id === runId);
 const deleteModelRun = async (runId: string) => {
   const modelRun = getModelRunById(runId);
   if (modelRun) {

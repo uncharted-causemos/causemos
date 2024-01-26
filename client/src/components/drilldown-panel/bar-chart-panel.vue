@@ -1,6 +1,6 @@
 <template>
   <div class="bar-chart-panel-container">
-    <p>{{ aggregationMethod === AggregationOption.Mean ? 'Average' : 'Total' }} {{ outputName }}</p>
+    <p>{{ aggregationMethod === AggregationOption.Mean ? 'Average' : 'Total' }} {{ unit }}</p>
     <div class="sortable-headers">
       <SortableTableHeaderCell
         :active-state="getHeaderCellSortState(SortOption.Name)"
@@ -52,6 +52,7 @@ import SortableTableHeaderCell from '@/components/widgets/sortable-table-header-
 import { AggregationOption, SortableTableHeaderState } from '@/types/Enums';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import { RootStatefulDataNode, StatefulDataNode } from '@/types/BarChartPanel';
+import { ComparisonSettings } from '@/types/Datacube';
 
 const props = defineProps<{
   aggregationLevel: number;
@@ -59,9 +60,9 @@ const props = defineProps<{
   unit: string;
   getColorFromTimeseriesId: (timeseriesId: string) => string;
   aggregationMethod: AggregationOption;
-  outputName: string;
+  comparisonSettings: ComparisonSettings;
 }>();
-const { rawData, aggregationLevel, getColorFromTimeseriesId } = toRefs(props);
+const { rawData, aggregationLevel, getColorFromTimeseriesId, comparisonSettings } = toRefs(props);
 
 const columnToSortBy = ref<SortOption>(SortOption.Name);
 const sortOrder = ref<SortableTableHeaderState.Up | SortableTableHeaderState.Down>(
@@ -78,7 +79,7 @@ const getHeaderCellSortState = (cell: SortOption) =>
   cell === columnToSortBy.value ? sortOrder.value : SortableTableHeaderState.None;
 const statefulData = ref<RootStatefulDataNode | null>(null);
 watch(
-  [rawData, columnToSortBy, sortOrder, getColorFromTimeseriesId],
+  [rawData, columnToSortBy, sortOrder, getColorFromTimeseriesId, comparisonSettings],
   () => {
     if (rawData.value === null) return;
     statefulData.value = constructHierarchichalDataNodeTree(
@@ -86,7 +87,8 @@ watch(
       rawData.value,
       getColorFromTimeseriesId.value,
       columnToSortBy.value,
-      sortOrder.value
+      sortOrder.value,
+      comparisonSettings.value
     );
   },
   { immediate: true }
@@ -179,6 +181,7 @@ h5 {
   justify-content: space-between;
   margin-left: -10px;
   margin-right: -10px;
+  margin-top: 10px;
 
   & > * {
     left: 0;
