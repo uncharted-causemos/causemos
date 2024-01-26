@@ -151,11 +151,9 @@ export const getDatacubeById = async (datacubeId: string, options = {}) => {
  * @param {string} datacubeId
  */
 export const getDatacubeNameById = async (datacubeId: string): Promise<string | null> => {
-  const result = (await getDatacubeById(datacubeId, {
-    from: 0,
-    size: 1,
-    includes: ['name'],
-  })) as { name: string } | null;
+  const result = (await getDatacubeById(datacubeId, { includes: ['name'] })) as {
+    name: string;
+  } | null;
   return result?.name ?? null;
 };
 
