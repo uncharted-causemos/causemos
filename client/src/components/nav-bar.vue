@@ -156,6 +156,12 @@ export default defineComponent({
       },
     }));
 
+    const getPreviousRouteItemForDrilldown = () => {
+      if (route.query.index_node_id) return indexStructureItem.value;
+      if (route.query.index_projections_node_id) return indexProjectionsItem.value;
+      return quantitativeAnalysisItem.value;
+    };
+
     const siteMap = computed<{ [key: string]: NavBarItem[] }>(() => ({
       home: [],
       newDomainProject: [],
@@ -209,7 +215,7 @@ export default defineComponent({
       ],
       datasetDrilldown: [
         analysisProjectItem.value,
-        quantitativeAnalysisItem.value,
+        getPreviousRouteItemForDrilldown(),
         { icon: 'fa-table', route: null, text: modelOrDatasetName.value ?? 'Dataset drilldown' },
       ],
     }));

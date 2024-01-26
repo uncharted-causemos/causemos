@@ -651,19 +651,18 @@ const dataWarnings = computed(() =>
     : multiCountryProjectionDataWarnings.value
 );
 
-const projectId = computed(() => route.params.project as string);
-const projectType = computed(() => route.params.projectType as string);
-const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => {
+const handleNavigateToDataset = (datacubeId: string) => {
+  if (!selectedNodeId.value) return;
   router.push({
-    name: 'projectionsDataExplorer',
+    name: 'datasetDrilldown',
     params: {
-      projectType: projectType.value,
-      project: projectId.value,
-      analysisId: analysisId.value,
+      projectType: route.params.projectType as string,
+      project: route.params.project as string,
+      datacubeId,
     },
     query: {
-      datacube_id: datacubeId,
-      item_id: datacubeItemId,
+      analysis_id: analysisId.value,
+      index_projections_node_id: selectedNodeId.value,
     },
   });
 };

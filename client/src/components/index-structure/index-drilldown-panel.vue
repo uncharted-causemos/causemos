@@ -246,7 +246,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'delete-edge', value: SelectableIndexElementId): void;
-  (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
+  (e: 'open-drilldown', datacubeId: string, indexElementId: SelectableIndexElementId): void;
   (e: 'save-geo-context', value: string): void;
 }>();
 
@@ -260,9 +260,8 @@ const setDatasetIsInverted = (nodeId: string, newValue: boolean) => {
 };
 
 const navigateToDataset = () => {
-  if (datasetMetadata.value !== null) {
-    const itemId = ''; // TODO: itemId is a qualitative analysis thing that we don't have access to yet. Interface will render but some controls will fail (generate errors)
-    emit('open-drilldown', datasetMetadata.value.id, itemId);
+  if (datasetMetadata.value !== null && props.selectedElementId !== null) {
+    emit('open-drilldown', datasetMetadata.value.id, props.selectedElementId);
   } else {
     throw new Error('Dataset metadata not assigned.  Drill-down aborted.');
   }

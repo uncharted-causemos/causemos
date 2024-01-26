@@ -62,8 +62,6 @@ const route = useRoute();
 const router = useRouter();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const projectId = computed(() => route.params.project as string);
-const projectType = computed(() => route.params.projectType as string);
 
 const {
   analysisName,
@@ -125,17 +123,18 @@ const handleKey = (evt: KeyboardEvent) => {
   }
 };
 
-const handleNavigateToDataset = (datacubeId: string, datacubeItemId: string) => {
+const handleNavigateToDataset = (datacubeId: string, indexElementId: SelectableIndexElementId) => {
+  if (isEdge(indexElementId)) return;
   router.push({
-    name: 'indexResultsDataExplorer',
+    name: 'datasetDrilldown',
     params: {
-      projectType: projectType.value,
-      project: projectId.value,
-      analysisId: analysisId.value,
+      projectType: route.params.projectType as string,
+      project: route.params.project as string,
+      datacubeId,
     },
     query: {
-      datacube_id: datacubeId,
-      item_id: datacubeItemId,
+      analysis_id: analysisId.value,
+      index_node_id: indexElementId,
     },
   });
 };

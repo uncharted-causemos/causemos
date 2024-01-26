@@ -173,7 +173,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'click-chart', timestamp: number, value: number): void;
-  (e: 'open-drilldown', datacubeId: string, datacubeItemId: string): void;
+  (e: 'open-drilldown', datacubeId: string): void;
 }>();
 
 const oppositeEdgeCountToRoot = computed(() => {
@@ -202,8 +202,7 @@ const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVar
 
 const navigateToDataset = () => {
   if (metadata.value !== null) {
-    const itemId = ''; // TODO: itemId is a qualitative analysis thing that we don't have access to yet. Interface will render but some controls will fail (generate errors)
-    emit('open-drilldown', metadata.value.id, itemId);
+    emit('open-drilldown', metadata.value.id);
   } else {
     throw new Error('Dataset metadata not assigned.  Drill-down aborted.');
   }
