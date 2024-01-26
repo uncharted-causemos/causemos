@@ -78,7 +78,11 @@ export default defineComponent({
     const project = computed(() => store.getters['app/project']);
     const projectMetadata = computed(() => store.getters['app/projectMetadata']);
     const route = useRoute();
-    const analysisId = computed(() => route.params.analysisId as string);
+    // New data space pages use `route.query.analysis_id`, while other existing pages use
+    //  `route.params.analysisId`.
+    const analysisId = computed(
+      () => (route.query.analysis_id as string) ?? (route.params.analysisId as string)
+    );
     const analysisName = computed(() => store.getters['app/analysisName']);
 
     const datacubeId = computed(() => (route.params.datacubeId as string) ?? null);
@@ -86,13 +90,13 @@ export default defineComponent({
 
     const analysisProjectItem = computed<NavBarItem>(() => ({
       text: projectMetadata.value.name,
-      icon: 'fa-clone',
+      icon: 'fa-folder',
       route: { name: 'overview', params: { project: project.value } },
     }));
     const datacubeProjectItem = computed<NavBarItem>(() => {
       const navBarItem = {
         text: projectMetadata.value.name,
-        icon: 'fa-connectdevelop',
+        icon: projectMetadata.value.type === 'model' ? 'fa-connectdevelop' : 'fa-table',
         route: {
           name:
             projectMetadata.value.type === 'model' ? 'domainDatacubeOverview' : 'datasetOverview',
@@ -104,7 +108,7 @@ export default defineComponent({
 
     const quantitativeAnalysisItem = computed(() => ({
       text: analysisName.value,
-      icon: 'fa-line-chart',
+      icon: 'fa-list',
       route: {
         name: 'dataComparative',
         params: {
@@ -196,11 +200,17 @@ export default defineComponent({
       ],
       modelDrilldown: [
         analysisProjectItem.value,
-        { route: null, text: modelOrDatasetName.value ?? 'Model drilldown' },
+        quantitativeAnalysisItem.value,
+        {
+          icon: 'fa-connectdevelop',
+          route: null,
+          text: modelOrDatasetName.value ?? 'Model drilldown',
+        },
       ],
       datasetDrilldown: [
         analysisProjectItem.value,
-        { route: null, text: modelOrDatasetName.value ?? 'Dataset drilldown' },
+        quantitativeAnalysisItem.value,
+        { icon: 'fa-table', route: null, text: modelOrDatasetName.value ?? 'Dataset drilldown' },
       ],
     }));
 
