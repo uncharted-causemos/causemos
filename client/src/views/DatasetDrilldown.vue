@@ -55,10 +55,11 @@
           Filter and compare
         </button>
 
-        <div class="media-files">
+        <!-- TODO: re-add support for media files -->
+        <!-- <div class="media-files">
           <span class="subdued un-font-small">This model produces media files.</span>
           <button class="btn btn-default btn-white">View supporting media</button>
-        </div>
+        </div> -->
       </section>
     </div>
     <div class="visualization-container">
@@ -96,7 +97,8 @@
               @map-move="onMapMove"
             />
           </div>
-          <button class="btn btn-default"><i class="fa fa-fw fa-gear" />Map options</button>
+          <!-- TODO: re-add support for map options -->
+          <!-- <button class="btn btn-default"><i class="fa fa-fw fa-gear" />Map options</button> -->
         </div>
         <BarChartPanel
           v-if="breakdownState !== null"
