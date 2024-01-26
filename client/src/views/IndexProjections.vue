@@ -662,7 +662,7 @@ const handleNavigateToDataset = (datacubeId: string) => {
     },
     query: {
       analysis_id: analysisId.value,
-      index_projection_node_id: selectedNodeId.value,
+      index_projections_node_id: selectedNodeId.value,
     },
   });
 };
