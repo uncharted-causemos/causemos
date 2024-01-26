@@ -321,8 +321,14 @@ const isModelRunsInProgressSectionExpanded = ref(false);
   gap: 40px;
   overflow-y: auto;
   height: 850px;
-  // Ensure the top and bottom of the modal are always visible
-  max-height: 80vh;
+  // Adding up conservative height estimates for each of the fixed-height elements on this screen
+  $modal-header-height: 125px;
+  $modal-footer-height: 75px;
+  $vertical-margin-around-modal: 60px;
+  $occupied-space: $modal-header-height + $modal-footer-height + $vertical-margin-around-modal;
+  // Limit the height of this dynamic-height element to the leftover space to ensure the top and
+  //  bottom of the modal are always visible.
+  max-height: calc(100vh - $occupied-space);
 }
 
 .column {
