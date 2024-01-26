@@ -321,7 +321,7 @@ const isModelRunsInProgressSectionExpanded = ref(false);
   gap: 40px;
   overflow-y: auto;
   height: 850px;
-  // Adding up conservative height estimates for each of the fixed-height elements on this screen
+  // Add up conservative height estimates for each of the fixed-height elements on this screen
   $modal-header-height: 125px;
   $modal-footer-height: 75px;
   $vertical-margin-around-modal: 60px;
