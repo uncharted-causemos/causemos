@@ -60,7 +60,7 @@ import { useRoute } from 'vue-router';
 import { mapActions, useStore } from 'vuex';
 import NavbarInsightsPanel from '@/components/insight-manager/navbar-insights-panel.vue';
 import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
-import useModelMetadata from '@/composables/useModelMetadata';
+import useModelOrDatasetName from '@/composables/useModelOrDatasetName';
 
 interface NavBarItem {
   route: { name: string; params: any } | null;
@@ -82,8 +82,7 @@ export default defineComponent({
     const analysisName = computed(() => store.getters['app/analysisName']);
 
     const datacubeId = computed(() => (route.params.datacubeId as string) ?? null);
-    const metadata = useModelMetadata(datacubeId);
-    const datacubeName = computed(() => metadata.value?.name ?? null);
+    const modelOrDatasetName = useModelOrDatasetName(datacubeId);
 
     const analysisProjectItem = computed<NavBarItem>(() => ({
       text: projectMetadata.value.name,
@@ -197,11 +196,11 @@ export default defineComponent({
       ],
       modelDrilldown: [
         analysisProjectItem.value,
-        { route: null, text: datacubeName.value ?? 'Model drilldown' },
+        { route: null, text: modelOrDatasetName.value ?? 'Model drilldown' },
       ],
       datasetDrilldown: [
         analysisProjectItem.value,
-        { route: null, text: datacubeName.value ?? 'Dataset drilldown' },
+        { route: null, text: modelOrDatasetName.value ?? 'Dataset drilldown' },
       ],
     }));
 

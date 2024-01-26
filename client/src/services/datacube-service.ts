@@ -145,6 +145,17 @@ export const getDatacubeById = async (datacubeId: string): Promise<Model | Indic
 };
 
 /**
+ * Get a datacube name by id
+ * @param {string} datacubeId
+ */
+export const getDatacubeNameById = async (datacubeId: string): Promise<string | null> => {
+  const filters = fu.newFilters();
+  fu.setClause(filters, 'id', [datacubeId], 'or', false);
+  const results = await getDatacubes(filters, { from: 0, size: 1, includes: ['name'] });
+  return results?.[0].name ?? null;
+};
+
+/**
  * Get  datacubes by ids
  * @param {string[]} datacubeIds
  */
