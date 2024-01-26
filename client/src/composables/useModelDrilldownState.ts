@@ -124,7 +124,12 @@ export default function useModelOrDatasetDrilldownState(metadata: Ref<Model | In
       if (insightId !== undefined) {
         return;
       }
-      if (analysisId !== previousAnalysisId || analysisItemId !== previousAnalysisItemId) {
+      // isAnalysisItem will be false when a dataset is expanded from an index node.
+      const isAnalysisItem = analysisId !== undefined && analysisItemId !== undefined;
+      if (
+        isAnalysisItem &&
+        (analysisId !== previousAnalysisId || analysisItemId !== previousAnalysisItemId)
+      ) {
         const newState = await getAnalysisItemState(analysisId as string, analysisItemId as string);
         setState(newState);
       }
