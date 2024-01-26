@@ -136,11 +136,13 @@ export const getDatacubeFacets = async (facets: string[], filters: Filters): Pro
 /**
  * Get a datacube by id
  * @param {string} datacubeId
+ * NOTE: if options.includes is set, the return value will not be a full Model or Indicator, it
+ *  will only include the fields specified in options.includes.
  */
-export const getDatacubeById = async (datacubeId: string): Promise<Model | Indicator | null> => {
+export const getDatacubeById = async (datacubeId: string, options = {}) => {
   const filters = fu.newFilters();
   fu.setClause(filters, 'id', [datacubeId], 'or', false);
-  const cubes = await getDatacubes(filters);
+  const cubes = await getDatacubes(filters, options);
   return (cubes?.[0] as Model | Indicator | undefined) ?? null;
 };
 
@@ -149,10 +151,12 @@ export const getDatacubeById = async (datacubeId: string): Promise<Model | Indic
  * @param {string} datacubeId
  */
 export const getDatacubeNameById = async (datacubeId: string): Promise<string | null> => {
-  const filters = fu.newFilters();
-  fu.setClause(filters, 'id', [datacubeId], 'or', false);
-  const results = await getDatacubes(filters, { from: 0, size: 1, includes: ['name'] });
-  return results?.[0].name ?? null;
+  const result = (await getDatacubeById(datacubeId, {
+    from: 0,
+    size: 1,
+    includes: ['name'],
+  })) as { name: string } | null;
+  return result?.name ?? null;
 };
 
 /**
