@@ -129,7 +129,7 @@ export function isModelDrilldownInsight(insight: NewInsight) {
   return breakdownState.modelRunId !== 'indicator';
 }
 
-export function getModelOrDatasetStateViewViewFromRoute(
+export function getModelOrDatasetStateViewFromRoute(
   route: RouteLocationNormalizedLoaded
 ): ModelOrDatasetStateView | undefined {
   if (route.query.analysis_item_id)

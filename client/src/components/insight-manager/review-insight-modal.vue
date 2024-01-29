@@ -185,7 +185,7 @@ import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header
 import { useStore } from 'vuex';
 import InsightUtil, {
   INSIGHT_CAPTURE_CLASS,
-  getModelOrDatasetStateViewViewFromRoute,
+  getModelOrDatasetStateViewFromRoute,
 } from '@/utils/insight-util';
 import {
   Insight,
@@ -700,7 +700,7 @@ const saveInsight = () => {
         image: insightThumbnail.value ?? '',
         annotation_state: annotationAndCropState.value,
         type: 'ModelOrDatasetStateInsight',
-        view: getModelOrDatasetStateViewViewFromRoute(route),
+        view: getModelOrDatasetStateViewFromRoute(route),
         context_id: contextId.value,
         // ASSUMPTION: state has been set before the new insight flow began, so modelOrDatasetState
         //  is not null
