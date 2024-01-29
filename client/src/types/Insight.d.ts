@@ -186,7 +186,13 @@ export type ModelOrDatasetStateView =
       analysisItemId: string;
     }
   // For when a model or dataset is opened from an index
-  | { view: 'indexNodeDrilldown'; datacubeId: string; indexId: string };
+  | { view: 'indexNodeDrilldown'; datacubeId: string; analysisId: string; nodeId: string }
+  | {
+      view: 'indexProjectionsNodeDrilldown';
+      datacubeId: string;
+      analysisId: string;
+      nodeId: string;
+    };
 export interface ModelOrDatasetStateInsight extends NewInsightBase {
   type: 'ModelOrDatasetStateInsight';
   view: ModelOrDatasetStateView;

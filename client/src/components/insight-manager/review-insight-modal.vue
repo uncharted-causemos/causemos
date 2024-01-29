@@ -183,7 +183,10 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { useStore } from 'vuex';
-import InsightUtil, { INSIGHT_CAPTURE_CLASS } from '@/utils/insight-util';
+import InsightUtil, {
+  INSIGHT_CAPTURE_CLASS,
+  getModelOrDatasetStateViewViewFromRoute,
+} from '@/utils/insight-util';
 import {
   Insight,
   InsightMetadata,
@@ -697,12 +700,7 @@ const saveInsight = () => {
         image: insightThumbnail.value ?? '',
         annotation_state: annotationAndCropState.value,
         type: 'ModelOrDatasetStateInsight',
-        view: {
-          view: 'analysisItemDrilldown',
-          analysisId: route.query.analysis_id,
-          analysisItemId: route.query.analysis_item_id,
-          datacubeId: route.params.datacubeId,
-        },
+        view: getModelOrDatasetStateViewViewFromRoute(route),
         context_id: contextId.value,
         // ASSUMPTION: state has been set before the new insight flow began, so modelOrDatasetState
         //  is not null
