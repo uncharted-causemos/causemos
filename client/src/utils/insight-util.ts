@@ -13,6 +13,7 @@ import {
   IndexResultsDataState,
   IndexProjectionsDataState,
   NewInsight,
+  ModelOrDatasetStateView,
 } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
 import {
@@ -34,7 +35,7 @@ import { saveAs } from 'file-saver';
 import pptxgen from 'pptxgenjs';
 import { DataTransform, ProjectType } from '@/types/Enums';
 import { DataAnalysisState, IndexAnalysisState } from '@/types/Analysis';
-import { RouteLocationRaw } from 'vue-router';
+import { RouteLocationNormalizedLoaded, RouteLocationRaw } from 'vue-router';
 import { isBreakdownStateNone } from './datacube-util';
 
 // Used to label elements that should be captured in a screenshot when an insight is taken
@@ -128,6 +129,32 @@ export function isModelDrilldownInsight(insight: NewInsight) {
   return breakdownState.modelRunId !== 'indicator';
 }
 
+export function getModelOrDatasetStateViewFromRoute(
+  route: RouteLocationNormalizedLoaded
+): ModelOrDatasetStateView | undefined {
+  if (route.query.analysis_item_id)
+    return {
+      view: 'analysisItemDrilldown',
+      datacubeId: route.params.datacubeId as string,
+      analysisId: route.query.analysis_id as string,
+      analysisItemId: route.query.analysis_item_id as string,
+    };
+  if (route.query.index_node_id)
+    return {
+      view: 'indexNodeDrilldown',
+      datacubeId: route.params.datacubeId as string,
+      analysisId: route.query.analysis_id as string,
+      nodeId: route.query.index_node_id as string,
+    };
+  if (route.query.index_projections_node_id)
+    return {
+      view: 'indexProjectionsNodeDrilldown',
+      datacubeId: route.params.datacubeId as string,
+      analysisId: route.query.analysis_id as string,
+      nodeId: route.query.index_projections_node_id as string,
+    };
+}
+
 function jumpToInsightContext(
   insight: Insight | NewInsight,
   currentURL: string,
@@ -150,8 +177,35 @@ function jumpToInsightContext(
           analysis_item_id: insight.view.analysisItemId,
         },
       };
+    } else if (insight.view.view === 'indexNodeDrilldown') {
+      return {
+        name: isModelDrilldownInsight(insight) ? 'modelDrilldown' : 'datasetDrilldown',
+        params: {
+          project: insight.project_id,
+          projectType: ProjectType.Analysis,
+          datacubeId: insight.view.datacubeId,
+        },
+        query: {
+          insight_id: insight.id,
+          analysis_id: insight.view.analysisId,
+          index_node_id: insight.view.nodeId,
+        },
+      };
+    } else if (insight.view.view === 'indexProjectionsNodeDrilldown') {
+      return {
+        name: isModelDrilldownInsight(insight) ? 'modelDrilldown' : 'datasetDrilldown',
+        params: {
+          project: insight.project_id,
+          projectType: ProjectType.Analysis,
+          datacubeId: insight.view.datacubeId,
+        },
+        query: {
+          insight_id: insight.id,
+          analysis_id: insight.view.analysisId,
+          index_projections_node_id: insight.view.nodeId,
+        },
+      };
     } else {
-      // TODO: if view is other than 'analysisItemDrilldown'
       return;
     }
   }

@@ -167,10 +167,13 @@ const metadata = useModelMetadata(datacubeId) as Ref<Indicator | null>;
 const { setContextId } = useInsightStore();
 onMounted(() => {
   // If loading analysis item, use the analysis item ID as the context ID.
-  // TODO: If loading from an index node, use the node ID.
+  // If loading from an index node, use the node ID.
   // This is used to determine which insights should be displayed in the navbar dropdown for this
   //  page.
   if (route.query.analysis_item_id) setContextId(route.query.analysis_item_id as string);
+  if (route.query.index_node_id) setContextId(route.query.index_node_id as string);
+  if (route.query.index_projections_node_id)
+    setContextId((route.query.index_projections_node_id as string) + '--projections');
 });
 
 const store = useStore();
