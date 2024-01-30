@@ -80,7 +80,9 @@ const { breakdownState, outputSpecs, spatialAggregation, regionalData, metadata 
 // Default or satellite
 const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
 // Admin, tiles, or dot
-const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+const selectedDataLayer = computed(() =>
+  spatialAggregation.value === 'tiles' ? DATA_LAYER.TILES : DATA_LAYER.ADMIN
+);
 
 const getSelectedLayer = (): string => {
   const adminLevel =
