@@ -45,7 +45,7 @@ const getters: GetterTree<AuthState, any> = {
 const actions: ActionTree<AuthState, any> = {
   async fetchSSO({ commit, dispatch, getters }) {
     // TODO: update this temporary workaround for supporting multiple tabs with oidc
-    // s_access_token and r_access_token must by in sync across tabs
+    // s_access_token and r_access_token must be in sync across tabs
     // see: https://github.com/OpenIDC/mod_auth_openidc/blob/master/src/mod_auth_openidc.c#L3744
     const allowedErrorCodes = ['no_access_token_match'];
 
