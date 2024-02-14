@@ -44,6 +44,11 @@ const getters: GetterTree<AuthState, any> = {
 
 const actions: ActionTree<AuthState, any> = {
   async fetchSSO({ commit, dispatch, getters }) {
+    // TODO: update this temporary workaround for supporting multiple tabs with oidc
+    // s_access_token and r_access_token must by in sync across tabs
+    // see: https://github.com/OpenIDC/mod_auth_openidc/blob/master/src/mod_auth_openidc.c#L3744
+    const allowedErrorCodes = ['no_access_token_match'];
+
     // Fetch or refresh the access token
     const response =
       getters.userToken !== null
@@ -56,7 +61,10 @@ const actions: ActionTree<AuthState, any> = {
     // So check for the error from the url as well.
     const parsedResUrl = new URL(response.url);
     const error = parsedResUrl.searchParams.get('error_code');
-    if (!response.ok || error) {
+
+    const authFailed = error && !allowedErrorCodes.includes(error);
+
+    if (!response.ok || authFailed) {
       dispatch('logout');
       throw new Error('Authentication Failed');
     }
