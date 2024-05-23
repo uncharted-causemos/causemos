@@ -132,8 +132,6 @@ import API from '@/api/api';
 import { modifiedAtSorter, nameSorter, sortItem, SortOptions } from '@/utils/sort/sort-items';
 import { ProjectType } from '@/types/Enums';
 
-const DISPLAYED_FAMILY_LIMIT = 100;
-
 export default defineComponent({
   name: 'Home',
   components: {
@@ -197,7 +195,7 @@ export default defineComponent({
         filtered,
         { date: modifiedAtSorter, name: nameSorter },
         this.selectedDatacubeSortingOption
-      ).slice(0, DISPLAYED_FAMILY_LIMIT);
+      );
     },
   },
   mounted() {
@@ -230,7 +228,7 @@ export default defineComponent({
           this.projectsList,
           { date: modifiedAtSorter, name: nameSorter },
           SortOptions.MostRecent
-        ).slice(0, DISPLAYED_FAMILY_LIMIT);
+        );
       });
     },
     async refreshDomainProjects() {
@@ -272,7 +270,7 @@ export default defineComponent({
         this.projectsList,
         { date: modifiedAtSorter, name: nameSorter },
         this.selectedSortingOption
-      ).slice(0, DISPLAYED_FAMILY_LIMIT);
+      );
     },
     setDatacubeSort(option: SortOptions) {
       this.selectedDatacubeSortingOption = option;
