@@ -6,11 +6,12 @@
       :selected-admin-level="0"
       :disable-pan-zoom="false"
     />
-    <MapLegend :ramp="mapLegendData" :isContinuous="false" />
+    <MapLegend :ramp="mapLegendData" :isContinuous="false" :formatter="d3.format(',.0f')" />
   </div>
 </template>
 
 <script setup lang="ts">
+import * as d3 from 'd3';
 import { computed, ref, watch } from 'vue';
 import RegionMap from '@/components/widgets/region-map.vue';
 import MapLegend from '../widgets/map-legend.vue';

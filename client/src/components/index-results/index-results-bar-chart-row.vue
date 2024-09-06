@@ -5,7 +5,7 @@
         <p class="index-result-table-dataset-country-column">
           {{ `${props.rank}. ${props.rowData.countryName}` }}
         </p>
-        <p>{{ precisionFormatter(props.rowData.value) }}</p>
+        <p>{{ precisionFormatter(props.rowData.value, 0) }}</p>
       </div>
       <div class="bar-background">
         <div
