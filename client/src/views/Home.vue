@@ -9,29 +9,29 @@
     <div class="columns">
       <div class="project-column">
         <div class="title">
-          <h3>Analysis Projects</h3>
-          <button
-            v-tooltip.top-center="'Create a new analysis project'"
-            type="button"
-            class="btn btn-call-to-action"
+          <h3>Analysis projects</h3>
+          <Button
+            label="New analysis project"
             @click="gotoNewProject"
-          >
-            New Analysis Project
-          </button>
+            class="fixed-width-control"
+          />
         </div>
         <div class="controls">
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Search projects..."
-            class="form-control"
+          <InputText
+            v-model="projectListQueryString"
+            placeholder="Search projects"
+            class="flex-1"
           />
-          <dropdown-button
-            :inner-button-label="'Sort by'"
-            :items="sortingOptions"
-            :selected-item="selectedSortingOption"
-            @item-selected="sort"
-          />
+          <FloatLabel class="fixed-width-control">
+            <Select
+              :options="SORTING_OPTIONS"
+              :model-value="selectedSortingOption"
+              @update:model-value="sort"
+              inputId="analysis-project-sort-dropdown"
+              class="labelled-select"
+            />
+            <label for="analysis-project-sort-dropdown">Sort by</label>
+          </FloatLabel>
         </div>
         <div class="projects-list">
           <div class="projects-list-header">
@@ -54,37 +54,40 @@
       </div>
       <div class="project-column">
         <div class="title">
-          <h3>Domain Models and Datasets</h3>
-          <button
-            v-tooltip.top-center="'Create a new domain family project'"
-            type="button"
-            class="btn btn-call-to-action"
+          <h3>Domain models and datasets</h3>
+          <Button
+            label="New domain model project"
             @click="gotoNewFamilyProject"
-          >
-            New Domain Model Project
-          </button>
+            class="fixed-width-control"
+          />
         </div>
         <div class="controls">
-          <radio-button-group
-            :selected-button-value="selectedDataType"
-            :buttons="[
+          <SelectButton
+            :options="[
               { label: 'Domain Models', value: 'models' },
               { label: 'Datasets', value: 'datasets' },
             ]"
-            @button-clicked="setDataType"
+            :model-value="selectedDataType"
+            option-label="label"
+            option-value="value"
+            @update:model-value="setSelectedDataType"
           />
-          <input
-            v-model="searchDomainDatacubes"
-            type="text"
-            :placeholder="`Search ${selectedDataType}...`"
-            class="form-control"
+          <InputText
+            v-model="domainDatacubesQueryString"
+            :placeholder="`Search ${selectedDataType}`"
+            class="flex-1"
           />
-          <dropdown-button
-            :inner-button-label="'Sort by'"
-            :items="sortingOptions"
-            :selected-item="selectedDatacubeSortingOption"
-            @item-selected="setDatacubeSort"
-          />
+
+          <FloatLabel class="fixed-width-control">
+            <Select
+              :options="SORTING_OPTIONS"
+              :model-value="selectedDatacubeSortingOption"
+              @update:model-value="setDatacubeSort"
+              inputId="analysis-project-sort-dropdown"
+              class="labelled-select"
+            />
+            <label for="analysis-project-sort-dropdown">Sort by</label>
+          </FloatLabel>
         </div>
         <div class="projects-list">
           <div v-if="selectedDataType === 'models'" class="projects-list-header">
@@ -117,170 +120,162 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import _ from 'lodash';
-import { defineComponent } from 'vue';
-import { mapActions } from 'vuex';
+import { computed, onMounted, ref } from 'vue';
 import projectService from '@/services/project-service';
 import ProjectCard from '@/components/home/project-card.vue';
 import DomainDatacubeProjectCard from '@/components/home/domain-datacube-project-card.vue';
-import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { Project, DomainProject, DatasetInfo, DatacubeFamily } from '@/types/Common';
 import domainProjectService from '@/services/domain-project-service';
-import DropdownButton from '@/components/dropdown-button.vue';
 import API from '@/api/api';
 import { modifiedAtSorter, nameSorter, sortItem, SortOptions } from '@/utils/sort/sort-items';
 import { ProjectType } from '@/types/Enums';
+import SelectButton from 'primevue/selectbutton';
+import useOverlay from '@/composables/useOverlay';
+import { useRouter } from 'vue-router';
+import Button from 'primevue/button';
+import InputText from 'primevue/inputtext';
+import FloatLabel from 'primevue/floatlabel';
+import Select from 'primevue/select';
 
-export default defineComponent({
-  name: 'Home',
-  components: {
-    ProjectCard,
-    DomainDatacubeProjectCard,
-    DropdownButton,
-    RadioButtonGroup,
-  },
-  data: () => ({
-    search: '',
-    projectsList: [] as Project[],
-    showSortingDropdown: false,
-    sortingOptions: Object.values(SortOptions),
-    selectedSortingOption: SortOptions.MostRecent,
-    searchDomainDatacubes: '',
-    projectsListDomainDatacubes: [] as DomainProject[],
-    datasetsList: [] as DatasetInfo[],
-    showSortingDropdownDomainDatacubes: false,
-    selectedDatacubeSortingOption: SortOptions.MostRecent,
-    selectedDataType: 'models',
+const SORTING_OPTIONS = Object.values(SortOptions);
 
-    domainProjectStats: {} as { [key: string]: any },
-  }),
-  computed: {
-    filteredProjects(): Project[] {
-      return this.projectsList.filter((project) => {
-        return project.name.toLowerCase().includes(this.search.toLowerCase());
-      });
-    },
-    filteredFamilyList(): DatacubeFamily[] {
-      const familyList: DatacubeFamily[] =
-        this.selectedDataType === 'models'
-          ? this.projectsListDomainDatacubes.map((domainModel) => {
-              const stats = this.domainProjectStats[domainModel.name];
-              return {
-                id: domainModel.id || '',
-                name: domainModel.name || '',
-                type: domainModel.type,
-                numReady: stats && stats.READY ? stats.READY : 0,
-                numDraft: stats && stats.REGISTERED ? stats.REGISTERED : 0,
-                source:
-                  (domainModel.source ||
-                    (domainModel.maintainer && domainModel.maintainer[0]?.organization)) ??
-                  '',
-                modified_at: domainModel.modified_at || domainModel.created_at || 0,
-              };
-            })
-          : this.datasetsList.map((dataset) => ({
-              id: dataset.data_id,
-              name: dataset.name,
-              type: 'dataset',
-              numReady: dataset.indicator_count,
-              numDraft: 0,
-              source: dataset.source ?? '',
-              modified_at: dataset.created_at,
-            }));
-      const filtered = familyList.filter((family) =>
-        family.name.toLowerCase().includes(this.searchDomainDatacubes.toLowerCase())
-      );
-      return sortItem(
-        filtered,
-        { date: modifiedAtSorter, name: nameSorter },
-        this.selectedDatacubeSortingOption
-      );
-    },
-  },
-  mounted() {
-    this.refresh();
-    this.refreshDomainProjects();
-  },
-  methods: {
-    ...mapActions({
-      enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay',
-    }),
-    deleteProject(project: Project) {
-      this.enableOverlay(`Deleting project '${project.name}'`);
-      projectService.deleteProject(project.id).then(() => {
-        this.disableOverlay();
-        this.refresh();
-      });
-    },
-    deleteDomainProject(project: DomainProject) {
-      this.enableOverlay(`Deleting domain model project '${project.name}'`);
-      domainProjectService.deleteProject(project.id ?? '').then(() => {
-        this.disableOverlay();
-        this.refreshDomainProjects();
-      });
-    },
-    refresh() {
-      projectService.getProjects().then((projects) => {
-        this.projectsList = projects;
-        this.projectsList = sortItem(
-          this.projectsList,
-          { date: modifiedAtSorter, name: nameSorter },
-          SortOptions.MostRecent
-        );
-      });
-    },
-    async refreshDomainProjects() {
-      this.enableOverlay('Loading projects');
-      this.domainProjectStats = await domainProjectService.getProjectsStats();
+const projectListQueryString = ref('');
+const projectsList = ref<Project[]>([]);
 
-      const domainProjectSearchFields = {
-        // DomainProjectFilterFields
-        type: 'model',
-      };
-      const existingProjects: DomainProject[] = await domainProjectService.getProjects(
-        domainProjectSearchFields
-      );
+const selectedSortingOption = ref(SortOptions.MostRecent);
+const sort = (option: SortOptions) => {
+  selectedSortingOption.value = option;
+  projectsList.value = sortItem(
+    projectsList.value,
+    { date: modifiedAtSorter, name: nameSorter },
+    selectedSortingOption.value
+  );
+};
 
-      this.projectsListDomainDatacubes = existingProjects;
+const domainDatacubesQueryString = ref('');
+const projectsListDomainDatacubes = ref<DomainProject[]>([]);
+const datasetsList = ref<DatasetInfo[]>([]);
 
-      const { data } = await API.get('maas/datacubes/datasets');
-      this.datasetsList = data;
+const selectedDatacubeSortingOption = ref(SortOptions.MostRecent);
+const setDatacubeSort = (option: SortOptions) => {
+  selectedDatacubeSortingOption.value = option;
+};
 
-      this.disableOverlay();
-    },
-    async gotoNewProject() {
-      const id = await projectService.createProject('Untitled project', 'Project description');
-      this.$router.push({
-        name: 'overview',
-        params: { project: id, projectType: ProjectType.Analysis },
-      });
-    },
-    gotoNewFamilyProject() {
-      this.$router.push('newDomainProject');
-    },
-    toggleSortingDropdown() {
-      this.showSortingDropdown = !this.showSortingDropdown;
-    },
-    sort(option: SortOptions) {
-      this.selectedSortingOption = option;
-      this.showSortingDropdown = false;
-      this.projectsList = sortItem(
-        this.projectsList,
-        { date: modifiedAtSorter, name: nameSorter },
-        this.selectedSortingOption
-      );
-    },
-    setDatacubeSort(option: SortOptions) {
-      this.selectedDatacubeSortingOption = option;
-      this.showSortingDropdownDomainDatacubes = false;
-    },
-    setDataType(type: string) {
-      this.selectedDataType = type;
-    },
-  },
+const selectedDataType = ref('models');
+const setSelectedDataType = (type: string) => {
+  selectedDataType.value = type;
+};
+
+const domainProjectStats = ref<{ [key: string]: any }>({});
+
+const filteredProjects = computed(() =>
+  projectsList.value.filter((project) =>
+    project.name.toLowerCase().includes(projectListQueryString.value.toLowerCase())
+  )
+);
+
+const filteredFamilyList = computed(() => {
+  const familyList: DatacubeFamily[] =
+    selectedDataType.value === 'models'
+      ? projectsListDomainDatacubes.value.map((domainModel) => {
+          const stats = domainProjectStats.value[domainModel.name];
+          return {
+            id: domainModel.id || '',
+            name: domainModel.name || '',
+            type: domainModel.type,
+            numReady: stats && stats.READY ? stats.READY : 0,
+            numDraft: stats && stats.REGISTERED ? stats.REGISTERED : 0,
+            source:
+              (domainModel.source ||
+                (domainModel.maintainer && domainModel.maintainer[0]?.organization)) ??
+              '',
+            modified_at: domainModel.modified_at || domainModel.created_at || 0,
+          };
+        })
+      : datasetsList.value.map((dataset) => ({
+          id: dataset.data_id,
+          name: dataset.name,
+          type: 'dataset',
+          numReady: dataset.indicator_count,
+          numDraft: 0,
+          source: dataset.source ?? '',
+          modified_at: dataset.created_at,
+        }));
+  const filtered = familyList.filter((family) =>
+    family.name.toLowerCase().includes(domainDatacubesQueryString.value.toLowerCase())
+  );
+  return sortItem(
+    filtered,
+    { date: modifiedAtSorter, name: nameSorter },
+    selectedDatacubeSortingOption.value
+  );
 });
+const refreshProjects = () => {
+  projectService.getProjects().then((projects) => {
+    projectsList.value = projects;
+    projectsList.value = sortItem(
+      projectsList.value,
+      { date: modifiedAtSorter, name: nameSorter },
+      SortOptions.MostRecent
+    );
+  });
+};
+
+const refreshDomainProjects = async () => {
+  enableOverlay('Loading projects');
+  domainProjectStats.value = await domainProjectService.getProjectsStats();
+
+  const domainProjectSearchFields = {
+    // DomainProjectFilterFields
+    type: 'model',
+  };
+  const existingProjects: DomainProject[] = await domainProjectService.getProjects(
+    domainProjectSearchFields
+  );
+
+  projectsListDomainDatacubes.value = existingProjects;
+
+  const { data } = await API.get('maas/datacubes/datasets');
+  datasetsList.value = data;
+
+  disableOverlay();
+};
+
+onMounted(() => {
+  refreshProjects();
+  refreshDomainProjects();
+});
+
+const { enable: enableOverlay, disable: disableOverlay } = useOverlay();
+
+const deleteProject = (project: Project) => {
+  enableOverlay(`Deleting project '${project.name}'`);
+  projectService.deleteProject(project.id).then(() => {
+    disableOverlay();
+    refreshProjects();
+  });
+};
+const deleteDomainProject = (project: DomainProject) => {
+  enableOverlay(`Deleting domain model project '${project.name}'`);
+  domainProjectService.deleteProject(project.id ?? '').then(() => {
+    disableOverlay();
+    refreshDomainProjects();
+  });
+};
+
+const router = useRouter();
+const gotoNewProject = async () => {
+  const id = await projectService.createProject('Untitled project', 'Project description');
+  router.push({
+    name: 'overview',
+    params: { project: id, projectType: ProjectType.Analysis },
+  });
+};
+const gotoNewFamilyProject = () => {
+  router.push('newDomainProject');
+};
 </script>
 
 <style lang="scss" scoped>
@@ -299,7 +294,7 @@ $padding-size: 12.5vh;
   flex: 1;
   min-height: 0;
   padding: 2rem;
-  background-color: $tinted-background;
+  background-color: var(--p-surface-50);
 }
 
 .logo-container {
@@ -383,17 +378,20 @@ $padding-size: 12.5vh;
 
 .controls {
   display: flex;
-  justify-content: space-between;
+  gap: 1rem;
+}
 
-  input[type='text'] {
-    padding: 8px;
-    width: 250px;
-    margin-right: 10px;
-  }
+.fixed-width-control {
+  width: 20rem;
+}
 
-  .form-control {
-    background: #fff;
-  }
+.flex-1 {
+  flex: 1;
+  min-width: 0;
+}
+
+.labelled-select {
+  width: 100%;
 }
 
 .project-column {
@@ -402,6 +400,7 @@ $padding-size: 12.5vh;
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  gap: 2rem;
 
   &:not(:first-child) {
     margin-left: 20px;
