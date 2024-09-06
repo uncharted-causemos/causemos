@@ -3,12 +3,7 @@
   // Extension identifier format: ${publisher}.${name}. Example: vscode.csharp
 
   // List of extensions which should be recommended for users of this workspace.
-  "recommendations": [
-    "Vue.volar",
-    // vscode-typescript-vue-plugin is not needed with Voloar Takeover Mode
-    // For more information, see: https://vuejs.org/guide/typescript/overview.html#volar-takeover-mode
-    "Vue.vscode-typescript-vue-plugin"
-  ],
+  "recommendations": ["Vue.volar"],
   // List of extensions recommended by VS Code that should not be recommended for users of this workspace.
   "unwantedRecommendations": []
 }
