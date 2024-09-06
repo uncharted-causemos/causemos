@@ -2,87 +2,73 @@
   <div class="map-legend-container">
     <svg ref="colorRamp"></svg>
     <div class="label-container">
-      <span v-if="ramp.length > 0" class="color-label">
-        {{ formatter(ramp[0].minLabel) }}
+      <span v-if="props.ramp.length > 0" class="color-label">
+        {{ formatter(props.ramp[0].minLabel) }}
       </span>
-      <span v-for="bin in ramp" :key="bin.color" class="color-label">
+      <span v-for="bin in props.ramp" :key="bin.color" class="color-label">
         {{ formatter(bin.maxLabel) }}
       </span>
     </div>
   </div>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import * as d3 from 'd3';
-import { defineComponent, PropType } from 'vue';
+import { ref, watch } from 'vue';
 import { MapLegendColor } from '@/types/Common';
 import { exponentFormatter, valueFormatter } from '@/utils/string-util';
 import { ramp } from '@/utils/colors-util';
 
-export default defineComponent({
-  name: 'MapLegend',
-  emits: [],
-  props: {
-    ramp: {
-      type: Array as PropType<MapLegendColor[]>,
-      default: [],
-    },
-    isContinuous: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  watch: {
-    ramp() {
-      this.refresh();
-    },
-    isContinuous() {
-      this.refresh();
-    },
-  },
-  mounted() {
-    this.refresh();
-  },
-  methods: {
-    refresh() {
-      const n = this.ramp.length;
-      if (n === 0) return;
-      const colors = this.ramp.map((d) => d.color);
-      const refSelection = d3.select((this.$refs as any).colorRamp);
-      refSelection.selectAll('*').remove();
-      refSelection
-        .attr('viewBox', '0 0 1 ' + n)
-        .attr('preserveAspectRatio', 'none')
-        .style('display', 'block');
+const props = defineProps<{
+  ramp: MapLegendColor[];
+  isContinuous: boolean;
+  formatter?: (value: number) => string;
+}>();
+const colorRamp = ref<SVGElement>();
 
-      if (this.isContinuous) {
-        refSelection
-          .append('image')
-          .attr('width', '100%')
-          .attr('height', '100%')
-          .attr('preserveAspectRatio', 'none')
-          .attr('href', ramp(d3.interpolateRgbBasis(colors))?.toDataURL() || '');
-      } else {
-        const margin = 0.01;
-        refSelection
-          .selectAll('rect')
-          .data(this.ramp)
-          .enter()
-          .append('rect')
-          .style('fill', (d) => d.color)
-          .attr('y', (d, i) => n - 1 - i + margin)
-          .attr('width', 1)
-          .attr('height', 1 - margin * 2);
-      }
-    },
-    formatter(value: number) {
-      const result = valueFormatter(value);
-      if (result.length > 12) {
-        return exponentFormatter(value);
-      }
-      return result;
-    },
-  },
-});
+const refresh = () => {
+  const n = props.ramp.length;
+  if (n === 0 || colorRamp.value === undefined) return;
+  const colors = props.ramp.map((d) => d.color);
+  const refSelection = d3.select(colorRamp.value);
+  refSelection.selectAll('*').remove();
+  refSelection
+    .attr('viewBox', '0 0 1 ' + n)
+    .attr('preserveAspectRatio', 'none')
+    .style('display', 'block');
+
+  if (props.isContinuous) {
+    refSelection
+      .append('image')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('preserveAspectRatio', 'none')
+      .attr('href', ramp(d3.interpolateRgbBasis(colors))?.toDataURL() || '');
+  } else {
+    const margin = 0.01;
+    refSelection
+      .selectAll('rect')
+      .data(props.ramp)
+      .enter()
+      .append('rect')
+      .style('fill', (d) => d.color)
+      .attr('y', (d, i) => n - 1 - i + margin)
+      .attr('width', 1)
+      .attr('height', 1 - margin * 2);
+  }
+};
+
+watch([() => props.ramp, () => props.isContinuous], refresh, { immediate: true });
+
+const formatter = (value: number) => {
+  if (props.formatter !== undefined) {
+    return props.formatter(value);
+  }
+  const result = valueFormatter(value);
+  if (result.length > 12) {
+    return exponentFormatter(value);
+  }
+  return result;
+};
 </script>
 <style lang="scss" scoped>
 $font-size: 12px;
