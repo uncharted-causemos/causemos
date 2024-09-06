@@ -22,6 +22,7 @@
     "!*.{js,ts,vue}": "prettier --write --ignore-unknown"
   },
   "dependencies": {
+    "@primevue/themes": "^4.0.5",
     "@uncharted.software/facets-core": "^3.1.0",
     "@uncharted.software/facets-plugins": "^3.1.0",
     "@uncharted.software/lex": "^1.0.0",
@@ -48,6 +49,7 @@
     "pdfjs-dist": "^2.10.377",
     "pptxgenjs": "^3.5.0",
     "preact": "^8.3.1",
+    "primevue": "^4.0.5",
     "qs": "^6.5.2",
     "svg-flowgraph": "0.5.5",
     "uuid": "^8.3.2",
