@@ -2,9 +2,10 @@
   <nav class="navbar-container" v-if="isNavbarVisible">
     <div class="navbar-left-group">
       <a href="#/" class="nav-item nav-item--logo clickable">
-        <img class="logo" src="../assets/causemos-icon-white.svg" alt="CauseMos logo" />
+        <img class="logo" src="../assets/causemos-logo-colour.svg" alt="CauseMos logo" />
       </a>
       <template v-for="(navItem, index) of navItems" :key="index">
+        <i v-if="index !== 0" class="fa fa-fw fa-caret-right breadcrumb-caret" />
         <!-- ASSUMPTION: navItem.route is not null for all navItems except for the last one -->
         <router-link
           v-if="index !== navItems.length - 1"
@@ -260,17 +261,17 @@ export default defineComponent({
   height: $navbar-outer-height;
   display: flex;
   justify-content: space-between;
-  background: $accent-darkest;
-  padding: 0 15px;
+  background: var(--p-surface-0);
+  padding: 0.5rem;
+  padding-right: 1rem;
+  border-bottom: 1px solid var(--p-content-border-color);
+  transition: left var(--p-transition-duration);
 }
 
 .navbar-left-group,
 .navbar-right-group {
   display: flex;
-
-  & > .nav-item:not(:first-child) {
-    margin-left: 10px;
-  }
+  gap: 1rem;
 }
 
 .trailing {
@@ -281,54 +282,54 @@ export default defineComponent({
   display: flex;
   align-items: center;
   text-decoration: none;
+  border-radius: var(--p-border-radius-md);
   padding: 0 10px;
-
-  i {
-    margin-right: 5px;
-  }
+  gap: 0.25rem;
 
   .nav-item-label,
   i {
-    color: rgba(255, 255, 255, 0.71);
-    font-size: $font-size-large;
+    color: var(--p-text-muted-color);
+  }
+
+  &.clickable {
+    cursor: pointer;
+    transition: background-color var(--p-transition-duration) ease;
   }
 }
 
-.clickable {
-  cursor: pointer;
-}
-
-.nav-item.clickable:hover {
-  background: rgba(255, 255, 255, 0.2);
-
-  .nav-item-label,
-  i {
-    color: white;
+.nav-item.clickable {
+  &:hover {
+    color: var(--p-text-color);
+    background-color: var(--p-primary-50);
   }
 }
 
 .nav-item.active {
   .nav-item-label,
   i {
-    color: white;
-  }
-  .nav-item-label {
-    font-weight: 600;
+    color: var(--p-text-color);
   }
 }
 
-$logo-size: 28px;
+.breadcrumb-caret {
+  color: var(--p-surface-300);
+  align-self: center;
+}
+
+// Logo
 
 .nav-item--logo {
-  padding: calc(#{$navbar-outer-height - $logo-size} / 2);
+  padding: 0;
+  margin-right: 2rem;
 }
 
 .logo {
-  height: $logo-size;
+  height: 130%;
   position: relative;
-  // Nudge the logo up a little bit so it's more visually centered
-  bottom: calc(#{$logo-size} / 10);
+  bottom: 10%;
 }
+
+// Insights
 
 .insights-controls {
   display: flex;

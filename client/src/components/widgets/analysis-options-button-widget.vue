@@ -103,12 +103,13 @@ button {
   height: 0.75 * $navbar-outer-height;
   width: 0.75 * $navbar-outer-height;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--p-surface-50);
+  color: var(--p-text-muted-color);
   font-size: $font-size-large;
+  cursor: pointer;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
+    color: var(--p-text-color);
   }
 }
 
