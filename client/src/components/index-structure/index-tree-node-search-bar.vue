@@ -9,7 +9,7 @@
         v-model="searchText"
         placeholder="Type a concept"
       />
-      <button class="btn btn-default" @click="emit('cancel')">Cancel</button>
+      <Button label="Cancel" severity="secondary" @click="emit('cancel')" />
     </div>
     <div class="search-filter-container flex">
       <p class="subdued">Filter datasets</p>
@@ -119,6 +119,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import { getCountryList } from '@/services/region-service';
 import { CountryFilter } from '@/types/Analysis';
 import { defaultCountryFilters } from '@/services/analysis-service';
+import Button from 'primevue/button';
 
 const SEARCH_DEBOUNCE_DELAY = 500;
 

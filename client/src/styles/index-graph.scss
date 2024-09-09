@@ -124,12 +124,17 @@ $index-graph-padding-vertical: 40px;
   background: white;
   width: $index-tree-node-width;
   height: fit-content;
-  border: 1px solid $un-color-black-30;
+  --border-colour: var(--p-surface-300);
+  // This HTML element always has a 1px border, but we use pseudoelements to
+  //  render thicker borders when the node is active. We use --border-width to
+  //  keep those elements in sync.
+  --border-width: 1px;
+  border: 1px solid var(--border-colour);
   border-radius: 3px;
 }
 
 @mixin index-tree-node-hover() {
-  border-color: $accent-main;
+  --border-colour: var(--p-primary-400);
   cursor: pointer;
 }
 
@@ -138,9 +143,10 @@ $index-graph-padding-vertical: 40px;
 //  search results) need to expand to take the full width of the node.
 $node-content-horizontal-padding: 10px;
 // Standard padding that's applied to each element within the node by default
-$node-content-vertical-padding: 5px;
+$node-content-top-padding: 5px;
+$node-content-bottom-padding: $node-content-horizontal-padding;
 @mixin index-tree-node-content() {
-  padding: $node-content-vertical-padding $node-content-horizontal-padding;
+  padding: $node-content-top-padding $node-content-horizontal-padding $node-content-bottom-padding;
 }
 
 @mixin arrow-head($color: $un-color-black-30, $width: 5px, $height: 5px) {
