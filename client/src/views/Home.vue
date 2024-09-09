@@ -7,7 +7,7 @@
       </div>
     </div>
     <div class="columns">
-      <div class="project-column">
+      <Panel :pt="{ content: { class: 'project-column' } }" class="panel">
         <div class="title">
           <h3>Analysis projects</h3>
           <Button
@@ -51,8 +51,9 @@
             />
           </div>
         </div>
-      </div>
-      <div class="project-column">
+      </Panel>
+
+      <Panel :pt="{ content: { class: 'project-column' } }" class="panel">
         <div class="title">
           <h3>Domain models and datasets</h3>
           <Button
@@ -115,7 +116,7 @@
             />
           </div>
         </div>
-      </div>
+      </Panel>
     </div>
   </div>
 </template>
@@ -138,6 +139,7 @@ import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import FloatLabel from 'primevue/floatlabel';
 import Select from 'primevue/select';
+import Panel from 'primevue/panel';
 
 const SORTING_OPTIONS = Object.values(SortOptions);
 
@@ -283,10 +285,10 @@ const gotoNewFamilyProject = () => {
 $padding-size: 12.5vh;
 
 .home-container {
-  background: white;
   height: $content-full-height;
   display: flex;
   flex-direction: column;
+  background-color: var(--p-surface-50);
 }
 
 .columns {
@@ -294,7 +296,9 @@ $padding-size: 12.5vh;
   flex: 1;
   min-height: 0;
   padding: 2rem;
-  background-color: var(--p-surface-50);
+  width: 1400px;
+  align-self: center;
+  gap: 20px;
 }
 
 .logo-container {
@@ -319,6 +323,7 @@ $padding-size: 12.5vh;
 .title {
   display: flex;
   align-items: center;
+  margin-bottom: 2rem;
 
   h3 {
     flex: 1;
@@ -331,19 +336,24 @@ $padding-size: 12.5vh;
 
 .projects-list {
   flex: 1;
-  overflow: hidden;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 
   .projects-list-header {
     display: flex;
-    margin: 5px 0;
     align-items: flex-end;
     line-height: 20px;
-    min-height: 2 * 20px;
-    padding-left: 10px;
-    // Add 15px right padding to accommodate for scrollbar
-    padding-right: 25px;
+    padding: 0.5rem 1rem;
+    // Add right padding to accommodate for scrollbar
+    overflow: hidden;
+    scrollbar-gutter: stable;
+    color: var(--p-text-muted-color);
+    background: var(--p-surface-50);
+    border-radius: var(--p-border-radius-sm);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
   }
 
   .projects-list-elements {
@@ -394,16 +404,20 @@ $padding-size: 12.5vh;
   width: 100%;
 }
 
-.project-column {
+.panel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+:deep(.project-column) {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  gap: 2rem;
-
-  &:not(:first-child) {
-    margin-left: 20px;
-  }
+  gap: 1rem;
+  position: absolute;
+  inset: 0;
+  padding: 2rem;
 }
 </style>
