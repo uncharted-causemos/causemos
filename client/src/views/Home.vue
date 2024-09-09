@@ -288,6 +288,7 @@ $padding-size: 12.5vh;
   height: $content-full-height;
   display: flex;
   flex-direction: column;
+  align-items: center;
   background-color: var(--p-surface-50);
 }
 
@@ -296,8 +297,8 @@ $padding-size: 12.5vh;
   flex: 1;
   min-height: 0;
   padding: 2rem;
-  width: 1600px;
-  align-self: center;
+  width: 100%;
+  max-width: 1600px;
   gap: 20px;
 }
 
