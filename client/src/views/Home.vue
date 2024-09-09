@@ -296,7 +296,7 @@ $padding-size: 12.5vh;
   flex: 1;
   min-height: 0;
   padding: 2rem;
-  width: 1400px;
+  width: 1600px;
   align-self: center;
   gap: 20px;
 }
@@ -346,20 +346,21 @@ $padding-size: 12.5vh;
     align-items: flex-end;
     line-height: 20px;
     padding: 0.5rem 1rem;
-    // Add right padding to accommodate for scrollbar
-    overflow: hidden;
-    scrollbar-gutter: stable;
     color: var(--p-text-muted-color);
     background: var(--p-surface-50);
     border-radius: var(--p-border-radius-sm);
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
+    // Add right padding to accommodate for scrollbar
+    overflow: hidden;
+    scrollbar-gutter: stable both-edges;
   }
 
   .projects-list-elements {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    scrollbar-gutter: stable both-edges;
 
     & > *:not(:first-child) {
       margin-top: 1px;
