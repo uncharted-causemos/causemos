@@ -1,12 +1,28 @@
 <template>
   <div class="index-action-bar-container">
-    <button class="btn btn-default" @click="addConcept">Add concept</button>
-    <button class="btn btn-default" @click="viewProjections">View projections</button>
+    <Button
+      icon="fa fa-plus"
+      label="Add concept"
+      severity="secondary"
+      @click="addConcept"
+      style="width: 240px"
+    />
+    <div class="group">
+      <Button label="View projections" severity="secondary" @click="viewProjections" />
+      <Button
+        label="View region ranking results"
+        @click="viewIndexResults"
+        :disabled="!canViewResults"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import useIndexTree from '@/composables/useIndexTree';
 import { ProjectType } from '@/types/Enums';
+import { indexNodeTreeContainsDataset } from '@/utils/index-tree-util';
+import Button from 'primevue/button';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -32,6 +48,19 @@ const viewProjections = () => {
     },
   });
 };
+const viewIndexResults = () => {
+  router.push({
+    name: 'indexResults',
+    params: {
+      project: project.value,
+      analysisId: analysisId.value,
+      projectType: ProjectType.Analysis,
+    },
+  });
+};
+
+const indexTree = useIndexTree();
+const canViewResults = computed(() => indexNodeTreeContainsDataset(indexTree.tree.value));
 </script>
 
 <style scoped lang="scss">
@@ -41,16 +70,16 @@ const viewProjections = () => {
 .index-action-bar-container {
   display: flex;
   flex-direction: row;
-  align-items: center;
-  padding: 5px 30px;
-  gap: 40px;
-
-  height: 51px;
-  background: white;
-  border-bottom: 1px solid $un-color-black-10;
+  justify-content: space-between;
+  padding: 1rem;
+  padding-left: 30px;
+  background: var(--p-surface-0);
+  border-bottom: 1px solid var(--p-content-border-color);
 }
 
-button {
-  width: 240px;
+.group {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
 }
 </style>
