@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Button from 'primevue/button';
 import { onMounted, ref } from 'vue';
 
 const props = defineProps<{
@@ -42,13 +43,13 @@ const addGeoContext = () => {
 
 <template>
   <div class="geoContext subdued">
-    <button
+    <Button
       v-if="!editGeoContext && geoContextString.length === 0"
-      class="btn btn-sm btn-default"
+      label="Add geographic context"
+      icon="fa fa-globe"
+      outlined
       @click="addGeoContext"
-    >
-      <i class="fa fa-globe" />&nbsp;Add geographic context
-    </button>
+    />
     <div class="show-geo-context" v-if="!editGeoContext && geoContextString.length > 0">
       <p v-if="displayListInComponent" class="subdued">in {{ geoContextString }}</p>
       <button class="btn btn-sm btn-default" @click="toggleGeoContext">

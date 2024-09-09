@@ -20,22 +20,20 @@
         />
       </template>
       <div v-else-if="showEditName" class="rename content flex">
-        <input
+        <InputText
           v-focus
           class="form-control"
-          type="text"
           :placeholder="renameInputTextPlaceholder"
           v-model="renameInputText"
           @keyup.escape="cancelRename"
           @keyup.enter="handleRenameDone"
         />
-        <button
-          class="btn btn-default"
+        <Button
+          label="Done"
+          severity="secondary"
           @click="handleRenameDone"
           :disabled="renameInputText === '' && renameInputTextPlaceholder === ''"
-        >
-          Done
-        </button>
+        />
       </div>
       <div v-else class="header content">
         <div class="name">
@@ -63,29 +61,21 @@
         >
           {{ dataSourceText }}
         </p>
-        <button
+        <Button
           v-if="!showEditName"
-          class="btn btn-default full-width-button"
+          class="full-width-button"
+          label="Add input concept"
+          severity="secondary"
           @click.stop="emit('create-child', props.nodeData.id)"
-        >
-          Add input concept
-        </button>
-        <button
+        />
+        <Button
           v-if="showAttachDatasetButton"
-          class="btn btn-default full-width-button button-top-margin"
+          class="full-width-button button-top-margin"
+          label="Attach dataset"
+          severity="secondary"
+          :icon="`fa fa-fw ${DATASET_ICON}`"
           @click="isSearchingForDataset = true"
-        >
-          <i class="fa fa-fw" :class="DATASET_ICON" />
-          Attach dataset
-        </button>
-        <button
-          v-if="showSeeResultsButton"
-          class="btn btn-sm btn-call-to-action full-width-button button-top-margin"
-          :disabled="!canViewResults"
-          @click="seeResults"
-        >
-          See results
-        </button>
+        />
       </div>
       <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)" class="content">
         <div class="flex dataset-label" :style="{ color: DATASET_COLOR }">
@@ -120,7 +110,7 @@ import {
   isOutputIndexNode,
   getNodeDataSourceText,
   DATASET_COLOR,
-  indexNodeTreeContainsDataset,
+  hasChildren,
 } from '@/utils/index-tree-util';
 import OptionsButton from '@/components/widgets/options-button.vue';
 import IndexTreeNodeSearchBar from '@/components/index-structure/index-tree-node-search-bar.vue';
@@ -128,12 +118,11 @@ import IndexTreeNodeAdvancedSearchButton from '@/components/index-structure/inde
 import { OptionButtonMenu, MENU_OPTIONS } from '@/utils/index-common-util';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
 import useIndexTree from '@/composables/useIndexTree';
-import { useRoute, useRouter } from 'vue-router';
-import { useStore } from 'vuex';
-import { ProjectType } from '@/types/Enums';
 import IndexStructureRecommendations from './index-structure-recommendations.vue';
 import useIndexWorkBench from '@/composables/useIndexWorkBench';
 import { CountryFilter } from '@/types/Analysis';
+import InputText from 'primevue/inputtext';
+import Button from 'primevue/button';
 
 interface Props {
   nodeData: ConceptNode;
@@ -184,6 +173,9 @@ const classObject = computed(() => ({
   disabled: disableInteraction.value,
   'highlight-on-hover': canSelectNode.value,
   'click-not-allowed': props.isConnecting && !canSelectNode.value,
+  'has-children': hasChildren(props.nodeData),
+  'is-first-child-opposite-polarity':
+    hasChildren(props.nodeData) && props.nodeData.components[0].isOppositePolarity,
 }));
 
 const selectNode = () => {
@@ -285,27 +277,7 @@ const showAttachDatasetButton = computed(
     !showEditName.value
 );
 
-const showSeeResultsButton = computed(
-  () => isOutputIndexNode(props.nodeData) && !showDatasetSearch.value && !showEditName.value
-);
 const indexTree = useIndexTree();
-const canViewResults = computed(() => indexNodeTreeContainsDataset(indexTree.tree.value));
-const router = useRouter();
-const route = useRoute();
-const store = useStore();
-const project = computed(() => store.getters['app/project']);
-const analysisId = computed(() => route.params.analysisId as string);
-
-const seeResults = () => {
-  router.push({
-    name: 'indexResults',
-    params: {
-      project: project.value,
-      analysisId: analysisId.value,
-      projectType: ProjectType.Analysis,
-    },
-  });
-};
 
 // Dataset search
 
@@ -388,11 +360,15 @@ $option-button-width: 16px;
     cursor: not-allowed;
   }
 
+  &.selected {
+    --border-width: 2px;
+    --border-colour: var(--p-primary-500);
+  }
+
   // When node is selected, we want to show a 2px accent color border outside.
   // To avoid adjusting the size of the node element, use ::before to make a
   //  slightly larger pseudoelement within it.
   &.selected::before {
-    --border-width: 2px;
     content: '';
     display: block;
     position: absolute;
@@ -402,7 +378,7 @@ $option-button-width: 16px;
     top: calc(-1 * var(--border-width));
     left: calc(-1 * var(--border-width));
     border-radius: 3px;
-    border: var(--border-width) solid $accent-main;
+    border: var(--border-width) solid var(--border-colour);
   }
 
   &.disabled {
@@ -423,13 +399,25 @@ $option-button-width: 16px;
   }
 
   .input-arrow {
+    --arrow-side-length: 10px;
     position: absolute;
     top: 8px;
-    width: 0;
-    height: 0;
-    border-top: 5px solid transparent;
-    border-bottom: 5px solid transparent;
-    border-left: 5px solid #b3b4b5;
+    width: var(--arrow-side-length);
+    height: var(--arrow-side-length);
+    left: calc(-0.5 * var(--arrow-side-length) - var(--border-width));
+    rotate: 45deg;
+    background: var(--p-surface-100);
+    border-top: var(--border-width) solid var(--border-colour);
+    border-right: var(--border-width) solid var(--border-colour);
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+
+  &.has-children .input-arrow {
+    background: $positive;
+  }
+
+  &.has-children.is-first-child-opposite-polarity .input-arrow {
+    background: $negative;
   }
 
   .options-button-container {
@@ -482,8 +470,6 @@ $option-button-width: 16px;
       width: 100%;
       max-width: 59px;
       margin-left: 5px;
-      color: white;
-      background-color: $call-to-action-color;
     }
   }
 

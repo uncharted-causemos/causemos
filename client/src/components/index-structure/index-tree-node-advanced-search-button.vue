@@ -1,8 +1,6 @@
 <template>
   <div class="index-tree-node-advanced-search-button-container">
-    <button class="btn btn-sm advanced-search" @click="openDataExplorer">
-      Use advanced search
-    </button>
+    <Button label="Use advanced search" severity="secondary" @click="openDataExplorer" />
   </div>
 </template>
 
@@ -10,6 +8,7 @@
 import { useRoute, useRouter } from 'vue-router';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS } from '@/utils/datacube-util';
+import Button from 'primevue/button';
 
 interface Props {
   nodeId: string;
