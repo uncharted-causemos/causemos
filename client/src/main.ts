@@ -8,12 +8,22 @@ import Toast, { useToast, TYPE } from 'vue-toastification';
 
 import Vue3Resize from 'vue3-resize';
 
+import PrimeVue from 'primevue/config';
+import PrimeVueStylePreset from '@/styles/PrimeVueStylePreset';
+
 import 'vue-toastification/dist/index.css';
 import 'floating-vue/dist/style.css';
 
 sync(store, router);
 
 const app = createApp(App).use(store).use(router).use(Vue3Resize);
+
+app.use(PrimeVue, {
+  theme: {
+    preset: PrimeVueStylePreset,
+  },
+});
+
 app.use(Toast);
 app.use(FloatingVue, {
   themes: {
