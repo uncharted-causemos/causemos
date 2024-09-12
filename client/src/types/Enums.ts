@@ -159,6 +159,11 @@ export enum RegionRankingCompositionType {
   Intersection = 'intersection',
 }
 
+export enum IndexWeightingBehaviour {
+  DatasetsHaveEqualWeights = 'Datasets have equal weight',
+  SiblingNodesHaveEqualWeights = 'Inputs have equal weight',
+}
+
 export enum BinningOptions {
   Quantile = 'Quantile (equal counts)',
   Linear = 'linear',

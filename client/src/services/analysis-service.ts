@@ -12,6 +12,7 @@ import {
 import {
   BinningOptions,
   ComparativeAnalysisMode,
+  IndexWeightingBehaviour,
   RegionRankingCompositionType,
 } from '@/types/Enums';
 import { createNewOutputIndex } from '@/utils/index-tree-util';
@@ -219,6 +220,7 @@ export const createIndexAnalysisObject = (): IndexAnalysisState => {
     countryFilters: defaultCountryFilters,
     countryContextForSnippets: '',
     projectionDateRange: defaultProjectionDateRange,
+    weightingBehaviour: IndexWeightingBehaviour.DatasetsHaveEqualWeights,
   };
 };
 
