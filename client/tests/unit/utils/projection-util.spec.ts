@@ -14,7 +14,12 @@ import {
   calculateGreatestAbsoluteHistoricalChange,
 } from '@/utils/projection-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
-import { TemporalResolutionOption, AggregationOption, ProjectionAlgorithm } from '@/types/Enums';
+import {
+  TemporalResolutionOption,
+  AggregationOption,
+  ProjectionAlgorithm,
+  IndexWeightingBehaviour,
+} from '@/types/Enums';
 import { Subset } from '@/types/Common';
 
 const getNumM = (year: number, month: number) => {
@@ -558,7 +563,8 @@ describe('projection-util', () => {
         testTree,
         testHistoricalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       );
 
       expect(runner.getProjectionResultForDatasetNodes()).to.deep.equal({});
@@ -571,7 +577,8 @@ describe('projection-util', () => {
         testTree,
         testHistoricalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       ).projectAllDatasetNodes();
 
       const expected = {
@@ -647,7 +654,8 @@ describe('projection-util', () => {
         testTree,
         testHistoricalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       )
         .projectAllDatasetNodes()
         .calculateWeightedSum();
@@ -708,7 +716,8 @@ describe('projection-util', () => {
         testTree,
         historicalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       )
         .runProjection()
         .getResults();
@@ -772,7 +781,8 @@ describe('projection-util', () => {
         testTree,
         testHistoricalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       )
         .runProjection()
         .getRunInfo();
@@ -826,7 +836,8 @@ describe('projection-util', () => {
         testTree,
         testHistoricalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       );
       const infoH = runner
         .projectDatasetNode('data-node-1', { method: ProjectionAlgorithm.Holt })
