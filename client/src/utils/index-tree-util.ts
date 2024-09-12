@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { DataTransform, ProjectionAlgorithm } from '@/types/Enums';
+import { DataTransform, IndexWeightingBehaviour, ProjectionAlgorithm } from '@/types/Enums';
 import {
   DatasetSearchResult,
   ConceptNode,
@@ -260,6 +260,27 @@ export const findAllDatasets = (node: ConceptNode): ConceptNodeWithDatasetAttach
 };
 
 /**
+ * Depending on the weighting behaviour, calls the appropriate helper function
+ *  to calculate the overall weight for each specified dataset.
+ * @param tree The root node of the index structure tree.
+ * @param datasets A list of nodes with datasets for which to calculate weights.
+ * @param weightingBehaviour The algorithm used to determine the weight of each dataset.
+ * @returns A list of numbers representing the weight of each dataset.
+ */
+export const calculateOverallWeightForEachDataset = (
+  tree: ConceptNode,
+  datasets: ConceptNodeWithDatasetAttached[],
+  weightingBehaviour: IndexWeightingBehaviour
+) => {
+  switch (weightingBehaviour) {
+    case IndexWeightingBehaviour.DatasetsHaveEqualWeights:
+      return calculateEqualDatasetWeightingSchemeWeights(datasets);
+    case IndexWeightingBehaviour.SiblingNodesHaveEqualWeights:
+      return datasets.map((dataset) => calculateOverallWeight(tree, dataset));
+  }
+};
+
+/**
  * Calculates the overall weight of a node in a given tree.
  * Returns 0 if the node is not found in the tree.
  * NOTE: Currently just looks for the first instance of this node.
@@ -293,6 +314,19 @@ export const calculateOverallWeight = (tree: ConceptNode, targetNode: ConceptNod
   };
   return _search(tree, 100);
 };
+
+/**
+ * This currently just evenly divides 100% between each of the datasets.
+ * In the future we may wish to be able to manually set weights for some
+ *  datasets, in which case the remaining weight would be evenly divided among
+ *  any datasets without specified weights.
+ * NOTE: This weighting scheme ignores weights that are manually set on edges.
+ * @param datasets The list of dataset nodes to calculate weights for.
+ * @returns A list of numbers in the range [0, 100] that represents the weight of each dataset.
+ */
+export const calculateEqualDatasetWeightingSchemeWeights = (
+  datasets: ConceptNodeWithDatasetAttached[]
+) => datasets.map(() => 100 / datasets.length);
 
 /** ====== Operations on a node ====== */
 
