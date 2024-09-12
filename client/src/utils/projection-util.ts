@@ -1,12 +1,22 @@
 import _ from 'lodash';
 import forecast from './forecast';
 import { getTimestampConvertFunctions } from '@/utils/date-util';
-import { isConceptNodeWithDatasetAttached } from '@/utils/index-tree-util';
+import {
+  countOppositeEdgesBetweenNodes,
+  findAllDatasets,
+  isConceptNodeWithDatasetAttached,
+} from '@/utils/index-tree-util';
 
-import { ProjectionAlgorithm, ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
+import {
+  IndexWeightingBehaviour,
+  ProjectionAlgorithm,
+  ProjectionPointType,
+  TemporalResolutionOption,
+} from '@/types/Enums';
 import { TimeseriesPoint, TimeseriesPointProjected } from '@/types/Timeseries';
 import {
   ConceptNode,
+  ConceptNodeWithoutDataset,
   ProjectionConstraint,
   ProjectionResults,
   ProjectionRunInfo,
@@ -426,7 +436,8 @@ export const createProjectionRunner = (
   conceptTree: ConceptNode,
   historicalData: { [nodeId: string]: TimeseriesPoint[] },
   targetPeriod: { start: number; end: number },
-  dataResOption: TemporalResolutionOption
+  dataResOption: TemporalResolutionOption,
+  weightingBehaviour: IndexWeightingBehaviour
 ) => {
   // With unsupported temporal resolution option, fall back to month resolution option
   const dataTempResOption = !(
@@ -444,15 +455,41 @@ export const createProjectionRunner = (
 
   let _constraints: { [nodeId: string]: ProjectionConstraint[] } | null = null;
 
-  const _calculateWeightedSum = (node: ConceptNode) => {
-    if (isConceptNodeWithDatasetAttached(node)) {
-      if (!resultForDatasetNode[node.id]) return null;
-      const projectedSeries = resultForDatasetNode[node.id];
-      return invertData(projectedSeries, node.dataset.isInverted);
-    }
-
-    // Retrieve the weighted projected timeseries data from children
-    const childProjectionSeriesData = node.components
+  // A helper function that is used when the weighting scheme is set to
+  //  DatasetsHaveEqualWeights.
+  // Recursively calls _calculateWeightedSum for each direct child of the node,
+  //  and returns a list of the timeseries from each descendent with a dataset
+  //  attached, regardless of depth. Each timeseries is equally weighted and
+  //  possibly inverted before being returned.
+  // NOTE: Ignores weights on edges.
+  // NOTE: Ignores constraints on nodes that do not have datasets attached.
+  const _computeTimeseriesForEachDescendentWithDataset = (node: ConceptNodeWithoutDataset) => {
+    // Direct descendents are not required to calculate the timeseries for this
+    //  node, so we need to call _calculateWeightedSum on all direct children
+    //  to ensure that we traverse the entire tree and calculate a timeseries
+    //  for each node.
+    node.components.forEach((c) => _calculateWeightedSum(c.componentNode));
+    // Weight is the same for all datasets.
+    const descendentsWithDatasets = findAllDatasets(node);
+    const weight = 1 / descendentsWithDatasets.length;
+    return descendentsWithDatasets
+      .map((c) => {
+        const timeseries = _calculateWeightedSum(c);
+        const isOppositePolarity = countOppositeEdgesBetweenNodes(c, node) % 2 === 1;
+        return timeseries !== null
+          ? multiply(invertData(timeseries, isOppositePolarity), weight)
+          : null;
+      })
+      .filter((s): s is TimeseriesPointProjected[] => s !== null);
+  };
+  // A helper function that is used when the weighting scheme is set to
+  //  SiblingNodesHaveEqualWeights.
+  // Recursively calls _calculateWeightedSum for each direct child of the node,
+  //  and returns a list of the timeseries of each child, after multiplying
+  //  each by the weight of the edge between the node and the child, and
+  //  possibly inverting it.
+  const _computeTimeseriesForEachDirectChild = (node: ConceptNodeWithoutDataset) =>
+    node.components
       .map((c) => {
         const timeseries = _calculateWeightedSum(c.componentNode);
         return timeseries !== null
@@ -461,12 +498,27 @@ export const createProjectionRunner = (
       })
       .filter((s): s is TimeseriesPointProjected[] => s !== null);
 
-    if (childProjectionSeriesData.length === 0) {
+  const _calculateWeightedSum = (node: ConceptNode) => {
+    if (isConceptNodeWithDatasetAttached(node)) {
+      if (!resultForDatasetNode[node.id]) return null;
+      const projectedSeries = resultForDatasetNode[node.id];
+      return invertData(projectedSeries, node.dataset.isInverted);
+    }
+
+    // Depending on the weighting scheme, this node will look at either its
+    //  direct children or any descendents with datasets attached. In either
+    //  case, each timeseries is multiplied by the appropriate weight and
+    //  possibly inverted before being summed up along with the others.
+    const timeseriesToSum =
+      weightingBehaviour === IndexWeightingBehaviour.DatasetsHaveEqualWeights
+        ? _computeTimeseriesForEachDescendentWithDataset(node)
+        : _computeTimeseriesForEachDirectChild(node);
+    if (timeseriesToSum.length === 0) {
       return null;
     }
 
     // Calculate the sum of children's weighted projected timeseries data
-    const weightedSumSeries = sum(...childProjectionSeriesData);
+    const weightedSumSeries = sum(...timeseriesToSum);
     const constraints = (_constraints && _constraints[node.id]) || [];
     resultForWeightedSumNodes[node.id] = applyConstraints(weightedSumSeries, constraints);
     runInfo[node.id] = { method: NodeProjectionType.WeightedSum };
