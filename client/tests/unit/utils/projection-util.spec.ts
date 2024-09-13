@@ -708,7 +708,7 @@ describe('projection-util', () => {
       expect(runner.getProjectionResultForWeightedSumNodes()).to.deep.equal(expected);
       expect(runner.getResults()).to.deep.include(expected);
     });
-    it('should calculate the weighted sum of each descendent with a dataset for each weighted sum node in the tree', () => {
+    it('should calculate the weighted sum of each descendant with a dataset for each weighted sum node in the tree', () => {
       // Tree structure with weights
       // root = 33% of data-node-1
       //         +

@@ -458,21 +458,21 @@ export const createProjectionRunner = (
   // A helper function that is used when the weighting scheme is set to
   //  DatasetsHaveEqualWeights.
   // Recursively calls _calculateWeightedSum for each direct child of the node,
-  //  and returns a list of the timeseries from each descendent with a dataset
+  //  and returns a list of the timeseries from each descendant with a dataset
   //  attached, regardless of depth. Each timeseries is equally weighted and
   //  possibly inverted before being returned.
   // NOTE: Ignores weights on edges.
   // NOTE: Ignores constraints on nodes that do not have datasets attached.
-  const _computeTimeseriesForEachDescendentWithDataset = (node: ConceptNodeWithoutDataset) => {
-    // Direct descendents are not required to calculate the timeseries for this
+  const _computeTimeseriesForEachDescendantWithDataset = (node: ConceptNodeWithoutDataset) => {
+    // Direct descendants are not required to calculate the timeseries for this
     //  node, so we need to call _calculateWeightedSum on all direct children
     //  to ensure that we traverse the entire tree and calculate a timeseries
     //  for each node.
     node.components.forEach((c) => _calculateWeightedSum(c.componentNode));
     // Weight is the same for all datasets.
-    const descendentsWithDatasets = findAllDatasets(node);
-    const weight = 1 / descendentsWithDatasets.length;
-    return descendentsWithDatasets
+    const descendantsWithDatasets = findAllDatasets(node);
+    const weight = 1 / descendantsWithDatasets.length;
+    return descendantsWithDatasets
       .map((c) => {
         const timeseries = _calculateWeightedSum(c);
         const isOppositePolarity = countOppositeEdgesBetweenNodes(c, node) % 2 === 1;
@@ -506,12 +506,12 @@ export const createProjectionRunner = (
     }
 
     // Depending on the weighting scheme, this node will look at either its
-    //  direct children or any descendents with datasets attached. In either
+    //  direct children or any descendants with datasets attached. In either
     //  case, each timeseries is multiplied by the appropriate weight and
     //  possibly inverted before being summed up along with the others.
     const timeseriesToSum =
       weightingBehaviour === IndexWeightingBehaviour.DatasetsHaveEqualWeights
-        ? _computeTimeseriesForEachDescendentWithDataset(node)
+        ? _computeTimeseriesForEachDescendantWithDataset(node)
         : _computeTimeseriesForEachDirectChild(node);
     if (timeseriesToSum.length === 0) {
       return null;

@@ -36,7 +36,7 @@ export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
       // The last column in a CSS grid can be accessed with `grid-column: -1`
       startColumn: -depth - 1,
       startRow: currentRow,
-      // Assume this node and its descendents take up one row. Increase this later as we go through
+      // Assume this node and its descendants take up one row. Increase this later as we go through
       //  any children this node has
       rowCount: 1,
       hasOutputLine: !isRootNode,
@@ -52,8 +52,8 @@ export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
       return [currentCell];
     }
     // This is a parent node so we recursively build a list of cells including this one and all of
-    //  its descendents.
-    const descendentCells: GridCell[] = [];
+    //  its descendants.
+    const descendantCells: GridCell[] = [];
     const directChildCells: GridCell[] = [];
     // We need to label the last child for when we render the edges between nodes.
     const lastChildArrayPosition = currentNode.components.length - 1;
@@ -71,12 +71,12 @@ export const convertTreeToGridCells = (tree: ConceptNode): GridCell[] => {
       );
       directChildCells.push(cells[0]);
       cells.forEach((cell) => {
-        descendentCells.push(cell);
+        descendantCells.push(cell);
       });
     });
     // This parent node needs to span a number of rows equal to the sum of its children's row spans.
     currentCell.rowCount = _.sumBy(directChildCells, (child) => child.rowCount);
-    return [currentCell, ...descendentCells];
+    return [currentCell, ...descendantCells];
   };
   return _convertTreeToGridCells(tree, 0, true, false, false, false);
 };
