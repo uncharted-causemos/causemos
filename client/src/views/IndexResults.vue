@@ -13,32 +13,21 @@
           label="Edit structure"
         />
         <h3>Index results</h3>
-        <p class="subtitle">{{ selectedNodeName }}</p>
       </header>
-      <section>
-        <header class="flex index-structure-header">
-          <h4>Index structure</h4>
-        </header>
-        <IndexResultsStructurePreview class="index-structure-preview" :selected-node-id="tree.id" />
-        <IndexResultsComponentList />
-      </section>
-      <section>
-        <IndexResultsDatasetWeights :selected-node-name="selectedNodeName" />
-      </section>
+      <IndexResultsBarChartColumn
+        class="bars-column"
+        :class="{ expanded: isShowingKeyDatasets }"
+        :is-showing-key-datasets="isShowingKeyDatasets"
+        :index-results-data="indexResultsData"
+        :index-results-settings="indexResultsSettings"
+        :selected-node-name="selectedNodeName"
+        :removed-countries="removedCountriesData"
+        @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
+      />
     </div>
     <div class="map">
       <IndexResultsMap :index-results-data="indexResultsData" :settings="indexResultsSettings" />
     </div>
-    <IndexResultsBarChartColumn
-      class="bars-column"
-      :class="{ expanded: isShowingKeyDatasets }"
-      :is-showing-key-datasets="isShowingKeyDatasets"
-      :index-results-data="indexResultsData"
-      :index-results-settings="indexResultsSettings"
-      :selected-node-name="selectedNodeName"
-      :removed-countries="removedCountriesData"
-      @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
-    />
   </div>
 </template>
 
@@ -60,10 +49,7 @@ import { calculateIndexResults } from '@/utils/index-results-util';
 import { ConceptNodeWithDatasetAttached, IndexResultsData } from '@/types/Index';
 import { getIndexRegionAggregation, TRANSFORM_NORM } from '@/services/outputdata-service';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
-import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
 import IndexResultsMap from '@/components/index-results/index-results-map.vue';
-import IndexResultsComponentList from '@/components/index-results/index-results-component-list.vue';
-import IndexResultsDatasetWeights from '@/components/index-results/index-results-dataset-weights.vue';
 import { AdminLevel, ProjectType } from '@/types/Enums';
 import useInsightStore from '@/composables/useInsightStore';
 import { IndexResultsDataState, Insight } from '@/types/Insight';
@@ -368,16 +354,15 @@ watch(
 $column-padding: 20px;
 
 .structure-column {
-  width: 400px;
   padding: $column-padding;
-  overflow-y: auto;
   border-right: 1px solid $un-color-black-10;
-  gap: 20px;
+  gap: 3rem;
 }
 
 .bars-column {
   width: 300px;
-  border-left: 1px solid $un-color-black-10;
+  flex: 1;
+  min-height: 0;
   &.expanded {
     width: 600px;
   }
@@ -387,18 +372,6 @@ section {
   display: flex;
   flex-direction: column;
   gap: 5px;
-}
-
-header {
-  gap: 10px;
-  h5 {
-    flex: 1;
-    min-width: 0;
-  }
-}
-
-.subtitle {
-  color: $un-color-black-40;
 }
 
 .index-structure-header {

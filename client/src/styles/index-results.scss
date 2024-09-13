@@ -35,4 +35,7 @@ $index-result-table-key-datasets-column-gap: 10px;
   // Needs to be larger than the width of 'Value' using un-design-tokens body font styles
   width: 96px;
   text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 10px;
 }

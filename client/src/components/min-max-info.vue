@@ -2,9 +2,7 @@
   <div class="container un-font-small subdued">
     <div>{{ message }}</div>
     <VMinMaxTooltip>
-      <div class="icon" @mouseover="getExtrema">
-        <i class="fa fa-info" />
-      </div>
+      <i class="fa fa-info-circle icon" @mouseover="getExtrema" />
       <template #popper>
         <div class="max-min-info un-font-small">
           <section v-if="!isInverted && !isEdgeInverted" class="un-font-small">
@@ -182,15 +180,9 @@ const minValue = computed<string>(() => {
 .container {
   display: flex;
   gap: 5px;
+
   .icon {
-    background-color: grey;
-    border-radius: 2px;
-    padding: 0 0.45rem;
-    width: 1.2rem;
-    font-size: 0.9rem;
-    i {
-      color: white;
-    }
+    color: var(--p-surface-300);
   }
 }
 // make changes to the extended Tooltip theme here.
