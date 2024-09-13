@@ -41,7 +41,11 @@
 import { computed, ref, watch } from 'vue';
 import * as d3 from 'd3';
 
-import { ProjectionAlgorithm, TemporalResolutionOption } from '@/types/Enums';
+import {
+  IndexWeightingBehaviour,
+  ProjectionAlgorithm,
+  TemporalResolutionOption,
+} from '@/types/Enums';
 import { ConceptNodeWithDatasetAttached, ProjectionConstraint } from '@/types/Index';
 import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
 import {
@@ -70,6 +74,7 @@ const props = defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
   projectionTimeseries: ProjectionTimeseries[];
+  weightingBehaviour: IndexWeightingBehaviour;
 }>();
 
 const targetPeriod = computed(() => ({
@@ -142,7 +147,8 @@ const runScenariosProjection = (projectionItem: ProjectionTimeseries): Scenarios
       props.nodeData,
       wrapByNodeId(historicalData),
       targetPeriod.value,
-      props.projectionTemporalResolutionOption
+      props.projectionTemporalResolutionOption,
+      props.weightingBehaviour
     )
       .setConstraints(wrapByNodeId(constraints))
       .projectDatasetNode(props.nodeData.id, { method: ProjectionAlgorithm.Holt })

@@ -197,6 +197,7 @@
         :historical-data="historicalData"
         :scenarios="scenarios"
         :projection-temporal-resolution-option="temporalResolutionOption"
+        :weighting-behaviour="weightingBehaviour"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
