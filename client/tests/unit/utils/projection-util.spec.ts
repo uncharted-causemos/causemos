@@ -14,7 +14,12 @@ import {
   calculateGreatestAbsoluteHistoricalChange,
 } from '@/utils/projection-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
-import { TemporalResolutionOption, AggregationOption, ProjectionAlgorithm } from '@/types/Enums';
+import {
+  TemporalResolutionOption,
+  AggregationOption,
+  ProjectionAlgorithm,
+  IndexWeightingBehaviour,
+} from '@/types/Enums';
 import { Subset } from '@/types/Common';
 
 const getNumM = (year: number, month: number) => {
@@ -558,7 +563,8 @@ describe('projection-util', () => {
         testTree,
         testHistoricalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       );
 
       expect(runner.getProjectionResultForDatasetNodes()).to.deep.equal({});
@@ -571,7 +577,8 @@ describe('projection-util', () => {
         testTree,
         testHistoricalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       ).projectAllDatasetNodes();
 
       const expected = {
@@ -636,7 +643,7 @@ describe('projection-util', () => {
         'data-node-3': DEFAULT_TEST_FORECAST_RESULT,
       });
     });
-    it('should calculate weighted sum of its children for each weighted sum node in the tree', () => {
+    it('should calculate the weighted sum of each direct child for each weighted sum node in the tree', () => {
       // Tree structure with weights
       // root = 50% of 40% of data-node-1
       //                +
@@ -647,7 +654,8 @@ describe('projection-util', () => {
         testTree,
         testHistoricalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       )
         .projectAllDatasetNodes()
         .calculateWeightedSum();
@@ -700,6 +708,75 @@ describe('projection-util', () => {
       expect(runner.getProjectionResultForWeightedSumNodes()).to.deep.equal(expected);
       expect(runner.getResults()).to.deep.include(expected);
     });
+    it('should calculate the weighted sum of each descendant with a dataset for each weighted sum node in the tree', () => {
+      // Tree structure with weights
+      // root = 33% of data-node-1
+      //         +
+      //        33% of data-node-2 (opposite polarity)
+      //         +
+      //        33% of data-node-3 (inverted)
+      const runner = createProjectionRunner(
+        testTree,
+        testHistoricalData,
+        testTargetPeriod,
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.DatasetsHaveEqualWeights
+      )
+        .projectAllDatasetNodes()
+        .calculateWeightedSum();
+      const expected = {
+        // 50% of opposite 'data-node-2'
+        // [0.3, 0.2, 0.3, 0.2, 0.3, 0.2,  0.3]
+        // +
+        // 50% of inverted 'data-node-3'
+        // [0,   0.1, 0.2, 0.3, 0.4, 0.45, 0.5]
+        'weighted-sum-node-1': [
+          { timestamp: getTsM(1980, 0), value: 0.3, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 1), value: 0.3, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.5, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.5, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.7, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.65, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0.8, projectionType: 'historical' },
+        ],
+        // 33% of 'data-node-1'
+        // [0.0, 0.033, 0.066, 0.100, 0.133, 0.166, 0.200]
+        // +
+        // 33% of opposite 'data-node-2'
+        // [0.2, 0.133, 0.200, 0.133, 0.200, 0.133, 0.200]
+        // +
+        // 33% of inverted 'data-node-3'
+        //  0 2 4 6 8 9 1 (these are inverted, just need to scale by 1 third)
+        // [0.0, 0.066, 0.133, 0.200, 0.266, 0.300, 0.333]
+        'weighted-sum-node-2': [
+          { timestamp: getTsM(1980, 0), value: 0.2, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 1), value: 0.233, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.433, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.6, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0.733, projectionType: 'interpolated' },
+        ],
+        // Same as 'weighted-sum-node-2'
+        'output-node': [
+          { timestamp: getTsM(1980, 0), value: 0.2, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 1), value: 0.233, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 2), value: 0.4, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 3), value: 0.433, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 4), value: 0.6, projectionType: 'historical' },
+          { timestamp: getTsM(1980, 5), value: 0.6, projectionType: 'interpolated' },
+          { timestamp: getTsM(1980, 6), value: 0.733, projectionType: 'interpolated' },
+        ],
+      };
+      const result = runner.getProjectionResultForWeightedSumNodes();
+      // round numbers for easy comparison
+      for (const [_, series] of Object.entries(result)) {
+        series.forEach((v) => (v.value = +v.value.toFixed(3)));
+      }
+
+      expect(runner.getProjectionResultForWeightedSumNodes()).to.deep.equal(expected);
+      expect(runner.getResults()).to.deep.include(expected);
+    });
     it('should run projection fine with missing historical data', () => {
       // remove data-node-1
       const historicalData: any = _.cloneDeep(testHistoricalData);
@@ -708,7 +785,8 @@ describe('projection-util', () => {
         testTree,
         historicalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       )
         .runProjection()
         .getResults();
@@ -772,7 +850,8 @@ describe('projection-util', () => {
         testTree,
         testHistoricalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       )
         .runProjection()
         .getRunInfo();
@@ -826,7 +905,8 @@ describe('projection-util', () => {
         testTree,
         testHistoricalData,
         testTargetPeriod,
-        TemporalResolutionOption.Month
+        TemporalResolutionOption.Month,
+        IndexWeightingBehaviour.SiblingNodesHaveEqualWeights
       );
       const infoH = runner
         .projectDatasetNode('data-node-1', { method: ProjectionAlgorithm.Holt })

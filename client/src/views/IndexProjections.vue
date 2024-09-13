@@ -9,9 +9,14 @@
         <button v-if="selectedNodeId !== null" class="btn btn-sm" @click="deselectNode">
           <i class="fa fa-fw fa-caret-left" />View all concepts
         </button>
-        <button v-else class="btn btn-sm" @click="modifyStructure">
-          <i class="fa fa-fw fa-caret-left" />Edit structure
-        </button>
+        <Button
+          v-else
+          text
+          severity="secondary"
+          icon="fa fa-arrow-left"
+          @click="modifyStructure"
+          label="Edit structure"
+        />
         <h3>Projections</h3>
       </header>
       <section v-if="selectedNodeId !== null" class="horizontal-padding">
@@ -192,6 +197,7 @@
         :historical-data="historicalData"
         :scenarios="scenarios"
         :projection-temporal-resolution-option="temporalResolutionOption"
+        :weighting-behaviour="weightingBehaviour"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projections="timeseriesToDisplay"
@@ -256,6 +262,7 @@ import useScenarioProjections from '@/composables/useScenarioProjections';
 import useHistoricalData from '@/composables/useHistoricalData';
 import useMultipleCountryProjections from '@/composables/useMultipleCountryProjections';
 import ModalProjectionExplanation from '@/components/modals/modal-projection-explanation.vue';
+import Button from 'primevue/button';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -284,6 +291,7 @@ const {
   updateIndexProjectionSettings,
   updateProjectionDateRange,
   getProjectionDateRange,
+  weightingBehaviour,
 } = useIndexAnalysis(analysisId);
 // If selectedNodeId === null, no node is selected and we're looking at the graph view
 const selectedNodeId = ref<string | null>(null);
@@ -482,7 +490,8 @@ watch(
       historicalDataForSelectedCountry.value,
       { start: projectionStartTimestamp.value, end: projectionEndTimestamp.value },
       temporalResolutionOption.value,
-      scenarios.value
+      scenarios.value,
+      weightingBehaviour.value
     );
   }
 );
@@ -628,7 +637,8 @@ watch(
       historicalDataForSelectedCountries.value,
       { start: projectionStartTimestamp.value, end: projectionEndTimestamp.value },
       temporalResolutionOption.value,
-      selectedCountries.value
+      selectedCountries.value,
+      weightingBehaviour.value
     );
   }
 );

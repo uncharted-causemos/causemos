@@ -1,5 +1,9 @@
 import { DataSpaceDataState, ViewState } from '@/types/Insight';
-import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
+import {
+  BinningOptions,
+  IndexWeightingBehaviour,
+  RegionRankingCompositionType,
+} from '@/types/Enums';
 import { ConceptNode, IndexProjectionSettings, IndexResultsSettings } from '@/types/Index';
 import { ModelOrDatasetState } from '@/types/Datacube';
 
@@ -83,6 +87,7 @@ export interface IndexAnalysisState {
   index: ConceptNode;
   /** Temporary index nodes or sub trees that are being edited and detached from the main index tree */
   workBench: ConceptNode[];
+  weightingBehaviour: IndexWeightingBehaviour;
   /** Index results page settings */
   resultsSettings: IndexResultsSettings;
   /** Index projection page settings */

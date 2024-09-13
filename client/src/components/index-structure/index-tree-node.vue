@@ -128,7 +128,7 @@ interface Props {
   nodeData: ConceptNode;
   isSelected: boolean;
   isConnecting: boolean;
-  isDescendentOfConnectingNode: boolean;
+  isDescendantOfConnectingNode: boolean;
   geoContextString: string;
   countryFilters: CountryFilter[];
 }
@@ -160,7 +160,7 @@ const canSelectNode = computed(() => {
     // We're adding a new edge, so we can select the node if
     //  - it has no dataset and
     //  - adding an edge to it won't create a loop in the graph
-    return isConceptNodeWithoutDataset(props.nodeData) && !props.isDescendentOfConnectingNode;
+    return isConceptNodeWithoutDataset(props.nodeData) && !props.isDescendantOfConnectingNode;
   } else {
     // We're not adding a new edge, so we can select the node if it has been given a name already.
     return props.nodeData.name !== '';

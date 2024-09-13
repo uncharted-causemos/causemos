@@ -7,6 +7,18 @@
       @click="addConcept"
       style="width: 240px"
     />
+
+    <label for="weight-behaviour-dropdown" class="group weight-behaviour">
+      Weighting scheme
+      <Select
+        :options="WEIGHTING_BEHAVIOUR_OPTIONS"
+        :model-value="weightingBehaviour"
+        @update:model-value="
+          (weightingBehaviour) => emit('set-weighting-behaviour', weightingBehaviour)
+        "
+        input-id="weight-behaviour-dropdown"
+      />
+    </label>
     <div class="group">
       <Button label="View projections" severity="secondary" @click="viewProjections" />
       <Button
@@ -20,19 +32,25 @@
 
 <script setup lang="ts">
 import useIndexTree from '@/composables/useIndexTree';
-import { ProjectType } from '@/types/Enums';
+import { IndexWeightingBehaviour, ProjectType } from '@/types/Enums';
 import { indexNodeTreeContainsDataset } from '@/utils/index-tree-util';
 import Button from 'primevue/button';
+import Select from 'primevue/select';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
+defineProps<{ weightingBehaviour: IndexWeightingBehaviour }>();
+
 const emit = defineEmits<{
   (e: 'add-concept'): void;
+  (e: 'set-weighting-behaviour', behaviour: IndexWeightingBehaviour): void;
 }>();
 
 const addConcept = () => {
   emit('add-concept');
 };
+
+const WEIGHTING_BEHAVIOUR_OPTIONS = Object.values(IndexWeightingBehaviour);
 
 const route = useRoute();
 const analysisId = computed(() => route.params.analysisId as string);
@@ -81,5 +99,13 @@ const canViewResults = computed(() => indexNodeTreeContainsDataset(indexTree.tre
   display: flex;
   flex-direction: row;
   gap: 1rem;
+  align-items: center;
+}
+
+.weight-behaviour {
+  width: 400px;
+  justify-content: flex-start;
+  font-size: 1.25rem;
+  color: var(--p-text-muted-color);
 }
 </style>

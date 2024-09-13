@@ -28,7 +28,7 @@
         :node-data="cell.node"
         :is-selected="isSelected(cell.node.id)"
         :is-connecting="isConnecting"
-        :is-descendent-of-connecting-node="isDescendentOfConnectingNode(cell.node.id)"
+        :is-descendant-of-connecting-node="isDescendantOfConnectingNode(cell.node.id)"
         :geo-context-string="geoContextString"
         :countryFilters="countryFilters"
         class="index-tree-node"
@@ -129,7 +129,7 @@ const indexTree = useIndexTree();
 const { findNode } = indexTree;
 const workbench = useIndexWorkBench();
 
-const isDescendentOfConnectingNode = (targetId: string) => {
+const isDescendantOfConnectingNode = (targetId: string) => {
   if (connectingId.value !== null) {
     return workbench.isDescendant(targetId, connectingId.value);
   }

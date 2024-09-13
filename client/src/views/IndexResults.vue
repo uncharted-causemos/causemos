@@ -5,9 +5,13 @@
   <div class="index-results-container flex" :class="[INSIGHT_CAPTURE_CLASS]">
     <div class="flex-col structure-column">
       <header>
-        <button class="btn btn-sm" @click="modifyStructure">
-          <i class="fa fa-fw fa-caret-left" />Edit structure
-        </button>
+        <Button
+          text
+          severity="secondary"
+          icon="fa fa-arrow-left"
+          @click="modifyStructure"
+          label="Edit structure"
+        />
         <h3>Index results</h3>
         <p class="subtitle">{{ selectedNodeName }}</p>
       </header>
@@ -47,10 +51,10 @@ import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import useIndexTree from '@/composables/useIndexTree';
 import {
-  calculateOverallWeight,
   findAllDatasets,
   convertDataConfigToOutputSpec,
   countOppositeEdgesBetweenNodes,
+  calculateOverallWeightForEachDataset,
 } from '@/utils/index-tree-util';
 import { calculateIndexResults } from '@/utils/index-results-util';
 import { ConceptNodeWithDatasetAttached, IndexResultsData } from '@/types/Index';
@@ -68,6 +72,7 @@ import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import { INSIGHT_CAPTURE_CLASS, isIndexResultsDataState } from '@/utils/insight-util';
 import { RegionalAggregation } from '@/types/Outputdata';
+import Button from 'primevue/button';
 
 // This is required because teleported components require their teleport destination to be mounted
 //  before they can be rendered.
@@ -81,7 +86,8 @@ const route = useRoute();
 const router = useRouter();
 
 const analysisId = computed(() => route.params.analysisId as string);
-const { analysisName, indexResultsSettings, refresh } = useIndexAnalysis(analysisId);
+const { analysisName, indexResultsSettings, refresh, weightingBehaviour } =
+  useIndexAnalysis(analysisId);
 
 const project = computed(() => store.getters['app/project']);
 const modifyStructure = () => {
@@ -230,7 +236,7 @@ const datasets = ref<ConceptNodeWithDatasetAttached[]>([]);
 const regionDataForEachDataset = ref<RegionalAggregation[]>([]);
 
 // Whenever the tree changes, fetch data and calculate `indexResultsData`.
-watch([tree], async () => {
+watch([tree, weightingBehaviour], async () => {
   // Save a reference to the current version of the tree so that if it changes before all of the
   //  fetch requests return, we only perform calculations and update the state with the most up-to-
   //  date tree structure.
@@ -257,8 +263,10 @@ watch([tree], async () => {
     return;
   }
   // Calculate each dataset's overall weight.
-  const overallWeightForEachDataset = datasets.value.map((dataset) =>
-    calculateOverallWeight(frozenTreeState, dataset)
+  const overallWeightForEachDataset = calculateOverallWeightForEachDataset(
+    frozenTreeState,
+    datasets.value,
+    weightingBehaviour.value
   );
   // Calculate whether each dataset should be inverted.
   // Datasets can be inverted for two reasons:

@@ -41,6 +41,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projection-temporal-resolution-option="projectionTemporalResolutionOption"
+        :weighting-behaviour="weightingBehaviour"
         :timeseries="getProjectionsForNode(projectionData, selectedNode.found.id)"
         :show-data-outside-norm="showDataOutsideNorm"
         :edit-mode="projectionForScenarioBeingEdited !== null ? EditMode.Constraints : undefined"
@@ -97,7 +98,7 @@ import IndexProjectionsNode from './index-projections-node.vue';
 import IndexProjectionsExpandedNode from './index-projections-expanded-node.vue';
 import { EditMode } from '@/utils/projection-util';
 import { TimeseriesPoint } from '@/types/Timeseries';
-import { TemporalResolutionOption } from '@/types/Enums';
+import { IndexWeightingBehaviour, TemporalResolutionOption } from '@/types/Enums';
 const props = defineProps<{
   selectedNodeId: string | null;
   historicalData: { [countryName: string]: { [nodeId: string]: TimeseriesPoint[] } };
@@ -109,6 +110,7 @@ const props = defineProps<{
   projectionForScenarioBeingEdited: IndexProjection | null;
   showDataOutsideNorm: boolean;
   dataWarnings: { [nodeId: string]: IndexProjectionNodeDataWarning[] };
+  weightingBehaviour: IndexWeightingBehaviour;
 }>();
 
 const emit = defineEmits<{

@@ -8,7 +8,11 @@ import {
   IndexProjectionScenario,
 } from '@/types/Index';
 import { TimeseriesPoint } from '@/types/Timeseries';
-import { ProjectionPointType, TemporalResolutionOption } from '@/types/Enums';
+import {
+  IndexWeightingBehaviour,
+  ProjectionPointType,
+  TemporalResolutionOption,
+} from '@/types/Enums';
 import { checkProjectionWarnings } from '@/utils/index-projection-util';
 
 export default function useScenarioProjections(
@@ -88,14 +92,16 @@ export default function useScenarioProjections(
     historicalData: { [nodeId: string]: TimeseriesPoint[] },
     targetPeriod: { start: number; end: number },
     dataResOption: TemporalResolutionOption,
-    scenarios: IndexProjectionScenario[]
+    scenarios: IndexProjectionScenario[],
+    weightingBehaviour: IndexWeightingBehaviour
   ) => {
     projectionData.value = scenarios.map((scenario) => {
       const runner = createProjectionRunner(
         conceptTree,
         historicalData,
         targetPeriod,
-        dataResOption
+        dataResOption,
+        weightingBehaviour
       )
         .setConstraints(scenario.constraints)
         .runProjection();

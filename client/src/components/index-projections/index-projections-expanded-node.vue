@@ -57,6 +57,7 @@
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
         :projection-timeseries="timeseries"
+        :weighting-behaviour="weightingBehaviour"
       />
 
       <div class="dataset-metadata add-horizontal-margin">
@@ -132,7 +133,7 @@ import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vu
 import { EditMode } from '@/utils/projection-util';
 import IndexProjectionsExpandedNodeWarning from './index-projections-expanded-node-warning.vue';
 import IndexProjectionsExpandedNodeResilience from './index-projections-expanded-node-resilience.vue';
-import { TemporalResolutionOption } from '@/types/Enums';
+import { IndexWeightingBehaviour, TemporalResolutionOption } from '@/types/Enums';
 import MinMaxInfo from '@/components/min-max-info.vue';
 import useIndexTree from '@/composables/useIndexTree';
 
@@ -169,6 +170,7 @@ const props = defineProps<{
   showDataOutsideNorm: boolean;
   editMode?: EditMode;
   dataWarnings?: IndexProjectionNodeDataWarning[];
+  weightingBehaviour: IndexWeightingBehaviour;
 }>();
 
 const emit = defineEmits<{

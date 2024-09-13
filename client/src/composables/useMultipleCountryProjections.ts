@@ -8,7 +8,7 @@ import {
   IndexProjectionNodeDataWarning,
 } from '@/types/Index';
 import { TimeseriesPoint } from '@/types/Timeseries';
-import { TemporalResolutionOption } from '@/types/Enums';
+import { IndexWeightingBehaviour, TemporalResolutionOption } from '@/types/Enums';
 import { checkProjectionWarnings } from '@/utils/index-projection-util';
 
 export default function useMultipleCountryProjections() {
@@ -25,7 +25,8 @@ export default function useMultipleCountryProjections() {
     },
     targetPeriod: { start: number; end: number },
     dataResOption: TemporalResolutionOption,
-    countries: IndexProjectionCountry[]
+    countries: IndexProjectionCountry[],
+    weightingBehaviour: IndexWeightingBehaviour
   ) => {
     multipleCountryProjectionData.value = countries.map((country) => {
       const historicalData = historicalDataForSelectedCountries[country.name];
@@ -41,7 +42,8 @@ export default function useMultipleCountryProjections() {
         conceptTree,
         historicalData,
         targetPeriod,
-        dataResOption
+        dataResOption,
+        weightingBehaviour
       ).runProjection();
       retVal.result = runner.getResults();
       retVal.runInfo = runner.getRunInfo();

@@ -13,9 +13,10 @@ import {
   createNewConceptNode,
   countOppositeEdgesBetweenNodes,
   addChild,
+  calculateEqualDatasetWeightingSchemeWeights,
 } from '@/utils/index-tree-util';
 import { AggregationOption, ProjectionAlgorithm, TemporalResolutionOption } from '@/types/Enums';
-import { ConceptNodeWithoutDataset } from '@/types/Index';
+import { ConceptNodeWithDatasetAttached, ConceptNodeWithoutDataset } from '@/types/Index';
 import { WeightedComponent } from '@/types/WeightedComponent';
 
 export const newTestTree = (): ConceptNodeWithoutDataset => ({
@@ -530,6 +531,28 @@ describe('index-tree-util', () => {
       const expectedWeight = (tree.components[1].weight * targetComponent.weight) / 100;
       const result = calculateOverallWeight(tree, targetComponent.componentNode);
       expect(result).to.equal(expectedWeight);
+    });
+  });
+
+  describe('calculateEqualDatasetWeightingSchemeWeights', () => {
+    it('should return an empty array when passed an empty array', () => {
+      const result = calculateEqualDatasetWeightingSchemeWeights([]);
+      expect(result.length).to.equal(0);
+    });
+    it('should return a weight of 100 when passed one dataset', () => {
+      const dataset = weightedDatasetComponent.componentNode as ConceptNodeWithDatasetAttached;
+      const result = calculateEqualDatasetWeightingSchemeWeights([dataset]);
+      expect(result).to.deep.equal([100]);
+    });
+    it('should evenly return an array of four 25s when passed 4 datasets', () => {
+      const dataset = weightedDatasetComponent.componentNode as ConceptNodeWithDatasetAttached;
+      const result = calculateEqualDatasetWeightingSchemeWeights([
+        dataset,
+        dataset,
+        dataset,
+        dataset,
+      ]);
+      expect(result).to.deep.equal([25, 25, 25, 25]);
     });
   });
 

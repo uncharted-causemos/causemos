@@ -10,6 +10,7 @@ import {
 import useIndexWorkBench from '@/composables/useIndexWorkBench';
 import useIndexTree from '@/composables/useIndexTree';
 import { IndexProjectionSettings, IndexResultsSettings } from '@/types/Index';
+import { IndexWeightingBehaviour } from '@/types/Enums';
 
 // Whenever a change is made, wait SYNC_DELAY_MS before saving to the backend to
 //  group requests together.
@@ -20,7 +21,7 @@ const _saveState = _.debounce((analysisId: string, state: IndexAnalysisState) =>
 }, SYNC_DELAY_MS);
 
 export default function useIndexAnalysis(analysisId: Ref<string>) {
-  // place for temporally storing detached tree/nodes that are being worked on
+  // place for temporarily storing detached tree/nodes that are being worked on
   const workbench = useIndexWorkBench();
   // primary upstream index tree
   const indexTree = useIndexTree();
@@ -115,6 +116,18 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
     throw new Error('waitForStateInSync has timed out');
   };
 
+  // Index structure settings
+
+  const weightingBehaviour = computed(() => _analysisState.value.weightingBehaviour);
+
+  const setWeightingBehaviour = (_weightingBehaviour: IndexWeightingBehaviour) => {
+    _analysisState.value = {
+      ..._analysisState.value,
+      weightingBehaviour: _weightingBehaviour,
+    };
+    _saveState(analysisId.value, _analysisState.value);
+  };
+
   // Index results settings
 
   const indexResultsSettings = computed(() => _analysisState.value.resultsSettings);
@@ -201,6 +214,8 @@ export default function useIndexAnalysis(analysisId: Ref<string>) {
   return {
     addCountryFilter,
     analysisName,
+    weightingBehaviour,
+    setWeightingBehaviour,
     countryContextForSnippets,
     deleteCountryFilter,
     getCountryFilters,

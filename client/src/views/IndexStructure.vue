@@ -3,7 +3,11 @@
     <analysis-options-button v-if="analysisName" :analysis-id="analysisId" />
   </teleport>
   <div class="index-structure-view-container content-full flex-col">
-    <IndexActionBar @add-concept="addConcept" />
+    <IndexActionBar
+      :weighting-behaviour="weightingBehaviour"
+      @set-weighting-behaviour="setWeightingBehaviour"
+      @add-concept="addConcept"
+    />
     <div class="flex flex-grow h-0 set-background-color" :class="[INSIGHT_CAPTURE_CLASS]">
       <div class="flex-col flex-grow w-0">
         <IndexTreePane
@@ -72,6 +76,8 @@ const {
   getCountryFilters,
   setCountryContextForSnippets,
   countryContextForSnippets,
+  weightingBehaviour,
+  setWeightingBehaviour,
 } = useIndexAnalysis(analysisId);
 
 // This is required because teleported components require their teleport destination to be mounted
