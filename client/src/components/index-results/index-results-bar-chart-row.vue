@@ -27,21 +27,24 @@
           {{ precisionFormatter(dataset.overallWeight) }}%
         </p>
         <div class="index-result-table-dataset-value-column">
-          <p class="de-emphasized un-font-small">{{ precisionFormatter(dataset.datasetValue) }}</p>
+          <p class="de-emphasized un-font-small">
+            {{ precisionFormatter(dataset.datasetValue) }}
+          </p>
+          <min-max-info
+            :placement="'left'"
+            :dataset="dataset.dataset.dataset"
+            :oppositeEdgeCount="indexTree.oppositeEdgeCountToRoot(dataset.dataset)"
+          />
         </div>
-        <min-max-info
-          :placement="'left'"
-          :dataset="dataset.dataset.dataset"
-          :oppositeEdgeCount="indexTree.oppositeEdgeCountToRoot(dataset.dataset)"
-        />
       </div>
-      <button
+      <Button
         v-if="props.rowData.contributingDatasets.length > SHOW_TOP_N_DATASETS_BY_DEFAULT"
-        class="btn btn-sm"
         @click="isShowingAllDatasets = !isShowingAllDatasets"
+        severity="secondary"
+        outlined
       >
         {{ showMoreToggleButtonLabel }}
-      </button>
+      </Button>
     </div>
   </div>
 </template>
@@ -52,6 +55,7 @@ import { IndexResultsData } from '@/types/Index';
 import { ref, computed } from 'vue';
 import MinMaxInfo from '@/components/min-max-info.vue';
 import useIndexTree from '@/composables/useIndexTree';
+import Button from 'primevue/button';
 
 const SHOW_TOP_N_DATASETS_BY_DEFAULT = 3;
 
