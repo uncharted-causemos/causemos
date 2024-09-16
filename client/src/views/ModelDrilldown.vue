@@ -141,7 +141,7 @@
       :initial-breakdown-state="breakdownState"
       @close="isFilterAndCompareModalOpen = false"
       @apply-breakdown-state="setBreakdownState"
-      @set-spatial-aggregation="(newValue) => (spatialAggregation = newValue)"
+      @set-spatial-aggregation="setSpatialAggregation"
     />
   </div>
 </template>
