@@ -18,9 +18,24 @@
           v-if="isShowingKeyDatasets"
           class="key-datasets-labels index-result-table-key-datasets-column"
         >
-          <p class="index-result-table-dataset-name-column">Key datasets</p>
-          <p class="index-result-table-dataset-weight-column">Dataset weight</p>
-          <p class="index-result-table-dataset-value-column">Value</p>
+          <p
+            class="index-result-table-dataset-name-column"
+            v-tooltip="`Sorted by the dataset's weight times this country's value.`"
+          >
+            Key datasets
+          </p>
+          <p
+            class="index-result-table-dataset-weight-column"
+            v-tooltip="`How much this dataset impacts ${props.selectedNodeName}.`"
+          >
+            Dataset weight
+          </p>
+          <p
+            class="index-result-table-dataset-value-column"
+            v-tooltip="`The country's value in the dataset, scaled to the range 0 to 1.`"
+          >
+            Value
+          </p>
         </div>
       </div>
     </header>
