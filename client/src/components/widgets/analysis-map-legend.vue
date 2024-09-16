@@ -1,5 +1,5 @@
 <template>
-  <div class="map-legend-container">
+  <div class="map-legend-container" :class="{ 'center-labels': shouldCenterLabels }">
     <span class="color-label subdued" v-if="ramp.length > 0">
       {{ formatter(ramp[ramp.length - 1].maxLabel) }}
     </span>
@@ -19,6 +19,7 @@ import { ramp as createRamp } from '@/utils/colors-util';
 const props = defineProps<{
   ramp: MapLegendColor[];
   isContinuous: boolean;
+  shouldCenterLabels?: boolean;
 }>();
 const { ramp, isContinuous } = toRefs(props);
 const colorRamp = ref<SVGElement>();
@@ -82,6 +83,8 @@ svg {
 .color-label {
   position: relative;
   padding: 2px 0;
+}
+.map-legend-container:not(.center-labels) .color-label {
   align-self: flex-end;
 }
 </style>

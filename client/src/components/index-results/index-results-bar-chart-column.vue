@@ -1,14 +1,14 @@
 <template>
   <div class="index-results-bar-chart-column-container flex-col">
     <header class="flex-col">
-      <div class="flex">
-        <button
-          class="btn btn-sm toggle-key-datasets-button"
-          @click="emit('toggle-is-showing-key-datasets')"
-        >
-          {{ isShowingKeyDatasets ? 'Hide' : 'Show' }} key datasets for each country
-        </button>
-      </div>
+      <label class="toggle-key-datasets">
+        <Checkbox
+          binary
+          :model-value="isShowingKeyDatasets"
+          @update:model-value="emit('toggle-is-showing-key-datasets')"
+        />
+        Show explanations
+      </label>
       <div class="table-header">
         <div class="index-result-table-output-value-column flex">
           <p class="index-result-table-dataset-country-column">Country</p>
@@ -18,9 +18,24 @@
           v-if="isShowingKeyDatasets"
           class="key-datasets-labels index-result-table-key-datasets-column"
         >
-          <p class="index-result-table-dataset-name-column">Key datasets</p>
-          <p class="index-result-table-dataset-weight-column">Dataset weight</p>
-          <p class="index-result-table-dataset-value-column">Country's value</p>
+          <p
+            class="index-result-table-dataset-name-column"
+            v-tooltip="`Sorted by the dataset's weight times this country's value.`"
+          >
+            Key datasets
+          </p>
+          <p
+            class="index-result-table-dataset-weight-column"
+            v-tooltip="`How much this dataset impacts ${props.selectedNodeName}.`"
+          >
+            Dataset weight
+          </p>
+          <p
+            class="index-result-table-dataset-value-column"
+            v-tooltip="`The country's value in the dataset, scaled to the range 0 to 1.`"
+          >
+            Value
+          </p>
         </div>
       </div>
     </header>
@@ -40,9 +55,9 @@
         {{ removedCountries.length === 1 ? 'country' : 'countries' }} are hidden because they are
         not covered by one or more datasets.
       </p>
-      <button class="btn btn-default btn-sm review-hidden-button" @click="showReview = true">
+      <Button class="review-hidden-button" outlined severity="secondary" @click="showReview = true">
         Review hidden {{ removedCountries.length === 1 ? 'country' : 'countries' }}
-      </button>
+      </Button>
     </div>
     <modal-removed-country-review
       class="country-review"
@@ -60,6 +75,8 @@ import IndexResultsBarChartRow from '@/components/index-results/index-results-ba
 import { IndexResultsData, IndexResultsSettings } from '@/types/Index';
 import { getIndexResultsColorConfig } from '@/utils/index-results-util';
 import ModalRemovedCountryReview from '@/components/modals/modal-removed-country-review.vue';
+import Checkbox from 'primevue/checkbox';
+import Button from 'primevue/button';
 
 const props = defineProps<{
   isShowingKeyDatasets: boolean;
@@ -84,34 +101,42 @@ const colorConfig = computed(() =>
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/index-results';
 .index-results-bar-chart-column-container {
-  border-right: 1px solid $un-color-black-10;
-  gap: 20px;
-  padding: 20px;
+  gap: 10px;
 }
 
-.toggle-key-datasets-button {
-  width: 100%;
+.toggle-key-datasets {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 header {
-  gap: 10px;
-  h5 {
-    flex: 1;
-    min-width: 0;
-  }
+  gap: 5px;
 }
 
 .results-rows {
-  gap: 40px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+
+  & > * {
+    padding-block: 10px;
+  }
+
+  & > *:not(:first-child) {
+    border-top: 1px solid var(--p-content-border-color);
+  }
 }
 .table-header {
   display: flex;
+  align-items: flex-end;
   gap: $index-result-table-column-gap;
   border-bottom: 1px solid $un-color-black-10;
-  color: $un-color-black-40;
+  color: var(--p-text-muted-color);
+  background: var(--p-surface-50);
+  padding: 5px 0;
+  scrollbar-gutter: stable;
+  overflow: hidden;
   .key-datasets-labels {
     display: flex;
     gap: $index-result-table-key-datasets-column-gap;
@@ -121,7 +146,6 @@ header {
 
 .removed-countries {
   .review-hidden-button {
-    width: 100%;
     margin-top: 5px;
   }
 }

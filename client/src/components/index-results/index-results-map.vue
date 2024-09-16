@@ -6,7 +6,12 @@
       :selected-admin-level="0"
       :disable-pan-zoom="false"
     />
-    <MapLegend :ramp="mapLegendData" :isContinuous="false" :formatter="d3.format(',.0f')" />
+    <AnalysisMapLegend
+      :ramp="mapLegendData"
+      :isContinuous="false"
+      :formatter="d3.format(',.0f')"
+      :should-center-labels="true"
+    />
   </div>
 </template>
 
@@ -14,7 +19,7 @@
 import * as d3 from 'd3';
 import { computed, ref, watch } from 'vue';
 import RegionMap from '@/components/widgets/region-map.vue';
-import MapLegend from '../widgets/map-legend.vue';
+import AnalysisMapLegend from '../widgets/analysis-map-legend.vue';
 import { getIndexResultsColorConfig } from '@/utils/index-results-util';
 import { IndexResultsData, IndexResultsSettings } from '@/types/Index';
 import {
@@ -66,16 +71,12 @@ const mapLegendData = computed(() =>
 <style lang="scss" scoped>
 .index-results-map-container {
   height: 100%;
-  :deep(.color-label) {
-    background: transparent;
-    right: 25px;
-  }
+  position: relative;
   .map-legend-container {
-    position: relative;
-    width: 48px;
-    height: 400px;
-    bottom: 450px;
-    left: 10px;
+    position: absolute;
+    height: 200px;
+    bottom: 10px;
+    right: 10px;
   }
 }
 </style>
