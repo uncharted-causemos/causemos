@@ -30,6 +30,7 @@
         :index-results-data="indexResultsData"
         :settings="indexResultsSettings"
         :aggregation-level="aggregationLevel"
+        @click-region="onMapClick"
       />
     </div>
   </div>
@@ -63,6 +64,11 @@ import { TYPE } from 'vue-toastification';
 import { INSIGHT_CAPTURE_CLASS, isIndexResultsDataState } from '@/utils/insight-util';
 import { RegionalAggregation } from '@/types/Outputdata';
 import Button from 'primevue/button';
+import {
+  adminLevelToString,
+  getLevelFromRegionId,
+  getParentRegion,
+} from '@/utils/admin-level-util';
 
 // This is required because teleported components require their teleport destination to be mounted
 //  before they can be rendered.
@@ -102,9 +108,24 @@ const { tree } = useIndexTree();
 
 const selectedNodeName = computed(() => tree.value.name);
 
-const selectedCountry = ref<string | null>(null);
+const selectedRegion = ref<string | null>(null);
+const onMapClick = (regionId: string) => {
+  if (regionId !== '') {
+    // Select the region that was clicked
+    selectedRegion.value = regionId;
+  } else if (selectedRegion.value === null) {
+    // We're already at the top level, nothing needs to be done.
+  } else {
+    const parentRegion = getParentRegion(selectedRegion.value);
+    // Navigate up one level to the parent of the currently selected region
+    selectedRegion.value = parentRegion === '' ? null : parentRegion;
+  }
+};
+// Show regions that are 1 level below the currently selected region.
 const aggregationLevel = computed(() =>
-  selectedCountry.value === null ? AdminLevel.Country : AdminLevel.Admin1
+  selectedRegion.value === null
+    ? AdminLevel.Country
+    : adminLevelToString(getLevelFromRegionId(selectedRegion.value) + 1)
 );
 
 /**
@@ -190,7 +211,7 @@ const datasets = ref<ConceptNodeWithDatasetAttached[]>([]);
 const regionDataForEachDataset = ref<RegionalAggregation[]>([]);
 
 // Whenever the tree changes, fetch data and calculate `indexResultsData`.
-watch([tree, weightingBehaviour], async () => {
+watch([tree, weightingBehaviour, aggregationLevel], async () => {
   // Save a reference to the current version of the tree so that if it changes before all of the
   //  fetch requests return, we only perform calculations and update the state with the most up-to-
   //  date tree structure.

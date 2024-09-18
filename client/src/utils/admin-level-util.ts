@@ -176,6 +176,10 @@ export function getFullRegionIdDisplayName(regionId: string) {
   return regionId.split(REGION_ID_DELIMETER).reverse().join(REGION_ID_DISPLAY_DELIMETER);
 }
 
+export function getParentRegion(regionId: string) {
+  return regionId.split(REGION_ID_DELIMETER).slice(0, -1).join(REGION_ID_DELIMETER);
+}
+
 export function getAdminLevelFromSpatialAggregation(aggregation: SpatialAggregation) {
   if (aggregation === DatacubeGeoAttributeVariableType.Country) return 0;
   if (aggregation === DatacubeGeoAttributeVariableType.Admin1) return 1;
