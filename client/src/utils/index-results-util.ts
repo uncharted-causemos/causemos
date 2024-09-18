@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { DiscreteOuputScale } from '@/types/Enums';
+import { AdminLevel, DiscreteOuputScale } from '@/types/Enums';
 import {
   IndexResultsData,
   IndexResultsContributingDataset,
@@ -11,68 +11,71 @@ import { RegionalAggregation } from '@/types/Outputdata';
 import { COLOR, getColors } from './colors-util';
 
 /**
- * Summarizes the countries that are found across multiple datasets.
- * Returns the summary as sets to quickly determine whether a given country is in either.
+ * Summarizes the regions that are found across multiple datasets.
+ * Returns the summary as sets to quickly determine whether a given region is in either.
  * @param regionData a list of RegionalAggregation objects, one for each dataset.
- * @returns two sets representing the country names that are found in all or just some datasets.
+ * @param aggregationLevel returns regions at this admin level (e.g. 'country', 'admin1', ...).
+ * @returns two sets representing the region IDs that are found in all or just some datasets.
  */
 export const calculateCoverage = (
-  regionData: RegionalAggregation[]
+  regionData: RegionalAggregation[],
+  aggregationLevel: AdminLevel
 ): {
-  countriesInAllDatasets: Set<string>;
-  countriesInSomeDatasets: Set<string>;
+  regionsInAllDatasets: Set<string>;
+  regionsInSomeDatasets: Set<string>;
 } => {
   if (regionData.length === 0) {
     return {
-      countriesInAllDatasets: new Set(),
-      countriesInSomeDatasets: new Set(),
+      regionsInAllDatasets: new Set(),
+      regionsInSomeDatasets: new Set(),
     };
   }
-  // Pull out a list of just country names (no values) for each dataset
-  const countryLists = regionData.map(
-    (regionDataForOneDataset) => regionDataForOneDataset.country?.map(({ id }) => id) ?? []
+  // Pull out a list of just region IDs (no values) for each dataset
+  const regionLists = regionData.map(
+    (regionDataForOneDataset) =>
+      regionDataForOneDataset[aggregationLevel]?.map(({ id }) => id) ?? []
   );
-  // Identify countries found in all datasets and those found in only some
-  let countriesInAllDatasets = new Set(countryLists[0]);
-  const countriesInSomeDatasets = new Set(countryLists[0]);
-  countryLists.slice(1).forEach((countryList) => {
-    countryList.forEach((country) => {
-      // Add all countries to countriesInSomeDatasets
-      countriesInSomeDatasets.add(country);
+  // Identify regions found in all datasets and those found in only some
+  let regionsInAllDatasets = new Set(regionLists[0]);
+  const regionsInSomeDatasets = new Set(regionLists[0]);
+  regionLists.slice(1).forEach((regionList) => {
+    regionList.forEach((region) => {
+      // Add all regions to regionsInSomeDatasets
+      regionsInSomeDatasets.add(region);
     });
-    // Remove all countries in countriesInAllDatasets that aren't found in this one
+    // Remove all regions in regionsInAllDatasets that aren't found in this one
     //  (take the intersection)
-    countriesInAllDatasets = new Set(
-      countryList.filter((country) => countriesInAllDatasets.has(country))
-    );
+    regionsInAllDatasets = new Set(regionList.filter((region) => regionsInAllDatasets.has(region)));
   });
   return {
-    countriesInAllDatasets,
-    countriesInSomeDatasets,
+    regionsInAllDatasets,
+    regionsInSomeDatasets,
   };
 };
 
 /**
- * Multiplies each dataset's overall weight by the value of the country in the dataset.
+ * Multiplies each dataset's overall weight by the value of the region in the dataset.
  * ASSUMES that the relevant data for dataset[i] can be found at overallWeightForEachDataset[i] and
  *  regionDataForEachDataset[i].
  * NOTE: does not sort or filter the results.
- * @param country the name string of the country that indicates which values to look for.
+ * @param region the ID string of the region that indicates which values to look for.
  * @param datasets All dataset nodes in the index.
  * @param overallWeightForEachDataset The overall weight for each node.
  * @param regionDataForEachDataset The regional data for each node.
+ * @param aggregationLevel The admin level of the region to search for.
  * @returns a list of IndexResultsContributingDataset objects.
  */
 export const calculateContributingDatasets = (
-  country: string,
+  regionId: string,
   datasets: ConceptNodeWithDatasetAttached[],
   overallWeightForEachDataset: number[],
-  regionDataForEachDataset: RegionalAggregation[]
+  regionDataForEachDataset: RegionalAggregation[],
+  aggregationLevel: AdminLevel
 ): IndexResultsContributingDataset[] => {
   return datasets.map((dataset, i) => {
     const overallWeight = overallWeightForEachDataset[i];
-    const countriesWithValues = regionDataForEachDataset[i].country;
-    const datasetValue = countriesWithValues?.find((entry) => entry.id === country)?.value ?? null;
+    const regionsWithValues = regionDataForEachDataset[i][aggregationLevel];
+    const datasetValue = regionsWithValues?.find((entry) => entry.id === regionId)?.value ?? null;
     const weightedDatasetValue = datasetValue !== null ? datasetValue * overallWeight : null;
     return {
       overallWeight,
@@ -84,35 +87,38 @@ export const calculateContributingDatasets = (
 };
 
 /**
- * Calculates the overall value for each country by
- *  - multiplying each dataset's overall weight by the value of the country in the dataset
+ * Calculates the overall value for each region by
+ *  - multiplying each dataset's overall weight by the value of the region in the dataset
  *  - adding up all the products
  * While doing so, keeps track of
- *  - how much each dataset contributes to each country's overall value
- *  - whether each country is found in all datasets
+ *  - how much each dataset contributes to each region's overall value
+ *  - whether each region is found in all datasets
  * ASSUMES that the relevant data for dataset[i] can be found at overallWeightForEachDataset[i] and
  *  regionDataForEachDataset[i].
  * NOTE: does not sort or filter the results.
  * @param datasetsWithOverallWeight All dataset nodes in the index.
  * @param overallWeightForEachDataset The overall weight for each node.
  * @param regionDataForEachDataset The regional data for each node.
+ * @param aggregationLevel Regions at this admin level will be returned.
  */
 export const calculateIndexResults = (
   datasets: ConceptNodeWithDatasetAttached[],
   overallWeightForEachDataset: number[],
-  regionDataForEachDataset: RegionalAggregation[]
+  regionDataForEachDataset: RegionalAggregation[],
+  aggregationLevel: AdminLevel
 ): IndexResultsData[] => {
-  const { countriesInSomeDatasets } = calculateCoverage(regionDataForEachDataset);
-  return [...countriesInSomeDatasets].map((country) => {
+  const { regionsInSomeDatasets } = calculateCoverage(regionDataForEachDataset, aggregationLevel);
+  return [...regionsInSomeDatasets].map((regionId) => {
     const contributingDatasets = calculateContributingDatasets(
-      country,
+      regionId,
       datasets,
       overallWeightForEachDataset,
-      regionDataForEachDataset
+      regionDataForEachDataset,
+      aggregationLevel
     );
     const overallValue = _.sum(contributingDatasets.map((entry) => entry.weightedDatasetValue));
     return {
-      countryName: country,
+      regionId,
       value: overallValue,
       contributingDatasets,
     };

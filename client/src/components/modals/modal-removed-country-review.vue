@@ -1,22 +1,22 @@
 <template>
-  <modal @close="close()">
+  <modal @close="close">
     <template #header>
-      <h4>Hidden countries</h4>
+      <h4>Hidden regions</h4>
     </template>
     <template #body>
       <div class="container">
         <nav>
-          <div class="country-col">Country</div>
+          <div class="region-col">Region</div>
           <div class="missing-from">Not covered by</div>
         </nav>
         <div class="rows">
-          <div class="row" v-for="(country, index) in removedCountries" :key="index">
-            <div class="country-name">{{ country.countryName }}</div>
+          <div class="row" v-for="region in removedRegions" :key="region.regionId">
+            <div class="region-name">{{ getFullRegionIdDisplayName(region.regionId) }}</div>
             <div class="removed-from">
-              <div v-for="(dataSource, index2) in country.removedFrom" :key="index2">
+              <div v-for="(dataSource, i) in region.removedFrom" :key="i">
                 {{ dataSource }}
               </div>
-              <div v-if="country.removedFrom.length === 0">Not specified</div>
+              <div v-if="region.removedFrom.length === 0">Not specified</div>
             </div>
           </div>
         </div>
@@ -24,7 +24,7 @@
     </template>
     <template #footer>
       <ul class="unstyled-list">
-        <button ref="close" type="button" class="btn first-button" @click.stop="close()">
+        <button ref="closeButton" type="button" class="btn first-button" @click.stop="close">
           Close
         </button>
       </ul>
@@ -32,29 +32,24 @@
   </modal>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { onMounted, ref } from 'vue';
 import Modal from '@/components/modals/modal.vue';
+import { getFullRegionIdDisplayName } from '@/utils/admin-level-util';
 
-export default defineComponent({
-  name: 'Removed Country Review',
-  components: {
-    Modal,
-  },
-  props: {
-    removedCountries: Array<{ countryName: string; removedFrom: string[] }>,
-  },
-  emits: ['close'],
-  mounted() {
-    const el = this.$refs.close as HTMLButtonElement;
-    el.focus();
-  },
-  methods: {
-    close() {
-      this.$emit('close', null);
-    },
-  },
+defineProps<{ removedRegions: Array<{ regionId: string; removedFrom: string[] }> }>();
+
+const emit = defineEmits<{ (e: 'close'): void }>();
+
+const closeButton = ref<HTMLButtonElement>();
+
+onMounted(() => {
+  closeButton.value?.focus();
 });
+
+const close = () => {
+  emit('close');
+};
 </script>
 
 <style scoped lang="scss">
@@ -85,7 +80,7 @@ export default defineComponent({
     justify-content: center;
     border-bottom: 1px solid $un-color-black-40;
 
-    .country-col {
+    .region-col {
       width: 40%;
     }
 
@@ -108,7 +103,7 @@ export default defineComponent({
       display: flex;
       flex-direction: row;
       gap: 10px;
-      .country-name {
+      .region-name {
         width: 40%;
       }
       .removed-from {

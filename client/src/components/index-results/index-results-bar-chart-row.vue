@@ -2,8 +2,8 @@
   <div class="index-results-bar-chart-row-container">
     <div class="flex-col index-result-table-output-value-column">
       <div class="flex country-name-and-value">
-        <p class="index-result-table-dataset-country-column">
-          {{ `${props.rank}. ${props.rowData.countryName}` }}
+        <p class="index-result-table-dataset-region-column">
+          {{ `${props.rank}. ${getFullRegionIdDisplayName(props.rowData.regionId)}` }}
         </p>
         <p>{{ precisionFormatter(props.rowData.value, 0) }}</p>
       </div>
@@ -56,6 +56,7 @@ import { ref, computed } from 'vue';
 import MinMaxInfo from '@/components/min-max-info.vue';
 import useIndexTree from '@/composables/useIndexTree';
 import Button from 'primevue/button';
+import { getFullRegionIdDisplayName } from '@/utils/admin-level-util';
 
 const SHOW_TOP_N_DATASETS_BY_DEFAULT = 3;
 
@@ -97,7 +98,7 @@ const showMoreToggleButtonLabel = computed(() =>
   gap: 10px;
 }
 
-.index-result-table-dataset-country-column {
+.index-result-table-dataset-region-column {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;

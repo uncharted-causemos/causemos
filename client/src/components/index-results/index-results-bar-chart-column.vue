@@ -11,7 +11,7 @@
       </label>
       <div class="table-header">
         <div class="index-result-table-output-value-column flex">
-          <p class="index-result-table-dataset-country-column">Country</p>
+          <p class="index-result-table-dataset-region-column">Region</p>
           <p v-if="!isShowingKeyDatasets">{{ props.selectedNodeName }}</p>
         </div>
         <div
@@ -49,23 +49,22 @@
         :is-expanded="isShowingKeyDatasets"
       />
     </div>
-    <div v-if="removedCountries.length > 0" class="removed-countries subdued">
+    <div v-if="removedRegions.length > 0" class="removed-countries subdued">
       <p>
-        {{ removedCountries.length }}
-        {{ removedCountries.length === 1 ? 'country' : 'countries' }} are hidden because they are
-        not covered by one or more datasets.
+        {{ removedRegions.length }}
+        {{ removedRegions.length === 1 ? 'region' : 'regions' }} are hidden because they are not
+        covered by one or more datasets.
       </p>
       <Button class="review-hidden-button" outlined severity="secondary" @click="showReview = true">
-        Review hidden {{ removedCountries.length === 1 ? 'country' : 'countries' }}
+        Review hidden {{ removedRegions.length === 1 ? 'region' : 'regions' }}
       </Button>
     </div>
     <modal-removed-country-review
       class="country-review"
       v-if="showReview"
-      :removed-countries="removedCountries"
+      :removed-regions="removedRegions"
       @close="showReview = false"
-    >
-    </modal-removed-country-review>
+    />
   </div>
 </template>
 
@@ -83,7 +82,7 @@ const props = defineProps<{
   indexResultsData: IndexResultsData[];
   indexResultsSettings: IndexResultsSettings;
   selectedNodeName: string;
-  removedCountries: { countryName: string; removedFrom: string[] }[];
+  removedRegions: { regionId: string; removedFrom: string[] }[];
 }>();
 
 const showReview = ref<boolean>(false);

@@ -21,12 +21,16 @@
         :index-results-data="indexResultsData"
         :index-results-settings="indexResultsSettings"
         :selected-node-name="selectedNodeName"
-        :removed-countries="removedCountriesData"
+        :removed-regions="removedRegionsData"
         @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
       />
     </div>
     <div class="map">
-      <IndexResultsMap :index-results-data="indexResultsData" :settings="indexResultsSettings" />
+      <IndexResultsMap
+        :index-results-data="indexResultsData"
+        :settings="indexResultsSettings"
+        :aggregation-level="aggregationLevel"
+      />
     </div>
   </div>
 </template>
@@ -45,7 +49,7 @@ import {
   countOppositeEdgesBetweenNodes,
   calculateOverallWeightForEachDataset,
 } from '@/utils/index-tree-util';
-import { calculateIndexResults } from '@/utils/index-results-util';
+import { calculateCoverage, calculateIndexResults } from '@/utils/index-results-util';
 import { ConceptNodeWithDatasetAttached, IndexResultsData } from '@/types/Index';
 import { getIndexRegionAggregation, TRANSFORM_NORM } from '@/services/outputdata-service';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
@@ -98,6 +102,11 @@ const { tree } = useIndexTree();
 
 const selectedNodeName = computed(() => tree.value.name);
 
+const selectedCountry = ref<string | null>(null);
+const aggregationLevel = computed(() =>
+  selectedCountry.value === null ? AdminLevel.Country : AdminLevel.Admin1
+);
+
 /**
  * Sort high values to the front of the list, then low values, then null values.
  * NOTE: Sorts the list in place.
@@ -122,101 +131,60 @@ function sortForDisplay<T>(list: T[], accessor: (item: T) => number | null) {
 }
 
 /**
- * Sorts countries and their contributing datasets.
+ * Sorts regions and their contributing datasets.
  *
- * Removes any contributing datasets that don't have a value for the current country and removes
- * any countries (stored for review) that are not present in all datasets to avoid misleading data.
+ * Removes any contributing datasets that don't have a value for the current region and removes
+ * any regions (stored for review) that are not present in all datasets to avoid misleading data.
  *
  * @param results Unsorted index results, that may contain contributing datasets with null values.
  */
 const prepareResultsForDisplay = (results: IndexResultsData[]): IndexResultsData[] => {
-  removedCountries.value = [];
   const preparedResultsAll = _.cloneDeep(results);
-
-  // Remove countries that are missing from some datasets during clone. Store for reference.
-  const preparedResults = preparedResultsAll.filter((country) => {
-    if (countryIntersection.value.includes(country.countryName)) {
-      return true;
-    }
-    removedCountries.value = [...removedCountries.value, _.cloneDeep(country)];
-    return false;
-  });
-
-  // Remove datasets that don't include the current country
-  preparedResults.forEach((countryWithData) => {
-    const filteredDatasets = countryWithData.contributingDatasets.filter(
+  const { regionsInAllDatasets } = calculateCoverage(
+    regionDataForEachDataset.value,
+    aggregationLevel.value
+  );
+  // Remove regions that are missing from some datasets during clone.
+  const preparedResults = preparedResultsAll.filter((region) =>
+    regionsInAllDatasets.has(region.regionId)
+  );
+  // Remove datasets that don't include the current region
+  preparedResults.forEach((regionWithData) => {
+    const filteredDatasets = regionWithData.contributingDatasets.filter(
       (value) => value.datasetValue !== null
     );
-    // Sort datasets by how much they contributed to the overall value
+    // Sort datasets within each result by how much they contributed to the
+    //  overall value
     sortForDisplay(filteredDatasets, (dataset) => dataset.weightedDatasetValue);
-    countryWithData.contributingDatasets = filteredDatasets;
+    regionWithData.contributingDatasets = filteredDatasets;
   });
-  // Sort countries by overall value
+  // Sort regions by overall value
   sortForDisplay(preparedResults, (result) => result.value);
 
   return preparedResults;
 };
 
-const indexResultsData = ref<IndexResultsData[]>([]);
-const removedCountries = ref<IndexResultsData[]>([]);
-const countryIntersection = ref<string[]>([]);
+const unsortedResults = ref<IndexResultsData[]>([]);
+const indexResultsData = computed(() => prepareResultsForDisplay(unsortedResults.value));
 
-/**
- * associate removed countries with their source data.
- */
-const removedCountriesData = computed(() => {
-  return removedCountries.value.map((country) => ({
-    countryName: country.countryName,
-    removedFrom: countryMissingFrom(country.countryName),
-  }));
+const removedRegionsData = computed(() => {
+  const result: { regionId: string; removedFrom: string[] }[] = [];
+  unsortedResults.value.forEach((regionData) => {
+    const { regionId, contributingDatasets } = regionData;
+    // Datasets not found in contributing datasets
+    const datasetsMissingThisRegion = datasets.value.filter(
+      (dataset) =>
+        contributingDatasets.find((cd) => cd.dataset.id === dataset.id)?.datasetValue === null
+    );
+    if (datasetsMissingThisRegion.length > 0) {
+      result.push({
+        regionId,
+        removedFrom: datasetsMissingThisRegion.map(({ name }) => name),
+      });
+    }
+  });
+  return result;
 });
-
-/**
- * Check a country against all datasets and list the datasets from which it is absent
- * @param countryName
- */
-const countryMissingFrom = (countryName: string) => {
-  let missingFromList: string[] = [];
-  regionDataForEachDataset.value.forEach((dataset: any, index) => {
-    if (dataset.country.filter((aCountry: any) => aCountry.id === countryName).length === 0) {
-      missingFromList = [...missingFromList, datasets.value[index].dataset.datasetName];
-    }
-  });
-  return missingFromList;
-};
-
-/**
- * Given a set of data sources with country based data, generate a list of common (intersection)
- * countries.  Can be used to filter displayed data when missing country data may have a negative effect
- * on some calculations (weights and such).
- *
- * @param datasets
- */
-const findCountryIntersection = (): string[] => {
-  const allPossible: string[] = [];
-  regionDataForEachDataset.value.forEach((dataset: any) => {
-    dataset.country.forEach((aCountry: any) => {
-      allPossible.push(aCountry.id);
-    });
-  });
-
-  const uniqueCountries: string[] = _.uniq(allPossible);
-
-  const commonCountries: string[] = [];
-  uniqueCountries.forEach((country) => {
-    let isCommon = true;
-    regionDataForEachDataset.value.forEach((dataset: any) => {
-      if (dataset.country.findIndex((c: any) => c.id === country) < 0) {
-        isCommon = false;
-      }
-    });
-    if (isCommon) {
-      commonCountries.push(country);
-    }
-  });
-
-  return commonCountries;
-};
 
 const datasets = ref<ConceptNodeWithDatasetAttached[]>([]);
 const regionDataForEachDataset = ref<RegionalAggregation[]>([]);
@@ -237,12 +205,11 @@ watch([tree, weightingBehaviour], async () => {
     getIndexRegionAggregation({
       ...convertDataConfigToOutputSpec(dataset.dataset.config),
       transform: TRANSFORM_NORM,
-      adminLevel: AdminLevel.Country,
+      adminLevel: aggregationLevel.value,
     })
   );
   // Wait for all fetches to complete.
   regionDataForEachDataset.value = await Promise.all(promises);
-  countryIntersection.value = findCountryIntersection();
 
   if (tree.value !== frozenTreeState) {
     // Tree has changed since the fetches began, so ignore these results.
@@ -273,20 +240,20 @@ watch([tree, weightingBehaviour], async () => {
     // If this dataset is inverted, higher original values should map closer to 0 and lower
     //  original values should map closer to 1.
     if (shouldDatasetsBeInverted[i]) {
-      regionData.country = regionData.country?.map((country) => ({
-        id: country.id,
-        value: 1 - country.value,
+      regionData.admin1 = regionData.admin1?.map((region) => ({
+        id: region.id,
+        value: 1 - region.value,
       }));
     }
   });
 
   // All the data has been fetched and normalized, perform the actual result calculations.
-  const unsortedResults = calculateIndexResults(
+  unsortedResults.value = calculateIndexResults(
     datasets.value,
     overallWeightForEachDataset,
-    regionDataForEachDataset.value
+    regionDataForEachDataset.value,
+    aggregationLevel.value
   );
-  indexResultsData.value = prepareResultsForDisplay(unsortedResults);
 });
 
 const isShowingKeyDatasets = ref(false);
