@@ -14,6 +14,20 @@
         />
         <h3>Index results</h3>
       </header>
+
+      <div class="breadcrumbs">
+        <template v-for="(breadcrumb, i) of breadcrumbs" :key="breadcrumb.value">
+          <i class="fa fa-caret-right" v-if="i !== 0" />
+          <Button
+            text
+            :disabled="i === breadcrumbs.length - 1"
+            @click="() => (selectedRegionId = breadcrumb.value)"
+            :label="breadcrumb.label"
+            size="small"
+          />
+        </template>
+      </div>
+
       <IndexResultsBarChartColumn
         class="bars-column"
         :class="{ expanded: isShowingKeyDatasets }"
@@ -69,6 +83,7 @@ import {
   getLevelFromRegionId,
   getParentRegion,
   isAncestorOfRegion,
+  REGION_ID_DELIMETER,
 } from '@/utils/admin-level-util';
 
 // This is required because teleported components require their teleport destination to be mounted
@@ -128,6 +143,19 @@ const aggregationLevel = computed(() =>
     ? AdminLevel.Country
     : adminLevelToString(getLevelFromRegionId(selectedRegionId.value) + 1)
 );
+// Used to display which region is currently selected.
+// Allows the user to click one of the region's ancestors to navigate back up
+//  through the hierarchy.
+const breadcrumbs = computed(() => {
+  const ancestors = selectedRegionId.value?.split(REGION_ID_DELIMETER) ?? [];
+  return [
+    { label: 'All countries', value: null },
+    ...ancestors.map((region, i) => ({
+      label: region,
+      value: ancestors.slice(0, i + 1).join(REGION_ID_DELIMETER),
+    })),
+  ];
+});
 
 /**
  * Sort high values to the front of the list, then low values, then null values.
@@ -351,6 +379,17 @@ $column-padding: 20px;
   padding: $column-padding;
   border-right: 1px solid $un-color-black-10;
   gap: 3rem;
+}
+
+.breadcrumbs {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+
+  i {
+    color: var(--p-surface-400);
+    font-size: 1rem;
+  }
 }
 
 .bars-column {
