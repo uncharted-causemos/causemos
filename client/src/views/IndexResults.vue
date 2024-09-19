@@ -68,6 +68,7 @@ import {
   adminLevelToString,
   getLevelFromRegionId,
   getParentRegion,
+  isAncestorOfRegion,
 } from '@/utils/admin-level-util';
 
 // This is required because teleported components require their teleport destination to be mounted
@@ -108,24 +109,24 @@ const { tree } = useIndexTree();
 
 const selectedNodeName = computed(() => tree.value.name);
 
-const selectedRegion = ref<string | null>(null);
+const selectedRegionId = ref<string | null>(null);
 const onMapClick = (regionId: string) => {
   if (regionId !== '') {
     // Select the region that was clicked
-    selectedRegion.value = regionId;
-  } else if (selectedRegion.value === null) {
+    selectedRegionId.value = regionId;
+  } else if (selectedRegionId.value === null) {
     // We're already at the top level, nothing needs to be done.
   } else {
-    const parentRegion = getParentRegion(selectedRegion.value);
+    const parentRegion = getParentRegion(selectedRegionId.value);
     // Navigate up one level to the parent of the currently selected region
-    selectedRegion.value = parentRegion === '' ? null : parentRegion;
+    selectedRegionId.value = parentRegion === '' ? null : parentRegion;
   }
 };
 // Show regions that are 1 level below the currently selected region.
 const aggregationLevel = computed(() =>
-  selectedRegion.value === null
+  selectedRegionId.value === null
     ? AdminLevel.Country
-    : adminLevelToString(getLevelFromRegionId(selectedRegion.value) + 1)
+    : adminLevelToString(getLevelFromRegionId(selectedRegionId.value) + 1)
 );
 
 /**
@@ -165,10 +166,15 @@ const prepareResultsForDisplay = (results: IndexResultsData[]): IndexResultsData
     regionDataForEachDataset.value,
     aggregationLevel.value
   );
-  // Remove regions that are missing from some datasets during clone.
-  const preparedResults = preparedResultsAll.filter((region) =>
-    regionsInAllDatasets.has(region.regionId)
-  );
+  const preparedResults = preparedResultsAll
+    // If a region is selected, filter out any regions that aren't within it.
+    .filter(
+      (region) =>
+        selectedRegionId.value === null ||
+        isAncestorOfRegion(selectedRegionId.value, region.regionId)
+    )
+    // Remove regions that are missing from some datasets during clone.
+    .filter((region) => regionsInAllDatasets.has(region.regionId));
   // Remove datasets that don't include the current region
   preparedResults.forEach((regionWithData) => {
     const filteredDatasets = regionWithData.contributingDatasets.filter(

@@ -180,6 +180,10 @@ export function getParentRegion(regionId: string) {
   return regionId.split(REGION_ID_DELIMETER).slice(0, -1).join(REGION_ID_DELIMETER);
 }
 
+export function isAncestorOfRegion(ancestorId: string, regionId: string) {
+  return regionId.slice(0, ancestorId.length) === ancestorId;
+}
+
 export function getAdminLevelFromSpatialAggregation(aggregation: SpatialAggregation) {
   if (aggregation === DatacubeGeoAttributeVariableType.Country) return 0;
   if (aggregation === DatacubeGeoAttributeVariableType.Admin1) return 1;
