@@ -14,6 +14,20 @@
         />
         <h3>Index results</h3>
       </header>
+
+      <div class="breadcrumbs">
+        <template v-for="(breadcrumb, i) of breadcrumbs" :key="breadcrumb.value">
+          <i class="fa fa-caret-right" v-if="i !== 0" />
+          <Button
+            text
+            :disabled="i === breadcrumbs.length - 1"
+            @click="() => (selectedRegionId = breadcrumb.value)"
+            :label="breadcrumb.label"
+            size="small"
+          />
+        </template>
+      </div>
+
       <IndexResultsBarChartColumn
         class="bars-column"
         :class="{ expanded: isShowingKeyDatasets }"
@@ -21,12 +35,17 @@
         :index-results-data="indexResultsData"
         :index-results-settings="indexResultsSettings"
         :selected-node-name="selectedNodeName"
-        :removed-countries="removedCountriesData"
+        :removed-regions="removedRegionsData"
         @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
       />
     </div>
     <div class="map">
-      <IndexResultsMap :index-results-data="indexResultsData" :settings="indexResultsSettings" />
+      <IndexResultsMap
+        :index-results-data="indexResultsData"
+        :settings="indexResultsSettings"
+        :aggregation-level="aggregationLevel"
+        @click-region="onMapClick"
+      />
     </div>
   </div>
 </template>
@@ -45,7 +64,7 @@ import {
   countOppositeEdgesBetweenNodes,
   calculateOverallWeightForEachDataset,
 } from '@/utils/index-tree-util';
-import { calculateIndexResults } from '@/utils/index-results-util';
+import { calculateCoverage, calculateIndexResults } from '@/utils/index-results-util';
 import { ConceptNodeWithDatasetAttached, IndexResultsData } from '@/types/Index';
 import { getIndexRegionAggregation, TRANSFORM_NORM } from '@/services/outputdata-service';
 import IndexResultsBarChartColumn from '@/components/index-results/index-results-bar-chart-column.vue';
@@ -59,6 +78,13 @@ import { TYPE } from 'vue-toastification';
 import { INSIGHT_CAPTURE_CLASS, isIndexResultsDataState } from '@/utils/insight-util';
 import { RegionalAggregation } from '@/types/Outputdata';
 import Button from 'primevue/button';
+import {
+  adminLevelToString,
+  getLevelFromRegionId,
+  getParentRegion,
+  isAncestorOfRegion,
+  REGION_ID_DELIMETER,
+} from '@/utils/admin-level-util';
 
 // This is required because teleported components require their teleport destination to be mounted
 //  before they can be rendered.
@@ -98,6 +124,39 @@ const { tree } = useIndexTree();
 
 const selectedNodeName = computed(() => tree.value.name);
 
+const selectedRegionId = ref<string | null>(null);
+const onMapClick = (regionId: string) => {
+  if (regionId !== '') {
+    // Select the region that was clicked
+    selectedRegionId.value = regionId;
+  } else if (selectedRegionId.value === null) {
+    // We're already at the top level, nothing needs to be done.
+  } else {
+    const parentRegion = getParentRegion(selectedRegionId.value);
+    // Navigate up one level to the parent of the currently selected region
+    selectedRegionId.value = parentRegion === '' ? null : parentRegion;
+  }
+};
+// Show regions that are 1 level below the currently selected region.
+const aggregationLevel = computed(() =>
+  selectedRegionId.value === null
+    ? AdminLevel.Country
+    : adminLevelToString(getLevelFromRegionId(selectedRegionId.value) + 1)
+);
+// Used to display which region is currently selected.
+// Allows the user to click one of the region's ancestors to navigate back up
+//  through the hierarchy.
+const breadcrumbs = computed(() => {
+  const ancestors = selectedRegionId.value?.split(REGION_ID_DELIMETER) ?? [];
+  return [
+    { label: 'All countries', value: null },
+    ...ancestors.map((region, i) => ({
+      label: region,
+      value: ancestors.slice(0, i + 1).join(REGION_ID_DELIMETER),
+    })),
+  ];
+});
+
 /**
  * Sort high values to the front of the list, then low values, then null values.
  * NOTE: Sorts the list in place.
@@ -122,107 +181,80 @@ function sortForDisplay<T>(list: T[], accessor: (item: T) => number | null) {
 }
 
 /**
- * Sorts countries and their contributing datasets.
+ * Sorts regions and their contributing datasets.
  *
- * Removes any contributing datasets that don't have a value for the current country and removes
- * any countries (stored for review) that are not present in all datasets to avoid misleading data.
+ * Removes any contributing datasets that don't have a value for the current region and removes
+ * any regions (stored for review) that are not present in all datasets to avoid misleading data.
  *
  * @param results Unsorted index results, that may contain contributing datasets with null values.
  */
 const prepareResultsForDisplay = (results: IndexResultsData[]): IndexResultsData[] => {
-  removedCountries.value = [];
   const preparedResultsAll = _.cloneDeep(results);
-
-  // Remove countries that are missing from some datasets during clone. Store for reference.
-  const preparedResults = preparedResultsAll.filter((country) => {
-    if (countryIntersection.value.includes(country.countryName)) {
-      return true;
-    }
-    removedCountries.value = [...removedCountries.value, _.cloneDeep(country)];
-    return false;
-  });
-
-  // Remove datasets that don't include the current country
-  preparedResults.forEach((countryWithData) => {
-    const filteredDatasets = countryWithData.contributingDatasets.filter(
+  const { regionsInAllDatasets } = calculateCoverage(
+    regionDataForEachDataset.value,
+    aggregationLevel.value
+  );
+  const preparedResults = preparedResultsAll
+    // If a region is selected, filter out any regions that aren't within it.
+    .filter(
+      (region) =>
+        selectedRegionId.value === null ||
+        isAncestorOfRegion(selectedRegionId.value, region.regionId)
+    )
+    // Remove regions that are missing from some datasets during clone.
+    .filter((region) => regionsInAllDatasets.has(region.regionId));
+  // Remove datasets that don't include the current region
+  preparedResults.forEach((regionWithData) => {
+    const filteredDatasets = regionWithData.contributingDatasets.filter(
       (value) => value.datasetValue !== null
     );
-    // Sort datasets by how much they contributed to the overall value
+    // Sort datasets within each result by how much they contributed to the
+    //  overall value
     sortForDisplay(filteredDatasets, (dataset) => dataset.weightedDatasetValue);
-    countryWithData.contributingDatasets = filteredDatasets;
+    regionWithData.contributingDatasets = filteredDatasets;
   });
-  // Sort countries by overall value
+  // Sort regions by overall value
   sortForDisplay(preparedResults, (result) => result.value);
 
   return preparedResults;
 };
 
-const indexResultsData = ref<IndexResultsData[]>([]);
-const removedCountries = ref<IndexResultsData[]>([]);
-const countryIntersection = ref<string[]>([]);
+const unsortedResults = ref<IndexResultsData[]>([]);
+const indexResultsData = computed(() => prepareResultsForDisplay(unsortedResults.value));
 
-/**
- * associate removed countries with their source data.
- */
-const removedCountriesData = computed(() => {
-  return removedCountries.value.map((country) => ({
-    countryName: country.countryName,
-    removedFrom: countryMissingFrom(country.countryName),
-  }));
-});
-
-/**
- * Check a country against all datasets and list the datasets from which it is absent
- * @param countryName
- */
-const countryMissingFrom = (countryName: string) => {
-  let missingFromList: string[] = [];
-  regionDataForEachDataset.value.forEach((dataset: any, index) => {
-    if (dataset.country.filter((aCountry: any) => aCountry.id === countryName).length === 0) {
-      missingFromList = [...missingFromList, datasets.value[index].dataset.datasetName];
-    }
-  });
-  return missingFromList;
-};
-
-/**
- * Given a set of data sources with country based data, generate a list of common (intersection)
- * countries.  Can be used to filter displayed data when missing country data may have a negative effect
- * on some calculations (weights and such).
- *
- * @param datasets
- */
-const findCountryIntersection = (): string[] => {
-  const allPossible: string[] = [];
-  regionDataForEachDataset.value.forEach((dataset: any) => {
-    dataset.country.forEach((aCountry: any) => {
-      allPossible.push(aCountry.id);
-    });
-  });
-
-  const uniqueCountries: string[] = _.uniq(allPossible);
-
-  const commonCountries: string[] = [];
-  uniqueCountries.forEach((country) => {
-    let isCommon = true;
-    regionDataForEachDataset.value.forEach((dataset: any) => {
-      if (dataset.country.findIndex((c: any) => c.id === country) < 0) {
-        isCommon = false;
+const removedRegionsData = computed(() => {
+  const result: { regionId: string; removedFrom: string[] }[] = [];
+  unsortedResults.value
+    // If a region is selected, filter out any regions that aren't within it.
+    // We don't want to include regions that in the "hidden regions" list if
+    //  they wouldn't have been shown anyway due to the selected region.
+    .filter(
+      (region) =>
+        selectedRegionId.value === null ||
+        isAncestorOfRegion(selectedRegionId.value, region.regionId)
+    )
+    .forEach((regionData) => {
+      const { regionId, contributingDatasets } = regionData;
+      // Datasets not found in contributing datasets
+      const datasetsMissingThisRegion = datasets.value.filter(
+        (dataset) =>
+          contributingDatasets.find((cd) => cd.dataset.id === dataset.id)?.datasetValue === null
+      );
+      if (datasetsMissingThisRegion.length > 0) {
+        result.push({
+          regionId,
+          removedFrom: datasetsMissingThisRegion.map(({ name }) => name),
+        });
       }
     });
-    if (isCommon) {
-      commonCountries.push(country);
-    }
-  });
-
-  return commonCountries;
-};
+  return result;
+});
 
 const datasets = ref<ConceptNodeWithDatasetAttached[]>([]);
 const regionDataForEachDataset = ref<RegionalAggregation[]>([]);
 
 // Whenever the tree changes, fetch data and calculate `indexResultsData`.
-watch([tree, weightingBehaviour], async () => {
+watch([tree, weightingBehaviour, aggregationLevel], async () => {
   // Save a reference to the current version of the tree so that if it changes before all of the
   //  fetch requests return, we only perform calculations and update the state with the most up-to-
   //  date tree structure.
@@ -237,12 +269,11 @@ watch([tree, weightingBehaviour], async () => {
     getIndexRegionAggregation({
       ...convertDataConfigToOutputSpec(dataset.dataset.config),
       transform: TRANSFORM_NORM,
-      adminLevel: AdminLevel.Country,
+      adminLevel: aggregationLevel.value,
     })
   );
   // Wait for all fetches to complete.
   regionDataForEachDataset.value = await Promise.all(promises);
-  countryIntersection.value = findCountryIntersection();
 
   if (tree.value !== frozenTreeState) {
     // Tree has changed since the fetches began, so ignore these results.
@@ -273,20 +304,20 @@ watch([tree, weightingBehaviour], async () => {
     // If this dataset is inverted, higher original values should map closer to 0 and lower
     //  original values should map closer to 1.
     if (shouldDatasetsBeInverted[i]) {
-      regionData.country = regionData.country?.map((country) => ({
-        id: country.id,
-        value: 1 - country.value,
+      regionData.admin1 = regionData.admin1?.map((region) => ({
+        id: region.id,
+        value: 1 - region.value,
       }));
     }
   });
 
   // All the data has been fetched and normalized, perform the actual result calculations.
-  const unsortedResults = calculateIndexResults(
+  unsortedResults.value = calculateIndexResults(
     datasets.value,
     overallWeightForEachDataset,
-    regionDataForEachDataset.value
+    regionDataForEachDataset.value,
+    aggregationLevel.value
   );
-  indexResultsData.value = prepareResultsForDisplay(unsortedResults);
 });
 
 const isShowingKeyDatasets = ref(false);
@@ -357,6 +388,17 @@ $column-padding: 20px;
   padding: $column-padding;
   border-right: 1px solid $un-color-black-10;
   gap: 3rem;
+}
+
+.breadcrumbs {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+
+  i {
+    color: var(--p-surface-400);
+    font-size: 1rem;
+  }
 }
 
 .bars-column {

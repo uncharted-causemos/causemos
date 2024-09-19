@@ -44,19 +44,19 @@ export type IndexEdgeId = { sourceId: string; targetId: string };
 export type SelectableIndexElementId = string | IndexEdgeId;
 
 /**
- * Used to summarize a given dataset's contribution to a specific country.
+ * Used to summarize a given dataset's contribution to a specific region.
  */
 export interface IndexResultsContributingDataset {
   /**
    * A number in the range [0, 100].
-   *  The percentage of the country's result value that comes from this dataset.
+   *  The percentage of the region's result value that comes from this dataset.
    */
   overallWeight: number;
   /** The dataset node in question. */
   dataset: ConceptNodeWithDatasetAttached;
   /**
-   * The normalized value of the country within the dataset.
-   *  A value of null means the country was not found in the dataset.
+   * The normalized value of the region within the dataset.
+   *  A value of null means the region was not found in the dataset.
    */
   datasetValue: number | null;
   /** `datasetValue` multiplied by `overallWeight` */
@@ -64,10 +64,10 @@ export interface IndexResultsContributingDataset {
 }
 
 export interface IndexResultsData {
-  countryName: string;
+  regionId: string;
   /**
-   * The country's overall value.
-   *  A value of null means the country was not found in one or more datasets.
+   * The region's overall value.
+   *  A value of null means the region was not found in one or more datasets.
    */
   value: number | null;
   contributingDatasets: IndexResultsContributingDataset[];

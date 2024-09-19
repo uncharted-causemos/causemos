@@ -50,6 +50,7 @@ import useMapSyncBounds from '@/composables/useMapSyncBounds';
 import { BASE_MAP_OPTIONS, ETHIOPIA_BOUNDING_BOX, STYLE_URL_PREFIX } from '@/utils/map-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { BASE_LAYER, SOURCE_LAYERS } from '@/utils/map-util-new';
+import { getFullRegionIdDisplayName } from '@/utils/admin-level-util';
 
 const colorLayer = () => {
   return Object.freeze({
@@ -150,7 +151,9 @@ export default defineComponent({
       default: (feature) => {
         const { label, name, value } = feature.state || {};
         if (!label) return null;
-        return `${label.split('__').pop()}<br> Rank: ${name}<br> Value: ${+value.toFixed(2)}`;
+        return `${getFullRegionIdDisplayName(label)}<br> Rank: ${name}<br> Value: ${+value.toFixed(
+          2
+        )}`;
       },
     },
     disablePanZoom: {

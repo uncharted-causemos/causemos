@@ -3,8 +3,9 @@
     <RegionMap
       :data="regionMapData"
       :map-bounds="mapBounds"
-      :selected-admin-level="0"
+      :selected-admin-level="stringToAdminLevel(aggregationLevel)"
       :disable-pan-zoom="false"
+      @click-region="(regionId) => emit('click-region', regionId)"
     />
     <AnalysisMapLegend
       :ramp="mapLegendData"
@@ -28,19 +29,24 @@ import {
   computeMapBoundsForCountries,
 } from '@/utils/map-util-new';
 import { RegionMapData } from '@/types/Common';
+import { AdminLevel } from '@/types/Enums';
+import { stringToAdminLevel } from '@/utils/admin-level-util';
 
 interface Props {
   indexResultsData: IndexResultsData[];
   settings: IndexResultsSettings;
+  aggregationLevel: AdminLevel;
 }
 const props = defineProps<Props>();
+
+const emit = defineEmits<{ (e: 'click-region', regionId: string): void }>();
 
 const mapBounds = ref<[[number, number], [number, number]]>(BOUNDS_GLOBAL);
 watch(
   () => props.indexResultsData,
   async () => {
     mapBounds.value =
-      (await computeMapBoundsForCountries(props.indexResultsData.map((v) => v.countryName))) ||
+      (await computeMapBoundsForCountries(props.indexResultsData.map((v) => v.regionId))) ||
       BOUNDS_GLOBAL;
   }
 );
@@ -51,7 +57,7 @@ const colorConfig = computed(() =>
 
 const regionMapData = computed(() => {
   const mapData: RegionMapData[] = props.indexResultsData.map((d, index) => ({
-    label: d.countryName,
+    label: d.regionId,
     name: '' + (index + 1),
     color: colorConfig.value.scaleFn(d.value as number),
     value: d.value as number,

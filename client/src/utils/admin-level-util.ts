@@ -154,8 +154,7 @@ export function isSelectionEmpty(
 }
 
 export function stringToAdminLevel(geoString: string) {
-  const adminLevel =
-    geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +geoString[geoString.length - 1];
+  const adminLevel = geoString === AdminLevel.Country ? 0 : +geoString[geoString.length - 1];
   return adminLevel;
 }
 
@@ -171,6 +170,18 @@ export function getLevelFromRegionId(regionId: string) {
 
 export function getRegionIdDisplayName(regionId: string) {
   return regionId.split(REGION_ID_DELIMETER).pop() ?? regionId;
+}
+
+export function getFullRegionIdDisplayName(regionId: string) {
+  return regionId.split(REGION_ID_DELIMETER).reverse().join(REGION_ID_DISPLAY_DELIMETER);
+}
+
+export function getParentRegion(regionId: string) {
+  return regionId.split(REGION_ID_DELIMETER).slice(0, -1).join(REGION_ID_DELIMETER);
+}
+
+export function isAncestorOfRegion(ancestorId: string, regionId: string) {
+  return regionId.slice(0, ancestorId.length) === ancestorId;
 }
 
 export function getAdminLevelFromSpatialAggregation(aggregation: SpatialAggregation) {
