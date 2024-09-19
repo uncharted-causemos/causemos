@@ -224,20 +224,29 @@ const indexResultsData = computed(() => prepareResultsForDisplay(unsortedResults
 
 const removedRegionsData = computed(() => {
   const result: { regionId: string; removedFrom: string[] }[] = [];
-  unsortedResults.value.forEach((regionData) => {
-    const { regionId, contributingDatasets } = regionData;
-    // Datasets not found in contributing datasets
-    const datasetsMissingThisRegion = datasets.value.filter(
-      (dataset) =>
-        contributingDatasets.find((cd) => cd.dataset.id === dataset.id)?.datasetValue === null
-    );
-    if (datasetsMissingThisRegion.length > 0) {
-      result.push({
-        regionId,
-        removedFrom: datasetsMissingThisRegion.map(({ name }) => name),
-      });
-    }
-  });
+  unsortedResults.value
+    // If a region is selected, filter out any regions that aren't within it.
+    // We don't want to include regions that in the "hidden regions" list if
+    //  they wouldn't have been shown anyway due to the selected region.
+    .filter(
+      (region) =>
+        selectedRegionId.value === null ||
+        isAncestorOfRegion(selectedRegionId.value, region.regionId)
+    )
+    .forEach((regionData) => {
+      const { regionId, contributingDatasets } = regionData;
+      // Datasets not found in contributing datasets
+      const datasetsMissingThisRegion = datasets.value.filter(
+        (dataset) =>
+          contributingDatasets.find((cd) => cd.dataset.id === dataset.id)?.datasetValue === null
+      );
+      if (datasetsMissingThisRegion.length > 0) {
+        result.push({
+          regionId,
+          removedFrom: datasetsMissingThisRegion.map(({ name }) => name),
+        });
+      }
+    });
   return result;
 });
 
