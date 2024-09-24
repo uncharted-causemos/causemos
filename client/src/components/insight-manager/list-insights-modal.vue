@@ -41,15 +41,18 @@
             class="search form-control"
             placeholder="Search insights"
           />
-          <radio-button-group
-            class="export-options"
-            :buttons="exportOptions"
-            :selected-button-value="activeExportOption"
-            @button-clicked="toggleExport"
+          <SelectButton
+            :options="exportOptions"
+            :model-value="activeExportOption"
+            option-label="label"
+            option-value="value"
+            @update:model-value="setActiveExportOption"
           />
           as
-          <button class="btn btn-sm" @click="() => exportInsights('Powerpoint')">PowerPoint</button>
-          <button class="btn btn-sm" @click="() => exportInsights('Word')">Word</button>
+          <Button severity="secondary" outlined @click="() => exportInsights('Powerpoint')"
+            >PowerPoint</Button
+          >
+          <Button severity="secondary" outlined @click="() => exportInsights('Word')">Word</Button>
         </div>
         <div class="cards">
           <div v-if="searchedInsights.length > 0" class="pane-content">
@@ -94,12 +97,13 @@ import useToaster from '@/composables/useToaster';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import InsightUtil from '@/utils/insight-util';
 import { unpublishDatacube } from '@/utils/datacube-util';
-import RadioButtonGroup from '../widgets/radio-button-group.vue';
 import { countPublicInsights, fetchFullInsights, removeInsight } from '@/services/insight-service';
 import { AnalyticalQuestion, Insight, NewInsight, SectionWithInsights } from '@/types/Insight';
 import useQuestionsData from '@/composables/useQuestionsData';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 import useInsightStore from '@/composables/useInsightStore';
+import SelectButton from 'primevue/selectbutton';
+import Button from 'primevue/button';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
@@ -115,7 +119,8 @@ export default defineComponent({
     InsightCard,
     MessageDisplay,
     ListAnalyticalQuestionsPane,
-    RadioButtonGroup,
+    SelectButton,
+    Button,
   },
   data: () => ({
     activeExportOption: EXPORT_OPTIONS.insights,
@@ -202,7 +207,7 @@ export default defineComponent({
         },
         {
           value: EXPORT_OPTIONS.questions,
-          label: 'Export All Questions & Insights',
+          label: 'Export all questions and insights',
         },
       ];
     },
@@ -385,7 +390,7 @@ export default defineComponent({
       this.setInsightsBySection(this.insightsBySection);
       this.setCurrentPane('review-insight');
     },
-    toggleExport(id: string) {
+    setActiveExportOption(id: string) {
       this.activeExportOption = id;
     },
     updateCuration(id: string) {
@@ -407,6 +412,7 @@ export default defineComponent({
   flex-direction: column;
   align-items: stretch;
   height: 100vh;
+  background: var(--p-surface-50);
 }
 
 .tab-controls {
@@ -414,10 +420,6 @@ export default defineComponent({
   flex: 0 0 auto;
   align-items: center;
   gap: 0.5em;
-}
-
-.export-options {
-  flex-shrink: 0;
 }
 
 .checklist {
@@ -431,9 +433,6 @@ export default defineComponent({
   min-height: 0;
   display: flex;
   flex-direction: column;
-  .search {
-    margin-bottom: 10px;
-  }
   .pane-content {
     overflow: auto;
     display: flex;
@@ -441,17 +440,14 @@ export default defineComponent({
     flex-wrap: wrap;
   }
 }
-.list {
-  background-color: $background-light-2;
-  display: inline-block;
-  height: 100%;
-  overflow: auto;
+.search {
+  flex: 1;
+  min-width: 0;
 }
 
 .body {
   flex: 1;
   min-height: 0;
-  background: $background-light-2;
 }
 
 .body-main-content {
@@ -459,7 +455,7 @@ export default defineComponent({
   min-width: 0;
   isolation: isolate;
   gap: 10px;
-  margin: 10px;
+  padding: 10px;
   margin-left: 0;
 }
 

@@ -4,11 +4,13 @@
       <h4 class="title">Filter and compare</h4>
     </template>
     <template #body>
-      <RadioButtonGroup
+      <SelectButton
         class="modal-filter-and-compare-radio-button-group"
-        :buttons="tabs"
-        :selected-button-value="selectedTab"
-        @button-clicked="selectTab"
+        :options="tabs"
+        :model-value="selectedTab"
+        option-label="label"
+        option-value="value"
+        @update:model-value="selectTab"
       />
 
       <NoFiltersTab
@@ -90,7 +92,6 @@ import RegionsTab from './modal-filter-and-compare/regions-tab.vue';
 import YearsTab from './modal-filter-and-compare/years-tab.vue';
 import QualifierTab from './modal-filter-and-compare/qualifier-tab.vue';
 import { computed, onMounted, ref, toRefs, watch } from 'vue';
-import RadioButtonGroup, { RadioButtonSpec } from '../widgets/radio-button-group.vue';
 import {
   getValidatedOutputs,
   isBreakdownStateNone,
@@ -102,6 +103,7 @@ import { AggregationOption, SpatialAggregation } from '@/types/Enums';
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { getDefaultFeature } from '@/services/datacube-service';
 import useQualifierFetchInfo from '@/composables/useQualifierFetchInfo';
+import SelectButton from 'primevue/selectbutton';
 
 const DEFAULT_COMPARISON_SETTINGS = {
   baselineTimeseriesId: '',
@@ -148,7 +150,7 @@ const qualifiers = computed(() =>
     .filter((qualifier) => qualifiersWithData.value.has(qualifier.name))
 );
 
-const tabs = computed<RadioButtonSpec[]>(() => {
+const tabs = computed<{ value: string; label: string }[]>(() => {
   const allTabs = [
     { value: NO_FILTERS, label: NO_FILTERS },
     { value: OUTPUTS, label: OUTPUTS, isDisabled: areTabsDisabled.value },
