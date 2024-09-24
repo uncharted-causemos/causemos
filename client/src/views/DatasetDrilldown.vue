@@ -303,14 +303,10 @@ $configColumnButtonWidth: 122px;
 
 .config-column {
   width: 380px;
-  background: $un-color-black-5;
+  background: var(--p-surface-50);
   border-right: 1px solid $un-color-black-10;
   display: flex;
   flex-direction: column;
-
-  h3 {
-    margin-bottom: 10px;
-  }
 
   header,
   section {
