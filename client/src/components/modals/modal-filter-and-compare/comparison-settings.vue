@@ -32,10 +32,12 @@
       v-if="!comparisonSettings.shouldDisplayAbsoluteValues"
     >
       as
-      <RadioButtonGroup
-        :buttons="radioButtonGroupOptions"
-        :selected-button-value="comparisonSettings.shouldUseRelativePercentage"
-        @button-clicked="setShouldUseRelativePercentage"
+      <SelectButton
+        :options="radioButtonGroupOptions"
+        :model-value="comparisonSettings.shouldUseRelativePercentage"
+        option-label="label"
+        option-value="value"
+        @update:model-value="setShouldUseRelativePercentage"
       />
     </div>
   </div>
@@ -43,8 +45,8 @@
 
 <script setup lang="ts">
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
-import RadioButtonGroup, { RadioButtonSpec } from '@/components/widgets/radio-button-group.vue';
 import { ComparisonSettings } from '@/types/Datacube';
+import SelectButton from 'primevue/selectbutton';
 import { computed, toRefs } from 'vue';
 
 const props = defineProps<{
@@ -78,7 +80,7 @@ const relativePercentageDisplayString = computed(() => {
   return `% change from ${baselineTimeseriesName}`;
 });
 
-const radioButtonGroupOptions = computed<RadioButtonSpec[]>(() => [
+const radioButtonGroupOptions = computed<{ value: boolean; label: string }[]>(() => [
   { value: false, label: unit.value },
   { value: true, label: relativePercentageDisplayString.value },
 ]);
