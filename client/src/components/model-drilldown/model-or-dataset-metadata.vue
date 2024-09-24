@@ -46,6 +46,10 @@ const isModelDetailsSectionExpanded = ref(false);
   padding: 20px;
 }
 
+h3 {
+  margin-bottom: 10px;
+}
+
 .model-details {
   cursor: pointer;
   position: relative;
