@@ -230,6 +230,7 @@ export default defineComponent({
       'indexProjections',
       'modelDrilldown',
       'datasetDrilldown',
+      'dataComparative',
     ];
     const showNavbarInsightsPanelButton = computed(() =>
       VIEWS_WITH_NAVBAR_INSIGHTS_PANEL.includes(currentView.value)

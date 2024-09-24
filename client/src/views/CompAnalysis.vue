@@ -1,27 +1,102 @@
 <template>
-  <div class="comp-analysis-container">
+  <div class="comp-analysis-container insight-capture">
     <Teleport to="#navbar-trailing-teleport-destination" v-if="isMounted">
       <AnalysisOptionsButton :analysis-id="analysisId" />
     </Teleport>
-    <AnalyticalQuestionsAndInsightsPanel
-      class="side-panel"
-      :analysis-items="analysisItems"
-      @remove-analysis-item="removeAnalysisItem"
-      @toggle-analysis-item-selected="toggleAnalysisItemSelected"
-    >
-      <template #below-tabs>
-        <AnalysisCommentsButton :analysis-id="analysisId" />
-      </template>
-    </AnalyticalQuestionsAndInsightsPanel>
-    <main class="insight-capture">
-      <div class="action-bar-container">
-        <ActionBar
-          :active-tab="activeTab"
-          :analysisId="analysisId"
-          @set-active-tab="setActiveTab"
-          style="flex: 1"
+    <main>
+      <div class="header-row">
+        <div class="header-row">
+          <SelectButton
+            :options="[
+              { label: 'Side by side', value: ComparativeAnalysisMode.List },
+              { label: 'Overlay', value: ComparativeAnalysisMode.Overlay },
+            ]"
+            :model-value="activeTab"
+            option-label="label"
+            option-value="value"
+            @update:model-value="setActiveTab"
+          />
+          <Button
+            v-if="hiddenDatacubeCount > 0 || isHideDatacubePanelVisible"
+            :label="`View ${hiddenDatacubeCount} hidden ${
+              isFirstDatacubeAnIndicator ? 'dataset' : 'model'
+            }${hiddenDatacubeCount === 1 ? '' : 's'}`"
+            outlined
+            @click="isHideDatacubePanelVisible = true"
+          />
+          <Dialog v-model:visible="isHideDatacubePanelVisible" modal :style="{ width: '800px' }">
+            <template #header>
+              <strong
+                >Hidden {{ isFirstDatacubeAnIndicator ? 'dataset' : 'model' }}s
+                <span class="subdued"
+                  >({{ analysisItems.filter((item) => !item.selected).length }})</span
+                ></strong
+              >
+            </template>
+            <Message
+              icon="fa fa-info-circle"
+              :style="{ marginTop: '10px', display: 'inline-block' }"
+            >
+              Up to {{ MAX_ANALYSIS_DATACUBES_COUNT }}
+              {{ isFirstDatacubeAnIndicator ? 'dataset' : 'model' }}s can be visible at once.
+            </Message>
+            <div class="hidden-datacubes">
+              <div
+                v-for="item in analysisItems.filter((item) => !item.selected)"
+                :key="item.datacubeId"
+                class="hide-datacube-panel-row"
+              >
+                <div>
+                  <p :style="{ marginBottom: '2px' }">
+                    {{ getDisplayInfo(item).outputDisplayName.join(',') }}
+                  </p>
+                  <p class="subdued font-size-small">{{ getDisplayInfo(item).source }}</p>
+                  <p class="subdued font-size-small">{{ getDisplayInfo(item).organization }}</p>
+                </div>
+                <Button
+                  label="Show"
+                  :disabled="!canSelectItem"
+                  severity="secondary"
+                  @click="toggleAnalysisItemSelected(getId(item))"
+                />
+              </div>
+            </div>
+            <div class="visible-datacubes">
+              <strong
+                >Visible {{ isFirstDatacubeAnIndicator ? 'dataset' : 'model' }}s
+                <span class="subdued"
+                  >({{ analysisItems.filter((item) => item.selected).length }})</span
+                ></strong
+              >
+              <div
+                v-for="item in analysisItems.filter((item) => item.selected)"
+                :key="item.datacubeId"
+                class="hide-datacube-panel-row"
+              >
+                <div>
+                  <p :style="{ marginBottom: '2px' }">
+                    {{ getDisplayInfo(item).outputDisplayName.join(',') }}
+                  </p>
+                  <p class="subdued font-size-small">{{ getDisplayInfo(item).source }}</p>
+                  <p class="subdued font-size-small">{{ getDisplayInfo(item).organization }}</p>
+                </div>
+                <Button
+                  label="Hide"
+                  severity="secondary"
+                  @click="toggleAnalysisItemSelected(getId(item))"
+                />
+              </div>
+            </div>
+            <template #footer>
+              <Button label="Done" @click="isHideDatacubePanelVisible = false" />
+            </template>
+          </Dialog>
+        </div>
+        <Button
+          icon="fa fa-plus"
+          :label="`Add ${isFirstDatacubeAnIndicator ? 'dataset' : 'model'}s`"
+          @click="openDataExplorer"
         />
-        <div class="shown-datacubes-count">{{ shownDatacubesCountLabel }}</div>
       </div>
 
       <!-- overlay view content -->
@@ -35,53 +110,48 @@
       <!--
         listing individual datacube cards
       -->
-      <div v-if="selectedAnalysisItems.length" class="column">
-        <template v-if="activeTab === ComparativeAnalysisMode.List">
-          <DatacubeComparativeCard
-            v-for="(item, indx) in selectedAnalysisItems"
-            :key="getAnalysisItemId(item)"
-            class="datacube-comparative-card"
-            :datacube-id="getDatacubeId(item)"
-            :item-id="getAnalysisItemId(item)"
-            :item-index="indx"
-            :selected-timestamp="selectedTimestamp ?? 0"
-            :analysis-item="item"
-            :analysis-id="analysisId"
-            @select-timestamp="setSelectedTimestamp"
-            @remove-analysis-item="removeAnalysisItem"
-            @duplicate-analysis-item="duplicateAnalysisItem"
-          />
-        </template>
-        <template v-if="activeTab === ComparativeAnalysisMode.Overlay">
-          <div class="card-maps-container">
-            <div
-              v-for="(item, indx) in selectedAnalysisItems"
-              :key="getAnalysisItemId(item)"
-              class="card-map-container"
-              :class="[
-                `card-count-${
-                  selectedAnalysisItems.length < 5 ? selectedAnalysisItems.length : 'n'
-                }`,
-              ]"
-            >
-              <DatacubeComparativeOverlayRegion
-                :style="{ borderColor: colorFromIndex(indx) }"
-                class="card-map"
-                :datacube-id="getDatacubeId(item)"
-                :item-id="getAnalysisItemId(item)"
-                :item-index="indx"
-                :global-timestamp="globalTimestamp ?? initialSelectedTimestamp ?? 0"
-                :analysis-item="item"
-                :analysis-id="analysisId"
-                @loaded-timeseries="onLoadedTimeseries"
-                @remove-analysis-item="removeAnalysisItem"
-                @duplicate-analysis-item="duplicateAnalysisItem"
-              />
-            </div>
-          </div>
-        </template>
+      <div
+        v-if="selectedAnalysisItems.length && activeTab === ComparativeAnalysisMode.List"
+        class="column"
+      >
+        <DatacubeComparativeCard
+          v-for="(item, indx) in selectedAnalysisItems"
+          :key="getAnalysisItemId(item)"
+          class="datacube-comparative-card"
+          :datacube-id="getDatacubeId(item)"
+          :item-id="getAnalysisItemId(item)"
+          :item-index="indx"
+          :selected-timestamp="selectedTimestamp ?? 0"
+          :analysis-item="item"
+          :analysis-id="analysisId"
+          @select-timestamp="setSelectedTimestamp"
+          @remove-analysis-item="removeAnalysisItem"
+          @duplicate-analysis-item="duplicateAnalysisItem"
+        />
       </div>
-      <p v-else>Models and datasets you select will appear here.</p>
+      <div
+        class="card-maps-container"
+        v-else-if="selectedAnalysisItems.length && activeTab === ComparativeAnalysisMode.Overlay"
+      >
+        <DatacubeComparativeOverlayRegion
+          v-for="(item, indx) in selectedAnalysisItems"
+          :key="getAnalysisItemId(item)"
+          :style="{ borderColor: colorFromIndex(indx) }"
+          class="card-map"
+          :datacube-id="getDatacubeId(item)"
+          :item-id="getAnalysisItemId(item)"
+          :item-index="indx"
+          :global-timestamp="globalTimestamp ?? initialSelectedTimestamp ?? 0"
+          :analysis-item="item"
+          :analysis-id="analysisId"
+          @loaded-timeseries="onLoadedTimeseries"
+          @remove-analysis-item="removeAnalysisItem"
+          @duplicate-analysis-item="duplicateAnalysisItem"
+        />
+      </div>
+      <p v-else>
+        {{ isFirstDatacubeAnIndicator ? 'Dataset' : 'Model' }}s you select will appear here.
+      </p>
     </main>
   </div>
 </template>
@@ -97,25 +167,41 @@ import router from '@/router';
 import { ComparativeAnalysisMode } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { Insight } from '@/types/Insight';
-import { DataAnalysisState } from '@/types/Analysis';
+import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
 
 import DatacubeComparativeCard from '@/components/comp-analysis/datacube-comparative-card.vue';
 import DatacubeComparativeOverlayRegion from '@/components/comp-analysis/datacube-comparative-overlay-region.vue';
-import ActionBar from '@/components/data/action-bar.vue';
-import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
-import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
 
 import { useDataAnalysis } from '@/composables/useDataAnalysis';
 
 import { colorFromIndex } from '@/utils/colors-util';
-import { getId as getAnalysisItemId, getDatacubeId, getId } from '@/utils/analysis-util';
+import {
+  getId as getAnalysisItemId,
+  getDatacubeId,
+  getId,
+  getState,
+  MAX_ANALYSIS_DATACUBES_COUNT,
+} from '@/utils/analysis-util';
 import { normalizeTimeseriesList, getTimestampRange } from '@/utils/timeseries-util';
 import { isDataAnalysisState } from '@/utils/insight-util';
 
 import { getAnalysis } from '@/services/analysis-service';
 import { getInsightById } from '@/services/insight-service';
+import filtersUtil from '@/utils/filters-util';
+import {
+  getOutputDisplayNamesForBreakdownState,
+  isIndicator,
+  STATUS,
+  TYPE,
+} from '@/utils/datacube-util';
+import Button from 'primevue/button';
+import SelectButton from 'primevue/selectbutton';
+import { getDatacubeById, getDatacubesByIds } from '@/services/datacube-service';
+import { Datacube } from '@/types/Datacube';
+import Dialog from 'primevue/dialog';
+import Message from 'primevue/message';
 
 // This is required because teleported components require their teleport destination to be mounted
 //  before they can be rendered.
@@ -139,6 +225,31 @@ const {
   toggleAnalysisItemSelected,
   setAnalysisState,
 } = useDataAnalysis(analysisId);
+
+// NOTE: As of October 2023, "quantitative" analyses can contain any combination of models and
+//  datasets(indicators), though the interface guides the user to create an analysis of one type
+//  or the other. As a temporary measure, we store the type of the first datacube in each analysis
+//  to sort the analyses into "collections of datasets" and "collections of models".
+// If the analysis has no datacubes, don't set the flag.
+const isFirstDatacubeAnIndicator = ref(false);
+watch(analysisItems, async (items) => {
+  if (items.length === 0) {
+    return;
+  }
+  const firstDatacube = await getDatacubeById(getDatacubeId(items[0]));
+  isFirstDatacubeAnIndicator.value = isIndicator(firstDatacube);
+});
+
+const openDataExplorer = () => {
+  const filters = filtersUtil.newFilters();
+  filtersUtil.setClause(filters, STATUS, ['READY'], 'or', false);
+  const type = isFirstDatacubeAnIndicator.value ? 'indicator' : 'model';
+  filtersUtil.setClause(filters, TYPE, [type], 'or', false);
+  router.push({
+    name: 'dataExplorer',
+    query: { analysisId: analysisId.value, filters: filters as any },
+  });
+};
 
 const allTimeseriesMap = ref<{ [key: string]: Timeseries[] }>({});
 const allTimestampRangeMap = ref<{
@@ -186,15 +297,10 @@ watch(
   { immediate: true }
 );
 
-const shownDatacubesCountLabel = computed(() => {
-  return (
-    'Selected ' +
-    selectedAnalysisItems.value.length +
-    ' / ' +
-    analysisItems.value.length +
-    ' datacubes'
-  );
-});
+const hiddenDatacubeCount = computed(
+  () => analysisItems.value.length - selectedAnalysisItems.value.length
+);
+const isHideDatacubePanelVisible = ref(false);
 
 const setSelectedTimestamp = (value: number) => {
   if (selectedTimestamp.value === value) return;
@@ -298,31 +404,52 @@ const onLoadedTimeseries = (
   allTimeseriesMap.value[itemId] = timeseriesData;
   allTimestampRangeMap.value[itemId] = getTimestampRange(timeseriesData);
 };
+
+const metadataMap = ref<{ [datacubeId: string]: Partial<Datacube> }>({});
+watchEffect(async () => {
+  // Only fetch datacubes with necessary fields specified in `includes`
+  const result = await getDatacubesByIds(_.uniq(analysisItems.value.map(getDatacubeId)), {
+    includes: ['id', 'name', 'maintainer.organization', 'outputs.name', 'outputs.display_name'],
+  });
+  result.forEach((datacube) => (metadataMap.value[datacube.id] = datacube));
+});
+
+const getDisplayInfo = (item: AnalysisItem) => {
+  const metadata = metadataMap.value[getDatacubeId(item)] ?? {};
+  const outputDisplayName = getOutputDisplayNamesForBreakdownState(
+    getState(item).breakdownState,
+    metadata.outputs
+  );
+  return {
+    outputDisplayName,
+    source: metadata.name ?? '',
+    organization: metadata.maintainer?.organization ?? '',
+  };
+};
+
+const canSelectItem = computed(() => {
+  return analysisItems.value.filter((item) => item.selected).length < MAX_ANALYSIS_DATACUBES_COUNT;
+});
 </script>
 
 <style lang="scss" scoped>
 @import '~styles/variables';
+
 .comp-analysis-container {
   height: $content-full-height;
   display: flex;
   overflow: hidden;
-}
-
-.side-panel {
-  isolation: isolate;
-  z-index: 1;
+  background: var(--p-surface-50);
 }
 
 main {
   display: flex;
   flex-direction: column;
+  gap: 10px;
   flex: 1;
   min-width: 0;
   margin-right: 10px;
-}
-
-.datacube-region-ranking-card {
-  margin-bottom: 10px;
+  padding: 20px;
 }
 
 .datacube-comparative-card:not(:first-child) {
@@ -335,106 +462,49 @@ main {
   height: 100%;
 }
 
-.ranking-header-bottom {
-  h5 {
-    margin-bottom: -1rem;
-  }
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-.ranking-header-top {
-  margin-bottom: -0.25rem;
-  flex: 1;
-}
-
-.region-ranking-settings-button {
-  align-self: center;
-  cursor: pointer;
-  font-size: large;
-}
-
-.region-ranking-settings-button-invalid {
-  color: black;
-  &:hover {
-    color: darkgray;
-  }
-}
-
-.region-ranking-settings-button-valid {
-  color: gray;
-  &:hover {
-    color: darkgray;
-  }
-}
-
-.checkbox {
-  user-select: none;
-  display: inline-block;
-  align-self: center;
-  margin-bottom: -1rem;
-
-  label {
-    font-weight: normal;
-    margin: 0;
-    padding: 0;
-    cursor: auto;
-    color: gray;
-  }
-}
-
-$marginSize: 6px;
-
 .card-maps-container {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
   width: 100%;
   height: 100%;
+  gap: 5px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-auto-rows: 1fr;
 }
 
-.card-map-container {
+.header-row {
   display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-  padding-top: 1rem;
-
-  :deep(.region-map) {
-    border-style: solid;
-    border-color: inherit;
-  }
-  &.card-count-1 {
-    :deep(.region-map) {
-      border: none;
-    }
-  }
-  &.card-count-2,
-  &.card-count-3,
-  &.card-count-4 {
-    min-width: calc(50% - calc($marginSize / 2));
-    max-width: calc(50% - calc($marginSize / 2));
-  }
-  &.card-count-n {
-    min-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
-    max-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
-  }
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
 }
 
-.card-map {
-  flex-grow: 1;
-  min-height: 0;
-}
-
-.action-bar-container {
+.hide-datacube-panel-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
 
-  .shown-datacubes-count {
-    margin-left: 20px;
-    color: darkgray;
-    cursor: default;
-    font-style: italic;
+  &:not(:first-of-type) {
+    border-top: 1px solid var(--p-surface-100);
   }
+
+  & > *:first-child {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  & > *:last-child {
+    width: 60px;
+    flex-shrink: 0;
+  }
+}
+
+.visible-datacubes {
+  margin-top: 30px;
+}
+
+.font-size-small {
+  font-size: $font-size-small;
 }
 </style>

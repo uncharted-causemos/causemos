@@ -53,7 +53,7 @@ $un-color-black-100: #020203;
 
 $un-color-feedback-warning: #ad5f00;
 
-$subdued: $un-color-black-50;
+$subdued: var(--p-text-muted-color);
 .subdued {
   color: $subdued;
 }
