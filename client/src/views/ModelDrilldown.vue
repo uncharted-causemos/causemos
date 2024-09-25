@@ -80,12 +80,27 @@
           class="timeseries-chart"
           :timeseries-data="timeseriesData"
           :selected-timestamp="selectedTimestamp"
-          :breakdown-option="null"
-          :selected-temporal-resolution="TemporalResolutionOption.Month"
+          :breakdown-option="
+            breakdownState !== null && isBreakdownStateYears(breakdownState)
+              ? TemporalResolutionOption.Year
+              : null
+          "
+          :selected-temporal-resolution="temporalResolution"
           :unit="originalUnit"
           @select-timestamp="setSelectedTimestamp"
         />
-        <p class="selected-date"><span class="subdued">Selected date:</span> December 2012</p>
+        <p class="selected-date" v-if="selectedTimestamp !== null">
+          <span class="subdued">Selected date:</span>
+          {{
+            formatTimestamp(
+              selectedTimestamp,
+              breakdownState !== null && isBreakdownStateYears(breakdownState)
+                ? TemporalResolutionOption.Year
+                : null,
+              temporalResolution
+            )
+          }}
+        </p>
       </div>
       <div class="date-dependent-data">
         <div class="maps">
@@ -185,6 +200,7 @@ import ModelOrDatasetMetadata from '@/components/model-drilldown/model-or-datase
 import useModelOrDatasetUnits from '@/composables/useModelOrDatasetUnits';
 import { useStore } from 'vuex';
 import { getAnalysis } from '@/services/analysis-service';
+import formatTimestamp from '@/formatters/timestamp-formatter';
 
 const SPATIAL_AGGREGATION_METHOD_OPTIONS = [AggregationOption.Mean, AggregationOption.Sum];
 const TEMPORAL_RESOLUTION_OPTIONS = [TemporalResolutionOption.Month, TemporalResolutionOption.Year];
