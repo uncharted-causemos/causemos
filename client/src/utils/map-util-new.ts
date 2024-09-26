@@ -20,6 +20,7 @@ import { AdminRegionSets } from '@/types/Datacubes';
 import { DiscreteOuputScale } from '@/types/Enums';
 import { MapDisplayOptions } from '@/types/Datacube';
 import {
+  COLOR_PALETTE_SIZE,
   COLOR_SCHEME,
   ColorScaleType,
   SCALE_FUNCTION,
@@ -197,7 +198,7 @@ export function computeRegionalStats(
     }
 
     // Stats relative to the baseline. (min/max of the difference relative to the baseline)
-    for (const [key, data] of Object.entries(regionData)) {
+    for (const [adminLevel, data] of Object.entries(regionData)) {
       const values: number[] = [];
       (data || []).forEach((v) => {
         const baselineValue = _.isFinite(v.values[baselineProp])
@@ -209,7 +210,7 @@ export function computeRegionalStats(
         values.push(...diffs.filter((v) => _.isFinite(v)));
       });
       if (values.length) {
-        difference[key] = { min: Math.min(...values), max: Math.max(...values) };
+        difference[adminLevel] = { min: Math.min(...values), max: Math.max(...values) };
       }
     }
   }
@@ -316,6 +317,34 @@ export function createColorStops(
   return stops;
 }
 
+/**
+ * Produces an array of color stops to be used within a MapBox layer style color expression.
+ *
+ * For example, with [c1, v1, c2, v2, c3], colors will be mapped as following
+ *     c1, when value is less than v1
+ *     c2, when value is between v1 and v2
+ *     c3, when value is greater than or equal to v2
+ * @param domain the minimum and maximum values on the color scale
+ * @param colors an array of hex codes in the order they should appear on the color scale
+ * @param scaleFn controls how the colors should be spaced across the domain
+ */
+export function createColorStopsForLayerStyle(
+  domain: [number, number],
+  colors: string[],
+  scaleFn: Function
+) {
+  const scale = scaleFn().domain(domain).range([0, 1]);
+  const stops: string[] = [];
+  const numColors = colors.length;
+  const step = 1 / numColors;
+  colors.forEach((color, index) => {
+    stops.push(color);
+    const i = index + 1;
+    if (i < colors.length) stops.push(scale.invert(i * step));
+  });
+  return stops;
+}
+
 export function createDivergingColorStops(
   domain: [number, number],
   colors: string[],
@@ -331,6 +360,41 @@ export function createDivergingColorStops(
   // Add a stop for the maximum value (also ensures that we don't get a
   //  rounding error)
   stops.push(absoluteMax);
+  return stops;
+}
+
+/**
+ * Produces an array of color stops to be used within a MapBox layer style color expression.
+ *
+ * For example, with [c1, v1, c2, v2, c3], colors will be mapped as following
+ *     c1, when value is less than v1
+ *     c2, when value is between v1 and v2
+ *     c3, when value is greater than or equal to v2
+ *
+ *
+ * The min or max with the largest absolute value will be used to determine the color scale min and max.
+ *
+ * For example, a domain of [-8, 2] will produce a colour scale from -8 to +8.
+ *
+ * @param domain the minimum and maximum values in the data
+ * @param colors an array of hex codes in the order they should appear on the color scale
+ * @param scaleFn controls how the colors should be spaced across the domain
+ */
+export function createDivergingColorStopsForLayerStyle(
+  domain: [number, number],
+  colors: string[],
+  scaleFn: Function
+) {
+  const max = Math.max(...domain.map(Math.abs));
+  const scale = scaleFn().domain([-max, 0, max]).range([-1, 0, 1]);
+  const stops: string[] = [];
+  const numColors = colors.length;
+  const step = 2 / numColors;
+  colors.forEach((color, index) => {
+    stops.push(color);
+    const i = index + 1;
+    if (i < colors.length) stops.push(scale.invert(i * step - 1));
+  });
   return stops;
 }
 
@@ -389,4 +453,159 @@ export const getAnalysisMapColorOptionsFromMapDisplayOptions = (
     opacity: Number(dataLayerTransparency),
   };
   return options;
+};
+
+type MapboxGlExpression = (
+  | string
+  | (string | undefined)[]
+  | (string | (string | undefined)[] | null)[]
+)[];
+
+export function diffExpr(
+  oldValExpr: MapboxGlExpression,
+  newValExpr: MapboxGlExpression,
+  showPercentChange = false
+) {
+  if (showPercentChange) {
+    return [
+      'case',
+      // Both zero, return 0
+      ['all', ['==', 0, oldValExpr], ['==', 0, newValExpr]],
+      0,
+      // Otherwise, calculate the percentage
+      ['*', ['/', ['-', newValExpr, oldValExpr], ['abs', oldValExpr]], 100],
+    ];
+  }
+  return ['-', newValExpr, oldValExpr];
+}
+
+/**
+ * @param {String} property - Name of the property for the geojson feature for applying color
+ * @param {Array} dataDomain - Data domain in the form of [min, max]
+ * @param {Array} colorScheme - Color scheme, list of colors
+ * @param {Function} scaleFn - d3 scale function
+ * @param {Boolean} useFeatureState - use feature state instead of a property
+ */
+export function colorExpr(
+  property: string,
+  domain: [number, number],
+  colorScheme: string[],
+  scaleFn: Function = d3.scaleLinear,
+  useFeatureState = false,
+  relativeTo?: string,
+  showPercentChange = false,
+  continuous = false,
+  diverging = false
+) {
+  const colors = continuous
+    ? d3.quantize(d3.interpolateRgbBasis(colorScheme), COLOR_PALETTE_SIZE)
+    : colorScheme;
+
+  const stops =
+    !_.isNil(relativeTo) || diverging
+      ? createDivergingColorStopsForLayerStyle(domain, colors, scaleFn)
+      : createColorStopsForLayerStyle(domain, colors, scaleFn);
+  const getter = useFeatureState ? 'feature-state' : 'get';
+  const baselineValueExpr = [
+    'case',
+    ['!=', null, [getter, relativeTo]],
+    [getter, relativeTo],
+    [getter, BASELINE_VALUE_PROPERTY],
+  ];
+  const valueExpr = !_.isNil(relativeTo)
+    ? diffExpr(baselineValueExpr, [getter, property], showPercentChange)
+    : [getter, property];
+
+  return ['step', valueExpr, ...stops];
+  // return continuous
+  //   ? [
+  //     'interpolate',
+  //     ['linear'],
+  //     valueExpr,
+  //     ...stops
+  //   ]
+  //   : [
+  //     'step',
+  //     valueExpr,
+  //     ...stops
+  //   ];
+}
+
+/**
+ * Create a fill type mapbox layer style object for polygons
+ *
+ * @param {String} property - Name of the property for the geojson feature for applying color
+ * @param {Array} dataDomain - Data domain in the form of [min, max]
+ * @param {Array} filterDomain - Filter domain in the form of [min, max]
+ * @param {Array} colorOptions - Color options
+ * @param {Boolean} useFeatureState - use feature state instead of a property
+ */
+export const createHeatmapLayerStyle = (
+  property: string,
+  dataDomain: [number, number],
+  filterDomain: { min: number; max: number },
+  colorOptions: AnalysisMapColorOptions,
+  useFeatureState = false,
+  relativeTo?: string,
+  showPercentChange = false
+) => {
+  const opacity = _.isNil(colorOptions.opacity) ? 1 : colorOptions.opacity;
+  const style = {
+    type: 'fill',
+    paint: {
+      'fill-antialias': false,
+      'fill-color': colorExpr(
+        property,
+        dataDomain,
+        colorOptions.scheme,
+        colorOptions.scaleFn,
+        useFeatureState,
+        relativeTo,
+        showPercentChange,
+        colorOptions.isContinuous,
+        colorOptions.isDiverging
+      ),
+      'fill-opacity': opacity,
+    },
+  } as any;
+  if (useFeatureState) {
+    // TODO: split this into two functions (one for feature state and one for grid map style)
+    const missingProperty = [['==', null, ['feature-state', property]], 0.0] as any;
+    !_.isNil(relativeTo) &&
+      missingProperty.push(
+        [
+          'all',
+          ['==', null, ['feature-state', relativeTo]],
+          ['==', null, ['feature-state', BASELINE_VALUE_PROPERTY]],
+        ],
+        0.0
+      );
+    const baselineValueExpr = [
+      'case',
+      ['!=', null, ['feature-state', relativeTo]],
+      ['feature-state', relativeTo],
+      ['feature-state', BASELINE_VALUE_PROPERTY],
+    ];
+    const propertyGetter = _.isNil(relativeTo)
+      ? ['feature-state', property]
+      : diffExpr(baselineValueExpr, ['feature-state', property], showPercentChange);
+    style.paint['fill-opacity'] = [
+      'case',
+      ...missingProperty,
+      ['==', 'NaN', ['to-string', propertyGetter]],
+      0.0,
+      ['<', propertyGetter, filterDomain.min],
+      0.0,
+      ['>', propertyGetter, filterDomain.max],
+      0.0,
+      ['==', true, ['feature-state', '_isHidden']],
+      0.0,
+      opacity,
+    ];
+
+    // Add outline to better distinguish between neighbor polygons
+    style.paint['fill-antialias'] = true; // Needs to be true for fill-outline-color
+    style.paint['fill-outline-color'] = 'rgb(30, 30, 30)';
+  }
+  return style;
 };
