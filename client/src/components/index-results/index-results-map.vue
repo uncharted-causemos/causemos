@@ -7,12 +7,7 @@
       :disable-pan-zoom="false"
       @click-region="(regionId) => emit('click-region', regionId)"
     />
-    <AnalysisMapLegend
-      :ramp="mapLegendData"
-      :isContinuous="false"
-      :formatter="d3.format(',.0f')"
-      :should-center-labels="true"
-    />
+    <AnalysisMapLegend :ramp="mapLegendData" :isContinuous="false" :formatter="d3.format(',.0f')" />
   </div>
 </template>
 
