@@ -149,7 +149,7 @@ const {
   selectedDataLayer,
   computed(() => stringToAdminLevel(spatialAggregation.value)),
   mapSelectedRegions,
-  computed(() => breakdownState.value?.comparisonSettings.shouldDisplayAbsoluteValues ?? false),
+  computed(() => breakdownState.value?.comparisonSettings.shouldUseRelativePercentage),
   mapColorOptions,
   ref([]), // TODO: activeReferenceOptions,
   breakdownOption,

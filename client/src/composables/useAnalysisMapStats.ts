@@ -75,7 +75,48 @@ export default function useAnalysisMapStats(
 ) {
   // ===== Set up stats and legend for the admin layer ===== //
 
-  const adminMapLayerLegendData = ref<MapLegendColor[][]>([]);
+  const adminMapLayerLegendData = computed(() => {
+    if (!regionalData.value) {
+      return [];
+    }
+    /*
+      If relativeTo is defined, generated the relative legend info, otherwise generate the default legend info.
+    */
+    if (relativeTo.value) {
+      const baseline = getStats(adminLayerStats.value.baseline, selectedAdminLevel.value);
+      const difference = getStats(adminLayerStats.value.difference, selectedAdminLevel.value);
+      console.log(baseline, difference);
+      return baseline && difference
+        ? [
+            createMapLegendData(
+              [baseline.min, baseline.max],
+              colorOptions.value.relativeToSchemes[0],
+              colorOptions.value.scaleFn,
+              false
+            ),
+            createMapLegendData(
+              [difference.min, difference.max],
+              colorOptions.value.relativeToSchemes[1],
+              colorOptions.value.scaleFn,
+              true
+            ),
+          ]
+        : [];
+    } else {
+      const globalStats = getStats(adminLayerStats.value.global, selectedAdminLevel.value);
+      return globalStats
+        ? [
+            createMapLegendData(
+              [globalStats.min, globalStats.max],
+              colorOptions.value.scheme,
+              colorOptions.value.scaleFn,
+              colorOptions.value.isDiverging
+            ),
+          ]
+        : [];
+    }
+  });
+
   const adminLayerStats = ref<AnalysisMapStats>({
     global: {},
     baseline: {},
@@ -83,7 +124,6 @@ export default function useAnalysisMapStats(
   });
   watchEffect(() => {
     if (!regionalData.value) {
-      adminMapLayerLegendData.value = [];
       return;
     }
     const adminStats = computeRegionalStats(
@@ -92,7 +132,9 @@ export default function useAnalysisMapStats(
       showPercentChange.value
     );
 
-    // If there is a reference region selected, min and max stat should come from across different regional levels (country and currently selected admin level)
+    // If there is a reference region selected, min and max stat should come from
+    //  across different regional levels (country and currently selected admin
+    //  level)
     if (
       referenceOptions.value.length > 0 &&
       breakdownOption.value === SpatialAggregationLevel.Region
@@ -112,45 +154,7 @@ export default function useAnalysisMapStats(
         if (differenceStat) adminStats.difference[l] = differenceStat;
       });
     }
-    const adminStatsResolved = resolveSameMinMaxMapStats(adminStats);
-
-    /*
-      If relativeTo is defined, generated the relative legend info, otherwise generate the default legend info.
-    */
-    if (relativeTo.value) {
-      const baseline = getStats(adminStatsResolved.baseline, selectedAdminLevel.value);
-      const difference = getStats(adminStatsResolved.difference, selectedAdminLevel.value);
-      adminMapLayerLegendData.value =
-        baseline && difference
-          ? [
-              createMapLegendData(
-                [baseline.min, baseline.max],
-                colorOptions.value.relativeToSchemes[0],
-                colorOptions.value.scaleFn,
-                false
-              ),
-              createMapLegendData(
-                [difference.min, difference.max],
-                colorOptions.value.relativeToSchemes[1],
-                colorOptions.value.scaleFn,
-                true
-              ),
-            ]
-          : [];
-    } else {
-      const globalStats = getStats(adminStatsResolved.global, selectedAdminLevel.value);
-      adminMapLayerLegendData.value = globalStats
-        ? [
-            createMapLegendData(
-              [globalStats.min, globalStats.max],
-              colorOptions.value.scheme,
-              colorOptions.value.scaleFn,
-              colorOptions.value.isDiverging
-            ),
-          ]
-        : [];
-    }
-    adminLayerStats.value = adminStatsResolved;
+    adminLayerStats.value = resolveSameMinMaxMapStats(adminStats);
   });
 
   // ===== Calculate stats and legend for the grid layer dynamically ===== //

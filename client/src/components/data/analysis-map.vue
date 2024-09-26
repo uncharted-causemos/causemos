@@ -70,7 +70,6 @@ import useMapSyncBounds from '@/composables/useMapSyncBounds';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
-  createHeatmapLayerStyle,
   createPointsLayerStyle,
   ETHIOPIA_BOUNDING_BOX,
   STYLE_URL_PREFIX,
@@ -81,6 +80,7 @@ import {
   SOURCE_LAYERS,
   SOURCE_LAYER,
   BASELINE_VALUE_PROPERTY,
+  createHeatmapLayerStyle,
 } from '@/utils/map-util-new';
 import { calculateDiff } from '@/utils/value-util';
 import { REGION_ID_DELIMETER, adminLevelToString } from '@/utils/admin-level-util';
