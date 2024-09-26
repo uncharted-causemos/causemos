@@ -1,5 +1,5 @@
 <template>
-  <div class="map-legend-container" :class="{ 'center-labels': shouldCenterLabels }">
+  <div class="map-legend-container" :class="{ 'right-align-labels': shouldRightAlignLabels }">
     <span class="color-label subdued" v-if="ramp.length > 0">
       {{ formatter(ramp[ramp.length - 1].maxLabel) }}
     </span>
@@ -12,14 +12,13 @@
 
 <script lang="ts" setup>
 import * as d3 from 'd3';
-import { onMounted, ref, toRefs, watch } from 'vue';
+import { computed, onMounted, ref, toRefs, watch } from 'vue';
 import { MapLegendColor } from '@/types/Common';
 import { ramp as createRamp } from '@/utils/colors-util';
 
 const props = defineProps<{
   ramp: MapLegendColor[];
   isContinuous: boolean;
-  shouldCenterLabels?: boolean;
 }>();
 const { ramp, isContinuous } = toRefs(props);
 const colorRamp = ref<SVGElement>();
@@ -59,6 +58,18 @@ onMounted(() => refresh());
 watch([ramp, isContinuous], refresh);
 
 const formatter = (value: number) => d3.format(',.0f')(value);
+
+// Right-align the visible ramp numbers when they are in the thousands and one
+//  has at least 2 more digits than the other.
+const shouldRightAlignLabels = computed(() => {
+  if (ramp.value.length === 0) return false;
+  const minAbsoluteValue = Math.abs(ramp.value[0].minLabel);
+  const maxAbsoluteValue = Math.abs(ramp.value[ramp.value.length - 1].maxLabel);
+  const digitCountDifference = Math.abs(
+    minAbsoluteValue.toString().length - maxAbsoluteValue.toString().length
+  );
+  return minAbsoluteValue > 1000 && maxAbsoluteValue > 1000 && digitCountDifference > 2;
+});
 </script>
 
 <style lang="scss" scoped>
@@ -84,7 +95,7 @@ svg {
   position: relative;
   padding: 2px 0;
 }
-.map-legend-container:not(.center-labels) .color-label {
+.map-legend-container.right-align-labels .color-label {
   align-self: flex-end;
 }
 </style>

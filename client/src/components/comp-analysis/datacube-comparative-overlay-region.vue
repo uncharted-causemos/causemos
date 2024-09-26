@@ -44,7 +44,7 @@
           :selected-admin-level="selectedAdminLevel"
           :disable-pan-zoom="true"
         />
-        <MapLegend
+        <AnalysisMapLegend
           v-if="mapLegendData.length > 0"
           :ramp="mapLegendData[0]"
           :isContinuous="isContinuousScale"
@@ -96,7 +96,7 @@ import { ModelRun } from '@/types/ModelRun';
 
 import OptionsButton from '@/components/widgets/options-button.vue';
 import RegionMap from '@/components/widgets/region-map.vue';
-import MapLegend from '@/components/widgets/map-legend.vue';
+import AnalysisMapLegend from '@/components/widgets/analysis-map-legend.vue';
 
 import useModelMetadata from '@/composables/useModelMetadata';
 import useDatacubeVersioning from '@/composables/useDatacubeVersioning';
@@ -390,7 +390,13 @@ main {
 .card-maps-box {
   flex: 3;
   min-width: 0;
-  display: flex;
-  flex-direction: row;
+  position: relative;
+
+  & > *:last-child {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    height: min(250px, 50%);
+  }
 }
 </style>
