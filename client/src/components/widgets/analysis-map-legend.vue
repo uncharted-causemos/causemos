@@ -68,7 +68,7 @@ const shouldRightAlignLabels = computed(() => {
   const digitCountDifference = Math.abs(
     minAbsoluteValue.toString().length - maxAbsoluteValue.toString().length
   );
-  return minAbsoluteValue > 1000 && maxAbsoluteValue > 1000 && digitCountDifference > 2;
+  return minAbsoluteValue > 1000 && maxAbsoluteValue > 1000 && digitCountDifference > 1;
 });
 </script>
 
