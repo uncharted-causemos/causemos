@@ -12,7 +12,7 @@
       <div class="table-header">
         <div class="index-result-table-output-value-column flex">
           <p class="index-result-table-dataset-region-column">Region</p>
-          <p v-if="!isShowingKeyDatasets">{{ props.selectedNodeName }}</p>
+          <p>Index score</p>
         </div>
         <div
           v-if="isShowingKeyDatasets"
