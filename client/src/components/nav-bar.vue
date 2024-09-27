@@ -40,28 +40,34 @@
           @close="showNavbarInsightsPanel = false"
         />
       </div>
-      <a
-        :href="applicationConfiguration.CLIENT__USER_DOCS_URL"
-        target="_blank"
-        class="nav-item clickable"
-      >
-        <i class="fa fa-question" />
-      </a>
-      <div class="nav-item clickable" @click="logout">
-        <i class="fa fa-sign-out" />
-      </div>
+      <UserAvatar
+        :account-name="accountName ?? ''"
+        @avatar-click="toggleIsAccountMenuVisible"
+        size="large"
+        class="user-avatar"
+      />
+      <Menu ref="accountMenu" :model="accountMenuItems" :popup="true">
+        <template #start>
+          <p class="account-menu-header">Signed in as {{ accountName }}</p>
+        </template>
+        <template #itemicon="{ item }">
+          <i v-if="item.icon" :class="item.icon"></i>
+        </template>
+      </Menu>
     </div>
   </nav>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { ProjectType } from '@/types/Enums';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { mapActions, useStore } from 'vuex';
+import { useStore } from 'vuex';
 import NavbarInsightsPanel from '@/components/insight-manager/navbar-insights-panel.vue';
 import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 import useModelOrDatasetName from '@/composables/useModelOrDatasetName';
+import Menu from 'primevue/menu';
+import UserAvatar from './widgets/UserAvatar.vue';
 
 interface NavBarItem {
   route: { name: string; params: any } | null;
@@ -69,190 +75,187 @@ interface NavBarItem {
   text: string;
 }
 
-export default defineComponent({
-  name: 'NavBar',
-  components: {
-    NavbarInsightsPanel,
-  },
-  setup() {
-    const store = useStore();
-    const project = computed(() => store.getters['app/project']);
-    const projectMetadata = computed(() => store.getters['app/projectMetadata']);
-    const route = useRoute();
-    // New data space pages use `route.query.analysis_id`, while other existing pages use
-    //  `route.params.analysisId`.
-    const analysisId = computed(
-      () => (route.query.analysis_id as string) ?? (route.params.analysisId as string)
-    );
-    const analysisName = computed(() => store.getters['app/analysisName']);
+const store = useStore();
+const project = computed(() => store.getters['app/project']);
+const projectMetadata = computed(() => store.getters['app/projectMetadata']);
+const route = useRoute();
+// New data space pages use `route.query.analysis_id`, while other existing pages use
+//  `route.params.analysisId`.
+const analysisId = computed(
+  () => (route.query.analysis_id as string) ?? (route.params.analysisId as string)
+);
+const analysisName = computed(() => store.getters['app/analysisName']);
 
-    const datacubeId = computed(() => (route.params.datacubeId as string) ?? null);
-    const modelOrDatasetName = useModelOrDatasetName(datacubeId);
+const datacubeId = computed(() => (route.params.datacubeId as string) ?? null);
+const modelOrDatasetName = useModelOrDatasetName(datacubeId);
 
-    const analysisProjectItem = computed<NavBarItem>(() => ({
-      text: projectMetadata.value.name,
-      icon: 'fa-folder',
-      route: { name: 'overview', params: { project: project.value } },
-    }));
-    const datacubeProjectItem = computed<NavBarItem>(() => {
-      const navBarItem = {
-        text: projectMetadata.value.name,
-        icon: projectMetadata.value.type === 'model' ? 'fa-connectdevelop' : 'fa-table',
-        route: {
-          name:
-            projectMetadata.value.type === 'model' ? 'domainDatacubeOverview' : 'datasetOverview',
-          params: { project: project.value },
-        },
-      };
-      return navBarItem;
-    });
-
-    const quantitativeAnalysisItem = computed(() => ({
-      text: analysisName.value,
-      icon: 'fa-list',
-      route: {
-        name: 'dataComparative',
-        params: {
-          project: project.value,
-          analysisId: analysisId.value,
-          projectType: ProjectType.Analysis,
-        },
-      },
-    }));
-
-    const indexStructureItem = computed(() => ({
-      text: analysisName.value,
-      icon: 'fa-book',
-      route: {
-        name: 'indexStructure',
-        params: {
-          project: project.value,
-          analysisId: analysisId.value,
-          projectType: ProjectType.Analysis,
-        },
-      },
-    }));
-    const indexResultsItem = computed(() => ({
-      text: 'Results',
-      icon: 'fa-map',
-      route: {
-        name: 'indexStructure',
-        params: {
-          project: project.value,
-          analysisId: analysisId.value,
-          projectType: ProjectType.Analysis,
-        },
-      },
-    }));
-    const indexProjectionsItem = computed(() => ({
-      text: 'Projections',
-      icon: 'fa-line-chart',
-      route: {
-        name: 'indexProjections',
-        params: {
-          project: project.value,
-          analysisId: analysisId.value,
-          projectType: ProjectType.Analysis,
-        },
-      },
-    }));
-
-    const getPreviousRouteItemForDrilldown = () => {
-      if (route.query.index_node_id) return indexStructureItem.value;
-      if (route.query.index_projections_node_id) return indexProjectionsItem.value;
-      return quantitativeAnalysisItem.value;
-    };
-
-    const siteMap = computed<{ [key: string]: NavBarItem[] }>(() => ({
-      home: [],
-      newDomainProject: [],
-      domainDatacubeOverview: [datacubeProjectItem.value],
-      datasetOverview: [datacubeProjectItem.value],
-      modelPublisher: [
-        datacubeProjectItem.value,
-        { icon: 'fa-cube', route: null, text: 'Instance' },
-      ],
-      indicatorPublisher: [
-        datacubeProjectItem.value,
-        { icon: 'fa-cube', route: null, text: 'Indicator' },
-      ],
-      overview: [analysisProjectItem.value],
-      dataComparative: [analysisProjectItem.value, quantitativeAnalysisItem.value],
-      data: [
-        analysisProjectItem.value,
-        quantitativeAnalysisItem.value,
-        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
-      ],
-      indexResultsDataExplorer: [
-        analysisProjectItem.value,
-        indexStructureItem.value,
-        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
-      ],
-      projectionsDataExplorer: [
-        analysisProjectItem.value,
-        indexStructureItem.value,
-        indexProjectionsItem.value,
-        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
-      ],
-      indexStructure: [analysisProjectItem.value, indexStructureItem.value],
-      indexResults: [analysisProjectItem.value, indexStructureItem.value, indexResultsItem.value],
-      indexProjections: [
-        analysisProjectItem.value,
-        indexStructureItem.value,
-        indexProjectionsItem.value,
-      ],
-      documents: [
-        analysisProjectItem.value,
-        { icon: 'fa-book', route: null, text: 'Explore documents' },
-      ],
-      modelDrilldown: [
-        analysisProjectItem.value,
-        quantitativeAnalysisItem.value,
-        {
-          icon: 'fa-connectdevelop',
-          route: null,
-          text: modelOrDatasetName.value ?? 'Model drilldown',
-        },
-      ],
-      datasetDrilldown: [
-        analysisProjectItem.value,
-        getPreviousRouteItemForDrilldown(),
-        { icon: 'fa-table', route: null, text: modelOrDatasetName.value ?? 'Dataset drilldown' },
-      ],
-    }));
-
-    const currentView = computed(() => store.getters['app/currentView']);
-    const navItems = computed(() => siteMap.value[currentView.value] ?? null);
-    const isNavbarVisible = computed(() => navItems.value !== null);
-    const VIEWS_WITH_NAVBAR_INSIGHTS_PANEL = [
-      'indexStructure',
-      'indexResults',
-      'indexProjections',
-      'modelDrilldown',
-      'datasetDrilldown',
-      'dataComparative',
-    ];
-    const showNavbarInsightsPanelButton = computed(() =>
-      VIEWS_WITH_NAVBAR_INSIGHTS_PANEL.includes(currentView.value)
-    );
-    const showNavbarInsightsPanel = ref(false);
-
-    const { applicationConfiguration } = useApplicationConfiguration();
-
-    return {
-      navItems,
-      isNavbarVisible,
-      showNavbarInsightsPanelButton,
-      showNavbarInsightsPanel,
-      applicationConfiguration,
-    };
-  },
-  methods: {
-    ...mapActions({
-      logout: 'auth/logout',
-    }),
-  },
+const analysisProjectItem = computed<NavBarItem>(() => ({
+  text: projectMetadata.value.name,
+  icon: 'fa-folder',
+  route: { name: 'overview', params: { project: project.value } },
+}));
+const datacubeProjectItem = computed<NavBarItem>(() => {
+  const navBarItem = {
+    text: projectMetadata.value.name,
+    icon: projectMetadata.value.type === 'model' ? 'fa-connectdevelop' : 'fa-table',
+    route: {
+      name: projectMetadata.value.type === 'model' ? 'domainDatacubeOverview' : 'datasetOverview',
+      params: { project: project.value },
+    },
+  };
+  return navBarItem;
 });
+
+const quantitativeAnalysisItem = computed(() => ({
+  text: analysisName.value,
+  icon: 'fa-list',
+  route: {
+    name: 'dataComparative',
+    params: {
+      project: project.value,
+      analysisId: analysisId.value,
+      projectType: ProjectType.Analysis,
+    },
+  },
+}));
+
+const indexStructureItem = computed(() => ({
+  text: analysisName.value,
+  icon: 'fa-book',
+  route: {
+    name: 'indexStructure',
+    params: {
+      project: project.value,
+      analysisId: analysisId.value,
+      projectType: ProjectType.Analysis,
+    },
+  },
+}));
+const indexResultsItem = computed(() => ({
+  text: 'Results',
+  icon: 'fa-map',
+  route: {
+    name: 'indexStructure',
+    params: {
+      project: project.value,
+      analysisId: analysisId.value,
+      projectType: ProjectType.Analysis,
+    },
+  },
+}));
+const indexProjectionsItem = computed(() => ({
+  text: 'Projections',
+  icon: 'fa-line-chart',
+  route: {
+    name: 'indexProjections',
+    params: {
+      project: project.value,
+      analysisId: analysisId.value,
+      projectType: ProjectType.Analysis,
+    },
+  },
+}));
+
+const getPreviousRouteItemForDrilldown = () => {
+  if (route.query.index_node_id) return indexStructureItem.value;
+  if (route.query.index_projections_node_id) return indexProjectionsItem.value;
+  return quantitativeAnalysisItem.value;
+};
+
+const siteMap = computed<{ [key: string]: NavBarItem[] }>(() => ({
+  home: [],
+  newDomainProject: [],
+  domainDatacubeOverview: [datacubeProjectItem.value],
+  datasetOverview: [datacubeProjectItem.value],
+  modelPublisher: [datacubeProjectItem.value, { icon: 'fa-cube', route: null, text: 'Instance' }],
+  indicatorPublisher: [
+    datacubeProjectItem.value,
+    { icon: 'fa-cube', route: null, text: 'Indicator' },
+  ],
+  overview: [analysisProjectItem.value],
+  dataComparative: [analysisProjectItem.value, quantitativeAnalysisItem.value],
+  data: [
+    analysisProjectItem.value,
+    quantitativeAnalysisItem.value,
+    { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
+  ],
+  indexResultsDataExplorer: [
+    analysisProjectItem.value,
+    indexStructureItem.value,
+    { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
+  ],
+  projectionsDataExplorer: [
+    analysisProjectItem.value,
+    indexStructureItem.value,
+    indexProjectionsItem.value,
+    { icon: 'fa-cube', route: null, text: 'Datacube drilldown' },
+  ],
+  indexStructure: [analysisProjectItem.value, indexStructureItem.value],
+  indexResults: [analysisProjectItem.value, indexStructureItem.value, indexResultsItem.value],
+  indexProjections: [
+    analysisProjectItem.value,
+    indexStructureItem.value,
+    indexProjectionsItem.value,
+  ],
+  documents: [
+    analysisProjectItem.value,
+    { icon: 'fa-book', route: null, text: 'Explore documents' },
+  ],
+  modelDrilldown: [
+    analysisProjectItem.value,
+    quantitativeAnalysisItem.value,
+    {
+      icon: 'fa-connectdevelop',
+      route: null,
+      text: modelOrDatasetName.value ?? 'Model drilldown',
+    },
+  ],
+  datasetDrilldown: [
+    analysisProjectItem.value,
+    getPreviousRouteItemForDrilldown(),
+    { icon: 'fa-table', route: null, text: modelOrDatasetName.value ?? 'Dataset drilldown' },
+  ],
+}));
+
+const currentView = computed(() => store.getters['app/currentView']);
+const navItems = computed(() => siteMap.value[currentView.value] ?? null);
+const isNavbarVisible = computed(() => navItems.value !== null);
+const VIEWS_WITH_NAVBAR_INSIGHTS_PANEL = [
+  'indexStructure',
+  'indexResults',
+  'indexProjections',
+  'modelDrilldown',
+  'datasetDrilldown',
+  'dataComparative',
+];
+const showNavbarInsightsPanelButton = computed(() =>
+  VIEWS_WITH_NAVBAR_INSIGHTS_PANEL.includes(currentView.value)
+);
+const showNavbarInsightsPanel = ref(false);
+
+const { applicationConfiguration } = useApplicationConfiguration();
+
+const accountName = computed(() => store.getters['auth/name']);
+const logout = () => {
+  store.dispatch('auth/logout');
+};
+
+const accountMenu = ref<typeof Menu>();
+const toggleIsAccountMenuVisible = (e: MouseEvent) => {
+  accountMenu.value?.toggle(e);
+};
+const accountMenuItems = computed(() => [
+  {
+    label: 'Sign out',
+    icon: 'fa fa-fw fa-sign-out',
+    command: logout,
+  },
+  {
+    label: 'View documentation',
+    icon: 'fa fa-fw fa-question',
+    url: applicationConfiguration.value.CLIENT__USER_DOCS_URL,
+  },
+]);
 </script>
 
 <style scoped lang="scss">
@@ -347,5 +350,22 @@ export default defineComponent({
   height: 700px;
   top: calc(100% - 5px);
   right: 0;
+}
+
+// User avatar
+
+.user-avatar {
+  align-self: center;
+  color: var(--p-text-muted-color);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--p-text-color);
+  }
+}
+
+.account-menu-header {
+  padding: 10px;
+  color: var(--p-text-muted-color);
 }
 </style>

@@ -40,6 +40,7 @@ let timer: NodeJS.Timeout;
 const getters: GetterTree<AuthState, any> = {
   isAuthenticated: (state) => state.isAuthenticated,
   userToken: (state) => state.userToken,
+  name: (state) => state.name,
 };
 
 const actions: ActionTree<AuthState, any> = {
