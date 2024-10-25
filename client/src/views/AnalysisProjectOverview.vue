@@ -17,36 +17,37 @@
     <header>
       <section class="project-metadata">
         <div class="title">
-          <input
+          <InputText
             v-if="isEditingTitle"
             v-model="projectMetadata.name"
-            type="text"
-            class="editable-title"
+            @keypress.enter="isEditingTitle = false"
+            ref="projectTitleInput"
           />
-          <h3 v-else @click="editTitle">
-            {{ projectMetadata.name }} <i class="fa fa-fw fa-pencil subdued" />
+          <h3 v-else @click="editTitle" v-tooltip.top-center="'Edit'">
+            {{ projectMetadata.name }}<Button icon="fa fa-pencil" text severity="secondary" />
           </h3>
-          <SmallIconButton
+          <Button
             v-if="isEditingTitle"
             @click="saveTitle"
             v-tooltip.top-center="'Save changes'"
-          >
-            <i class="fa fa-check" />
-          </SmallIconButton>
-          <SmallIconButton
+            icon="fa fa-check"
+            outlined
+          />
+          <Button
             v-if="isEditingTitle"
             @click="discardTitle"
             v-tooltip.top-center="'Discard changes'"
-          >
-            <i class="fa fa-close" />
-          </SmallIconButton>
+            icon="fa fa-close"
+            outlined
+          />
         </div>
         <div class="description">
-          <textarea
+          <InputText
             v-if="isEditingProjectDescription"
             v-model="projectMetadata.description"
-            type="text"
+            @keypress.enter="isEditingProjectDescription = false"
             class="editable-description"
+            ref="projectDescriptionInput"
           />
           <div
             v-else
@@ -54,19 +55,25 @@
             v-tooltip.top-center="'Edit description'"
             :class="{ 'description-hint-text': !projectMetadata.description }"
           >
-            {{ projectMetadata.description ? projectMetadata.description : 'Add a description' }}
-            <i class="fa fa-fw fa-pencil" />
+            <span>
+              {{ projectMetadata.description ? projectMetadata.description : 'Add a description' }}
+            </span>
+            <Button icon="fa fa-pencil" text severity="secondary" />
           </div>
-          <SmallIconButton v-if="isEditingProjectDescription">
-            <i class="fa fa-check" @click="saveDesc" v-tooltip.top-center="'Save changes'" />
-          </SmallIconButton>
-          <SmallIconButton v-if="isEditingProjectDescription">
-            <i
-              class="fa fa-close"
-              @click="discardProjectDescription"
-              v-tooltip.top-center="'Discard changes'"
-            />
-          </SmallIconButton>
+          <Button
+            v-if="isEditingProjectDescription"
+            @click="saveDesc"
+            v-tooltip.top-center="'Save changes'"
+            icon="fa fa-check"
+            outlined
+          />
+          <Button
+            v-if="isEditingProjectDescription"
+            @click="discardProjectDescription"
+            v-tooltip.top-center="'Discard changes'"
+            icon="fa fa-close"
+            outlined
+          />
         </div>
       </section>
 
@@ -91,16 +98,18 @@
           <div v-if="questionsList.length === 0" class="un-font-small subdued">No questions.</div>
         </div>
         <div class="question-buttons">
-          <button
-            class="btn btn-default"
+          <Button
             @click="onAddQuestion"
-            :disabled="questionBeingEdited !== null"
-          >
-            <i class="fa fa-fw fa-plus" />Add question
-          </button>
-          <button class="btn btn-default" @click="openInsightsExplorer">
-            <i class="fa fa-fw fa-star" />Review insights
-          </button>
+            label="Add question"
+            icon="fa fa-fw fa-plus"
+            severity="secondary"
+          />
+          <Button
+            @click="openInsightsExplorer"
+            label="Review insights"
+            icon="fa fa-fw fa-star"
+            severity="secondary"
+          />
         </div>
       </section>
     </header>
@@ -176,7 +185,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import _ from 'lodash';
 import {
@@ -196,7 +205,6 @@ import projectService from '@/services/project-service';
 import DuplicateModal from '@/components/action-bar/duplicate-modal.vue';
 import useQuestionsData from '@/composables/useQuestionsData';
 import { computed } from '@vue/reactivity';
-import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { TYPE } from 'vue-toastification';
 import { isDataAnalysisState, isIndexAnalysisState } from '@/utils/insight-util';
 import useToaster from '@/composables/useToaster';
@@ -216,6 +224,8 @@ import ToolCardWithAnalyses from '@/components/home/tool-card-with-analyses.vue'
 import useInsightStore from '@/composables/useInsightStore';
 import { getDatacubeById } from '@/services/datacube-service';
 import { getDatacubeId } from '@/utils/analysis-util';
+import InputText from 'primevue/inputtext';
+import Button from 'primevue/button';
 
 const router = useRouter();
 
@@ -324,6 +334,14 @@ const saveDesc = () => {
   isEditingProjectDescription.value = false;
 };
 
+const projectDescriptionInput = ref();
+watch(isEditingProjectDescription, async (value) => {
+  await nextTick();
+  if (value && projectDescriptionInput.value.$el) {
+    projectDescriptionInput.value.$el.focus();
+  }
+});
+
 const projectTitle = ref('');
 const isEditingTitle = ref(false);
 const editTitle = () => {
@@ -340,6 +358,13 @@ const discardTitle = () => {
   projectMetadata.value.name = projectTitle.value;
   isEditingTitle.value = false;
 };
+const projectTitleInput = ref();
+watch(isEditingTitle, async (value) => {
+  await nextTick();
+  if (value && projectTitleInput.value.$el) {
+    projectTitleInput.value.$el.focus();
+  }
+});
 
 const analyses = ref<Analysis[]>([]);
 const fetchAnalyses = async () => {
@@ -517,15 +542,16 @@ header {
   padding: 30px;
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 20px;
+
+  .title {
+    display: flex;
+    gap: 4px;
+  }
 
   h3 {
     margin: 0;
     cursor: pointer;
-
-    i {
-      font-size: $font-size-small;
-    }
   }
 
   & > *:not(:first-child) {
@@ -535,13 +561,18 @@ header {
   .description {
     text-align: justify;
     max-width: 90ch;
+    display: flex;
+    gap: 4px;
+
+    span {
+      cursor: pointer;
+    }
   }
 }
 
 section.project-metadata {
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
 
 section.questions {
@@ -565,15 +596,7 @@ section.questions {
   border-bottom: 1px solid $un-color-black-10;
 }
 
-.editable-title {
-  border-width: 1px;
-  border-color: rgb(216, 214, 214);
-  font-size: x-large;
-}
-
 .editable-description {
-  border-width: 1px;
-  border-color: rgb(216, 214, 214);
   min-width: 85%;
   flex-basis: 85%;
 }
