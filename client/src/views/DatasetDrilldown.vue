@@ -76,6 +76,7 @@
           "
           :selected-temporal-resolution="temporalResolution"
           :unit="unitWithComparisonStateApplied"
+          :is-timestamp-summary-visible="false"
           @select-timestamp="setSelectedTimestamp"
         />
         <p class="selected-date" v-if="selectedTimestamp !== null">
@@ -124,7 +125,9 @@
           :get-color-from-timeseries-id="getColorFromTimeseriesId"
           :aggregation-method="spatialAggregationMethod"
           :output-name="activeOutputVariable?.display_name ?? ''"
-          :comparison-settings="breakdownState.comparisonSettings"
+          :breakdown-state="breakdownState"
+          :timeseries-data="timeseriesData"
+          :selected-timestamp="selectedTimestamp"
         />
       </div>
     </div>
@@ -308,143 +311,9 @@ const { getColorFromTimeseriesId } = useTimeseriesIdToColorMap(breakdownState);
 @import '@/styles/common';
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/variables';
-
-$configColumnButtonWidth: 122px;
+@import '@/styles/data-space';
 
 .dataset-drilldown-container {
-  height: $content-full-height;
-  display: flex;
-  overflow: hidden;
-}
-
-.config-column {
-  width: 380px;
-  background: var(--p-surface-50);
-  border-right: 1px solid $un-color-black-10;
-  display: flex;
-  flex-direction: column;
-
-  header,
-  section {
-    padding: 20px;
-  }
-
-  section {
-    border-top: 1px solid $un-color-black-10;
-  }
-
-  section {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-}
-
-.output-variables {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-
-  .unit {
-    margin-top: 5px;
-  }
-}
-
-.labelled-dropdowns {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.labelled-dropdown {
-  display: flex;
-  gap: 5px;
-  align-items: baseline;
-
-  p {
-    flex: 1;
-    min-width: 0;
-  }
-
-  & :deep(.dropdown-btn) {
-    width: $configColumnButtonWidth;
-    display: flex;
-    justify-content: space-between;
-  }
-}
-
-.media-files {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.visualization-container {
-  flex: 1;
-  min-width: 0;
-  background: white;
-  display: flex;
-  flex-direction: column;
-}
-
-.date-selector {
-  height: 200px;
-  border-bottom: 1px solid $un-color-black-10;
-  padding: 20px;
-
-  .selected-date {
-    margin-top: 10px;
-  }
-}
-
-.date-dependent-data {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  padding: 20px;
-  // The bar chart panel needs to specify its own padding so that its "sortable header" tooltips
-  //  aren't clipped for being outside of its bounding box.
-  padding-right: 0;
-}
-
-.maps {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-
-  .card-maps-box {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    gap: 2px;
-    flex-wrap: wrap;
-  }
-
-  $marginSize: 5px;
-
-  .new-analysis-map {
-    flex-grow: 1;
-
-    &.card-count-2,
-    &.card-count-3,
-    &.card-count-4 {
-      min-width: calc(50% - calc($marginSize / 2));
-      max-width: calc(50% - calc($marginSize / 2));
-    }
-    &.card-count-n {
-      min-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
-      max-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
-    }
-  }
-
-  & > button {
-    align-self: flex-start;
-  }
-}
-
-.bar-chart-panel {
-  width: 300px;
+  @include data-space-container;
 }
 </style>
