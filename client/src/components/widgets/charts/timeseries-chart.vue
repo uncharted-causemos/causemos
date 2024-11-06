@@ -5,7 +5,7 @@
         <svg ref="lineChart" />
         <resize-observer @notify="resize" />
       </div>
-      <div class="selected-data">
+      <div class="selected-data" v-if="isTimestampSummaryVisible">
         <span class="unit">{{ unit }}</span>
         <div class="selected-data-rows">
           <div
@@ -84,6 +84,10 @@ export default defineComponent({
     unit: {
       type: String,
       default: '',
+    },
+    isTimestampSummaryVisible: {
+      type: Boolean,
+      default: true,
     },
   },
   setup(props, { emit }) {

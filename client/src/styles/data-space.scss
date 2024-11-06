@@ -1,0 +1,145 @@
+@import '@/styles/variables';
+
+@mixin data-space-container {
+  height: $content-full-height;
+  display: flex;
+  overflow: hidden;
+  --section-padding: 20px;
+}
+
+.config-column {
+  width: 380px;
+  background: var(--p-surface-50);
+  border-right: 1px solid $un-color-black-10;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
+  section {
+    padding: var(--section-padding);
+    border-top: 1px solid $un-color-black-10;
+  }
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--section-padding);
+  }
+}
+
+.output-variables {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+
+  .unit {
+    margin-top: 5px;
+  }
+}
+
+.labelled-dropdowns {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.labelled-dropdown {
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+
+  p {
+    flex: 1;
+    min-width: 0;
+  }
+
+  & :deep(.dropdown-btn) {
+    width: 122px;
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+.media-files {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.visualization-container {
+  flex: 1;
+  min-width: 0;
+  background: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.date-selector {
+  height: 170px;
+  border-bottom: 1px solid $un-color-black-10;
+  padding: var(--section-padding);
+  padding-right: 0;
+  display: flex;
+
+  .timeseries-chart {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .selected-date {
+    margin-top: 10px;
+    padding-left: var(--section-padding);
+  }
+}
+
+.date-dependent-data {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  padding: var(--section-padding);
+  // The bar chart panel needs to specify its own padding so that its "sortable header" tooltips
+  //  aren't clipped for being outside of its bounding box.
+  padding-right: 0;
+}
+
+.maps {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .card-maps-box {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+
+  $marginSize: 5px;
+
+  .new-analysis-map {
+    flex-grow: 1;
+
+    &.card-count-2,
+    &.card-count-3,
+    &.card-count-4 {
+      min-width: calc(50% - calc($marginSize / 2));
+      max-width: calc(50% - calc($marginSize / 2));
+    }
+    &.card-count-n {
+      min-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
+      max-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
+    }
+  }
+
+  & > button {
+    align-self: flex-start;
+  }
+}
+
+.bar-chart-panel,
+.selected-date {
+  width: 300px;
+}

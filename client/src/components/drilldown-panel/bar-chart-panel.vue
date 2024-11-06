@@ -1,6 +1,15 @@
 <template>
   <div class="bar-chart-panel-container">
-    <p>{{ aggregationMethod === AggregationOption.Mean ? 'Average' : 'Total' }} {{ unit }}</p>
+    <!-- This (redundant) summary is hidden if split by region is active -->
+    <TimestampSummary
+      v-if="!isBreakdownStateRegions(breakdownState)"
+      :aggregationMethod="props.aggregationMethod"
+      :unit="props.unit"
+      :timeseriesData="props.timeseriesData"
+      :breakdown-state="breakdownState"
+      :selected-timestamp="props.selectedTimestamp"
+    />
+    <hr v-if="!isBreakdownStateRegions(breakdownState)" />
     <div class="sortable-headers">
       <SortableTableHeaderCell
         :active-state="getHeaderCellSortState(SortOption.Name)"
@@ -52,7 +61,10 @@ import SortableTableHeaderCell from '@/components/widgets/sortable-table-header-
 import { AggregationOption, SortableTableHeaderState } from '@/types/Enums';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import { RootStatefulDataNode, StatefulDataNode } from '@/types/BarChartPanel';
-import { ComparisonSettings } from '@/types/Datacube';
+import { BreakdownState } from '@/types/Datacube';
+import { isBreakdownStateRegions } from '@/utils/datacube-util';
+import TimestampSummary from './timestamp-summary.vue';
+import { Timeseries } from '@/types/Timeseries';
 
 const props = defineProps<{
   aggregationLevel: number;
@@ -60,9 +72,11 @@ const props = defineProps<{
   unit: string;
   getColorFromTimeseriesId: (timeseriesId: string) => string;
   aggregationMethod: AggregationOption;
-  comparisonSettings: ComparisonSettings;
+  breakdownState: BreakdownState;
+  timeseriesData: Timeseries[];
+  selectedTimestamp: number | null;
 }>();
-const { rawData, aggregationLevel, getColorFromTimeseriesId, comparisonSettings } = toRefs(props);
+const { rawData, aggregationLevel, getColorFromTimeseriesId, breakdownState } = toRefs(props);
 
 const columnToSortBy = ref<SortOption>(SortOption.Name);
 const sortOrder = ref<SortableTableHeaderState.Up | SortableTableHeaderState.Down>(
@@ -79,16 +93,22 @@ const getHeaderCellSortState = (cell: SortOption) =>
   cell === columnToSortBy.value ? sortOrder.value : SortableTableHeaderState.None;
 const statefulData = ref<RootStatefulDataNode | null>(null);
 watch(
-  [rawData, columnToSortBy, sortOrder, getColorFromTimeseriesId, comparisonSettings],
-  () => {
-    if (rawData.value === null) return;
+  [
+    rawData,
+    columnToSortBy,
+    sortOrder,
+    getColorFromTimeseriesId,
+    () => breakdownState.value.comparisonSettings,
+  ],
+  ([_rawData, _columnToSortBy, _sortOrder, _getColorFromTimeseriesId, _comparisonSettings]) => {
+    if (_rawData === null) return;
     statefulData.value = constructHierarchichalDataNodeTree(
       ADMIN_LEVEL_KEYS,
-      rawData.value,
-      getColorFromTimeseriesId.value,
-      columnToSortBy.value,
-      sortOrder.value,
-      comparisonSettings.value
+      _rawData,
+      _getColorFromTimeseriesId,
+      _columnToSortBy,
+      _sortOrder,
+      _comparisonSettings
     );
   },
   { immediate: true }
@@ -157,12 +177,6 @@ const toggleExpanded = (path: string[]) => {
 <style lang="scss" scoped>
 @import '~styles/variables';
 
-$un-color-surface-30: #b3b4b5;
-
-$track-height: 2px;
-$thumb-size: 16px;
-$tick-size: 8px;
-
 h5 {
   margin: 0;
   margin-bottom: 5px;
@@ -174,6 +188,12 @@ h5 {
   gap: 5px;
   padding: 0 20px;
   overflow-y: auto;
+
+  & > hr {
+    margin-block: 15px;
+    border-width: 0;
+    border-top: 1px solid var(--p-surface-200);
+  }
 }
 
 .sortable-headers {
@@ -191,7 +211,7 @@ h5 {
 .rows {
   margin-left: -20px;
   & > * {
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
 }
 </style>
