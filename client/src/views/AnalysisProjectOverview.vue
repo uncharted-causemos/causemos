@@ -20,7 +20,7 @@
           <InputText
             v-if="isEditingTitle"
             v-model="projectMetadata.name"
-            @keypress.enter="isEditingTitle = false"
+            @keypress.enter="saveTitle"
             ref="projectTitleInput"
           />
           <h3 v-else @click="editTitle" v-tooltip.top-center="'Edit'">
@@ -45,7 +45,7 @@
           <InputText
             v-if="isEditingProjectDescription"
             v-model="projectMetadata.description"
-            @keypress.enter="isEditingProjectDescription = false"
+            @keypress.enter="saveDesc"
             class="editable-description"
             ref="projectDescriptionInput"
           />
