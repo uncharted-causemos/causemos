@@ -14,31 +14,7 @@
       }"
     />
     <div v-else class="unit-width" />
-    <div
-      v-if="itemData.bars.length === 1"
-      v-tooltip.top-start="ancestorTooltip"
-      class="content--single-row"
-    >
-      <div class="single-row-headings">
-        <span class="title un-font-small">
-          <span class="faded">{{ ancestorPrefix }}</span>
-          {{ itemData.name }}
-        </span>
-        <span class="un-font-small value" :class="{ faded: !itemData.isSelectedAggregationLevel }">
-          {{ valueFormatter(itemData.bars[0].value) }}
-        </span>
-      </div>
-      <AggregationChecklistBar
-        :barColor="itemData.bars[0].color"
-        :barValue="itemData.bars[0].value"
-        :isChecked="itemData.isChecked"
-        :maxVisibleBarValue="maxVisibleBarValue"
-        :minVisibleBarValue="minVisibleBarValue"
-        :isSelectedAggregationLevel="itemData.isSelectedAggregationLevel"
-        :isWrapped="false"
-      />
-    </div>
-    <div v-else v-tooltip.top-start="ancestorTooltip" class="content--multiple-rows">
+    <div v-tooltip.top-start="ancestorTooltip" class="content--multiple-rows">
       <span class="title un-font-small">
         <span class="faded">{{ ancestorPrefix }}</span>
         {{ itemData.name }}
@@ -156,21 +132,6 @@ const ancestorTooltip = computed(() => {
 
 .value {
   color: $subdued;
-}
-
-.content--single-row {
-  flex: 1;
-  display: flex;
-  position: relative;
-  flex-direction: column;
-  .single-row-headings {
-    display: flex;
-    flex-direction: row;
-    align-items: baseline;
-  }
-  .title {
-    flex: 1;
-  }
 }
 
 .content--multiple-rows {
