@@ -71,6 +71,7 @@ export default function (
     temporalResolution
   );
   timeseriesList.forEach((timeseries) => {
+    const pointsGroupElement = groupElement.append('g');
     if (timeseries.points.length > 1) {
       // draw a line for time series longer than 1
       if (timeseries.isDefaultRun) {
@@ -79,10 +80,10 @@ export default function (
         renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);
       }
       // also, draw dots for all the timeseries points
-      renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+      renderPoint(pointsGroupElement, timeseries.points, xScale, yScale, timeseries.color);
     } else {
       // draw a spot for timeseries that are only 1 long
-      renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+      renderPoint(pointsGroupElement, timeseries.points, xScale, yScale, timeseries.color);
     }
   });
 

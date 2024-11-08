@@ -90,13 +90,21 @@ export default function render(
       const fullDataPoints = timeseries.points.filter(
         (point) => point.projectionType === ProjectionPointType.Historical
       );
-      renderPoint(groupElement, fullDataPoints, xScale, yScale, timeseries.color, POINT_RADIUS);
+      const pointsGroupElement = groupElement.append('g');
+      renderPoint(
+        pointsGroupElement,
+        fullDataPoints,
+        xScale,
+        yScale,
+        timeseries.color,
+        POINT_RADIUS
+      );
       // Render a square at any point where one or more inputs have a constraint
       const constraints = timeseries.points.filter(
         (point) => point.projectionType === ProjectionPointType.Constraint
       );
       renderSquares(
-        groupElement,
+        pointsGroupElement,
         constraints,
         xScale,
         yScale,
@@ -144,13 +152,14 @@ export default function render(
     const fullDataPoints = timeseries.points.filter(
       (point) => point.projectionType === ProjectionPointType.Historical
     );
-    renderPoint(groupElement, fullDataPoints, xScale, yScale, timeseries.color, POINT_RADIUS);
+    const pointsGroupElement = groupElement.append('g');
+    renderPoint(pointsGroupElement, fullDataPoints, xScale, yScale, timeseries.color, POINT_RADIUS);
     // Render a square at any point with a constraint
     const constraints = timeseries.points.filter(
       (point) => point.projectionType === ProjectionPointType.Constraint
     );
     renderSquares(
-      groupElement,
+      pointsGroupElement,
       constraints,
       xScale,
       yScale,
