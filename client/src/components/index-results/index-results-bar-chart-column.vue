@@ -47,6 +47,7 @@
         :row-data="data"
         :color="colorConfig.scaleFn(data.value || 0)"
         :is-expanded="isShowingKeyDatasets"
+        :gadm-name-to-iso2-country-code-map="gadmNameToIso2CountryCodeMap"
       />
     </div>
     <div v-if="removedRegions.length > 0" class="removed-countries subdued">
@@ -69,13 +70,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import IndexResultsBarChartRow from '@/components/index-results/index-results-bar-chart-row.vue';
 import { IndexResultsData, IndexResultsSettings } from '@/types/Index';
 import { getIndexResultsColorConfig } from '@/utils/index-results-util';
 import ModalRemovedCountryReview from '@/components/modals/modal-removed-country-review.vue';
 import Checkbox from 'primevue/checkbox';
 import Button from 'primevue/button';
+import { getGadmNameToIso2Map } from '@/services/region-service';
 
 const props = defineProps<{
   isShowingKeyDatasets: boolean;
@@ -94,6 +96,13 @@ const emit = defineEmits<{
 const colorConfig = computed(() =>
   getIndexResultsColorConfig(props.indexResultsData, props.indexResultsSettings)
 );
+
+const gadmNameToIso2CountryCodeMap = ref<{ [key: string]: string }>({});
+const getRegionIdToISO2Map = async () => {
+  const result = await getGadmNameToIso2Map();
+  gadmNameToIso2CountryCodeMap.value = result;
+};
+onMounted(getRegionIdToISO2Map);
 </script>
 
 <style lang="scss" scoped>

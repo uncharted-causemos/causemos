@@ -27,6 +27,8 @@ import { enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
+/* Flag icons */
+import 'flag-icons/css/flag-icons.min.css';
 import { getDataset } from '@/services/datacube-service';
 import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 
