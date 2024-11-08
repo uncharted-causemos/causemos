@@ -140,7 +140,8 @@ export default function (
     });
   // Render points
   timeseriesListValueCorrected.forEach((timeseries) => {
-    renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+    const pointsGroupElement = groupElement.append('g');
+    renderPoint(pointsGroupElement, timeseries.points, xScale, yScale, timeseries.color);
   });
 
   const timestampElements = generateSelectedTimestampElements(

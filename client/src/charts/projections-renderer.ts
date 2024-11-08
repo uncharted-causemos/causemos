@@ -126,12 +126,13 @@ const renderTimeseries = (
   const fullDataPoints = timeseries.filter(
     (point) => point.projectionType === ProjectionPointType.Historical
   );
-  renderPoint(parentGroupElement, fullDataPoints, xScale, yScale, color, POINT_RADIUS);
+  const pointsGroupElement = parentGroupElement.append('g');
+  renderPoint(pointsGroupElement, fullDataPoints, xScale, yScale, color, POINT_RADIUS);
   // Render a square at any point where one or more inputs have a constraint
   const constraints = timeseries.filter(
     (point) => point.projectionType === ProjectionPointType.Constraint
   );
-  renderSquares(parentGroupElement, constraints, xScale, yScale, color, CONSTRAINT_SIDE_LENGTH);
+  renderSquares(pointsGroupElement, constraints, xScale, yScale, color, CONSTRAINT_SIDE_LENGTH);
 };
 
 const renderBrushHandles = (g: D3GElementSelection, handlePositions: [number, number]) => {

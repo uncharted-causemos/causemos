@@ -423,6 +423,15 @@ export function renderDashedLine(
   return lineSelection;
 }
 
+/**
+ * NOTE: Overwrites the existing points in the parentGroupElement.
+ * @param parentGroupElement Element in which to create the points
+ * @param points The points to render
+ * @param xScale The x scale to use
+ * @param yScale The y scale to use
+ * @param color Defaults to DEFAULT_LINE_COLOR
+ * @param radius The radius of the points
+ */
 export function renderPoint(
   parentGroupElement: D3GElementSelection,
   points: TimeseriesPoint[],
@@ -444,6 +453,15 @@ export function renderPoint(
     .style('fill', color || DEFAULT_LINE_COLOR);
 }
 
+/**
+ * NOTE: Overwrites the existing squares in the parentGroupElement.
+ * @param parentGroupElement Element in which to create the squares
+ * @param points The points at which to render the squares
+ * @param xScale The x scale to use
+ * @param yScale The y scale to use
+ * @param color Defaults to DEFAULT_LINE_COLOR
+ * @param sideLength The side length of the squares
+ */
 export function renderSquares(
   parentGroupElement: D3GElementSelection,
   points: TimeseriesPoint[],
