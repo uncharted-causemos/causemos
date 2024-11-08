@@ -3,7 +3,9 @@
     <div class="flex-col index-result-table-output-value-column">
       <div class="flex country-name-and-value">
         <p class="index-result-table-dataset-region-column">
-          {{ `${props.rank}. ${getFullRegionIdDisplayName(props.rowData.regionId)}` }}
+          <span class="rank"> {{ props.rank }}.</span>
+          <span class="fi flag-icon" :class="[flagIconClass]" />
+          {{ getFullRegionIdDisplayName(props.rowData.regionId) }}
         </p>
         <p>{{ precisionFormatter(props.rowData.value, 0) }}</p>
       </div>
@@ -56,7 +58,7 @@ import { ref, computed } from 'vue';
 import MinMaxInfo from '@/components/min-max-info.vue';
 import useIndexTree from '@/composables/useIndexTree';
 import Button from 'primevue/button';
-import { getFullRegionIdDisplayName } from '@/utils/admin-level-util';
+import { getCountryFromRegionId, getFullRegionIdDisplayName } from '@/utils/admin-level-util';
 
 const SHOW_TOP_N_DATASETS_BY_DEFAULT = 3;
 
@@ -65,6 +67,7 @@ const props = defineProps<{
   rowData: IndexResultsData;
   color: string;
   isExpanded: boolean;
+  gadmNameToIso2CountryCodeMap: { [gadmName: string]: string };
 }>();
 
 const indexTree = useIndexTree();
@@ -83,6 +86,12 @@ const showMoreToggleButtonLabel = computed(() =>
     ? 'Show less'
     : `Show all ${props.rowData.contributingDatasets.length} datasets`
 );
+
+const flagIconClass = computed(() => {
+  const gadmCountryName = getCountryFromRegionId(props.rowData.regionId);
+  const iso2CountryCode = props.gadmNameToIso2CountryCodeMap[gadmCountryName];
+  return iso2CountryCode ? `fi-${iso2CountryCode.toLowerCase()}` : '';
+});
 </script>
 
 <style lang="scss" scoped>
@@ -102,6 +111,15 @@ const showMoreToggleButtonLabel = computed(() =>
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+
+  .rank {
+    min-width: 25px;
+    display: inline-block;
+  }
+
+  .flag-icon {
+    margin-right: 2px;
+  }
 }
 
 .bar-background {

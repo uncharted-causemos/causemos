@@ -180,6 +180,10 @@ export function getParentRegion(regionId: string) {
   return regionId.split(REGION_ID_DELIMETER).slice(0, -1).join(REGION_ID_DELIMETER);
 }
 
+export function getCountryFromRegionId(regionId: string) {
+  return regionId.split(REGION_ID_DELIMETER)[0];
+}
+
 export function isAncestorOfRegion(ancestorId: string, regionId: string) {
   return regionId.slice(0, ancestorId.length) === ancestorId;
 }

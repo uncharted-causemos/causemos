@@ -4,7 +4,7 @@ const _ = require('lodash');
 const router = express.Router();
 const { RESOURCE } = require('#@/adapters/es/adapter.js');
 const { client, searchAndHighlight, queryStringBuilder } = require('#@/adapters/es/client.js');
-const { listCountries } = require('#@/services/regions-service.js');
+const { listCountries, getGadmNameToIso2Map } = require('#@/services/regions-service.js');
 
 /* Keycloak Authentication */
 const authUtil = require('#@/util/auth-util.js');
@@ -20,6 +20,16 @@ router.get(
   authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
     const result = await listCountries(SORT_COUNTRIES_ASC);
+    res.status(200);
+    res.json(result);
+  })
+);
+
+router.get(
+  '/gadmNameToISO2Map',
+  authUtil.checkRole([authUtil.ROLES.USER]),
+  asyncHandler(async (req, res) => {
+    const result = await getGadmNameToIso2Map();
     res.status(200);
     res.json(result);
   })
