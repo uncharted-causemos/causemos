@@ -125,6 +125,8 @@
   }
 
   .new-analysis-map {
+    // Use a non-round number to make it more likely that overflowing content
+    //  will be partially visible, indicating that the user can scroll.
     min-height: 133px;
   }
 
