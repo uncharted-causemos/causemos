@@ -110,7 +110,6 @@
               v-for="spec of outputSpecs"
               :key="spec.id"
               class="new-analysis-map"
-              :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
               :color="getColorFromTimeseriesId(spec.id)"
               :breakdown-state="breakdownState"
               :metadata="metadata"
