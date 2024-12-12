@@ -112,26 +112,22 @@
   .card-maps-box {
     flex: 1;
     min-height: 0;
-    display: flex;
     gap: 2px;
-    flex-wrap: wrap;
+    display: grid;
+    /*
+    `auto-t` is a special value for the "how many times" parameter of the repeat() function.
+      It fits as many columns as possible onto a row.
+    `minmax` clamps the column width to be at least 300px,
+      while still expanding each column to take an even share of the remaining space (1fr).
+    */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    overflow-y: auto;
   }
 
-  $marginSize: 5px;
-
   .new-analysis-map {
-    flex-grow: 1;
-
-    &.card-count-2,
-    &.card-count-3,
-    &.card-count-4 {
-      min-width: calc(50% - calc($marginSize / 2));
-      max-width: calc(50% - calc($marginSize / 2));
-    }
-    &.card-count-n {
-      min-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
-      max-width: calc(calc(100% / 3) - calc($marginSize * 2 / 3));
-    }
+    // Use a non-round number to make it more likely that overflowing content
+    //  will be partially visible, indicating that the user can scroll.
+    min-height: 133px;
   }
 
   & > button {
