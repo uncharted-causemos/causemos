@@ -149,6 +149,14 @@ export const convertStringToBoolean = (input: string) => {
 
 export const capitalizeEachWord = (input: string) => _.words(input).map(_.capitalize).join(' ');
 
+export const findDuplicates = (strings: string[]) => {
+  const duplicates = new Set();
+  strings
+    .filter((string, index) => strings.slice(index + 1).includes(string))
+    .forEach((string) => duplicates.add(string));
+  return Array.from(duplicates);
+};
+
 export default {
   cleanTextFragment,
   truncateString,
@@ -159,4 +167,5 @@ export default {
   capitalize,
   runtimeFormatter,
   isValidUrl,
+  findDuplicates,
 };

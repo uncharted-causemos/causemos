@@ -47,4 +47,19 @@ describe('string-util', () => {
       });
     });
   });
+
+  describe('findDuplicates', () => {
+    it('returns an empty array when passed an empty array', () => {
+      expect(StringUtil.findDuplicates([])).to.deep.equal([]);
+    });
+    it('returns an empty array when the input contains no duplicates', () => {
+      expect(StringUtil.findDuplicates(['a', 'b', 'c'])).to.deep.equal([]);
+    });
+    it('successfully finds multiple duplicates', () => {
+      expect(StringUtil.findDuplicates(['a', 'b', 'a', 'b'])).to.deep.equal(['a', 'b']);
+    });
+    it('does not return multiple copies of the same duplicate', () => {
+      expect(StringUtil.findDuplicates(['a', 'b', 'a', 'a', 'b', 'b'])).to.deep.equal(['a', 'b']);
+    });
+  });
 });

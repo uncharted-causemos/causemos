@@ -205,6 +205,8 @@ const setComparisonSettings = (newComparisonSettings: ComparisonSettings) => {
   emit('set-breakdown-state', newState);
 };
 
+// Whenever the breakdown state changes, ensure the comparison baseline
+//  time series is found in the selected years.
 watch(breakdownState, () => {
   const validatedComparisonSettings = ensureBaselineFoundInTimeseriesIds(
     breakdownState.value.comparisonSettings,

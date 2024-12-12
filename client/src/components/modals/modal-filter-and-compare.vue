@@ -104,6 +104,9 @@ import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { getDefaultFeature } from '@/services/datacube-service';
 import useQualifierFetchInfo from '@/composables/useQualifierFetchInfo';
 import SelectButton from 'primevue/selectbutton';
+import useToaster from '@/composables/useToaster';
+import { TYPE } from 'vue-toastification';
+import stringUtil from '@/utils/string-util';
 
 const DEFAULT_COMPARISON_SETTINGS = {
   baselineTimeseriesId: '',
@@ -131,7 +134,13 @@ const emit = defineEmits<{
 const setSpatialAggregation = (newValue: SpatialAggregation) => {
   emit('set-spatial-aggregation', newValue);
 };
+const toaster = useToaster();
 const applyBreakdownState = () => {
+  const error = validationError.value;
+  if (error !== null) {
+    toaster(error, TYPE.INFO, false);
+    return;
+  }
   emit('apply-breakdown-state', breakdownState.value);
   emit('close');
 };
@@ -263,6 +272,28 @@ onMounted(() => {
     breakdownStatesQualifier.value[state.qualifier] = state;
     selectedTab.value = state.qualifier;
   }
+});
+
+const validationError = computed(() => {
+  const state = breakdownState.value;
+  // Check for duplicates
+  let timeseriesIds: string[] = [];
+  if (isBreakdownStateYears(state)) {
+    timeseriesIds = state.years;
+  } else if (isBreakdownStateRegions(state)) {
+    timeseriesIds = state.regionIds;
+  } else if (isBreakdownStateNone(state)) {
+    timeseriesIds = state.modelRunIds;
+  } else if (isBreakdownStateOutputs(state)) {
+    timeseriesIds = state.outputNames;
+  } else {
+    timeseriesIds = state.qualifierValues;
+  }
+  const duplicates = stringUtil.findDuplicates(timeseriesIds);
+  if (duplicates.length > 0) {
+    return `Multiple copies of ${duplicates[0]} are selected. Please remove duplicates.`;
+  }
+  return null;
 });
 </script>
 
