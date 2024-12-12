@@ -115,9 +115,9 @@
     gap: 2px;
     display: grid;
     /*
-    `auto-fill` is a special value for the "how many times" parameter of the repeat() function.
+    `auto-t` is a special value for the "how many times" parameter of the repeat() function.
       It fits as many columns as possible onto a row.
-    `minmax` clamps the column width to be at least 200px,
+    `minmax` clamps the column width to be at least 300px,
       while still expanding each column to take an even share of the remaining space (1fr).
     */
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
