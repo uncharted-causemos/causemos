@@ -91,6 +91,7 @@ import {
   isAncestorOfRegion,
   REGION_ID_DELIMETER,
 } from '@/utils/admin-level-util';
+import useHoveredRegionId from '@/composables/useHoveredRegionId';
 
 // This is required because teleported components require their teleport destination to be mounted
 //  before they can be rendered.
@@ -378,13 +379,7 @@ watch(
   { immediate: true }
 );
 
-const hoveredRegionId = ref<string | null>(null);
-const highlightRegion = (regionId: string) => {
-  hoveredRegionId.value = regionId;
-};
-const clearRegionHighlight = () => {
-  hoveredRegionId.value = null;
-};
+const { hoveredRegionId, highlightRegion, clearRegionHighlight } = useHoveredRegionId();
 </script>
 
 <style lang="scss" scoped>

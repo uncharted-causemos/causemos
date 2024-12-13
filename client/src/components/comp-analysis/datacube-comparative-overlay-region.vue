@@ -43,6 +43,10 @@
           :region-filter="selectedRegionIdsAtAllLevels"
           :selected-admin-level="selectedAdminLevel"
           :disable-pan-zoom="true"
+          :hovered-region-id="hoveredRegionId"
+          @region-hover="
+            (regionId) => (regionId === null ? clearRegionHighlight : highlightRegion(regionId))
+          "
         />
         <AnalysisMapLegend
           v-if="mapLegendData.length > 0"
@@ -129,6 +133,7 @@ import {
 } from '@/utils/map-util-new';
 
 import { getDefaultModelRunMetadata, getModelRunsByRunIds } from '@/services/datacube-service';
+import useHoveredRegionId from '@/composables/useHoveredRegionId';
 
 interface Props {
   datacubeId: string;
@@ -320,6 +325,8 @@ const { mapLegendData } = useAnalysisMapStats(
   breakdownOption,
   ref([]) // TODO: rawDataPointsList
 );
+
+const { hoveredRegionId, highlightRegion, clearRegionHighlight } = useHoveredRegionId();
 </script>
 
 <style lang="scss" scoped>
