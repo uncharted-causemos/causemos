@@ -36,7 +36,10 @@
         :index-results-settings="indexResultsSettings"
         :selected-node-name="selectedNodeName"
         :removed-regions="removedRegionsData"
+        :hovered-region-id="hoveredRegionId"
         @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
+        @hover-row="highlightRegion"
+        @stop-hover-row="clearRegionHighlight"
       />
     </div>
     <div class="map">
@@ -44,7 +47,10 @@
         :index-results-data="indexResultsData"
         :settings="indexResultsSettings"
         :aggregation-level="aggregationLevel"
+        :hovered-region-id="hoveredRegionId"
         @click-region="onMapClick"
+        @hover-region="highlightRegion"
+        @stop-hover-region="clearRegionHighlight"
       />
     </div>
   </div>
@@ -371,6 +377,14 @@ watch(
   },
   { immediate: true }
 );
+
+const hoveredRegionId = ref<string | null>(null);
+const highlightRegion = (regionId: string) => {
+  hoveredRegionId.value = regionId;
+};
+const clearRegionHighlight = () => {
+  hoveredRegionId.value = null;
+};
 </script>
 
 <style lang="scss" scoped>

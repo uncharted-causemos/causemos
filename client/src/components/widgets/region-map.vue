@@ -96,7 +96,7 @@ const borderLayer = () => {
         ['==', true, ['feature-state', 'selected']],
         2,
         ['==', true, ['feature-state', 'hover']],
-        1,
+        4,
         0.1,
       ],
       'line-opacity': ['case', ['==', null, ['feature-state', 'label']], 0.0, 1],
@@ -106,7 +106,7 @@ const borderLayer = () => {
 
 export default defineComponent({
   name: 'RegionMap',
-  emits: ['click-region', 'sync-bounds'],
+  emits: ['click-region', 'sync-bounds', 'region-hover'],
   components: {
     WmMap,
     WmMapVector,
@@ -145,6 +145,10 @@ export default defineComponent({
         [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
         [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
       ],
+    },
+    hoveredRegionId: {
+      type: String,
+      default: null,
     },
     popupFormatter: {
       type: Function,
@@ -225,6 +229,9 @@ export default defineComponent({
     regionFilter() {
       this.setFeatureStates();
     },
+    hoveredRegionId() {
+      this.setHoverId(this.hoveredRegionId ?? undefined);
+    },
   },
   created() {
     this.vectorSourceId = 'maas-vector-source';
@@ -295,28 +302,36 @@ export default defineComponent({
       this.hoverId = undefined;
       this.debouncedRefresh();
     },
-    onMouseMove(event) {
-      const { map, mapboxEvent } = event;
-      if (_.isNil(map.getLayer(this.colorLayerId))) return;
-
+    // TODO: TS
+    // setHoverId(newHoverId: string | undefined) {
+    setHoverId(newHoverId) {
+      // Tell the map that the currently hovered region is not hovered anymore.
+      this.clearHoveredRegion();
+      this.hoverId = newHoverId;
+      if (newHoverId === undefined) return;
+      this.map.setFeatureState(
+        { source: this.vectorSourceId, id: newHoverId, sourceLayer: this.vectorSourceLayer },
+        { hover: true }
+      );
+    },
+    clearHoveredRegion() {
       const hoverId = this.hoverId;
       if (hoverId) {
-        map.removeFeatureState(
+        this.map.removeFeatureState(
           { source: this.vectorSourceId, id: hoverId, sourceLayer: this.vectorSourceLayer },
           'hover'
         );
       }
-
+    },
+    onMouseMove(event) {
+      const { map, mapboxEvent } = event;
+      if (_.isNil(map.getLayer(this.colorLayerId))) return;
+      // Find any region that is under the cursor
       const features = map.queryRenderedFeatures(mapboxEvent.point, {
         layers: [this.colorLayerId],
       });
-      features.forEach((feature) => {
-        this.hoverId = feature.id;
-        map.setFeatureState(
-          { source: feature.source, id: feature.id, sourceLayer: this.vectorSourceLayer },
-          { hover: true }
-        );
-      });
+
+      this.$emit('region-hover', features.length === 0 ? null : features[0].id);
     },
     onMapClick(event) {
       const { map, mapboxEvent } = event;
