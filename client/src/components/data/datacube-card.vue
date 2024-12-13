@@ -466,8 +466,13 @@
                   :popup-Formatter="popupFormatter"
                   :region-filter="selectedRegionIdsAtAllLevels"
                   :selected-admin-level="selectedAdminLevel"
-                  @sync-bounds="onSyncMapBounds"
                 />
+                <!--
+                  Disabling sync-bounds feature to avoid TypeScript refactoring issues.
+                  Leaving the code commented out for future reference.
+                  December 2024
+                  -->
+                <!-- @sync-bounds="onSyncMapBounds" -->
               </div>
             </div>
           </div>
