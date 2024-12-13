@@ -1,5 +1,5 @@
 <template>
-  <div class="index-results-bar-chart-row-container">
+  <div class="index-results-bar-chart-row-container" :class="{ highlighted: isHighlighted }">
     <div class="flex-col index-result-table-output-value-column">
       <div class="flex country-name-and-value">
         <p class="index-result-table-dataset-region-column">
@@ -67,6 +67,7 @@ const props = defineProps<{
   rowData: IndexResultsData;
   color: string;
   isExpanded: boolean;
+  isHighlighted: boolean;
   gadmNameToIso2CountryCodeMap: { [gadmName: string]: string };
 }>();
 
@@ -101,6 +102,19 @@ const flagIconClass = computed(() => {
 .index-results-bar-chart-row-container {
   display: flex;
   gap: $index-result-table-column-gap;
+  position: relative;
+
+  &.highlighted::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    inset-inline: -5px;
+    border: 3px solid var(--p-primary-400);
+    border-radius: 3px;
+    // Stop element from blocking pointer events on the row like hovering the
+    //  info-circle icon.
+    pointer-events: none;
+  }
 }
 
 .country-name-and-value {

@@ -5,7 +5,12 @@
       :map-bounds="mapBounds"
       :selected-admin-level="stringToAdminLevel(aggregationLevel)"
       :disable-pan-zoom="false"
+      :hovered-region-id="hoveredRegionId"
       @click-region="(regionId) => emit('click-region', regionId)"
+      @region-hover="
+        (regionId) =>
+          regionId === null ? emit('stop-hover-region') : emit('hover-region', regionId)
+      "
     />
     <AnalysisMapLegend :ramp="mapLegendData" :isContinuous="false" :formatter="d3.format(',.0f')" />
   </div>
@@ -31,10 +36,15 @@ interface Props {
   indexResultsData: IndexResultsData[];
   settings: IndexResultsSettings;
   aggregationLevel: AdminLevel;
+  hoveredRegionId: string | null;
 }
 const props = defineProps<Props>();
 
-const emit = defineEmits<{ (e: 'click-region', regionId: string): void }>();
+const emit = defineEmits<{
+  (e: 'click-region', regionId: string): void;
+  (e: 'hover-region', regionId: string): void;
+  (e: 'stop-hover-region'): void;
+}>();
 
 const mapBounds = ref<[[number, number], [number, number]]>(BOUNDS_GLOBAL);
 watch(

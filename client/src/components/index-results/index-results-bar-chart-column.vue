@@ -48,6 +48,9 @@
         :color="colorConfig.scaleFn(data.value || 0)"
         :is-expanded="isShowingKeyDatasets"
         :gadm-name-to-iso2-country-code-map="gadmNameToIso2CountryCodeMap"
+        :is-highlighted="data.regionId === hoveredRegionId"
+        @mouseover="emit('hover-row', data.regionId)"
+        @mouseleave="emit('stop-hover-row')"
       />
     </div>
     <div v-if="removedRegions.length > 0" class="removed-countries subdued">
@@ -85,12 +88,15 @@ const props = defineProps<{
   indexResultsSettings: IndexResultsSettings;
   selectedNodeName: string;
   removedRegions: { regionId: string; removedFrom: string[] }[];
+  hoveredRegionId: string | null;
 }>();
 
 const showReview = ref<boolean>(false);
 
 const emit = defineEmits<{
   (e: 'toggle-is-showing-key-datasets'): void;
+  (e: 'hover-row', regionId: string): void;
+  (e: 'stop-hover-row'): void;
 }>();
 
 const colorConfig = computed(() =>
@@ -126,6 +132,7 @@ header {
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+  padding-inline: 5px;
 
   & > * {
     padding-block: 10px;
@@ -142,7 +149,7 @@ header {
   border-bottom: 1px solid $un-color-black-10;
   color: var(--p-text-muted-color);
   background: var(--p-surface-50);
-  padding: 5px 0;
+  padding: 5px;
   scrollbar-gutter: stable;
   overflow: hidden;
   .key-datasets-labels {

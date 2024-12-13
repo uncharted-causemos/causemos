@@ -36,7 +36,10 @@
         :index-results-settings="indexResultsSettings"
         :selected-node-name="selectedNodeName"
         :removed-regions="removedRegionsData"
+        :hovered-region-id="hoveredRegionId"
         @toggle-is-showing-key-datasets="isShowingKeyDatasets = !isShowingKeyDatasets"
+        @hover-row="highlightRegion"
+        @stop-hover-row="clearRegionHighlight"
       />
     </div>
     <div class="map">
@@ -44,7 +47,10 @@
         :index-results-data="indexResultsData"
         :settings="indexResultsSettings"
         :aggregation-level="aggregationLevel"
+        :hovered-region-id="hoveredRegionId"
         @click-region="onMapClick"
+        @hover-region="highlightRegion"
+        @stop-hover-region="clearRegionHighlight"
       />
     </div>
   </div>
@@ -85,6 +91,7 @@ import {
   isAncestorOfRegion,
   REGION_ID_DELIMETER,
 } from '@/utils/admin-level-util';
+import useHoveredRegionId from '@/composables/useHoveredRegionId';
 
 // This is required because teleported components require their teleport destination to be mounted
 //  before they can be rendered.
@@ -371,6 +378,8 @@ watch(
   },
   { immediate: true }
 );
+
+const { hoveredRegionId, highlightRegion, clearRegionHighlight } = useHoveredRegionId();
 </script>
 
 <style lang="scss" scoped>

@@ -4,6 +4,7 @@ import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { RegionalAggregations } from '@/types/Outputdata';
 import { Ref, watchEffect } from 'vue';
 import { getBboxFromRegionIds } from '@/services/geo-service';
+import { BoundingBox, MapBounds } from '@/types/Common';
 
 export default function useMapBounds(
   regionalData: Ref<RegionalAggregations | null>,
@@ -12,12 +13,12 @@ export default function useMapBounds(
   // FIXME: this can be greatly simplified. useMapBounds is only used in two
   //  places and it's unclear why mapBounds can be set to two different possible
   //  values.
-  const mapBounds = ref<number[][] | { value: number[][]; options: any }>([
+  const mapBounds = ref<MapBounds>([
     [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
     [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
   ]);
 
-  const onSyncMapBounds = (bounds: number[][]) => {
+  const onSyncMapBounds = (bounds: BoundingBox) => {
     mapBounds.value = bounds;
   };
 

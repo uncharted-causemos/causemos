@@ -87,6 +87,10 @@
           :region-filter="selectedRegionIdsAtAllLevels"
           :selected-admin-level="selectedAdminLevel"
           :disable-pan-zoom="true"
+          :hovered-region-id="hoveredRegionId"
+          @region-hover="
+            (regionId) => (regionId === null ? clearRegionHighlight : highlightRegion(regionId))
+          "
         />
       </div>
     </main>
@@ -136,6 +140,7 @@ import {
 } from '@/utils/admin-level-util';
 
 import { getDefaultModelRunMetadata } from '@/services/datacube-service';
+import useHoveredRegionId from '@/composables/useHoveredRegionId';
 
 interface Props {
   datacubeId: string;
@@ -274,6 +279,8 @@ const regionMapData = computed<BarData[]>(() => {
     dataLayerTransparency
   );
 });
+
+const { hoveredRegionId, highlightRegion, clearRegionHighlight } = useHoveredRegionId();
 </script>
 
 <style lang="scss" scoped>
