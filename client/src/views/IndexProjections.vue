@@ -28,134 +28,134 @@
           :selected-node-id="selectedNodeId"
         />
       </section>
-      <section class="settings-section horizontal-padding">
-        <header><h4>Settings</h4></header>
-        <DropdownButton
-          :is-dropdown-left-aligned="true"
-          :items="COUNTRY_MODES"
-          :selected-item="isSingleCountryModeActive"
-          @item-selected="setIsSingleCountryModeActive"
-        />
-        <div class="subsection" v-if="isSingleCountryModeActive">
-          <p>Country</p>
+      <section class="settings-section">
+        <h4 class="horizontal-padding">Settings</h4>
+        <div class="scrolling-section horizontal-padding">
           <DropdownButton
             :is-dropdown-left-aligned="true"
-            :items="selectableCountryDropdownItems"
-            :selected-item="selectedCountry"
-            :is-warning-state-active="selectedCountry === NO_COUNTRY_SELECTED.value"
-            @item-selected="setSelectedCountry"
+            :items="COUNTRY_MODES"
+            :selected-item="isSingleCountryModeActive"
+            @item-selected="setIsSingleCountryModeActive"
           />
-          <p v-if="selectedCountry === NO_COUNTRY_SELECTED.value" class="warning">
-            Select a country to display projections.
-          </p>
-        </div>
-        <IndexProjectionsSettingsScenarios
-          v-if="isSingleCountryModeActive && selectedCountry !== NO_COUNTRY_SELECTED.value"
-          class="subsection"
-          :scenarios="scenarios"
-          :max-scenarios="MAX_NUM_TIMESERIES"
-          @create="createAndEditScenario"
-          @duplicate="duplicateScenario"
-          @edit="enableEditingScenario"
-          @delete="deleteScenario"
-          @toggleVisible="toggleScenarioVisibility"
-        />
-
-        <IndexProjectionsSettingsCountries
-          v-if="!isSingleCountryModeActive"
-          class="subsection"
-          :countries="selectedCountries"
-          :selectable-countries="selectableCountryDropdownItems"
-          :max-countries="MAX_NUM_TIMESERIES"
-          @add="addSelectedCountry"
-          @remove="removeSelectedCountry"
-          @change="changeSelectedCountry"
-        />
-      </section>
-      <footer>
-        <section class="show-outside-values horizontal-padding">
-          <label @click="setShowDataOutsideNorm(!showDataOutsideNorm)">
-            <span>Show values outside the <b>0</b> to <b>1</b> range</span>
-            <i
-              class="fa fa-lg fa-fw"
-              :class="{
-                'fa-check-square-o': showDataOutsideNorm,
-                'fa-square-o': !showDataOutsideNorm,
-              }"
+          <div v-if="isSingleCountryModeActive">
+            <p>Country</p>
+            <DropdownButton
+              :is-dropdown-left-aligned="true"
+              :items="selectableCountryDropdownItems"
+              :selected-item="selectedCountry"
+              :is-warning-state-active="selectedCountry === NO_COUNTRY_SELECTED.value"
+              @item-selected="setSelectedCountry"
             />
-          </label>
-        </section>
-        <section>
-          <header class="flex">
-            <p>Time range</p>
-            <button
-              v-if="!isEditingTimeRange"
-              class="btn btn-sm"
-              @click="isEditingTimeRange = true"
-            >
-              Edit
-            </button>
-            <button
-              v-else
-              class="btn btn-sm btn-call-to-action"
-              @click="onDoneEditingTimeRange"
-              :disabled="!areProjectionDatesValid"
-            >
-              Done
-            </button>
-          </header>
-          <div v-if="isEditingTimeRange">
-            <div class="projection-date">
-              <DropdownButton
-                :items="MONTHS"
-                :selected-item="projectionStartMonth"
-                :is-dropdown-above="true"
-                :is-dropdown-left-aligned="true"
-                @item-selected="(month) => (projectionStartMonth = month)"
-              />
-              <DropdownButton
-                :items="selectableYears"
-                :selected-item="projectionStartYear"
-                :is-dropdown-above="true"
-                :is-dropdown-left-aligned="true"
-                @item-selected="(year) => (projectionStartYear = year)"
-              />
-            </div>
-            <p>to</p>
-            <div class="projection-date">
-              <DropdownButton
-                :items="MONTHS"
-                :selected-item="projectionEndMonth"
-                :is-dropdown-above="true"
-                :is-dropdown-left-aligned="true"
-                @item-selected="(month) => (projectionEndMonth = month)"
-              />
-              <DropdownButton
-                :items="selectableYears"
-                :selected-item="projectionEndYear"
-                :is-dropdown-above="true"
-                :is-dropdown-left-aligned="true"
-                @item-selected="(year) => (projectionEndYear = year)"
-              />
-            </div>
-            <p v-if="!areProjectionDatesValid" class="warning">
-              The projection end date must be after the projection start date.
+            <p v-if="selectedCountry === NO_COUNTRY_SELECTED.value" class="warning">
+              Select a country to display projections.
             </p>
           </div>
-          <p v-else class="un-font-small subtitle">
-            {{ timestampFormatter(projectionStartTimestamp, null, null) }} -
-            {{ timestampFormatter(projectionEndTimestamp, null, null) }}
-          </p>
-        </section>
-        <section>
-          <p
-            class="un-font-small subtitle projection-explanation-link"
-            @click="showProjectionExplanation"
-          >
-            How are projections calculated? <i class="fa fa-fw fa-info-circle" />
-          </p>
-        </section>
-      </footer>
+          <IndexProjectionsSettingsScenarios
+            v-if="isSingleCountryModeActive && selectedCountry !== NO_COUNTRY_SELECTED.value"
+            :scenarios="scenarios"
+            :max-scenarios="MAX_NUM_TIMESERIES"
+            @create="createAndEditScenario"
+            @duplicate="duplicateScenario"
+            @edit="enableEditingScenario"
+            @delete="deleteScenario"
+            @toggleVisible="toggleScenarioVisibility"
+          />
+
+          <IndexProjectionsSettingsCountries
+            v-if="!isSingleCountryModeActive"
+            :countries="selectedCountries"
+            :selectable-countries="selectableCountryDropdownItems"
+            :max-countries="MAX_NUM_TIMESERIES"
+            @add="addSelectedCountry"
+            @remove="removeSelectedCountry"
+            @change="changeSelectedCountry"
+          />
+        </div>
+        <footer>
+          <section class="show-outside-values horizontal-padding">
+            <label @click="setShowDataOutsideNorm(!showDataOutsideNorm)">
+              <span>Show values outside the <b>0</b> to <b>1</b> range</span>
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{
+                  'fa-check-square-o': showDataOutsideNorm,
+                  'fa-square-o': !showDataOutsideNorm,
+                }"
+              />
+            </label>
+          </section>
+          <section>
+            <header class="flex">
+              <p>Time range</p>
+              <button
+                v-if="!isEditingTimeRange"
+                class="btn btn-sm"
+                @click="isEditingTimeRange = true"
+              >
+                Edit
+              </button>
+              <button
+                v-else
+                class="btn btn-sm btn-call-to-action"
+                @click="onDoneEditingTimeRange"
+                :disabled="!areProjectionDatesValid"
+              >
+                Done
+              </button>
+            </header>
+            <div v-if="isEditingTimeRange">
+              <div class="projection-date">
+                <DropdownButton
+                  :items="MONTHS"
+                  :selected-item="projectionStartMonth"
+                  :is-dropdown-above="true"
+                  :is-dropdown-left-aligned="true"
+                  @item-selected="(month) => (projectionStartMonth = month)"
+                />
+                <DropdownButton
+                  :items="selectableYears"
+                  :selected-item="projectionStartYear"
+                  :is-dropdown-above="true"
+                  :is-dropdown-left-aligned="true"
+                  @item-selected="(year) => (projectionStartYear = year)"
+                />
+              </div>
+              <p>to</p>
+              <div class="projection-date">
+                <DropdownButton
+                  :items="MONTHS"
+                  :selected-item="projectionEndMonth"
+                  :is-dropdown-above="true"
+                  :is-dropdown-left-aligned="true"
+                  @item-selected="(month) => (projectionEndMonth = month)"
+                />
+                <DropdownButton
+                  :items="selectableYears"
+                  :selected-item="projectionEndYear"
+                  :is-dropdown-above="true"
+                  :is-dropdown-left-aligned="true"
+                  @item-selected="(year) => (projectionEndYear = year)"
+                />
+              </div>
+              <p v-if="!areProjectionDatesValid" class="warning">
+                The projection end date must be after the projection start date.
+              </p>
+            </div>
+            <p v-else class="un-font-small subtitle">
+              {{ timestampFormatter(projectionStartTimestamp, null, null) }} -
+              {{ timestampFormatter(projectionEndTimestamp, null, null) }}
+            </p>
+          </section>
+          <section>
+            <p
+              class="un-font-small subtitle projection-explanation-link"
+              @click="showProjectionExplanation"
+            >
+              How are projections calculated? <i class="fa fa-fw fa-info-circle" />
+            </p>
+          </section>
+        </footer>
+      </section>
     </div>
     <main class="flex-col">
       <div class="editing-container">
@@ -691,7 +691,10 @@ const showProjectionExplanation = () => {
 .index-projections-container {
   display: flex;
   height: $content-full-height;
-  background: $background-light-2;
+  background: var(--p-surface-100);
+  padding: 10px;
+
+  --header-height: 75px;
 }
 
 .horizontal-padding {
@@ -700,18 +703,38 @@ const showProjectionExplanation = () => {
 }
 
 .config-column {
-  background: white;
   width: 300px;
-  border-right: 1px solid $un-color-black-10;
-  gap: 40px;
+  gap: 10px;
   position: relative;
   .title-header {
-    padding: 20px 20px 0 20px;
+    padding: 0px 20px 0 20px;
+
+    height: var(--header-height);
+
+    h3 {
+      margin-top: 10px;
+    }
   }
 
   .settings-section {
+    background: var(--p-surface-0);
     flex: 1;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-top: 20px;
+    border-radius: 3px;
+
+    .scrolling-section {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+
+      & > * {
+        margin-bottom: 30px;
+      }
+    }
   }
 
   .show-outside-values {
@@ -744,10 +767,6 @@ section {
   }
 }
 
-.subsection {
-  margin-top: 40px;
-}
-
 .projection-date {
   display: flex;
   gap: 5px;
@@ -765,8 +784,13 @@ main {
   min-width: 0;
   position: relative;
 
+  .index-graph {
+    padding-top: 0;
+  }
+
   .legend {
-    margin: 0 20px;
+    margin: 0;
+    margin-left: 30px;
   }
 
   .fill-space {
@@ -776,8 +800,12 @@ main {
 }
 
 .editing-container {
-  padding: 10px $index-graph-padding-horizontal;
-  height: $navbar-outer-height;
+  padding: 0 $index-graph-padding-horizontal;
+  height: var(--header-height);
+  margin-bottom: 10px;
+  display: grid;
+  align-items: end;
+
   .editing-ui-group {
     display: flex;
     justify-content: space-between;
