@@ -60,7 +60,7 @@ $edge-top-offset-from-node: 11px;
 
 .index-results-structure-preview-container {
   display: grid;
-  background: $un-color-black-5;
+  background: var(--p-surface-100);
   row-gap: $space-between-rows;
   justify-content: center;
   overflow-x: auto;

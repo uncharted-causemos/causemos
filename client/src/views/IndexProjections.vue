@@ -24,7 +24,7 @@
         />
         <h3>Projections</h3>
       </header>
-      <section v-if="selectedNodeId !== null" class="horizontal-padding">
+      <section v-if="selectedNodeId !== null" class="horizontal-padding structure-section">
         <header class="flex index-structure-header">
           <h4>Index structure</h4>
         </header>
@@ -168,21 +168,19 @@
       </section>
     </div>
     <main class="flex-col">
-      <div class="editing-container">
+      <div class="editing-container" :class="{ 'is-editing': scenarioBeingEdited !== null }">
         <div v-if="scenarioBeingEdited !== null" class="editing-ui-group">
-          <label
-            >Editing
-            <input type="text" v-model="scenarioBeingEdited.name" v-focus />
-          </label>
-          <label class="flex-grow"
-            >Description
-            <input class="flex-grow" type="text" v-model="scenarioBeingEdited.description" />
-          </label>
-          <div>
-            <button class="btn btn-sm" @click="cancelEditingScenario">Cancel</button>
-            <button class="btn btn-sm btn-call-to-action" @click="finishEditingScenario">
-              Done
-            </button>
+          <FloatLabel>
+            <InputText id="scenario-name" v-model="scenarioBeingEdited.name" autofocus />
+            <label for="scenario-name">Scenario name</label>
+          </FloatLabel>
+          <FloatLabel>
+            <InputText id="scenario-description" v-model="scenarioBeingEdited.description" />
+            <label for="scenario-description">Scenario description</label>
+          </FloatLabel>
+          <div class="button-group">
+            <Button label="Cancel" @click="cancelEditingScenario" severity="secondary" />
+            <Button label="Done" @click="finishEditingScenario" />
           </div>
         </div>
         <p v-if="scenarioBeingEdited !== null" class="edit-msg subdued un-font-small">
@@ -276,6 +274,8 @@ import Button from 'primevue/button';
 import Select from 'primevue/select';
 import Checkbox from 'primevue/checkbox';
 import SelectButton from 'primevue/selectbutton';
+import FloatLabel from 'primevue/floatlabel';
+import InputText from 'primevue/inputtext';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -707,7 +707,7 @@ const showProjectionExplanation = () => {
   background: var(--p-surface-100);
   padding: 10px;
 
-  --header-height: 75px;
+  --header-height: 95px;
 }
 
 .horizontal-padding {
@@ -717,7 +717,6 @@ const showProjectionExplanation = () => {
 
 .config-column {
   width: 300px;
-  gap: 10px;
   position: relative;
   .title-header {
     padding: 0px 20px 0 20px;
@@ -729,15 +728,23 @@ const showProjectionExplanation = () => {
     }
   }
 
+  .structure-section,
   .settings-section {
     background: var(--p-surface-0);
+    border-radius: 3px;
+  }
+
+  .structure-section {
+    padding: 10px 20px 20px;
+  }
+
+  .settings-section {
     flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 20px;
     padding-top: 20px;
-    border-radius: 3px;
 
     .scrolling-section {
       flex: 1;
@@ -832,7 +839,7 @@ main {
 
   .legend {
     margin: 0;
-    margin-left: 30px;
+    margin-left: $index-graph-padding-horizontal;
   }
 
   .fill-space {
@@ -842,23 +849,37 @@ main {
 }
 
 .editing-container {
-  padding: 0 $index-graph-padding-horizontal;
+  padding: 20px ($index-graph-padding-horizontal / 2);
+  margin-inline: ($index-graph-padding-horizontal / 2);
   height: var(--header-height);
-  margin-bottom: 10px;
-  display: grid;
-  align-items: end;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  grid-template-rows: 1fr auto;
+  border: 1px solid transparent;
 
-  .editing-ui-group {
-    display: flex;
+  &.is-editing {
+    background: var(--p-surface-0);
+    border-color: var(--p-primary-400);
+    border-radius: 3px;
     justify-content: space-between;
-    gap: 50px;
-    label {
-      display: flex;
-      gap: 5px;
-      align-items: baseline;
-    }
-    label:first-child input {
+  }
+
+  :deep(.editing-ui-group) {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    // justify-content: space-between;
+    gap: 10px;
+    & > *:first-child > input {
       width: 180px;
+    }
+    & > *:not(:first-child) > input {
+      width: 100%;
+    }
+
+    .button-group {
+      gap: 5px;
     }
   }
   .edit-msg {
@@ -884,7 +905,7 @@ main {
   height: 100%;
   z-index: 999;
   opacity: 0.4;
-  background: white;
+  background: var(--p-surface-100);
   top: 0;
   left: 0;
 }

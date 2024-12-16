@@ -80,7 +80,8 @@ const props = defineProps<{ isProjectionSpace: boolean }>();
   flex-direction: column;
   gap: 10px;
   padding: 10px 20px;
-  background: white;
+  background: var(--p-surface-50);
+  border: 1px solid var(--p-surface-200);
   border-radius: 3px;
   max-width: 1100px;
 }
@@ -89,8 +90,13 @@ const props = defineProps<{ isProjectionSpace: boolean }>();
   flex: 1;
   min-width: 0;
 
+  p:first-child {
+    margin-bottom: 8px;
+  }
+
   p:not(:first-child) {
-    color: $un-color-black-40;
+    color: var(--p-text-muted-color);
+    margin-bottom: 3px;
   }
 }
 
