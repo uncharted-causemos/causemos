@@ -8,16 +8,14 @@
     <ul class="scenario-list">
       <li class="scenario-item" v-for="scenario in scenarios" :key="scenario.id">
         <div class="flex action-group">
-          <button
-            class="btn btn-sm btn-scenario-visible"
-            @mousedown="(e) => handleScenarioVisibleClick(e, scenario.id)"
-          >
-            <i class="fa" :class="[scenario.isVisible ? 'fa-eye' : 'fa-eye-slash']" />
-          </button>
-          <button class="btn btn-sm color-box">
-            <div :style="{ 'background-color': scenario.color }"></div>
-          </button>
+          <div class="color-box" :style="{ 'background-color': scenario.color }"></div>
           <div class="flex-grow">{{ scenario.name }}</div>
+          <Button
+            text
+            :icon="scenario.isVisible ? 'fa fa-eye' : 'fa fa-eye-slash'"
+            severity="secondary"
+            @click="(e) => handleScenarioVisibleClick(e, scenario.id)"
+          />
           <OptionsButton
             v-if="!scenario.isDefault"
             :dropdown-below="true"
@@ -41,8 +39,9 @@
               </div>
             </template>
           </OptionsButton>
+          <div v-else class="options-button-spacer" />
         </div>
-        <p class="un-font-small subdued">
+        <p class="un-font-small subdued description">
           {{ scenario.description }}
         </p>
         <div v-if="scenarioHasConstraints(scenario)" class="node-constraint-list">
@@ -54,13 +53,14 @@
         </div>
       </li>
     </ul>
-    <button
-      class="btn btn-sm"
-      :class="{ disabled: maxScenarios === scenarios.length }"
+    <Button
+      icon="fa fa-plus"
+      label="Create new scenario"
+      severity="secondary"
+      class="w-100"
+      :disabled="maxScenarios === scenarios.length"
       @click="emit('create')"
-    >
-      <i class="fa fa-fw fa-plus" />Create new scenario
-    </button>
+    />
   </div>
 </template>
 <script setup lang="ts">
@@ -69,6 +69,7 @@ import { IndexProjectionScenario } from '@/types/Index';
 import useIndexTree from '@/composables/useIndexTree';
 import useIndexWorkBench from '@/composables/useIndexWorkBench';
 import ConstraintIcon from '../widgets/constraint-icon.vue';
+import Button from 'primevue/button';
 
 const indexTree = useIndexTree();
 const indexWorkBench = useIndexWorkBench();
@@ -160,6 +161,9 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
 @import '@/styles/variables';
 @import '@/styles/uncharted-design-tokens';
 .index-projection-settings-scenarios-container {
+  --scenario-color-width: 10px;
+  --scenario-color-gap: 5px;
+
   .scenario-list {
     list-style: none;
     padding-left: 0;
@@ -168,8 +172,11 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
   .scenario-item {
     margin-bottom: 10px;
   }
+  .scenario-item:not(:first-child) {
+    border-top: 1px solid var(--p-surface-200);
+    padding-top: 10px;
+  }
   .scenario-item .action-group {
-    gap: 2px;
     align-items: center;
   }
   .scenario-item .btn,
@@ -180,9 +187,14 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
   .scenario-item .btn {
     padding: 2px;
   }
-  .scenario-item .color-box div {
-    width: 100%;
-    height: 100%;
+  .scenario-item .color-box {
+    width: var(--scenario-color-width);
+    height: var(--scenario-color-width);
+    border-radius: 200%;
+    margin-right: var(--scenario-color-gap);
+  }
+  .description {
+    margin-left: calc(var(--scenario-color-width) + var(--scenario-color-gap));
   }
   .node-constraint-list {
     margin-left: 10px;
@@ -191,6 +203,9 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
   .constraint-title {
     display: flex;
     align-items: baseline;
+  }
+  .options-button-spacer {
+    width: 26px;
   }
 }
 </style>
