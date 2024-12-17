@@ -9,7 +9,7 @@
       <li class="scenario-item" v-for="scenario in scenarios" :key="scenario.id">
         <div class="flex action-group">
           <div class="color-box" :style="{ 'background-color': scenario.color }"></div>
-          <div class="flex-grow">{{ scenario.name }}</div>
+          <div class="flex-grow scenario-name">{{ scenario.name }}</div>
           <Button
             text
             :icon="scenario.isVisible ? 'fa fa-eye' : 'fa fa-eye-slash'"
@@ -164,7 +164,6 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
 @import '@/styles/uncharted-design-tokens';
 .index-projection-settings-scenarios-container {
   --scenario-color-width: 10px;
-  --scenario-color-gap: 5px;
 
   .scenario-list {
     list-style: none;
@@ -175,12 +174,16 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
     margin-bottom: 10px;
     border: 1px solid var(--p-surface-200);
     border-radius: 3px;
+
+    .scenario-name {
+      padding: 5px 0;
+    }
   }
   .scenario-item .action-group {
     align-items: center;
     padding: 2px;
     padding-left: 10px;
-    & > *:not(.flex-grow) {
+    & > *:not(.scenario-name) {
       flex-shrink: 0;
     }
   }
@@ -200,7 +203,7 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
     width: var(--scenario-color-width);
     height: var(--scenario-color-width);
     border-radius: 200%;
-    margin-right: var(--scenario-color-gap);
+    margin-right: 10px;
   }
   .node-constraint-list {
     margin-top: 10px;

@@ -1,13 +1,9 @@
 <template>
   <div class="index-projections-expanded-node-resilience-container">
-    <p>Investigate resilience to sudden change</p>
+    <p>What if there's a sudden change in the next year?</p>
     <p class="subdued un-font-small">
-      Show three new scenarios to see how projections would change depending on the next observed
-      value.
-    </p>
-    <p class="subdued un-font-small">
-      Each scenario contains one constraint, selected based on the greatest annual change,
-      historically.
+      See how projections are affected if the greatest annual change in the historical data were to
+      happen again.
     </p>
 
     <div class="chart-container" v-for="(item, index) in chartData" :key="index">
@@ -16,8 +12,7 @@
         {{ item.name }}
       </p>
       <p class="change-text subdued un-font-small">
-        Greatest
-        {{ getFormattedTimeInterval(item.interval, projectionTemporalResolutionOption) }} change:
+        {{ getGreatestChangeString(item.interval, projectionTemporalResolutionOption) }}:
         {{ item.greatestChange.toFixed(2) }}
       </p>
 
@@ -187,6 +182,16 @@ watch(
   },
   { immediate: true }
 );
+
+const getGreatestChangeString = (steps: number, temporalResolution: TemporalResolutionOption) => {
+  const formattedInterval = getFormattedTimeInterval(steps, temporalResolution);
+  if (formattedInterval.includes('months') || formattedInterval.includes('years')) {
+    // e.g. "Greatest change over 11 months"
+    return `Greatest change over ${formattedInterval}`;
+  }
+  // e.g. "Greatest annual change"
+  return `Greatest ${formattedInterval} change`;
+};
 </script>
 
 <style lang="scss" scoped>
@@ -195,12 +200,12 @@ watch(
   margin-top: 10px;
   margin-bottom: 10px;
   padding-top: 10px;
-  border-top: 1px solid #e3e4e6;
+  border-top: 1px solid var(--p-surface-200);
   .change-text {
     padding-left: 20px;
   }
   .chart-container {
-    margin-top: 5px;
+    margin-top: 20px;
   }
 }
 </style>
