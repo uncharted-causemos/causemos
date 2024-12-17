@@ -21,15 +21,14 @@ import { splitProjectionsIntoLineSegments } from '@/utils/projection-util';
 import { snapTimestampToNearestMonth } from '@/utils/date-util';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 
-const FOCUS_BORDER_COLOR = '#888';
+const FOCUS_BORDER_COLOR = '#d1d5db';
 const FOCUS_BORDER_STROKE_WIDTH = 1;
-const HISTORICAL_RANGE_OPACITY = 0.05;
 export const SCROLL_BAR_HEIGHT = 20;
-const SCROLL_BAR_RANGE_FILL = '#ccc';
+const SCROLL_BAR_RANGE_FILL = '#f3f4f6';
 const SCROLL_BAR_RANGE_STROKE = 'none';
 const SCROLL_BAR_RANGE_OPACITY = 0.8;
-const SCROLL_BAR_BACKGROUND_COLOR = '#888';
-const SCROLL_BAR_BACKGROUND_OPACITY = HISTORICAL_RANGE_OPACITY;
+const SCROLL_BAR_BACKGROUND_COLOR = '#f3f4f6';
+const SCROLL_BAR_BACKGROUND_OPACITY = 1;
 const SCROLL_BAR_TIMESERIES_OPACITY = 0.2;
 const SCROLL_BAR_HANDLE_WIDTH = 9;
 const SCROLL_BAR_LABEL_WIDTH = 40;
@@ -421,6 +420,9 @@ export default function render(
   scrollBarGroupElement.select('.brush').remove();
   const brushElement = scrollBarGroupElement.append('g').classed('brush', true);
   // Add background to selected range
+  // FIXME: this selectAll function call doesn't seem to return anything, so
+  //  the following attr calls don't actually set the fill/stroke/opacity of
+  //  the selection.
   selection
     .selectAll('.brush > .selection')
     .attr('fill', SCROLL_BAR_RANGE_FILL)

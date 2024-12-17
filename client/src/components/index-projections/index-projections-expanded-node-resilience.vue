@@ -202,9 +202,5 @@ watch(
   .chart-container {
     margin-top: 5px;
   }
-  .timeseries {
-    margin-left: -20px;
-    margin-right: 0px;
-  }
 }
 </style>
