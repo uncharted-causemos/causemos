@@ -2,7 +2,7 @@
 @import '@/styles/uncharted-design-tokens';
 
 $index-tree-node-width: 240px;
-$space-between-columns: 40px;
+$space-between-columns: 20px;
 $space-between-rows: 10px;
 
 $incoming-edge-minimum-length: calc(#{$space-between-columns} / 2);
@@ -10,13 +10,12 @@ $outgoing-edge-length: calc($space-between-columns - $incoming-edge-minimum-leng
 $edge-top-offset-from-node: 13px;
 $edge-styles: 2px solid $un-color-black-20;
 
-$index-graph-padding-horizontal: 30px;
-$index-graph-padding-vertical: 40px;
+$index-graph-padding-horizontal: 20px;
 
 .index-graph {
   // The farthest left column will never have incoming edges, so it will have an empty space of
   //  size `$incoming-edge-minimum-length` to the left of it. Remove that width from the padding.
-  padding: $index-graph-padding-vertical $index-graph-padding-horizontal;
+  padding: 0 $index-graph-padding-horizontal 10px;
   padding-left: calc(#{$index-graph-padding-horizontal} - #{$incoming-edge-minimum-length});
   overflow: auto;
   display: grid;

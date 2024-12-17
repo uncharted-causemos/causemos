@@ -6,9 +6,14 @@
     >
       <div class="disable-overlay" />
       <header class="title-header">
-        <button v-if="selectedNodeId !== null" class="btn btn-sm" @click="deselectNode">
-          <i class="fa fa-fw fa-caret-left" />View all concepts
-        </button>
+        <Button
+          v-if="selectedNodeId !== null"
+          @click="deselectNode"
+          icon="fa fa-arrow-left"
+          label="View all concepts"
+          severity="secondary"
+          text
+        />
         <Button
           v-else
           text
@@ -19,160 +24,163 @@
         />
         <h3>Projections</h3>
       </header>
-      <section v-if="selectedNodeId !== null" class="horizontal-padding">
-        <header class="flex index-structure-header">
-          <h4>Index structure</h4>
-        </header>
-        <IndexResultsStructurePreview
-          class="index-structure-preview"
-          :selected-node-id="selectedNodeId"
-        />
-      </section>
-      <section class="settings-section horizontal-padding">
-        <header><h4>Settings</h4></header>
-        <DropdownButton
-          :is-dropdown-left-aligned="true"
-          :items="COUNTRY_MODES"
-          :selected-item="isSingleCountryModeActive"
-          @item-selected="setIsSingleCountryModeActive"
-        />
-        <div class="subsection" v-if="isSingleCountryModeActive">
-          <p>Country</p>
-          <DropdownButton
-            :is-dropdown-left-aligned="true"
-            :items="selectableCountryDropdownItems"
-            :selected-item="selectedCountry"
-            :is-warning-state-active="selectedCountry === NO_COUNTRY_SELECTED.value"
-            @item-selected="setSelectedCountry"
+      <section class="settings-section">
+        <h4 class="horizontal-padding">Settings</h4>
+        <div class="scrolling-section horizontal-padding">
+          <SelectButton
+            :options="COUNTRY_MODES"
+            :model-value="isSingleCountryModeActive"
+            option-label="displayName"
+            option-value="value"
+            @update:model-value="setIsSingleCountryModeActive"
+            class="w-100 button-group"
           />
-          <p v-if="selectedCountry === NO_COUNTRY_SELECTED.value" class="warning">
-            Select a country to display projections.
-          </p>
-        </div>
-        <IndexProjectionsSettingsScenarios
-          v-if="isSingleCountryModeActive && selectedCountry !== NO_COUNTRY_SELECTED.value"
-          class="subsection"
-          :scenarios="scenarios"
-          :max-scenarios="MAX_NUM_TIMESERIES"
-          @create="createAndEditScenario"
-          @duplicate="duplicateScenario"
-          @edit="enableEditingScenario"
-          @delete="deleteScenario"
-          @toggleVisible="toggleScenarioVisibility"
-        />
-
-        <IndexProjectionsSettingsCountries
-          v-if="!isSingleCountryModeActive"
-          class="subsection"
-          :countries="selectedCountries"
-          :selectable-countries="selectableCountryDropdownItems"
-          :max-countries="MAX_NUM_TIMESERIES"
-          @add="addSelectedCountry"
-          @remove="removeSelectedCountry"
-          @change="changeSelectedCountry"
-        />
-      </section>
-      <footer>
-        <section class="show-outside-values horizontal-padding">
-          <label @click="setShowDataOutsideNorm(!showDataOutsideNorm)">
-            <span>Show values outside the <b>0</b> to <b>1</b> range</span>
-            <i
-              class="fa fa-lg fa-fw"
-              :class="{
-                'fa-check-square-o': showDataOutsideNorm,
-                'fa-square-o': !showDataOutsideNorm,
-              }"
+          <div v-if="isSingleCountryModeActive">
+            <p>Country</p>
+            <Select
+              :options="selectableCountryDropdownItems"
+              :model-value="selectedCountry"
+              option-label="displayName"
+              option-value="value"
+              @update:model-value="setSelectedCountry"
+              class="w-100"
             />
-          </label>
-        </section>
-        <section>
-          <header class="flex">
-            <p>Time range</p>
-            <button
-              v-if="!isEditingTimeRange"
-              class="btn btn-sm"
-              @click="isEditingTimeRange = true"
-            >
-              Edit
-            </button>
-            <button
-              v-else
-              class="btn btn-sm btn-call-to-action"
-              @click="onDoneEditingTimeRange"
-              :disabled="!areProjectionDatesValid"
-            >
-              Done
-            </button>
-          </header>
-          <div v-if="isEditingTimeRange">
-            <div class="projection-date">
-              <DropdownButton
-                :items="MONTHS"
-                :selected-item="projectionStartMonth"
-                :is-dropdown-above="true"
-                :is-dropdown-left-aligned="true"
-                @item-selected="(month) => (projectionStartMonth = month)"
-              />
-              <DropdownButton
-                :items="selectableYears"
-                :selected-item="projectionStartYear"
-                :is-dropdown-above="true"
-                :is-dropdown-left-aligned="true"
-                @item-selected="(year) => (projectionStartYear = year)"
-              />
-            </div>
-            <p>to</p>
-            <div class="projection-date">
-              <DropdownButton
-                :items="MONTHS"
-                :selected-item="projectionEndMonth"
-                :is-dropdown-above="true"
-                :is-dropdown-left-aligned="true"
-                @item-selected="(month) => (projectionEndMonth = month)"
-              />
-              <DropdownButton
-                :items="selectableYears"
-                :selected-item="projectionEndYear"
-                :is-dropdown-above="true"
-                :is-dropdown-left-aligned="true"
-                @item-selected="(year) => (projectionEndYear = year)"
-              />
-            </div>
-            <p v-if="!areProjectionDatesValid" class="warning">
-              The projection end date must be after the projection start date.
+            <p v-if="selectedCountry === NO_COUNTRY_SELECTED.value" class="warning">
+              Select a country to display projections.
             </p>
           </div>
-          <p v-else class="un-font-small subtitle">
-            {{ timestampFormatter(projectionStartTimestamp, null, null) }} -
-            {{ timestampFormatter(projectionEndTimestamp, null, null) }}
-          </p>
-        </section>
-        <section>
-          <p
-            class="un-font-small subtitle projection-explanation-link"
-            @click="showProjectionExplanation"
-          >
-            How are projections calculated? <i class="fa fa-fw fa-info-circle" />
-          </p>
-        </section>
-      </footer>
+          <IndexProjectionsSettingsScenarios
+            v-if="isSingleCountryModeActive && selectedCountry !== NO_COUNTRY_SELECTED.value"
+            :scenarios="scenarios"
+            :max-scenarios="MAX_NUM_TIMESERIES"
+            @create="createAndEditScenario"
+            @duplicate="duplicateScenario"
+            @edit="enableEditingScenario"
+            @delete="deleteScenario"
+            @toggleVisible="toggleScenarioVisibility"
+          />
+
+          <IndexProjectionsSettingsCountries
+            v-if="!isSingleCountryModeActive"
+            :countries="selectedCountries"
+            :selectable-countries="selectableCountryDropdownItems"
+            :max-countries="MAX_NUM_TIMESERIES"
+            @add="addSelectedCountry"
+            @remove="removeSelectedCountry"
+            @change="changeSelectedCountry"
+          />
+        </div>
+        <footer>
+          <section>
+            <header>
+              <p>Time range</p>
+            </header>
+            <div v-if="isEditingTimeRange" class="time-range-editing">
+              <div class="projection-date">
+                <Select
+                  :options="MONTHS"
+                  :model-value="projectionStartMonth"
+                  option-label="displayName"
+                  option-value="value"
+                  @update:model-value="(month) => (projectionStartMonth = month)"
+                />
+                <Select
+                  :options="selectableYears"
+                  :model-value="projectionStartYear"
+                  option-label="displayName"
+                  option-value="value"
+                  @update:model-value="(year) => (projectionStartYear = year)"
+                />
+              </div>
+              <p class="subdued un-font-small">to</p>
+              <div class="projection-date">
+                <Select
+                  :options="MONTHS"
+                  :model-value="projectionEndMonth"
+                  option-label="displayName"
+                  option-value="value"
+                  @update:model-value="(month) => (projectionEndMonth = month)"
+                />
+                <Select
+                  :options="selectableYears"
+                  :model-value="projectionEndYear"
+                  option-label="displayName"
+                  option-value="value"
+                  @update:model-value="(year) => (projectionEndYear = year)"
+                />
+              </div>
+              <p v-if="!areProjectionDatesValid" class="warning">
+                The projection end date must be after the projection start date.
+              </p>
+
+              <div class="button-group">
+                <Button @click="isEditingTimeRange = false" label="Cancel" severity="secondary" />
+
+                <Button
+                  @click="onDoneEditingTimeRange"
+                  :disabled="!areProjectionDatesValid"
+                  label="Done"
+                />
+              </div>
+            </div>
+            <div class="time-range" v-else>
+              <p class="subdued">
+                {{ timestampFormatter(projectionStartTimestamp, null, null) }} -
+                {{ timestampFormatter(projectionEndTimestamp, null, null) }}
+              </p>
+              <Button
+                @click="isEditingTimeRange = true"
+                label="Edit"
+                severity="secondary"
+                outlined
+              />
+            </div>
+          </section>
+          <section class="show-outside-values horizontal-padding">
+            <label for="show-data-outside-norm">
+              Show values outside the <b>0</b> to <b>1</b> range
+            </label>
+            <Checkbox
+              binary
+              :model-value="showDataOutsideNorm"
+              @update:model-value="(newValue) => setShowDataOutsideNorm(newValue)"
+              inputId="show-data-outside-norm"
+            />
+          </section>
+          <section>
+            <p
+              class="un-font-small subdued projection-explanation-link"
+              @click="showProjectionExplanation"
+            >
+              How are projections calculated? <i class="fa fa-fw fa-info-circle" />
+            </p>
+          </section>
+        </footer>
+      </section>
     </div>
     <main class="flex-col">
-      <div class="editing-container">
+      <div class="editing-container" :class="{ 'is-editing': scenarioBeingEdited !== null }">
         <div v-if="scenarioBeingEdited !== null" class="editing-ui-group">
-          <label
-            >Editing
-            <input type="text" v-model="scenarioBeingEdited.name" v-focus />
-          </label>
-          <label class="flex-grow"
-            >Description
-            <input class="flex-grow" type="text" v-model="scenarioBeingEdited.description" />
-          </label>
-          <div>
-            <button class="btn btn-sm" @click="cancelEditingScenario">Cancel</button>
-            <button class="btn btn-sm btn-call-to-action" @click="finishEditingScenario">
-              Done
-            </button>
+          <div class="labelled-input">
+            <label for="scenario-name">Scenario name</label>
+            <InputText
+              size="large"
+              id="scenario-name"
+              v-model="scenarioBeingEdited.name"
+              autofocus
+            />
+          </div>
+          <div class="labelled-input">
+            <label for="scenario-description">Scenario description</label>
+            <InputText
+              size="large"
+              id="scenario-description"
+              v-model="scenarioBeingEdited.description"
+            />
+          </div>
+          <div class="button-group">
+            <Button label="Cancel" @click="cancelEditingScenario" severity="secondary" />
+            <Button label="Done" @click="finishEditingScenario" />
           </div>
         </div>
         <p v-if="scenarioBeingEdited !== null" class="edit-msg subdued un-font-small">
@@ -209,7 +217,16 @@
         @click-chart="onNodeChartClick"
         @open-drilldown="handleNavigateToDataset"
       />
-      <IndexLegend class="legend" :is-projection-space="true" />
+      <div class="flex">
+        <div class="structure-preview-section">
+          <p>Index structure</p>
+          <IndexResultsStructurePreview
+            class="structure-preview"
+            :selected-node-id="selectedNodeId"
+          />
+        </div>
+        <IndexLegend class="legend" :is-projection-space="true" />
+      </div>
     </main>
   </div>
 
@@ -240,7 +257,7 @@ import useProjectionDates from '@/composables/useProjectionDates';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
 import { SelectableIndexElementId } from '@/types/Index';
-import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import { DropdownItem } from '@/components/dropdown-button.vue';
 import IndexLegend from '@/components/index-legend.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import timestampFormatter from '@/formatters/timestamp-formatter';
@@ -263,6 +280,10 @@ import useHistoricalData from '@/composables/useHistoricalData';
 import useMultipleCountryProjections from '@/composables/useMultipleCountryProjections';
 import ModalProjectionExplanation from '@/components/modals/modal-projection-explanation.vue';
 import Button from 'primevue/button';
+import Select from 'primevue/select';
+import Checkbox from 'primevue/checkbox';
+import SelectButton from 'primevue/selectbutton';
+import InputText from 'primevue/inputtext';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'January' },
@@ -331,7 +352,7 @@ const modifyStructure = () => {
 };
 
 const COUNTRY_MODES: DropdownItem[] = [
-  { displayName: 'Single country', value: true },
+  { displayName: 'One country', value: true },
   { displayName: 'Multiple countries', value: false },
 ];
 const isSingleCountryModeActive = computed(
@@ -691,7 +712,7 @@ const showProjectionExplanation = () => {
 .index-projections-container {
   display: flex;
   height: $content-full-height;
-  background: $background-light-2;
+  background: var(--p-surface-100);
 }
 
 .horizontal-padding {
@@ -700,37 +721,57 @@ const showProjectionExplanation = () => {
 }
 
 .config-column {
-  background: white;
   width: 300px;
-  border-right: 1px solid $un-color-black-10;
-  gap: 40px;
   position: relative;
+  background: var(--p-surface-0);
+  border-right: 1px solid var(--p-surface-200);
+
   .title-header {
-    padding: 20px 20px 0 20px;
+    padding: 10px 20px 20px 20px;
+
+    h3 {
+      margin-top: 10px;
+    }
   }
 
   .settings-section {
     flex: 1;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-top: 20px;
+
+    .scrolling-section {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+
+      & > * {
+        margin-bottom: 40px;
+      }
+    }
   }
 
   .show-outside-values {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+
     label {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      cursor: pointer;
     }
+  }
+  .settings-section,
+  footer section {
+    border-top: 1px solid $un-color-black-10;
   }
   footer {
     section {
-      border-top: 1px solid $un-color-black-10;
       padding: 10px 20px;
     }
   }
-}
-
-.subtitle {
-  color: $un-color-black-40;
 }
 
 section {
@@ -744,8 +785,34 @@ section {
   }
 }
 
-.subsection {
-  margin-top: 40px;
+.time-range {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.time-range-editing {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-block: 10px;
+
+  .button-group {
+    margin-top: 10px;
+    gap: 5px;
+
+    & > * {
+      min-width: 0;
+    }
+  }
+}
+
+:deep(.button-group) {
+  display: flex;
+  & > * {
+    flex: 1;
+    flex-basis: auto;
+  }
 }
 
 .projection-date {
@@ -765,8 +832,27 @@ main {
   min-width: 0;
   position: relative;
 
+  .structure-preview-section {
+    padding: 10px 15px 0 20px;
+    background: var(--p-surface-50);
+    border: 1px solid var(--p-surface-200);
+    border-radius: 3px;
+    margin-left: $index-graph-padding-horizontal;
+    margin-block: 10px;
+  }
+
+  .structure-preview {
+    background: transparent;
+    padding: 0;
+  }
+
   .legend {
-    margin: 0 20px;
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    margin-left: 10px;
+    margin-right: $index-graph-padding-horizontal;
+    margin-block: 10px;
   }
 
   .fill-space {
@@ -776,20 +862,42 @@ main {
 }
 
 .editing-container {
-  padding: 10px $index-graph-padding-horizontal;
-  height: $navbar-outer-height;
-  .editing-ui-group {
-    display: flex;
+  margin: 10px $index-graph-padding-horizontal 20px;
+  display: flex;
+  gap: 15px;
+  flex-direction: column;
+  border: 1px solid transparent;
+
+  &.is-editing {
+    padding: 10px $index-graph-padding-horizontal;
+    background: var(--p-surface-0);
+    border-color: var(--p-primary-400);
+    border-radius: 3px;
     justify-content: space-between;
-    gap: 50px;
-    label {
-      display: flex;
-      gap: 5px;
-      align-items: baseline;
-    }
-    label:first-child input {
+  }
+
+  :deep(.editing-ui-group) {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: end;
+    // justify-content: space-between;
+    gap: 10px;
+    & > *:first-child > input {
       width: 180px;
     }
+    & > *:not(:first-child) > input {
+      width: 100%;
+    }
+
+    .button-group {
+      gap: 5px;
+    }
+  }
+
+  .labelled-input {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
   }
   .edit-msg {
     color: $accent-main;
@@ -814,7 +922,7 @@ main {
   height: 100%;
   z-index: 999;
   opacity: 0.4;
-  background: white;
+  background: var(--p-surface-100);
   top: 0;
   left: 0;
 }

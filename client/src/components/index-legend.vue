@@ -1,56 +1,65 @@
 <template>
   <div class="index-legend-container">
-    <div v-if="props.isProjectionSpace" class="legend-column">
-      <p class="un-font-small">
-        <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
-        Concepts with datasets attached
-      </p>
-      <div class="constraint-row">
-        <ConstraintIcon />
-        <p class="un-font-small">&nbsp;Constraint</p>
+    <p>Legend</p>
+    <div class="flex">
+      <div v-if="props.isProjectionSpace" class="legend-column">
+        <p class="un-font-small">
+          <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
+          Concepts with datasets attached
+        </p>
+        <div class="constraint-row">
+          <ConstraintIcon />
+          <p class="un-font-small">&nbsp;Constraint</p>
+        </div>
+        <p class="un-font-small">
+          <i class="fa fa-fw fa-circle" :style="{ color: 'black' }" />
+          Dataset value
+        </p>
+        <p class="un-font-small">
+          <i class="fa fa-fw fa-minus" :style="{ color: 'black' }" />
+          Interpolated data
+        </p>
+        <p class="un-font-small">
+          <i
+            class="fa fa-minus"
+            :style="{ color: 'black', transform: 'scale(0.5)', width: '7px' }"
+          />
+          <i
+            class="fa fa-minus"
+            :style="{ color: 'black', transform: 'scale(0.5)', width: '7px' }"
+          />
+          Extrapolated data
+        </p>
       </div>
-      <p class="un-font-small">
-        <i class="fa fa-fw fa-circle" :style="{ color: 'black' }" />
-        Dataset value
-      </p>
-      <p class="un-font-small">
-        <i class="fa fa-fw fa-minus" :style="{ color: 'black' }" />
-        Interpolated data
-      </p>
-      <p class="un-font-small">
-        <i class="fa fa-minus" :style="{ color: 'black', transform: 'scale(0.5)', width: '7px' }" />
-        <i class="fa fa-minus" :style="{ color: 'black', transform: 'scale(0.5)', width: '7px' }" />
-        Extrapolated data
-      </p>
-    </div>
-    <div v-if="props.isProjectionSpace" class="legend-column">
-      <p class="un-font-small">Concepts without datasets</p>
-      <div class="constraint-row">
-        <ConstraintIcon />
-        <p class="un-font-small">&nbsp;Constraint</p>
+      <div v-if="props.isProjectionSpace" class="legend-column">
+        <p class="un-font-small">Concepts without datasets</p>
+        <div class="constraint-row">
+          <ConstraintIcon />
+          <p class="un-font-small">&nbsp;Constraint</p>
+        </div>
+        <p class="un-font-small">
+          <i class="fa fa-fw fa-circle" :style="{ color: 'black' }" />All components have values
+        </p>
+        <p class="un-font-small">
+          <i
+            class="fa fa-fw fa-minus"
+            :style="{ color: 'black', opacity: WEIGHTED_SUM_LINE_OPACITY }"
+          />Some components do not have values
+        </p>
       </div>
-      <p class="un-font-small">
-        <i class="fa fa-fw fa-circle" :style="{ color: 'black' }" />All components have values
-      </p>
-      <p class="un-font-small">
-        <i
-          class="fa fa-fw fa-minus"
-          :style="{ color: 'black', opacity: WEIGHTED_SUM_LINE_OPACITY }"
-        />Some components do not have values
-      </p>
-    </div>
-    <div class="legend-column">
-      <p class="un-font-small">Relationships</p>
-      <p class="un-font-small">
-        <i class="fa fa-fw fa-minus" :style="{ color: POSITIVE_COLOR }" />
-        High levels of A represent
-        <span class="un-font-small" :style="{ color: POSITIVE_COLOR }">high</span> levels of B
-      </p>
-      <p class="un-font-small">
-        <i class="fa fa-fw fa-minus" :style="{ color: NEGATIVE_COLOR }" />
-        High levels of A represent
-        <span class="un-font-small" :style="{ color: NEGATIVE_COLOR }">low</span> levels of B
-      </p>
+      <div class="legend-column">
+        <p class="un-font-small">Relationships</p>
+        <p class="un-font-small">
+          <i class="fa fa-fw fa-minus" :style="{ color: POSITIVE_COLOR }" />
+          High levels of A represent
+          <span class="un-font-small" :style="{ color: POSITIVE_COLOR }">high</span> levels of B
+        </p>
+        <p class="un-font-small">
+          <i class="fa fa-fw fa-minus" :style="{ color: NEGATIVE_COLOR }" />
+          High levels of A represent
+          <span class="un-font-small" :style="{ color: NEGATIVE_COLOR }">low</span> levels of B
+        </p>
+      </div>
     </div>
   </div>
 </template>
@@ -68,9 +77,12 @@ const props = defineProps<{ isProjectionSpace: boolean }>();
 @import '@/styles/uncharted-design-tokens';
 .index-legend-container {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
   padding: 10px 20px;
-  background: white;
-  border-radius: 3px 3px 0 0;
+  background: var(--p-surface-50);
+  border: 1px solid var(--p-surface-200);
+  border-radius: 3px;
   max-width: 1100px;
 }
 
@@ -78,8 +90,13 @@ const props = defineProps<{ isProjectionSpace: boolean }>();
   flex: 1;
   min-width: 0;
 
+  p:first-child {
+    margin-bottom: 8px;
+  }
+
   p:not(:first-child) {
-    color: $un-color-black-40;
+    color: var(--p-text-muted-color);
+    margin-bottom: 3px;
   }
 }
 

@@ -3,21 +3,17 @@
     v-if="props.dataWarnings && props.dataWarnings.length > 0"
     class="index-projections-expanded-node-warning-container"
   >
-    <p>
-      <i class="fa fa-fw fa-exclamation-triangle warning"></i>
-      Warnings
-    </p>
-    <div v-for="(w, index) in nodeWarnings" :key="index">
-      <p>{{ w.warning }}</p>
-      <p class="subdued un-font-small">{{ w.message }}</p>
+    <div v-for="(w, index) in nodeWarnings" :key="index" class="warning">
+      <p class="warning-title"><i class="fa fa-fw fa-exclamation-triangle"></i>{{ w.warning }}</p>
+      <p class="subdued un-font-small message">{{ w.message }}</p>
     </div>
     <div v-for="(warnings, index) in Object.values(warningsPerProjection)" :key="index">
-      <div v-for="(w, i) in warnings" :key="i">
+      <div v-for="(w, i) in warnings" :key="i" class="warning">
         <p>
           <i class="fa fa-fw fa-minus" :style="{ color: w.color }"></i>
           {{ w.warning }}
         </p>
-        <p class="subdued un-font-small">{{ w.message }}</p>
+        <p class="subdued un-font-small message">{{ w.message }}</p>
       </div>
     </div>
   </div>
@@ -59,7 +55,31 @@ const warningsPerProjection = computed(() =>
 .index-projections-expanded-node-warning-container {
   padding-top: 10px;
   .warning {
+    background: var(--background-warn);
+    border-radius: 3px;
+    padding: 5px 10px;
+    display: flex;
+    gap: 5px;
+    align-items: baseline;
+    margin-bottom: 5px;
+    cursor: pointer;
+
+    .message {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &:not(:hover) .message {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-wrap: nowrap;
+    }
+  }
+  .warning-title {
     color: $un-color-feedback-warning;
+    i {
+      margin-right: 5px;
+    }
   }
 }
 </style>

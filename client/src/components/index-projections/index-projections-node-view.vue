@@ -158,12 +158,12 @@ const isOutgoingEdgeOppositePolarity = computed(() => {
 @import '@/styles/uncharted-design-tokens';
 @import '@/styles/index-graph';
 .index-projections-node-view-container {
-  padding: $index-graph-padding-vertical $index-graph-padding-horizontal;
   overflow: auto;
   display: flex;
   // When the graph is too small to take up the full available screen width, don't expand columns
   //  to fill the empty space.
   justify-content: flex-start;
+  padding-left: $index-graph-padding-horizontal;
 }
 
 .node-column {

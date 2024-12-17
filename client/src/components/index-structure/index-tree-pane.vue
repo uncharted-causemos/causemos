@@ -279,6 +279,8 @@ const searchForNode = (id: string) => {
 @import '@/styles/index-graph';
 
 .index-tree-pane-container {
+  margin: 40px 10px;
+
   &.connecting-nodes {
     cursor: crosshair;
   }

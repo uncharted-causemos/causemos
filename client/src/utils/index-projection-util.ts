@@ -25,7 +25,7 @@ export const getAvailableTimeseriesColor = (usedColors: string[]) =>
 const defaultScenario: IndexProjectionScenario = {
   id: uuidv4(),
   name: 'No constraints',
-  description: 'No concepts are constrained in this scenario.',
+  description: 'No constrained concepts.',
   color: TIMESERIES_COLORS[0],
   isVisible: true,
   isDefault: true,

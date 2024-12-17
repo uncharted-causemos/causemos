@@ -1,18 +1,31 @@
 <template>
   <div class="index-projections-expanded-node-container">
-    <p class="add-horizontal-margin">{{ props.nodeData.name ?? 'none' }}</p>
+    <p class="add-horizontal-margin un-font-large">{{ props.nodeData.name ?? 'none' }}</p>
     <span v-if="props.nodeData.name.length === 0" class="subdued add-horizontal-margin"
       >(Missing name)</span
     >
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)">
-      <div class="add-horizontal-margin timeseries-label">
-        <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
-        <span class="subdued un-font-small dataset-name">{{ dataSourceText }}</span>
-        <InvertedDatasetLabel class="inverted-label" v-if="isInvertedData" />
-        <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
+      <div
+        class="dataset-info add-horizontal-margin"
+        :class="{ 'is-expanded': isDatasetInfoExpanded }"
+        @click="isDatasetInfoExpanded = !isDatasetInfoExpanded"
+      >
+        <div class="timeseries-label">
+          <i
+            class="fa fa-fw expand-collapse-icon"
+            :class="{
+              'fa-angle-right': !isDatasetInfoExpanded,
+              'fa-angle-down': isDatasetInfoExpanded,
+            }"
+          />
+          <i class="fa fa-fw" :class="DATASET_ICON" :style="{ color: DATASET_COLOR }" />
+          <p class="dataset-name">{{ dataSourceText }}</p>
+          <InvertedDatasetLabel class="inverted-label" v-if="isInvertedData" />
+          <!-- TODO: options to edit dataset -->
+          <!-- <OptionsButton :dropdown-below="true" :wider-dropdown-options="true">
           <template #content>
             <div
-              v-for="item in optionsButtonMenu"
+              v-for="item in ['Edit data points', 'Remove dataset', 'Select another dataset']"
               class="dropdown-option"
               :key="item.text"
               @click="item.onClick()"
@@ -20,14 +33,26 @@
               {{ item.text }}
             </div>
           </template>
-        </OptionsButton>
+        </OptionsButton> -->
+        </div>
+        <div class="dataset-metadata" v-if="isDatasetInfoExpanded">
+          <p class="subdued un-font-small">{{ outputDescription }}</p>
+          <p class="margin-top">
+            Source:
+            {{
+              isConceptNodeWithDatasetAttached(props.nodeData) ? props.nodeData.dataset.source : ''
+            }}
+          </p>
+          <p class="subdued un-font-small">{{ metadata?.description }}</p>
+          <Button
+            class="margin-top w-100 explore-dataset-button"
+            @click.stop="navigateToDataset"
+            :disabled="metadata === null"
+            severity="secondary"
+            label="Explore dataset"
+          />
+        </div>
       </div>
-      <min-max-info
-        class="add-horizontal-margin"
-        :message="'What do 0 and 1 represent?'"
-        :dataset="props.nodeData.dataset"
-        :oppositeEdgeCount="oppositeEdgeCountToRoot"
-      ></min-max-info>
       <IndexProjectionsExpandedNodeTimeseries
         class="timeseries add-horizontal-margin"
         :class="{
@@ -43,13 +68,20 @@
         :is-inverted="isInvertedData"
       />
 
+      <MinMaxInfo
+        class="add-horizontal-margin min-max-info"
+        :message="'What do 0 and 1 represent?'"
+        :dataset="props.nodeData.dataset"
+        :oppositeEdgeCount="oppositeEdgeCountToRoot"
+      />
+
       <IndexProjectionsExpandedNodeWarning
-        class="warning-section add-horizontal-margin"
+        class="add-horizontal-margin"
         :data-warnings="dataWarnings"
       />
 
       <IndexProjectionsExpandedNodeResilience
-        class="add-horizontal-margin"
+        class="add-horizontal-padding"
         :node-data="(nodeData as ConceptNodeWithDatasetAttached)"
         :historical-data="historicalData"
         :constraints="constraints"
@@ -59,25 +91,6 @@
         :projection-timeseries="timeseries"
         :weighting-behaviour="weightingBehaviour"
       />
-
-      <div class="dataset-metadata add-horizontal-margin">
-        <p class="margin-top">Dataset description</p>
-        <p class="subdued un-font-small">{{ outputDescription }}</p>
-        <p class="margin-top">
-          Source:
-          {{
-            isConceptNodeWithDatasetAttached(props.nodeData) ? props.nodeData.dataset.source : ''
-          }}
-        </p>
-        <p class="subdued un-font-small">{{ metadata?.description }}</p>
-        <button
-          class="btn btn-default margin-top"
-          @click="navigateToDataset"
-          :disabled="metadata === null"
-        >
-          Explore dataset
-        </button>
-      </div>
     </div>
 
     <div v-else-if="isEmptyNode(props.nodeData)">
@@ -124,8 +137,7 @@ import {
   isConceptNodeWithDatasetAttached,
   isEmptyNode,
 } from '@/utils/index-tree-util';
-import OptionsButton from '../widgets/options-button.vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
 import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/composables/useModelMetadataSimple';
@@ -136,28 +148,9 @@ import IndexProjectionsExpandedNodeResilience from './index-projections-expanded
 import { IndexWeightingBehaviour, TemporalResolutionOption } from '@/types/Enums';
 import MinMaxInfo from '@/components/min-max-info.vue';
 import useIndexTree from '@/composables/useIndexTree';
+import Button from 'primevue/button';
 
 const indexTree = useIndexTree();
-const optionsButtonMenu = [
-  {
-    text: 'Edit data points',
-    onClick: () => {
-      console.log('This feature is under development.');
-    },
-  },
-  {
-    text: 'Remove dataset',
-    onClick: () => {
-      console.log('This feature is under development.');
-    },
-  },
-  {
-    text: 'Select another dataset',
-    onClick: () => {
-      console.log('This feature is under development.');
-    },
-  },
-];
 
 const props = defineProps<{
   nodeData: ConceptNode;
@@ -202,6 +195,8 @@ const outputVariable = computed(() => {
 
 const { metadata, outputDescription } = useModelMetadataSimple(dataId, outputVariable);
 
+const isDatasetInfoExpanded = ref(false);
+
 const navigateToDataset = () => {
   if (metadata.value !== null) {
     emit('open-drilldown', metadata.value.id);
@@ -217,7 +212,7 @@ const navigateToDataset = () => {
 @import '@/styles/common';
 
 $expanded-node-width: $index-tree-node-width * 2 + $space-between-columns;
-$horizontal-margin: 30px;
+$horizontal-margin: 20px;
 
 .index-projections-expanded-node-container {
   @include index-tree-node;
@@ -231,14 +226,46 @@ $horizontal-margin: 30px;
   margin-right: $horizontal-margin;
 }
 
+.add-horizontal-padding {
+  padding-left: $horizontal-margin;
+  padding-right: $horizontal-margin;
+}
+
+.dataset-info {
+  border: 1px solid var(--border-0);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+
+  // Highlight the expand/collapse icon when the mouse is over any part of the
+  //  dataset-info section except the explore-dataset-button.
+  &:hover:not(:has(.explore-dataset-button:hover)) .expand-collapse-icon {
+    color: var(--p-primary-900);
+    background: var(--p-primary-100);
+  }
+}
+
 .timeseries-label {
   display: flex;
   gap: 5px;
-  align-items: center;
+  align-items: baseline;
+  padding: 5px;
+  padding-right: 10px;
+
+  .expand-collapse-icon {
+    font-size: 1.6rem;
+    color: var(--p-text-muted-color);
+    border-radius: 100%;
+    width: 30px;
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+  }
 
   .dataset-name {
     flex: 1;
     min-width: 0;
+    padding-block: 5px;
   }
 
   .inverted-label {
@@ -247,15 +274,21 @@ $horizontal-margin: 30px;
   }
 }
 
+.dataset-info:not(.is-expanded) {
+  .dataset-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 .timeseries {
-  // $chartPadding should be kept in sync with the `projections-renderer.vue/PADDING_LEFT` constant.
-  // It is used to make sure the start of the chart lines up with the other `.add-horizontal-margin`
-  //  elements in this component, even though the left axis and svg have to extend past the margin.
-  $chartPadding: 20px;
   display: flex; // prevents a slight change in node size when showing outside norm values.
   margin-top: 5px;
-  margin-left: $horizontal-margin - $chartPadding;
-  width: $expanded-node-width - 2 * $horizontal-margin + $chartPadding;
+  margin-right: $horizontal-margin;
+  // -2 for the 1px border on each side
+  // -(2 * horizontal margin) for the margin on each side
+  width: $expanded-node-width - 2 - (2 * $horizontal-margin);
 
   &.warning {
     :deep(g.focusMouseEventGroup) {
@@ -273,15 +306,16 @@ $horizontal-margin: 30px;
   }
 }
 
-.warning-section {
-  margin-top: 10px;
-  border-top: 1px solid $un-color-black-10;
+.min-max-info {
+  margin-bottom: 10px;
+  background: var(--p-surface-50);
+  padding: 5px $horizontal-margin;
+  border-radius: 3px;
 }
 
 .dataset-metadata {
-  margin-top: 10px;
-  margin-bottom: 10px;
-  border-top: 1px solid $un-color-black-10;
+  background: var(--p-surface-50);
+  padding: 5px 10px;
 
   .margin-top {
     margin-top: 10px;
