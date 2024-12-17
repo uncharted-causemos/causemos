@@ -41,15 +41,17 @@
           </OptionsButton>
           <div v-else class="options-button-spacer" />
         </div>
-        <p class="un-font-small subdued description">
-          {{ scenario.description }}
-        </p>
-        <div v-if="scenarioHasConstraints(scenario)" class="node-constraint-list">
-          <div class="constraint-title">
-            <ConstraintIcon />
-            <p class="un-font-small">&nbsp;Constraints</p>
+        <div class="metadata">
+          <p class="un-font-small subdued description" v-if="scenario.description.length > 0">
+            {{ scenario.description }}
+          </p>
+          <div v-if="scenarioHasConstraints(scenario)" class="node-constraint-list">
+            <div class="constraint-title">
+              <ConstraintIcon />
+              <p class="un-font-small">&nbsp;Constraints</p>
+            </div>
+            <p class="un-font-small subdued">{{ constrainedNodeListString(scenario) }}</p>
           </div>
-          <p class="un-font-small subdued">{{ constrainedNodeListString(scenario) }}</p>
         </div>
       </li>
     </ul>
@@ -171,13 +173,20 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
   }
   .scenario-item {
     margin-bottom: 10px;
-  }
-  .scenario-item:not(:first-child) {
-    border-top: 1px solid var(--p-surface-200);
-    padding-top: 10px;
+    border: 1px solid var(--p-surface-200);
+    border-radius: 3px;
   }
   .scenario-item .action-group {
     align-items: center;
+    padding: 2px;
+    padding-left: 10px;
+    & > *:not(.flex-grow) {
+      flex-shrink: 0;
+    }
+  }
+  .scenario-item .metadata:has(*) {
+    background: var(--p-surface-50);
+    padding: 5px 10px;
   }
   .scenario-item .btn,
   .scenario-item .options-button-container {
@@ -193,16 +202,17 @@ const handleScenarioVisibleClick = (e: Event, scenarioId: string) => {
     border-radius: 200%;
     margin-right: var(--scenario-color-gap);
   }
-  .description {
-    margin-left: calc(var(--scenario-color-width) + var(--scenario-color-gap));
-  }
   .node-constraint-list {
-    margin-left: 10px;
-    margin-top: 5px;
+    margin-top: 10px;
   }
   .constraint-title {
     display: flex;
     align-items: baseline;
+    gap: 2px;
+
+    & > div {
+      width: auto;
+    }
   }
   .options-button-spacer {
     width: 26px;

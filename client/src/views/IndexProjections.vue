@@ -24,15 +24,6 @@
         />
         <h3>Projections</h3>
       </header>
-      <section v-if="selectedNodeId !== null" class="horizontal-padding structure-section">
-        <header class="flex index-structure-header">
-          <h4>Index structure</h4>
-        </header>
-        <IndexResultsStructurePreview
-          class="index-structure-preview"
-          :selected-node-id="selectedNodeId"
-        />
-      </section>
       <section class="settings-section">
         <h4 class="horizontal-padding">Settings</h4>
         <div class="scrolling-section horizontal-padding">
@@ -170,14 +161,23 @@
     <main class="flex-col">
       <div class="editing-container" :class="{ 'is-editing': scenarioBeingEdited !== null }">
         <div v-if="scenarioBeingEdited !== null" class="editing-ui-group">
-          <FloatLabel>
-            <InputText id="scenario-name" v-model="scenarioBeingEdited.name" autofocus />
+          <div class="labelled-input">
             <label for="scenario-name">Scenario name</label>
-          </FloatLabel>
-          <FloatLabel>
-            <InputText id="scenario-description" v-model="scenarioBeingEdited.description" />
+            <InputText
+              size="large"
+              id="scenario-name"
+              v-model="scenarioBeingEdited.name"
+              autofocus
+            />
+          </div>
+          <div class="labelled-input">
             <label for="scenario-description">Scenario description</label>
-          </FloatLabel>
+            <InputText
+              size="large"
+              id="scenario-description"
+              v-model="scenarioBeingEdited.description"
+            />
+          </div>
           <div class="button-group">
             <Button label="Cancel" @click="cancelEditingScenario" severity="secondary" />
             <Button label="Done" @click="finishEditingScenario" />
@@ -217,7 +217,16 @@
         @click-chart="onNodeChartClick"
         @open-drilldown="handleNavigateToDataset"
       />
-      <IndexLegend class="legend" :is-projection-space="true" />
+      <div class="flex">
+        <div class="structure-preview-section">
+          <p>Index structure</p>
+          <IndexResultsStructurePreview
+            class="structure-preview"
+            :selected-node-id="selectedNodeId"
+          />
+        </div>
+        <IndexLegend class="legend" :is-projection-space="true" />
+      </div>
     </main>
   </div>
 
@@ -274,7 +283,6 @@ import Button from 'primevue/button';
 import Select from 'primevue/select';
 import Checkbox from 'primevue/checkbox';
 import SelectButton from 'primevue/selectbutton';
-import FloatLabel from 'primevue/floatlabel';
 import InputText from 'primevue/inputtext';
 
 const MONTHS: DropdownItem[] = [
@@ -705,9 +713,6 @@ const showProjectionExplanation = () => {
   display: flex;
   height: $content-full-height;
   background: var(--p-surface-100);
-  padding: 10px;
-
-  --header-height: 95px;
 }
 
 .horizontal-padding {
@@ -718,24 +723,15 @@ const showProjectionExplanation = () => {
 .config-column {
   width: 300px;
   position: relative;
-  .title-header {
-    padding: 0px 20px 0 20px;
+  background: var(--p-surface-0);
+  border-right: 1px solid var(--p-surface-200);
 
-    height: var(--header-height);
+  .title-header {
+    padding: 10px 20px 20px 20px;
 
     h3 {
       margin-top: 10px;
     }
-  }
-
-  .structure-section,
-  .settings-section {
-    background: var(--p-surface-0);
-    border-radius: 3px;
-  }
-
-  .structure-section {
-    padding: 10px 20px 20px;
   }
 
   .settings-section {
@@ -767,9 +763,12 @@ const showProjectionExplanation = () => {
       cursor: pointer;
     }
   }
+  .settings-section,
+  footer section {
+    border-top: 1px solid $un-color-black-10;
+  }
   footer {
     section {
-      border-top: 1px solid $un-color-black-10;
       padding: 10px 20px;
     }
   }
@@ -833,13 +832,26 @@ main {
   min-width: 0;
   position: relative;
 
-  .index-graph {
-    padding-top: 0;
+  .structure-preview-section {
+    padding: 10px 20px;
+    background: var(--p-surface-50);
+    border: 1px solid var(--p-surface-200);
+    border-radius: 3px;
+    margin-left: $index-graph-padding-horizontal;
+    margin-block: 10px;
+  }
+
+  .structure-preview {
+    background: transparent;
   }
 
   .legend {
+    flex: 1;
+    min-width: 0;
     margin: 0;
-    margin-left: $index-graph-padding-horizontal;
+    margin-left: 10px;
+    margin-right: $index-graph-padding-horizontal;
+    margin-block: 10px;
   }
 
   .fill-space {
@@ -849,17 +861,14 @@ main {
 }
 
 .editing-container {
-  padding: 20px ($index-graph-padding-horizontal / 2);
-  margin-inline: ($index-graph-padding-horizontal / 2);
-  height: var(--header-height);
-  margin-bottom: 20px;
+  margin: 10px $index-graph-padding-horizontal 20px;
   display: flex;
+  gap: 15px;
   flex-direction: column;
-  justify-content: flex-end;
-  grid-template-rows: 1fr auto;
   border: 1px solid transparent;
 
   &.is-editing {
+    padding: 10px $index-graph-padding-horizontal;
     background: var(--p-surface-0);
     border-color: var(--p-primary-400);
     border-radius: 3px;
@@ -869,6 +878,7 @@ main {
   :deep(.editing-ui-group) {
     display: grid;
     grid-template-columns: auto 1fr auto;
+    align-items: end;
     // justify-content: space-between;
     gap: 10px;
     & > *:first-child > input {
@@ -881,6 +891,12 @@ main {
     .button-group {
       gap: 5px;
     }
+  }
+
+  .labelled-input {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
   }
   .edit-msg {
     color: $accent-main;

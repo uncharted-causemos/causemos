@@ -163,6 +163,7 @@ const isOutgoingEdgeOppositePolarity = computed(() => {
   // When the graph is too small to take up the full available screen width, don't expand columns
   //  to fill the empty space.
   justify-content: flex-start;
+  padding-left: $index-graph-padding-horizontal;
 }
 
 .node-column {
