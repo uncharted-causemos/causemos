@@ -833,7 +833,7 @@ main {
   position: relative;
 
   .structure-preview-section {
-    padding: 10px 20px;
+    padding: 10px 15px 0 20px;
     background: var(--p-surface-50);
     border: 1px solid var(--p-surface-200);
     border-radius: 3px;
@@ -843,6 +843,7 @@ main {
 
   .structure-preview {
     background: transparent;
+    padding: 0;
   }
 
   .legend {
