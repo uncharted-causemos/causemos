@@ -15,7 +15,6 @@ export default function useInsightsData(
 ) {
   const insights = ref<(Insight | NewInsight)[]>([]);
   watch(insights, () => {
-    // TODO: remove "shouldrefetchInsights"
     store.dispatch('insightPanel/setShouldRefetchInsights', false);
   });
 
