@@ -159,8 +159,7 @@ function jumpToInsightContext(
   insight: Insight | NewInsight,
   currentURL: string,
   project?: string,
-  projectType?: string,
-  analysisId?: string
+  projectType?: string
 ): string | RouteLocationRaw | undefined {
   if (instanceOfNewInsight(insight)) {
     if (insight.view.view === 'analysisItemDrilldown') {
@@ -223,14 +222,6 @@ function jumpToInsightContext(
   if (savedURL !== currentURL) {
     // FIXME: applying (private) insights that belong to analyses that no longer exist
     // TODO LATER: consider removing (private) insights once their owner (analysis or cag) is removed
-
-    // FIXME: this code can be removed when public insights no longer exist
-    if (projectType === ProjectType.Analysis && insight.visibility === 'public') {
-      // this is an insight created by the domain modeler during model publication:
-      // for applying this insight, do not redirect to the domain project page,
-      // instead use the current context and rehydrate the view
-      savedURL = '/analysis/' + project + '/data/' + analysisId;
-    }
 
     if (projectType === ProjectType.Model) {
       // this is an insight created by the domain modeler during model publication:
@@ -320,8 +311,6 @@ function createEmptyChecklistSection(): AnalyticalQuestion {
     question: '',
     linked_insights: [],
     view_state: {},
-    target_view: [],
-    visibility: '',
     url: '',
   };
 }
@@ -343,11 +332,15 @@ function getSlideFromPosition(
   return section.insights.find((insight) => insight.id === position.insightId) ?? null;
 }
 
-function instanceOfInsight(data: any): data is Insight | NewInsight {
-  return data !== null && 'name' in data && 'analytical_question' in data;
+function instanceOfInsight(
+  data: null | Insight | FullInsight | AnalyticalQuestion | NewInsight
+): data is Insight | NewInsight {
+  return data !== null && 'name' in data;
 }
 
-function instanceOfFullInsight(data: any): data is FullInsight {
+function instanceOfFullInsight(
+  data: null | Insight | FullInsight | AnalyticalQuestion | NewInsight
+): data is FullInsight {
   return instanceOfInsight(data) && 'image' in data;
 }
 

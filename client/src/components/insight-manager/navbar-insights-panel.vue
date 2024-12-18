@@ -15,34 +15,16 @@
         @click="applyInsight(insight)"
       >
         <div class="insight-header">
-          <div
-            class="insight-title"
-            :class="{
-              'private-insight-title':
-                InsightUtil.instanceOfNewInsight(insight) || insight.visibility === 'private',
-            }"
-          >
+          <div class="insight-title private-insight-title">
             {{ insight.name }}
           </div>
           <OptionsButton :dropdown-below="true">
             <template #content>
-              <div
-                class="dropdown-option"
-                :class="{
-                  disabled: !InsightUtil.instanceOfNewInsight(insight) && isDisabled(insight),
-                }"
-                @click="editInsight(insight)"
-              >
+              <div class="dropdown-option" @click="editInsight(insight)">
                 <i class="fa fa-edit" />
                 Edit
               </div>
-              <div
-                class="dropdown-option"
-                :class="{
-                  disabled: !InsightUtil.instanceOfNewInsight(insight) && isDisabled(insight),
-                }"
-                @click="deleteInsight(insight)"
-              >
+              <div class="dropdown-option" @click="deleteInsight(insight)">
                 <i class="fa fa-trash" />
                 Delete
               </div>
@@ -53,11 +35,7 @@
           <ImgLazy :src="`/api/insights/${insight.id}/thumbnail`" class="insight-thumbnail" />
           <div
             v-if="insight.description?.length ?? 0 > 0"
-            class="insight-description"
-            :class="{
-              'private-insight-description':
-                InsightUtil.instanceOfNewInsight(insight) || insight.visibility === 'private',
-            }"
+            class="insight-description private-insight-description"
           >
             {{ insight.description }}
           </div>
@@ -71,15 +49,13 @@
 
 <script setup lang="ts">
 import useInsightsData from '@/composables/useInsightsData';
-import { ProjectType } from '@/types/Enums';
 import { Insight, NewInsight } from '@/types/Insight';
-import { unpublishDatacube } from '@/utils/datacube-util';
 import InsightUtil from '@/utils/insight-util';
 import { INSIGHTS } from '@/utils/messages-util';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
-import { countPublicInsights, removeInsight } from '@/services/insight-service';
+import { removeInsight } from '@/services/insight-service';
 import MessageDisplay from '../widgets/message-display.vue';
 import ImgLazy from '../widgets/img-lazy.vue';
 import OptionsButton from '../widgets/options-button.vue';
@@ -90,12 +66,8 @@ const emit = defineEmits(['close']);
 const store = useStore();
 const projectType = computed(() => store.getters['app/projectType']);
 const project = computed(() => store.getters['app/project']);
-const isDisabled = (insight: Insight) =>
-  insight.visibility === 'public' && projectType.value === ProjectType.Analysis;
 
-// The gallery opens over top of this side panel, prevent fetches while the gallery is open
-const preventFetches = computed(() => store.getters['insightPanel/isPanelOpen']);
-const { insights, reFetchInsights } = useInsightsData(preventFetches, undefined, true);
+const { insights, reFetchInsights } = useInsightsData(undefined, true);
 
 const {
   showInsightPanel,
@@ -104,7 +76,6 @@ const {
   setUpdatedInsight,
   setInsightsBySection,
   setPositionInReview,
-  setRefreshDatacubes,
 } = useInsightStore();
 const openInsightsExplorer = () => {
   emit('close');
@@ -132,8 +103,7 @@ const applyInsight = (insight: Insight | NewInsight) => {
     insight,
     route.fullPath,
     project.value,
-    projectType.value,
-    route.params.analysisId as string | undefined
+    projectType.value
   );
 
   if (finalURL) {
@@ -183,25 +153,8 @@ const editInsight = (insight: Insight | NewInsight) => {
 };
 
 const deleteInsight = async (insight: Insight | NewInsight) => {
-  // are we removing a public insight (from the context panel within a domain project)?
-  if (
-    !InsightUtil.instanceOfNewInsight(insight) &&
-    insight.visibility === 'public' &&
-    Array.isArray(insight.context_id) &&
-    insight.context_id.length > 0
-  ) {
-    // is this the last public insight for the relevant dataube?
-    //  if so, unpublish the model datacube
-    const datacubeId = insight.context_id[0];
-    const publicInsightCount = await countPublicInsights(datacubeId, project.value);
-    if (publicInsightCount === 1) {
-      await unpublishDatacube(datacubeId);
-      setRefreshDatacubes(true);
-    }
-  }
-
   const id = insight.id as string;
-  await removeInsight(id, store);
+  await removeInsight(id);
   // refresh the latest list from the server
   reFetchInsights();
 };

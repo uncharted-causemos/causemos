@@ -28,30 +28,16 @@
         @click="selectContextInsight(contextInsight)"
       >
         <div class="context-insight-header">
-          <div
-            class="context-insight-title"
-            :class="{
-              'private-insight-title':
-                instanceOfNewInsight(contextInsight) || contextInsight.visibility === 'private',
-            }"
-          >
+          <div class="context-insight-title private-insight-title">
             {{ contextInsight.name }}
           </div>
           <options-button :dropdown-below="true">
             <template #content>
-              <div
-                class="dropdown-option"
-                :class="{ disabled: isDisabled(contextInsight) }"
-                @click="editContextInsight(contextInsight)"
-              >
+              <div class="dropdown-option" @click="editContextInsight(contextInsight)">
                 <i class="fa fa-edit" />
                 Edit
               </div>
-              <div
-                class="dropdown-option"
-                :class="{ disabled: isDisabled(contextInsight) }"
-                @click="deleteContextInsight(contextInsight)"
-              >
+              <div class="dropdown-option" @click="deleteContextInsight(contextInsight)">
                 <i class="fa fa-trash" />
                 Delete
               </div>
@@ -65,11 +51,7 @@
           />
           <div
             v-if="contextInsight.description?.length ?? 0 > 0"
-            class="context-insight-description"
-            :class="{
-              'private-insight-description':
-                instanceOfNewInsight(contextInsight) || contextInsight.visibility === 'private',
-            }"
+            class="context-insight-description private-insight-description"
           >
             {{ contextInsight.description }}
           </div>
@@ -87,8 +69,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed } from 'vue';
-import { mapGetters, mapActions, useStore } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 import DropdownButton from '@/components/dropdown-button.vue';
 import ImgLazy from '@/components/widgets/img-lazy.vue';
 
@@ -96,11 +77,9 @@ import { INSIGHTS } from '@/utils/messages-util';
 import InsightUtil from '@/utils/insight-util';
 
 import useInsightsData from '@/composables/useInsightsData';
-import { countPublicInsights, fetchFullInsights, removeInsight } from '@/services/insight-service';
-import { ProjectType } from '@/types/Enums';
+import { fetchFullInsights, removeInsight } from '@/services/insight-service';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import OptionsButton from '@/components/widgets/options-button.vue';
-import { unpublishDatacube } from '@/utils/datacube-util';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 import useInsightStore from '@/composables/useInsightStore';
 import { Insight, NewInsight } from '@/types/Insight';
@@ -124,14 +103,7 @@ export default {
     selectedContextInsight: null as Insight | NewInsight | null,
   }),
   setup() {
-    const store = useStore();
-    // the gallery opens over top of this side panel, prevent fetches while the gallery is open
-    const preventFetches = computed(() => store.getters['insightPanel/isPanelOpen']);
-    const { insights: listContextInsights, reFetchInsights } = useInsightsData(
-      preventFetches,
-      undefined,
-      true
-    );
+    const { insights: listContextInsights, reFetchInsights } = useInsightsData(undefined, true);
 
     const {
       showInsightPanel,
@@ -212,8 +184,7 @@ export default {
         this.selectedContextInsight,
         currentURL,
         this.project,
-        this.projectType,
-        this.$route.params.analysisId as string | undefined
+        this.projectType
       );
 
       if (finalURL) {
@@ -240,43 +211,12 @@ export default {
           .catch(() => {});
       }
     },
-    isDisabled(insight: Insight | NewInsight) {
-      return (
-        !InsightUtil.instanceOfNewInsight(insight) &&
-        insight.visibility === 'public' &&
-        this.projectType === ProjectType.Analysis
-      );
-    },
     async deleteContextInsight(insight: Insight | NewInsight) {
-      if (this.isDisabled(insight)) {
-        return;
-      }
-
-      // are removing a public insight (from the context panel within a domain project)?
-      if (
-        !InsightUtil.instanceOfNewInsight(insight) &&
-        insight.visibility === 'public' &&
-        Array.isArray(insight.context_id) &&
-        insight.context_id.length > 0
-      ) {
-        // is this the last public insight for the relevant dataube?
-        //  if so, unpublish the model datacube
-        const datacubeId = insight.context_id[0];
-        const publicInsightCount = await countPublicInsights(datacubeId, this.project);
-        if (publicInsightCount === 1) {
-          await unpublishDatacube(datacubeId);
-          this.setRefreshDatacubes(true);
-        }
-      }
-
       await removeInsight(insight.id as string);
       // refresh the latest list from the server
       this.reFetchInsights();
     },
     editContextInsight(insight: Insight | NewInsight) {
-      if (this.isDisabled(insight)) {
-        return;
-      }
       this.showInsightPanel();
       this.setUpdatedInsight(insight);
       const dummySection = InsightUtil.createEmptyChecklistSection();
@@ -363,10 +303,5 @@ export default {
 
 .export-dropdown {
   margin-bottom: 10px;
-}
-
-.insight-button-disabled {
-  cursor: none;
-  color: lightgray;
 }
 </style>
