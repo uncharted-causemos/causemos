@@ -146,15 +146,8 @@
 import { ref } from 'vue';
 import _ from 'lodash';
 
-import useInsightsData from '@/composables/useInsightsData';
 import { updateInsight } from '@/services/insight-service';
-import {
-  AnalyticalQuestion,
-  FullInsight,
-  Insight,
-  NewInsight,
-  SectionWithInsights,
-} from '@/types/Insight';
+import { AnalyticalQuestion, FullInsight, NewInsight, SectionWithInsights } from '@/types/Insight';
 import { QUESTIONS } from '@/utils/messages-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
@@ -162,25 +155,21 @@ import RenameModal from '@/components/action-bar/rename-modal.vue';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 
-type PartialInsight = {
-  id: string;
-  name: string;
-  visibility: string;
-};
-
 const HOVER_CLASS = {
   REORDERING_SECTION: 'reorder-section-hover',
   REORDERING_INSIGHT: 'reorder-insight-hover',
 };
 
-defineProps<{ insightsBySection: SectionWithInsights[] }>();
+const props = defineProps<{ insightsBySection: SectionWithInsights[] }>();
 const toaster = useToaster();
-// FIXME: hoist insights to parent component so that we're not fetching and
-//  managing two copies
-const { insights, reFetchInsights } = useInsightsData(['id', 'name', 'visibility']);
 
 const getInsightById = (insightId: string) => {
-  return insights.value.find((insight) => insight.id === insightId) as PartialInsight | undefined;
+  for (const section of props.insightsBySection) {
+    const insight = section.insights.find((insight) => insight.id === insightId);
+    if (insight !== undefined) {
+      return insight;
+    }
+  }
 };
 
 const questionsExpanded = ref(true);
@@ -193,6 +182,7 @@ const emit = defineEmits([
   'move-section-above-section',
   'remove-insight-from-section',
   'move-insight',
+  'refetch-insights',
 ]);
 const selectedQuestion = ref<AnalyticalQuestion | null>(null);
 const isEditModalOpen = ref(false);
@@ -292,8 +282,8 @@ const onDrop = async (evt: any, targetSection: AnalyticalQuestion) => {
     if (insight === undefined || droppedSectionId === targetSection.id) {
       return;
     }
-    await updateInsight(droppedInsightId, insight as Partial<Insight | NewInsight>);
-    reFetchInsights();
+    await updateInsight(droppedInsightId, insight);
+    emit('refetch-insights');
   } else if (types.includes('section_id')) {
     // Move dropped section above targetSection
     emit('move-section-above-section', droppedSectionId, targetSection.id);
@@ -395,8 +385,8 @@ const dropInsightOnInsight = async (
     return;
   }
   // Update insight's list of the sections it's linked to
-  await updateInsight(droppedInsightId, insight as Partial<Insight | NewInsight>);
-  reFetchInsights();
+  await updateInsight(droppedInsightId, insight);
+  emit('refetch-insights');
 };
 
 const removeRelationBetweenInsightAndQuestion = (
