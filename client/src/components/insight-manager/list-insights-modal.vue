@@ -10,8 +10,6 @@
     <div class="body flex">
       <div class="checklist">
         <list-analytical-questions-pane
-          :show-checklist-title="true"
-          :can-click-checklist-items="true"
           :insights-by-section="insightsBySection"
           @item-click="reviewChecklist"
           @update-section-title="updateSectionTitle"

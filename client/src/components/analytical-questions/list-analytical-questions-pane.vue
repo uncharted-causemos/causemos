@@ -1,6 +1,6 @@
 <template>
   <div class="list-analytical-questions-pane-container">
-    <h4 v-if="showChecklistTitle" class="title">Analysis Checklist</h4>
+    <h4 class="title">Analysis Checklist</h4>
     <slot />
     <template v-if="showNewAnalyticalQuestion">
       <h5>New Section</h5>
@@ -59,8 +59,7 @@
           <div class="checklist-item-question">
             <i class="fa fa-bars checklist-item-menu" />
             <span
-              class="question-title"
-              :class="{ clickable: canClickChecklistItems }"
+              class="question-title clickable"
               @click="$emit('item-click', sectionWithInsights.section, null)"
             >
               {{ sectionWithInsights.section.question }}</span
@@ -110,10 +109,7 @@
             >
               <i class="fa fa-star" />
               <span
-                class="insight-name private-insight-name"
-                :class="{
-                  clickable: canClickChecklistItems,
-                }"
+                class="insight-name private-insight-name clickable"
                 @click="$emit('item-click', sectionWithInsights.section, insight.id)"
               >
                 {{ insight.name }}
@@ -177,13 +173,7 @@ const HOVER_CLASS = {
   REORDERING_INSIGHT: 'reorder-insight-hover',
 };
 
-// TODO: eventually we'll be able to click checklist items everywhere, at
-//  which point we can remove this prop.
-defineProps<{
-  showChecklistTitle: boolean;
-  canClickChecklistItems: boolean;
-  insightsBySection: SectionWithInsights[];
-}>();
+defineProps<{ insightsBySection: SectionWithInsights[] }>();
 const toaster = useToaster();
 // FIXME: hoist insights to parent component so that we're not fetching and
 //  managing two copies
