@@ -1,7 +1,6 @@
 import _ from 'lodash';
-import { AnalysisItem, CachedDatacubeMetadata, DataAnalysisState } from '@/types/Analysis';
+import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
 import { computed, Ref, ref, watch } from 'vue';
-import { DataSpaceDataState } from '@/types/Insight';
 import {
   getAnalysis,
   saveAnalysisState,
@@ -10,12 +9,7 @@ import {
   didSelectedItemsChange,
 } from '../services/analysis-service';
 import { BinningOptions, RegionRankingCompositionType } from '@/types/Enums';
-import {
-  MAX_ANALYSIS_DATACUBES_COUNT,
-  isNewAnalysisItem,
-  getId,
-  duplicate,
-} from '@/utils/analysis-util';
+import { MAX_ANALYSIS_DATACUBES_COUNT, getId, duplicate } from '@/utils/analysis-util';
 
 // Whenever a change is made, wait SYNC_DELAY_MS before saving to the backend to
 //  group requests together.
@@ -79,39 +73,6 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     if (itemToToggle) {
       itemToToggle.selected = !itemToToggle.selected;
       setAnalysisItems(items);
-    }
-  };
-  const setAnalysisItemViewConfig = (itemId: string, viewConfig: any) => {
-    const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-    const analysisItem = updatedAnalysisItems.find((item) => getId(item) === itemId);
-    if (analysisItem && !isNewAnalysisItem(analysisItem)) {
-      analysisItem.viewConfig = viewConfig;
-      setAnalysisItems(updatedAnalysisItems);
-    }
-  };
-  const setAnalysisItemDataState = (itemId: string, dataState: DataSpaceDataState) => {
-    const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-    const analysisItem = updatedAnalysisItems.find((item) => getId(item) === itemId);
-    if (analysisItem && !isNewAnalysisItem(analysisItem)) {
-      analysisItem.dataConfig = dataState;
-      setAnalysisItems(updatedAnalysisItems);
-    }
-  };
-  const updateAnalysisItemCachedMetadata = (
-    itemId: string,
-    partialMetadata: Partial<CachedDatacubeMetadata>
-  ) => {
-    const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-    const analysisItem = updatedAnalysisItems.find((item) => getId(item) === itemId);
-    if (analysisItem && !isNewAnalysisItem(analysisItem)) {
-      const beforeChange = _.cloneDeep(analysisItem.cachedMetadata);
-      analysisItem.cachedMetadata = {
-        ...analysisItem.cachedMetadata,
-        ...partialMetadata,
-      };
-      if (!_.isEqual(beforeChange, analysisItem.cachedMetadata)) {
-        setAnalysisItems(updatedAnalysisItems);
-      }
     }
   };
   const selectedAnalysisItems = computed(() => analysisItems.value.filter((item) => item.selected));
@@ -193,9 +154,6 @@ export function useDataAnalysis(analysisId: Ref<string>) {
     selectedAnalysisItems,
     activeTab,
     setActiveTab,
-    setAnalysisItemViewConfig,
-    setAnalysisItemDataState,
-    updateAnalysisItemCachedMetadata,
     removeAnalysisItem,
     duplicateAnalysisItem,
     toggleAnalysisItemSelected,

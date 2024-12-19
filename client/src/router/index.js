@@ -11,7 +11,6 @@ import IndexProjections from '@/views/IndexProjections.vue';
 import ModelDrilldown from '@/views/ModelDrilldown.vue';
 import DatasetDrilldown from '@/views/DatasetDrilldown.vue';
 import NotFound from '@/views/NotFound.vue';
-import DatacubeDrilldown from '@/views/DatacubeDrilldown.vue';
 import Documents from '@/views/Documents.vue';
 import CompAnalysis from '@/views/CompAnalysis.vue';
 import ModelPublisher from '@/views/ModelPublisher.vue';
@@ -64,11 +63,6 @@ const routes = [
     component: DatasetOverview,
   },
   {
-    path: '/:projectType/:project/data/:analysisId',
-    name: 'data',
-    component: DatacubeDrilldown,
-  },
-  {
     path: '/:projectType/:project/dataComparative/:analysisId',
     name: 'dataComparative',
     component: CompAnalysis,
@@ -87,16 +81,6 @@ const routes = [
     path: '/:projectType/:project/index-structure/:analysisId/node/:nodeId/explorer',
     name: 'indexNodeDataExplorer',
     component: IndexNodeDataExplorer,
-  },
-  {
-    path: '/:projectType/:project/index-structure/:analysisId/explorer',
-    name: 'indexResultsDataExplorer',
-    component: DatacubeDrilldown,
-  },
-  {
-    path: '/:projectType/:project/index-projections/:analysisId/explorer',
-    name: 'projectionsDataExplorer',
-    component: DatacubeDrilldown,
   },
   {
     path: '/:projectType/:project/documents',
