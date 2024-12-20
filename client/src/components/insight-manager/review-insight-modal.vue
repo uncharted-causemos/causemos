@@ -197,6 +197,7 @@ import {
   AnalyticalQuestion,
   NewInsight,
   ModelOrDatasetStateInsight,
+  ModelOrDatasetStateView,
 } from '@/types/Insight';
 import {
   addInsight,
@@ -210,7 +211,6 @@ import useToaster from '@/composables/useToaster';
 import useInsightAnnotation from '@/composables/useInsightAnnotation';
 import html2canvas from 'html2canvas';
 import _ from 'lodash';
-import { ProjectType } from '@/types/Enums';
 import InsightSummary from './insight-summary.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
@@ -223,6 +223,7 @@ import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 import { TYPE } from 'vue-toastification';
 import { useRoute, useRouter } from 'vue-router';
 import useInsightStore from '@/composables/useInsightStore';
+import { ModelOrDatasetState } from '@/types/Datacube';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 const LBL_EMPTY_INSIGHT_NAME = '<Insight title missing...>';
@@ -230,7 +231,8 @@ const LBL_EMPTY_INSIGHT_QUESTION = 'Add to Analysis Checklist section';
 
 const store = useStore();
 const toaster = useToaster();
-const { questionsList, addSection, addInsightToSection } = useQuestionsData();
+const { questionsList, addSection, addInsightToSection, getQuestionsThatIncludeInsight } =
+  useQuestionsData();
 
 const updatedInsight = computed<null | Insight | FullInsight | AnalyticalQuestion | NewInsight>(
   () => store.getters['insightPanel/updatedInsight']
@@ -295,7 +297,9 @@ const positionInReview = computed<ReviewPosition | null>(
 );
 
 const selectedInsightQuestions = ref<string[]>([]);
-const insightQuestionInnerLabel = ref(LBL_EMPTY_INSIGHT_QUESTION);
+const insightQuestionInnerLabel = computed(() =>
+  selectedInsightQuestions.value.length === 0 ? LBL_EMPTY_INSIGHT_QUESTION : ''
+);
 const loadingImage = ref(false);
 const isEditingInsight = ref(false);
 const insightTitle = ref('');
@@ -319,9 +323,11 @@ const getQuestionById = (id: string) => {
 
 const insightQuestionLabel = computed<string>(() => {
   const _updatedInsight = updatedInsight.value;
+  const questionsThatContainThisInsight =
+    _updatedInsight !== null ? getQuestionsThatIncludeInsight(_updatedInsight.id as string) : [];
   if (
     InsightUtil.instanceOfInsight(_updatedInsight) &&
-    _updatedInsight.analytical_question.length === 0
+    questionsThatContainThisInsight.length === 0
   ) {
     // Current item is an insight that's not linked to any section.
     return '';
@@ -333,30 +339,19 @@ const insightQuestionLabel = computed<string>(() => {
   return section?.question ?? '';
 });
 
+// When we start editing a node or load the list of questions, initialize the
+//  list of selected questions.
 watch(
-  () => [questionsList.value, isEditingInsight.value],
+  [questionsList, isEditingInsight],
   () => {
-    // if we are reviewing this insight in edit mode,
-    //  it may have a current linking with some analytical question
-    //  so we need to surface that
     const _updatedInsight = updatedInsight.value;
     if (InsightUtil.instanceOfInsight(_updatedInsight)) {
-      const initialSelection: string[] = [];
-      _updatedInsight.analytical_question.forEach((q: string) => {
-        const questionObj = getQuestionById(q);
-        if (questionObj) {
-          initialSelection.push(questionObj.question);
-        }
-      });
-      selectedInsightQuestions.value = initialSelection;
-      if (initialSelection.length > 0) {
-        insightQuestionInnerLabel.value = '';
-      }
+      selectedInsightQuestions.value = getQuestionsThatIncludeInsight(
+        _updatedInsight.id as string
+      ).map(({ question }) => question);
     }
   },
-  {
-    immediate: true, // need to force updating the selected list when toggling the edit mode
-  }
+  { immediate: true }
 );
 
 const errorMsg = ref(MSG_EMPTY_INSIGHT_NAME);
@@ -380,7 +375,6 @@ watch(
 );
 
 const project = computed(() => store.getters['app/project']);
-const currentView = computed(() => store.getters['app/currentView']);
 const dataState = computed(() => store.getters['insightPanel/dataState']);
 const viewState = computed(() => store.getters['insightPanel/viewState']);
 const contextId = computed(() => store.getters['insightPanel/contextId']);
@@ -513,19 +507,6 @@ const previewInsightDesc = computed(() => {
     : '<Insight description missing...>';
 });
 
-const projectType = computed(() => store.getters['app/projectType']);
-const insightVisibility = computed(() =>
-  projectType.value === ProjectType.Analysis ? 'private' : 'public'
-);
-const insightTargetView = computed(() =>
-  // an insight created during model publication should be listed either
-  //  in the full list of insights,
-  //  or as a context specific insight when opening the page of the corresponding model family instance
-  projectType.value === ProjectType.Analysis
-    ? [currentView.value, 'overview', 'dataComparative']
-    : ['data', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher']
-);
-
 const takeSnapshot = async () => {
   const url = snapshotUrl.value;
   if (url) {
@@ -557,7 +538,6 @@ const setShouldRefetchInsights = (newValue: boolean) =>
 
 const setInsightQuestions = (questions: string[]) => {
   selectedInsightQuestions.value = questions;
-  insightQuestionInnerLabel.value = questions.length === 0 ? LBL_EMPTY_INSIGHT_QUESTION : '';
 };
 
 const addNewQuestion = (newQuestionText: string) => {
@@ -593,7 +573,7 @@ const removeInsight = () => {
   const insightIdToDelete = updatedInsight.value?.id;
   if (insightIdToDelete === undefined) return;
   // remove the insight from the server
-  insightServiceRemoveInsight(insightIdToDelete, store);
+  insightServiceRemoveInsight(insightIdToDelete);
 
   // close editing before deleting insight (this will ensure annotation/crop mode is cleaned up)
   cancelInsightEdit();
@@ -651,10 +631,6 @@ const confirmInsightEdit = () => {
 };
 const route = useRoute();
 
-const countInsights = computed(() => store.getters['insightPanel/countInsights']);
-const setCountInsights = (newCount: number) =>
-  store.dispatch('insightPanel/setCountInsights', newCount);
-
 const isInsightTitleInvalid = computed(
   () => insightTitle.value.trim().length === 0 || insightTitle.value === LBL_EMPTY_INSIGHT_NAME
 );
@@ -672,15 +648,10 @@ const saveInsight = () => {
     let newInsight: FullInsight | ModelOrDatasetStateInsight = {
       name: insightTitle.value,
       description: insightDesc.value,
-      visibility: insightVisibility.value,
       project_id: project.value,
       context_id: contextId.value,
       url,
-      target_view: insightTargetView.value,
-      pre_actions: null,
-      post_actions: null,
       is_default: true,
-      analytical_question: linkedQuestions.map((q) => q.id as string),
       image: insightThumbnail.value ?? '',
       annotation_state: annotationAndCropState.value,
       view_state: viewState.value,
@@ -690,25 +661,23 @@ const saveInsight = () => {
     // FIXME: HACK: determine whether we should use the new insight schema depending on the route
     //  name that the new insight was taken from
     if (['modelDrilldown', 'datasetDrilldown'].includes(route.name as string)) {
-      newInsight = {
+      const newModelOrDatasetStateInsight: ModelOrDatasetStateInsight = {
         schemaVersion: 2,
         id: uuidv4(),
         name: insightTitle.value,
         description: insightDesc.value,
         project_id: project.value,
-        analytical_question: linkedQuestions.map((q) => q.id as string),
         image: insightThumbnail.value ?? '',
         annotation_state: annotationAndCropState.value,
         type: 'ModelOrDatasetStateInsight',
-        view: getModelOrDatasetStateViewFromRoute(route),
+        // ASSUMPTION: view is not null
+        view: getModelOrDatasetStateViewFromRoute(route) as ModelOrDatasetStateView,
         context_id: contextId.value,
         // ASSUMPTION: state has been set before the new insight flow began, so modelOrDatasetState
         //  is not null
-        state: modelOrDatasetState.value,
-        // FIXME: HACK: This is required for new insights to show up in the list of all insights in
-        //  a project. It can be removed when public insights are removed and all insights are private.
-        visibility: 'private',
-      } as ModelOrDatasetStateInsight;
+        state: modelOrDatasetState.value as ModelOrDatasetState,
+      };
+      newInsight = newModelOrDatasetStateInsight;
     }
 
     addInsight(newInsight)
@@ -717,8 +686,6 @@ const saveInsight = () => {
           result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
         if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
           toaster(message, TYPE.SUCCESS, false);
-          const count = countInsights.value + 1;
-          setCountInsights(count);
 
           // after the insight is created and have a valid id, we need to link that to the question
           if (linkedQuestions) {
@@ -749,7 +716,6 @@ const saveInsight = () => {
       _updatedInsight.description = insightDesc.value;
       _updatedInsight.image = insightThumbnail.value ?? '';
       _updatedInsight.annotation_state = annotationAndCropState.value;
-      _updatedInsight.analytical_question = linkedQuestions.map((q) => q.id as string);
       updateInsight(insightId, _updatedInsight).then((result) => {
         if (result.updated === 'success') {
           toaster(INSIGHTS.SUCCESSFUL_UPDATE, TYPE.SUCCESS, false);

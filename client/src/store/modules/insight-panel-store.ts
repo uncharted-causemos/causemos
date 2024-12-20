@@ -11,7 +11,6 @@ import { GetterTree, MutationTree, ActionTree } from 'vuex';
 interface InsightState {
   isPanelOpen: boolean;
   currentPane: string;
-  countInsights: number;
   viewState: any;
   dataState: DataState | null;
   modelOrDatasetState: ModelOrDatasetState | null;
@@ -38,7 +37,6 @@ interface InsightState {
 const state: InsightState = {
   isPanelOpen: false,
   currentPane: '',
-  countInsights: 0,
   viewState: {},
   dataState: null,
   modelOrDatasetState: null,
@@ -55,7 +53,6 @@ const state: InsightState = {
 const getters: GetterTree<InsightState, any> = {
   isPanelOpen: (state) => state.isPanelOpen,
   currentPane: (state) => state.currentPane,
-  countInsights: (state) => state.countInsights,
   viewState: (state) => state.viewState,
   dataState: (state) => state.dataState,
   modelOrDatasetState: (state) => state.modelOrDatasetState,
@@ -78,9 +75,6 @@ const actions: ActionTree<InsightState, any> = {
   },
   setCurrentPane: ({ commit }, newValue) => {
     commit('setCurrentPane', newValue);
-  },
-  setCountInsights: ({ commit }, newValue) => {
-    commit('setCountInsights', newValue);
   },
   setViewState: ({ commit }, newValue) => {
     commit('setViewState', newValue);
@@ -126,9 +120,6 @@ const mutations: MutationTree<InsightState> = {
   },
   setCurrentPane(state, value) {
     state.currentPane = value;
-  },
-  setCountInsights(state, value) {
-    state.countInsights = value;
   },
   setViewState(state, value) {
     state.viewState = value;

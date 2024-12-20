@@ -90,11 +90,9 @@ const saveInsight = async () => {
   const newInsight: FullInsight = {
     name: insightName,
     description: '',
-    visibility: 'private',
     project_id: route.params.project as string,
     context_id: [route.params.analysisId as string],
     url: route.fullPath,
-    target_view: [], // Is this property actually being used in the app?
     is_default: true,
     image,
     // Note: data_state is already set globally using setDataState from `useInsightStore` in `indexStructure.vue` page.
@@ -105,7 +103,6 @@ const saveInsight = async () => {
     // This might require quite a bit of refactoring so further reviews and inspection might be needed.
     data_state: getDataState(),
     view_state: getViewState(),
-    analytical_question: [],
     metadata: {
       type: InsightMetadataType.DocumentSnippet,
       ...props.snippetData,

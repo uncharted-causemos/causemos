@@ -26,79 +26,73 @@
         </div>
       </div>
     </header>
-    <main>
-      <div class="insights-column">
-        <div class="column-title">Insights</div>
-        <list-context-insight-pane class="insights" :allow-new-insights="false" />
+    <main class="instance-list-column">
+      <div class="instance-list-header">
+        <div class="column-title">
+          Instances
+          <button class="btn btn-call-to-action" disabled>
+            <i class="fa fa-plus-circle" />
+            Register New
+          </button>
+        </div>
+        <div class="controls">
+          <div class="filter-options">
+            <label
+              v-for="filter of filterOptions"
+              :key="filter.status"
+              class="filter-label"
+              @click="filter.selected = !filter.selected"
+            >
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{ 'fa-check-square-o': filter.selected, 'fa-square-o': !filter.selected }"
+              />
+              {{ getDatacubeStatusInfo(filter.status).label }}
+            </label>
+          </div>
+          <input
+            v-model="searchDatacubeInstances"
+            type="text"
+            placeholder="Search ..."
+            class="form-control"
+          />
+          <div class="sorting">
+            <div>
+              <button type="button" class="btn" @click="toggleSortingDropdownDatacubeInstances">
+                <span class="lbl">Sort by</span> - {{ selectedSortingOptionDatacubeInstances }}
+                <i class="fa fa-caret-down" />
+              </button>
+            </div>
+            <div v-if="showSortingDropdownDatacubeInstances">
+              <dropdown-control class="dropdown">
+                <template #content>
+                  <div
+                    v-for="option in sortingOptionsDatacubeInstances"
+                    :key="option"
+                    class="dropdown-option"
+                    @click="sortDatacubeInstances(option)"
+                  >
+                    {{ option }}
+                  </div>
+                </template>
+              </dropdown-control>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="instance-list-column">
-        <div class="instance-list-header">
-          <div class="column-title">
-            Instances
-            <button class="btn btn-call-to-action" disabled>
-              <i class="fa fa-plus-circle" />
-              Register New
-            </button>
-          </div>
-          <div class="controls">
-            <div class="filter-options">
-              <label
-                v-for="filter of filterOptions"
-                :key="filter.status"
-                class="filter-label"
-                @click="filter.selected = !filter.selected"
-              >
-                <i
-                  class="fa fa-lg fa-fw"
-                  :class="{ 'fa-check-square-o': filter.selected, 'fa-square-o': !filter.selected }"
-                />
-                {{ getDatacubeStatusInfo(filter.status).label }}
-              </label>
-            </div>
-            <input
-              v-model="searchDatacubeInstances"
-              type="text"
-              placeholder="Search ..."
-              class="form-control"
-            />
-            <div class="sorting">
-              <div>
-                <button type="button" class="btn" @click="toggleSortingDropdownDatacubeInstances">
-                  <span class="lbl">Sort by</span> - {{ selectedSortingOptionDatacubeInstances }}
-                  <i class="fa fa-caret-down" />
-                </button>
-              </div>
-              <div v-if="showSortingDropdownDatacubeInstances">
-                <dropdown-control class="dropdown">
-                  <template #content>
-                    <div
-                      v-for="option in sortingOptionsDatacubeInstances"
-                      :key="option"
-                      class="dropdown-option"
-                      @click="sortDatacubeInstances(option)"
-                    >
-                      {{ option }}
-                    </div>
-                  </template>
-                </dropdown-control>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="instance-list">
-          <domain-datacube-instance-card
-            v-for="instance in filteredDatacubeInstances"
-            :key="instance.id"
-            :datacube="instance"
-            @unpublish="unpublishInstance(instance)"
-            @update-domains="updateDatacubeDomains"
-          />
-          <message-display
-            v-if="filteredDatacubeInstances.length === 0"
-            :message-type="'alert-warning'"
-            :message="'No model instances'"
-          />
-        </div>
+      <div class="instance-list">
+        <domain-datacube-instance-card
+          v-for="instance in filteredDatacubeInstances"
+          :key="instance.id"
+          :datacube="instance"
+          @unpublish="unpublishInstance(instance)"
+          @update-domains="updateDatacubeDomains"
+        />
+        <message-display
+          v-if="filteredDatacubeInstances.length === 0"
+          :message-type="'alert-warning'"
+          :message="'No model instances'"
+        />
       </div>
     </main>
   </div>
@@ -110,7 +104,6 @@ import DomainDatacubeInstanceCard from '@/components/domain-datacube-instance-ca
 import filtersUtil from '@/utils/filters-util';
 import { getDatacubes } from '@/services/datacube-service';
 import _ from 'lodash';
-import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import domainProjectService from '@/services/domain-project-service';
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
@@ -124,7 +117,6 @@ export default {
   name: 'DomainProjectOverview',
   components: {
     DomainDatacubeInstanceCard,
-    ListContextInsightPane,
     DropdownControl,
     MessageDisplay,
     SmallIconButton,
@@ -364,34 +356,11 @@ header {
   padding-right: 4px;
 }
 
-main {
-  flex: 1;
-  min-height: 0;
-  padding: 20px;
-  display: flex;
-}
-
-.insights-column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.insights {
-  background: white;
-  padding: 10px;
-  // Pane already contains bottom margin
-  padding-bottom: 0;
-  margin-top: 18px;
-  flex: 1;
-  min-height: 0;
-}
-
 .instance-list-column {
   flex: 3;
   display: flex;
   flex-direction: column;
-  margin-left: 10px;
+  padding: 20px;
 }
 
 .instance-list-header {

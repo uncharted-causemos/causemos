@@ -115,69 +115,63 @@
         </div>
       </div>
     </header>
-    <main>
-      <div class="insights-column">
-        <div class="column-title">Insights</div>
-        <list-context-insight-pane class="insights" :allow-new-insights="false" />
-      </div>
-      <div class="instance-list-column">
-        <div class="instance-list-header">
-          <div class="column-title">Indicators ({{ indicatorCount }})</div>
-          <div class="controls">
-            <!--            <div class="filter-options">-->
-            <!--              <label-->
-            <!--                v-for="filter of filterOptions"-->
-            <!--                :key="filter.status"-->
-            <!--                class="filter-label"-->
-            <!--                @click="filter.selected = !filter.selected">-->
-            <!--                <i-->
-            <!--                  class="fa fa-lg fa-fw"-->
-            <!--                  :class="{ 'fa-check-square-o': filter.selected, 'fa-square-o': !filter.selected }"-->
-            <!--                />-->
-            <!--                {{getDatacubeStatusInfo(filter.status).label}}-->
-            <!--              </label>-->
-            <!--            </div>-->
-            <input v-model="searchTerm" type="text" placeholder="Search ..." class="form-control" />
-            <div class="sorting">
-              <div>
-                <button type="button" class="btn" @click="toggleSortingDropdown">
-                  <span class="lbl">Sort by</span> - {{ selectedSortingOption }}
-                  <i class="fa fa-caret-down" />
-                </button>
-              </div>
-              <div v-if="showSortingDropdown">
-                <dropdown-control class="dropdown">
-                  <template #content>
-                    <div
-                      v-for="option in sortingOptions"
-                      :key="option"
-                      class="dropdown-option"
-                      @click="setDatacubeSort(option)"
-                    >
-                      {{ option }}
-                    </div>
-                  </template>
-                </dropdown-control>
-              </div>
+    <main class="instance-list-column">
+      <div class="instance-list-header">
+        <div class="column-title">Indicators ({{ indicatorCount }})</div>
+        <div class="controls">
+          <!--            <div class="filter-options">-->
+          <!--              <label-->
+          <!--                v-for="filter of filterOptions"-->
+          <!--                :key="filter.status"-->
+          <!--                class="filter-label"-->
+          <!--                @click="filter.selected = !filter.selected">-->
+          <!--                <i-->
+          <!--                  class="fa fa-lg fa-fw"-->
+          <!--                  :class="{ 'fa-check-square-o': filter.selected, 'fa-square-o': !filter.selected }"-->
+          <!--                />-->
+          <!--                {{getDatacubeStatusInfo(filter.status).label}}-->
+          <!--              </label>-->
+          <!--            </div>-->
+          <input v-model="searchTerm" type="text" placeholder="Search ..." class="form-control" />
+          <div class="sorting">
+            <div>
+              <button type="button" class="btn" @click="toggleSortingDropdown">
+                <span class="lbl">Sort by</span> - {{ selectedSortingOption }}
+                <i class="fa fa-caret-down" />
+              </button>
+            </div>
+            <div v-if="showSortingDropdown">
+              <dropdown-control class="dropdown">
+                <template #content>
+                  <div
+                    v-for="option in sortingOptions"
+                    :key="option"
+                    class="dropdown-option"
+                    @click="setDatacubeSort(option)"
+                  >
+                    {{ option }}
+                  </div>
+                </template>
+              </dropdown-control>
             </div>
           </div>
         </div>
-        <div class="instance-list">
-          <indicator-card
-            v-for="indicator in filteredIndicators"
-            :key="indicator.id"
-            :datacube="indicator"
-            :allow-editing="isReady"
-            @apply-to-all="applyVizToAll(indicator.id)"
-            @toggle-hidden="toggleHiddenState"
-            @update-meta="updateIndicator"
-          />
-          <message-display
-            v-if="filteredIndicators.length === 0"
-            :message-type="'alert-warning'"
-            :message="'No indicators'"
-          />
-        </div>
+      </div>
+      <div class="instance-list">
+        <indicator-card
+          v-for="indicator in filteredIndicators"
+          :key="indicator.id"
+          :datacube="indicator"
+          :allow-editing="isReady"
+          @apply-to-all="applyVizToAll(indicator.id)"
+          @toggle-hidden="toggleHiddenState"
+          @update-meta="updateIndicator"
+        />
+        <message-display
+          v-if="filteredIndicators.length === 0"
+          :message-type="'alert-warning'"
+          :message="'No indicators'"
+        />
       </div>
     </main>
   </div>
@@ -195,7 +189,6 @@ import {
 } from '@/services/datacube-service';
 import _ from 'lodash';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
-import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { AVAILABLE_DOMAINS, getDatacubeStatusInfo } from '@/utils/datacube-util';
@@ -216,7 +209,6 @@ export default defineComponent({
   name: 'DatasetOverview',
   components: {
     IndicatorCard,
-    ListContextInsightPane,
     DropdownControl,
     MessageDisplay,
     ModalConfirmation,
@@ -562,33 +554,11 @@ header {
   padding-right: 4px;
 }
 
-main {
-  flex: 1;
-  min-height: 0;
-  padding: 20px;
-  display: flex;
-}
-
-.insights-column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.insights {
-  background: white;
-  // Pane already contains bottom margin
-  padding: 10px 10px 0;
-  margin-top: 18px;
-  flex: 1;
-  min-height: 0;
-}
-
 .instance-list-column {
   flex: 3;
   display: flex;
   flex-direction: column;
-  margin-left: 10px;
+  padding: 20px;
 }
 
 .instance-list-header {

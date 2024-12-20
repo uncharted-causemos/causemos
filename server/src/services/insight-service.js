@@ -54,7 +54,6 @@ const createInsight = async (
   postActions,
   isDefault,
   // eslint-disable-next-line camelcase
-  analytical_question,
   image,
   viewState,
   dataState,
@@ -90,7 +89,6 @@ const createInsight = async (
       pre_actions: preActions,
       post_actions: postActions,
       is_default: isDefault,
-      analytical_question: analytical_question,
       image,
       thumbnail,
       view_state: viewState,

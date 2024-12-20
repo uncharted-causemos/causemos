@@ -81,7 +81,7 @@ export default defineComponent({
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      updateDatacubesOutputsMap(this.itemId, this.store, this.route, selectedOutputIndex);
+      updateDatacubesOutputsMap(this.itemId, this.store, selectedOutputIndex);
     },
   },
 });

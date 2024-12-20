@@ -1678,7 +1678,6 @@ export default defineComponent({
           updateDatacubesOutputsMap(
             itemId.value,
             store,
-            route,
             loadedInsight.view_state?.selectedOutputIndex
           );
         }

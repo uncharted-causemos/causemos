@@ -26,7 +26,7 @@ import { useDataAnalysis } from '@/composables/useDataAnalysis';
 
 import { ANALYSIS } from '@/utils/messages-util';
 import {
-  createNewAnalysisItem,
+  createAnalysisItem,
   getDatacubeId,
   MAX_ANALYSIS_DATACUBES_COUNT,
 } from '@/utils/analysis-util';
@@ -66,7 +66,7 @@ const addToAnalysis = async (selectedDatacubes: Datacube[]) => {
         uniqueDatacubeIdsFromAnalysisItems.value.find((id) => id === selected.id) === undefined
     );
     const newAnalysisItems = newDatacubes.map((d) =>
-      createNewAnalysisItem(d.id, d.default_state, false)
+      createAnalysisItem(d.id, d.default_state, false)
     );
     // Remove analysis items with unselected datacube
     const filteredExistingAnalysisItems = analysisItems.value.filter((item) =>

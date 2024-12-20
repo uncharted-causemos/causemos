@@ -60,25 +60,6 @@ export default function useQuestionsData() {
         isInsightExplorerOpen.value === true && projectType.value === ProjectType.Analysis;
 
       //
-      // fetch public insights
-      //
-      const publicQuestionsSearchFields: InsightFilterFields = {};
-      publicQuestionsSearchFields.visibility = 'public';
-      if (projectType.value !== ProjectType.Analysis) {
-        // when fetching public insights, then project-id is only relevant in domain projects
-        publicQuestionsSearchFields.project_id = project.value;
-      }
-      if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
-        // context-id must be ignored when fetching questions at the project landing page
-        publicQuestionsSearchFields.context_id = contextIds.value;
-      }
-      // Note that when 'ignoreContextId' is true, this means we are fetching questions for the insight explorer within an analysis project
-      // For this case, public questions should not be listed
-      const publicQuestions = ignoreContextId
-        ? []
-        : await fetchQuestions([publicQuestionsSearchFields]);
-
-      //
       // fetch context-specific questions
       //
       const contextQuestionsSearchFields: InsightFilterFields = {};
@@ -86,7 +67,6 @@ export default function useQuestionsData() {
         // when fetching project-specific insights, then project-id is relevant
         contextQuestionsSearchFields.project_id = project.value;
       }
-      contextQuestionsSearchFields.visibility = 'private';
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
         contextQuestionsSearchFields.context_id = contextIds.value;
       }
@@ -97,7 +77,7 @@ export default function useQuestionsData() {
         //  fetch results to avoid a race condition.
         return;
       }
-      const allQuestions = _.uniqBy([...publicQuestions, ...contextQuestions], 'id');
+      const allQuestions = _.uniqBy([...contextQuestions], 'id');
 
       questionsList.value = allQuestions.map((q, index) => {
         if (!q.view_state) {
@@ -130,26 +110,12 @@ export default function useQuestionsData() {
       }
     }
     view_state.analyticalQuestionOrder = newSectionOrderIndex;
-    const projectType = store.getters['app/projectType'];
-    const currentView = store.getters['app/currentView'];
-    // FIXME: Similar to insightTargetView. Can they be combined/removed?
-    // Insight created during model publication are visible in the full list of
-    //  insights, and as context specific insights on the corresponding model
-    //  family instance's page.
-    const target_view: string[] =
-      projectType === ProjectType.Analysis
-        ? [currentView, 'overview', 'dataComparative']
-        : ['data', 'dataComparative', 'overview', 'domainDatacubeOverview', 'modelPublisher'];
     const newSection: AnalyticalQuestion = {
       question: title,
       description: '',
-      visibility: 'private',
       project_id: store.getters['app/project'],
       context_id: store.getters['insightPanel/contextId'],
       url: route.fullPath,
-      target_view,
-      pre_actions: null,
-      post_actions: null,
       linked_insights: [],
       view_state,
     };
@@ -305,6 +271,9 @@ export default function useQuestionsData() {
     await updateQuestion(toSectionId, toSection);
   };
 
+  const getQuestionsThatIncludeInsight = (insightId: string) =>
+    sortedQuestionsList.value.filter((section) => section.linked_insights.includes(insightId));
+
   return {
     questionsList: sortedQuestionsList,
     updateSectionTitle,
@@ -314,5 +283,6 @@ export default function useQuestionsData() {
     addInsightToSection,
     removeInsightFromSection,
     moveInsight,
+    getQuestionsThatIncludeInsight,
   };
 }

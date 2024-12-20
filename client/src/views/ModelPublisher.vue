@@ -223,7 +223,7 @@ watchEffect(() => {
         ) ?? 0;
 
       // update the store
-      updateDatacubesOutputsMap(datacubeKey, store, route, initialOutputIndex);
+      updateDatacubesOutputsMap(datacubeKey, store, initialOutputIndex);
     }
   }
 });

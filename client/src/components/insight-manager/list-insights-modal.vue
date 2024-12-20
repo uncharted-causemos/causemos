@@ -10,8 +10,6 @@
     <div class="body flex">
       <div class="checklist">
         <list-analytical-questions-pane
-          :show-checklist-title="true"
-          :can-click-checklist-items="true"
           :insights-by-section="insightsBySection"
           @item-click="reviewChecklist"
           @update-section-title="updateSectionTitle"
@@ -96,8 +94,7 @@ import useInsightsData from '@/composables/useInsightsData';
 import useToaster from '@/composables/useToaster';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import InsightUtil from '@/utils/insight-util';
-import { unpublishDatacube } from '@/utils/datacube-util';
-import { countPublicInsights, fetchFullInsights, removeInsight } from '@/services/insight-service';
+import { fetchFullInsights, removeInsight } from '@/services/insight-service';
 import { AnalyticalQuestion, Insight, NewInsight, SectionWithInsights } from '@/types/Insight';
 import useQuestionsData from '@/composables/useQuestionsData';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
@@ -132,9 +129,7 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const toaster = useToaster();
-    // prevent insight fetches if the gallery is closed
-    const preventFetches = computed(() => !store.getters['insightPanel/isPanelOpen']);
-    const { insights, reFetchInsights } = useInsightsData(preventFetches);
+    const { insights, reFetchInsights } = useInsightsData();
     const {
       questionsList,
       updateSectionTitle,
@@ -283,29 +278,9 @@ export default defineComponent({
       this.setCurrentPane('review-edit-insight');
     },
     async removeInsight(insight: Insight | NewInsight) {
-      // are removing a public insight?
-      if (
-        !InsightUtil.instanceOfNewInsight(insight) &&
-        insight.visibility === 'public' &&
-        Array.isArray(insight.context_id) &&
-        insight.context_id.length > 0
-      ) {
-        // is this the last public insight for the relevant dataube?
-        //  if so, unpublish the model datacube
-        const datacubeId = insight.context_id[0];
-        // This component doesn't have access to `this.project`, the following
-        //  line would have thrown an error if it was reached.
-        // Is this code still used? If so, we need to add a getter for `project`
-        const publicInsightCount = await countPublicInsights(datacubeId, ''); // this.project);
-        if (publicInsightCount === 1) {
-          await unpublishDatacube(datacubeId);
-          this.setRefreshDatacubes(true);
-        }
-      }
-
       const id = insight.id as string;
       // remove the insight from the server
-      await removeInsight(id, this.store);
+      await removeInsight(id);
       this.removeCuration(id);
       // refresh the latest list from the server
       this.reFetchInsights();

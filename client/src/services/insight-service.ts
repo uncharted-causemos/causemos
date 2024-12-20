@@ -4,17 +4,13 @@ import { isDataAnalysisState } from '@/utils/insight-util';
 
 import { INSIGHTS } from '@/utils//messages-util';
 import useToaster from '@/composables/useToaster';
-import { computed } from 'vue';
 import { TYPE } from 'vue-toastification';
-import { isNewAnalysisItem } from '@/utils/analysis-util';
 
 // This defines the fields in ES that you can filter by
 export interface InsightFilterFields {
   id?: string | string[]; // allows searching by multiple IDs
   project_id?: string;
-  context_id?: string;
-  visibility?: string;
-  target_view?: string;
+  context_id?: string[];
   analysis_id?: string;
 }
 
@@ -49,14 +45,6 @@ export const deleteInsight = async (id: string) => {
 };
 
 // ==================================================================
-
-export const countInsights = async (fetchParams: InsightFilterFields): Promise<number> => {
-  const filters = _fetchParamsToFilters(fetchParams);
-  const { data } = await API.get('insights/count', {
-    params: { filters: JSON.stringify(filters) },
-  });
-  return data;
-};
 
 /**
  * Fetch insights using the specified filter parameters
@@ -170,14 +158,15 @@ export const extractMetadataDetails = (
       outputName: string;
       source: string;
     }[] = [];
-    dataState.analysisItems.forEach((item) => {
-      if (isNewAnalysisItem(item)) return;
-      const { cachedMetadata } = item;
-      datacubes.push({
-        datasetName: cachedMetadata.datacubeName,
-        outputName: cachedMetadata.featureName,
-        source: cachedMetadata.source,
-      });
+    dataState.analysisItems.forEach(() => {
+      // TODO: record metadata about the analysis items
+      // if (isNewAnalysisItem(item)) return;
+      // const { cachedMetadata } = item;
+      // datacubes.push({
+      //   datasetName: cachedMetadata.datacubeName,
+      //   outputName: cachedMetadata.featureName,
+      //   source: cachedMetadata.source,
+      // });
     });
     summary.datacubes = datacubes;
   }
@@ -185,29 +174,13 @@ export const extractMetadataDetails = (
   return summary;
 };
 
-export const countPublicInsights = async (datacubeId: string, projectId: string) => {
-  const publicInsightsSearchFields: InsightFilterFields = {};
-  publicInsightsSearchFields.visibility = 'public';
-  publicInsightsSearchFields.project_id = projectId;
-  publicInsightsSearchFields.context_id = datacubeId;
-  const count = await countInsights(publicInsightsSearchFields);
-  return count as number;
-};
-
-export const removeInsight = async (id: string, store?: any) => {
+export const removeInsight = async (id: string) => {
   const result = await deleteInsight(id);
   const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
   const toast = useToaster();
   if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
     toast(message, TYPE.SUCCESS, false);
-
-    if (store) {
-      const countInsights = computed(() => store.getters['insightPanel/countInsights']);
-      const count = countInsights.value - 1;
-      store.dispatch('insightPanel/setCountInsights', count);
-    }
   } else {
     toast(message, TYPE.INFO, true);
   }
-  // FIXME: delete any reference to this insight from its list of analytical_questions
 };
