@@ -446,7 +446,7 @@ export default defineComponent({
     setOutputVariable(variable: string) {
       const selectedOutputIndex = this.modelOutputsDisplayNames.indexOf(variable);
       // update the store so that other components can sync
-      updateDatacubesOutputsMap(this.itemId, this.store, this.route, selectedOutputIndex);
+      updateDatacubesOutputsMap(this.itemId, this.store, selectedOutputIndex);
     },
     setSpatialAggregationSelection(aggregation: string) {
       this.$emit('set-spatial-aggregation-selection', aggregation);
