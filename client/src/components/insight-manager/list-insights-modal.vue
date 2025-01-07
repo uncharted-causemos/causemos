@@ -358,7 +358,7 @@ export default defineComponent({
           : this.fullInsights.find((insight) => insight.id === _insightId);
 
       this.setUpdatedInsight(insightOrSection ?? null);
-      this.setPositionInReview({
+      this.$emit('set-review-position', {
         sectionId: _sectionId,
         insightId: _insightId as string,
       });
