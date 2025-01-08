@@ -131,7 +131,7 @@
             />
             <div class="image-preview-and-metadata">
               <div v-if="imagePreview !== null" class="preview">
-                <img id="finalImagePreview" ref="finalImagePreview" :src="imagePreview" />
+                <img id="imageElementRef" ref="imageElementRef" :src="imagePreview" />
                 <div v-if="showCropInfoMessage" style="align-self: center">
                   Annotations are still there, but not shown when the image is being cropped!
                 </div>
@@ -179,7 +179,7 @@
 
 <script setup lang="ts">
 import { v4 as uuidv4 } from 'uuid';
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, Ref, ref, watch } from 'vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import { useStore } from 'vuex';
@@ -263,7 +263,6 @@ watch(
 
     (updatedInsight.value as FullInsight | NewInsight).image = cache.image;
     (updatedInsight.value as FullInsight | NewInsight).annotation_state = cache.annotation_state;
-    setAnnotation(cache.annotation_state);
     imagePreview.value = null;
     nextTick(() => {
       imagePreview.value = cache.image;
@@ -279,15 +278,14 @@ watch(updatedInsight, (_updatedInsight) => {
 });
 
 const {
-  finalImagePreview,
+  imageElementRef,
   onCancelEdit,
   cropImage,
   annotateImage,
   showCropInfoMessage,
   annotationAndCropState,
   insightThumbnail,
-  setAnnotation,
-} = useInsightAnnotation(imagePreview);
+} = useInsightAnnotation(updatedInsight as Ref<FullInsight | NewInsight>);
 
 const insightsBySection = computed<SectionWithInsights[]>(
   () => store.getters['insightPanel/insightsBySection']

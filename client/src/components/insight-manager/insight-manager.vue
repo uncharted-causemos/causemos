@@ -16,7 +16,6 @@
       class="insight-modal"
       :insight-id="idOfInsightToEdit"
       :questions-list="questionsList"
-      :insights="insights"
       @cancel-editing-insight="cancelEditingInsight"
       @refresh-questions-and-insights="refreshQuestionsAndInsights"
     />

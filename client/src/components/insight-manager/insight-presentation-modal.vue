@@ -112,17 +112,6 @@ watch(
 //   slideImage.value = _updatedInsight ? (_updatedInsight as FullInsight | NewInsight).image : null;
 // });
 
-// const {
-//   finalslideImage,
-//   onCancelEdit,
-//   cropImage,
-//   annotateImage,
-//   showCropInfoMessage,
-//   annotationAndCropState,
-//   insightThumbnail,
-//   setAnnotation,
-// } = useInsightAnnotation(slideImage);
-
 const route = useRoute();
 const router = useRouter();
 const store = useStore();
@@ -246,8 +235,6 @@ const closeInsightReview = () => {
             </OptionsButton>
           </div>
         </header>
-        <!-- TODO: remove ref and ID? -->
-        <!-- <img id="finalImagePreview" ref="finalImagePreview" :src="imagePreview" /> -->
         <div class="slide-image" v-if="slideImage !== null">
           <img :src="slideImage" />
         </div>

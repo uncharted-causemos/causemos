@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import useInsightAnnotation from '@/composables/useInsightAnnotation';
 import useInsightStore from '@/composables/useInsightStore';
 import useToaster from '@/composables/useToaster';
-import { fetchPartialInsights, updateInsight } from '@/services/insight-service';
+import { fetchFullInsights, updateInsight } from '@/services/insight-service';
 import { updateQuestion } from '@/services/question-service';
-import { AnalyticalQuestion, FullInsight, Insight, NewInsight } from '@/types/Insight';
+import { AnalyticalQuestion, FullInsight, NewInsight } from '@/types/Insight';
 import { INSIGHTS } from '@/utils/messages-util';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
@@ -15,9 +16,8 @@ import { TYPE } from 'vue-toastification';
 const props = defineProps<{
   insightId: string | null;
   questionsList: AnalyticalQuestion[];
-  insights: (Insight | NewInsight)[];
 }>();
-const { insightId, questionsList, insights } = toRefs(props);
+const { insightId, questionsList } = toRefs(props);
 const emit = defineEmits<{
   (e: 'cancel-editing-insight'): void;
   (e: 'refresh-questions-and-insights'): void;
@@ -38,12 +38,10 @@ watch(
   },
   { immediate: true }
 );
-const selectedInsight = computed(() => {
-  return insights.value.find((i) => i.id === insightId.value);
-});
+const savedInsightState = ref<FullInsight | NewInsight | null>(null);
 const insightTitle = ref<string>('');
 watch(
-  selectedInsight,
+  savedInsightState,
   (insight) => {
     insightTitle.value = insight?.name || '';
   },
@@ -51,14 +49,14 @@ watch(
 );
 const description = ref<string>('');
 watch(
-  selectedInsight,
+  savedInsightState,
   (insight) => {
     description.value = insight?.description || '';
   },
   { immediate: true }
 );
 
-const slideImage = ref<string | null>(null);
+const slideImage = computed(() => savedInsightState.value?.image ?? null);
 watch(
   insightId,
   async (id) => {
@@ -67,13 +65,7 @@ watch(
       return;
     }
     // TODO: check for race conditions
-    // TODO: cache the image and annotation state like we do in review insight modal?
-    const extras = await fetchPartialInsights({ id }, ['id', 'annotation_state', 'image']);
-
-    // (updatedInsight.value as FullInsight | NewInsight).image = cache.image;
-    // (updatedInsight.value as FullInsight | NewInsight).annotation_state = cache.annotation_state;
-    // setAnnotation(cache.annotation_state);
-    slideImage.value = extras[0].image;
+    savedInsightState.value = (await fetchFullInsights({ id }, true))[0];
   },
   { immediate: true }
 );
@@ -84,16 +76,17 @@ watch(
 //   slideImage.value = _updatedInsight ? (_updatedInsight as FullInsight | NewInsight).image : null;
 // });
 
-// const {
-//   finalslideImage,
-//   onCancelEdit,
-//   cropImage,
-//   annotateImage,
-//   showCropInfoMessage,
-//   annotationAndCropState,
-//   insightThumbnail,
-//   setAnnotation,
-// } = useInsightAnnotation(slideImage);
+const {
+  imageElementRef,
+  //   onCancelEdit,
+  cropImage,
+  annotateImage,
+  //   showCropInfoMessage,
+  //   annotationAndCropState,
+  //   insightThumbnail,
+  //   setAnnotation,
+  insightThumbnail,
+} = useInsightAnnotation(savedInsightState);
 
 // TODO: remove dependence on store
 const { setCurrentPane } = useInsightStore();
@@ -109,7 +102,7 @@ const isInsightTitleInvalid = computed(() => insightTitle.value.trim().length ==
 const toaster = useToaster();
 const saveInsight = async () => {
   const id = insightId.value;
-  if (id === null || isInsightTitleInvalid.value || selectedInsight.value === undefined) return;
+  if (id === null || isInsightTitleInvalid.value || savedInsightState.value === undefined) return;
 
   const currentlyAssignedQuestions = questionsList.value.filter((q) =>
     q.linked_insights.includes(id)
@@ -191,11 +184,10 @@ const saveInsight = async () => {
   // } else {
   // saving an existing insight
 
-  const updatedInsight = { ...(selectedInsight.value as FullInsight | NewInsight) };
+  const updatedInsight = { ...(savedInsightState.value as FullInsight | NewInsight) };
   updatedInsight.name = insightTitle.value;
   updatedInsight.description = description.value;
-  // TODO: do we ever update the image itself?
-  // updatedInsight.image = insightThumbnail.value ?? '';
+  updatedInsight.image = insightThumbnail.value ?? '';
   // TODO: annotation and crop state
   // updatedInsight.annotation_state = annotationAndCropState.value;
   const result = await updateInsight(id, updatedInsight);
@@ -249,19 +241,37 @@ const saveInsight = async () => {
             placeholder="Assign to one or more questions"
           />
           <div class="actions">
-            <Button label="Cancel" outlined @click="stopEditingInsight" />
+            <Button label="Cancel" outlined severity="secondary" @click="stopEditingInsight" />
             <Button icon="fa fa-lg fa-fw fa-check" label="Done" @click="saveInsight" />
           </div>
         </div>
       </header>
-      <!-- TODO: remove ref and ID? -->
-      <!-- <img id="finalImagePreview" ref="finalImagePreview" :src="imagePreview" /> -->
-      <div class="slide-image" v-if="slideImage !== null">
-        <img :src="slideImage" />
+      <div class="editable-image" v-if="slideImage !== null">
+        <div class="editable-image-controls">
+          <!-- TODO: icons -->
+          <Button
+            @click="annotateImage"
+            label="Annotate"
+            icon="fa fa-lg fa-font"
+            outlined
+            severity="secondary"
+          />
+          <Button
+            @click="cropImage"
+            label="Crop"
+            icon="fa fa-lg fa-crop"
+            outlined
+            severity="secondary"
+          />
+        </div>
+        <div class="slide-image">
+          <!-- TODO: rename slideImage to savedInsightImage -->
+          <img :src="slideImage" ref="imageElementRef" />
+        </div>
       </div>
       <div v-else class="slide-image"><i class="fa fa-spin fa-spinner" /> Loading image ...</div>
       <div class="details">
-        <Textarea placeholder="Add a description" v-model="description" />
+        <Textarea placeholder="Add a description" v-model="description" class="description" />
         <!-- TODO: -->
         <!-- <insight-summary
               v-if="metadataDetails"
@@ -331,19 +341,39 @@ header {
   }
 }
 
+.editable-image {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
+  .editable-image-controls {
+    display: flex;
+    gap: 5px;
+    padding: 5px;
+    background: var(--p-surface-100);
+    border-radius: 3px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border: 1px solid var(--p-surface-200);
+    border-bottom-width: 0px;
+  }
+}
+
 .slide-image {
   flex: 1;
   min-height: 0;
   border: 1px solid var(--p-surface-200);
   border-radius: 3px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   display: grid;
   place-items: center;
   position: relative;
   img {
     --padding: 10px;
-    width: calc(100% - var(--padding));
-    height: calc(100% - var(--padding));
-    object-fit: contain;
+    max-width: calc(100% - var(--padding));
+    max-height: calc(100% - var(--padding));
     position: absolute;
   }
 }
@@ -353,5 +383,13 @@ header {
   border: 1px solid var(--p-surface-200);
   border-radius: 3px;
   background: var(--p-surface-50);
+  display: flex;
+}
+
+.description {
+  min-height: 100px;
+  flex: 1;
+  min-width: 0;
+  max-width: 90ch;
 }
 </style>
