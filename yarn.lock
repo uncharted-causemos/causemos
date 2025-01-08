@@ -4799,10 +4799,10 @@ maplibre-gl@^2.4.0:
     tinyqueue "^2.0.3"
     vt-pbf "^3.1.3"
 
-markerjs2@^2.13.0:
-  version "2.30.1"
-  resolved "https://registry.yarnpkg.com/markerjs2/-/markerjs2-2.30.1.tgz#8d1fd53e702a9ec14f611f8d360214d4b87a7d6d"
-  integrity sha512-eIEDUclbkV2RP5PJ3OgIkYaD4QzSU+b39anY2UZgR4A9cWYZRUoLKk5SPi72BQozmN24ALQVvSz0Inf9a2vA9Q==
+markerjs2@^2.31.1:
+  version "2.32.3"
+  resolved "https://registry.yarnpkg.com/markerjs2/-/markerjs2-2.32.3.tgz#e98e0242613673ab15fe30af97a8150d672bba42"
+  integrity sha512-D7oD4BT5NOsQbugdcO2TFmcw9ZMHp96Ih09A5f0UndxiQNWuz+j5zymtkTHs0WU+oOR8K6dyTufv4KtfJ6diBg==
 
 media-typer@0.3.0:
   version "0.3.0"
