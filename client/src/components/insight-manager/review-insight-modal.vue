@@ -277,15 +277,10 @@ watch(updatedInsight, (_updatedInsight) => {
   imagePreview.value = _updatedInsight ? (_updatedInsight as FullInsight | NewInsight).image : null;
 });
 
-const {
-  imageElementRef,
-  onCancelEdit,
-  cropImage,
-  annotateImage,
-  showCropInfoMessage,
-  annotationAndCropState,
-  insightThumbnail,
-} = useInsightAnnotation(updatedInsight as Ref<FullInsight | NewInsight>);
+const { imageElementRef, cropImage, annotateImage, annotationAndCropState, insightThumbnail } =
+  useInsightAnnotation(updatedInsight as Ref<FullInsight | NewInsight>);
+
+const showCropInfoMessage = ref(false);
 
 const insightsBySection = computed<SectionWithInsights[]>(
   () => store.getters['insightPanel/insightsBySection']
@@ -616,7 +611,6 @@ const goToNextSlide = () => {
 const cancelInsightEdit = () => {
   isEditingInsight.value = false;
   insightTitle.value = '';
-  onCancelEdit();
   if (isNewModeActive.value || updatedInsight.value === null) {
     closeInsightReview();
   }

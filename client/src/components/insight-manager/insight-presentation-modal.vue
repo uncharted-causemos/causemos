@@ -139,9 +139,6 @@ const deleteInsight = () => {
   // remove the insight from the server
   removeInsight(insightId);
 
-  // TODO: remove commented code
-  // close editing before deleting insight (this will ensure annotation/crop mode is cleaned up)
-  // cancelInsightEdit();
   // remove this insight from each section that contains it in the store
   // TODO: this should happen on the server? is it ever updated on the backend?
   questionsList.value

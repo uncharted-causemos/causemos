@@ -69,23 +69,14 @@ watch(
   },
   { immediate: true }
 );
-// every time the user navigates to a new insight (or removes the current insight), re-fetch the image
-// NOTE: slideImage ideally could be a computed prop, but when in newMode the image is fetched differently
-//       plus once slideImage is assigned its watch will apply-annotation insight if any
-// watch(updatedInsight, (_updatedInsight) => {
-//   slideImage.value = _updatedInsight ? (_updatedInsight as FullInsight | NewInsight).image : null;
-// });
 
 const {
   imageElementRef,
-  //   onCancelEdit,
   cropImage,
   annotateImage,
-  //   showCropInfoMessage,
-  //   annotationAndCropState,
-  //   insightThumbnail,
-  //   setAnnotation,
+  annotationAndCropState,
   insightThumbnail,
+  activeOperation,
 } = useInsightAnnotation(savedInsightState);
 
 // TODO: remove dependence on store
@@ -188,8 +179,7 @@ const saveInsight = async () => {
   updatedInsight.name = insightTitle.value;
   updatedInsight.description = description.value;
   updatedInsight.image = insightThumbnail.value ?? '';
-  // TODO: annotation and crop state
-  // updatedInsight.annotation_state = annotationAndCropState.value;
+  updatedInsight.annotation_state = annotationAndCropState.value;
   const result = await updateInsight(id, updatedInsight);
   if (result.updated !== 'success') {
     toaster(INSIGHTS.ERRONEOUS_UPDATE, TYPE.INFO, true);
@@ -242,19 +232,24 @@ const saveInsight = async () => {
           />
           <div class="actions">
             <Button label="Cancel" outlined severity="secondary" @click="stopEditingInsight" />
-            <Button icon="fa fa-lg fa-fw fa-check" label="Done" @click="saveInsight" />
+            <Button
+              icon="fa fa-lg fa-fw fa-check"
+              label="Done"
+              @click="saveInsight"
+              :disabled="activeOperation !== null || isInsightTitleInvalid"
+            />
           </div>
         </div>
       </header>
       <div class="editable-image" v-if="slideImage !== null">
         <div class="editable-image-controls">
-          <!-- TODO: icons -->
           <Button
             @click="annotateImage"
             label="Annotate"
             icon="fa fa-lg fa-font"
             outlined
             severity="secondary"
+            :disabled="activeOperation !== null"
           />
           <Button
             @click="cropImage"
@@ -262,7 +257,12 @@ const saveInsight = async () => {
             icon="fa fa-lg fa-crop"
             outlined
             severity="secondary"
+            :disabled="activeOperation !== null"
           />
+          <div class="image-edit-info" v-if="activeOperation === 'annotate'">
+            <i class="fa fa-fw fa-info-circle" />Click outside any active text label before saving
+            your changes.
+          </div>
         </div>
         <div class="slide-image">
           <!-- TODO: rename slideImage to savedInsightImage -->
@@ -350,13 +350,23 @@ header {
   .editable-image-controls {
     display: flex;
     gap: 5px;
-    padding: 5px;
+    padding: 5px 10px;
     background: var(--p-surface-100);
     border-radius: 3px;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     border: 1px solid var(--p-surface-200);
     border-bottom-width: 0px;
+    align-items: center;
+  }
+
+  .image-edit-info {
+    justify-content: flex-end;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
   }
 }
 

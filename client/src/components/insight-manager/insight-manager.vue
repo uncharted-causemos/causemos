@@ -9,8 +9,6 @@
       @set-review-position="setReviewPosition"
       @remove-insight-from-question="removeInsightFromSection"
     />
-    <!-- TODO: remove -->
-    <!-- <review-insight-modal v-if="isReviewInsightModalOpen"  /> -->
     <InsightEditModal
       v-if="currentPane === 'review-edit-insight' || currentPane === 'review-new-insight'"
       class="insight-modal"
