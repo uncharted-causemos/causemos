@@ -1,17 +1,31 @@
 <script setup lang="ts">
+import { v4 as uuidv4 } from 'uuid';
 import useInsightAnnotation from '@/composables/useInsightAnnotation';
 import useInsightStore from '@/composables/useInsightStore';
 import useToaster from '@/composables/useToaster';
-import { fetchFullInsights, updateInsight } from '@/services/insight-service';
+import { addInsight, fetchFullInsights, updateInsight } from '@/services/insight-service';
 import { updateQuestion } from '@/services/question-service';
-import { AnalyticalQuestion, FullInsight, NewInsight } from '@/types/Insight';
+import {
+  AnalyticalQuestion,
+  AnnotationState,
+  FullInsight,
+  ModelOrDatasetStateInsight,
+  ModelOrDatasetStateView,
+  NewInsight,
+} from '@/types/Insight';
+import { getModelOrDatasetStateViewFromRoute, INSIGHT_CAPTURE_CLASS } from '@/utils/insight-util';
 import { INSIGHTS } from '@/utils/messages-util';
+import html2canvas from 'html2canvas';
+import _ from 'lodash';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import MultiSelect from 'primevue/multiselect';
 import Textarea from 'primevue/textarea';
 import { computed, ref, toRefs, watch } from 'vue';
 import { TYPE } from 'vue-toastification';
+import { useRoute } from 'vue-router';
+import { ModelOrDatasetState } from '@/types/Datacube';
+import { useStore } from 'vuex';
 
 const props = defineProps<{
   insightId: string | null;
@@ -24,6 +38,14 @@ const emit = defineEmits<{
 }>();
 
 const isCreatingInsight = computed(() => insightId.value === null);
+
+const takeSnapshot = async () => {
+  const el = document.getElementsByClassName(INSIGHT_CAPTURE_CLASS)[0];
+  const image = _.isNil(el)
+    ? null
+    : (await html2canvas(el as HTMLElement, { scale: 1 })).toDataURL();
+  return image;
+};
 
 const questionDropdownItems = computed(() => [
   ...questionsList.value.map((q) => ({ id: q.id as string, title: q.question })),
@@ -56,16 +78,67 @@ watch(
   { immediate: true }
 );
 
-const slideImage = computed(() => savedInsightState.value?.image ?? null);
+const savedInsightImage = computed(() => savedInsightState.value?.image ?? null);
+
+const route = useRoute();
+// TODO: remove dependence on store
+const store = useStore();
+const project = computed(() => store.getters['app/project']);
+const contextId = computed(() => store.getters['insightPanel/contextId']);
+const { setCurrentPane, getDataState, getViewState, modelOrDatasetState } = useInsightStore();
 watch(
   insightId,
   async (id) => {
-    // TODO: if insight Id is null, we're creating a new insight, so we should fetch the image differently
-    if (id === null) {
+    if (id !== null) {
+      // TODO: check for race conditions
+      savedInsightState.value = (await fetchFullInsights({ id }, true))[0];
       return;
     }
-    // TODO: check for race conditions
-    savedInsightState.value = (await fetchFullInsights({ id }, true))[0];
+    // If insightId is null we're creating a new insight
+    const snapshotImage = (await takeSnapshot()) ?? '';
+    const url = route.fullPath;
+    const annotationState: AnnotationState = {
+      markerAreaState: undefined,
+      cropAreaState: undefined,
+      imagePreview: snapshotImage,
+      originalImagePreview: snapshotImage,
+    };
+    // FIXME: HACK: determine whether we should use the new insight schema depending on the route
+    //  name that the new insight was taken from
+    if (['modelDrilldown', 'datasetDrilldown'].includes(route.name as string)) {
+      const newModelOrDatasetStateInsight: ModelOrDatasetStateInsight = {
+        schemaVersion: 2,
+        id: uuidv4(),
+        name: '',
+        description: '',
+        project_id: project.value,
+        image: snapshotImage,
+        annotation_state: annotationState,
+        type: 'ModelOrDatasetStateInsight',
+        // ASSUMPTION: view is not null
+        view: getModelOrDatasetStateViewFromRoute(route) as ModelOrDatasetStateView,
+        context_id: contextId.value,
+        // ASSUMPTION: state has been set before the new insight flow began, so modelOrDatasetState
+        //  is not null
+        state: modelOrDatasetState.value as ModelOrDatasetState,
+      };
+      savedInsightState.value = newModelOrDatasetStateInsight;
+    } else {
+      // Old insight schema
+      const newInsight: FullInsight = {
+        name: '',
+        description: '',
+        project_id: project.value,
+        context_id: contextId.value,
+        url,
+        is_default: true,
+        image: snapshotImage,
+        annotation_state: annotationState,
+        view_state: getViewState(),
+        data_state: getDataState(),
+      };
+      savedInsightState.value = newInsight;
+    }
   },
   { immediate: true }
 );
@@ -79,8 +152,6 @@ const {
   activeOperation,
 } = useInsightAnnotation(savedInsightState);
 
-// TODO: remove dependence on store
-const { setCurrentPane } = useInsightStore();
 const closeInsightReview = () => {
   setCurrentPane('list-insights');
 };
@@ -88,16 +159,16 @@ const stopEditingInsight = () => {
   emit('cancel-editing-insight');
 };
 
-// TODO: highlight input when invalid
 const isInsightTitleInvalid = computed(() => insightTitle.value.trim().length === 0);
 const toaster = useToaster();
 const saveInsight = async () => {
-  const id = insightId.value;
-  if (id === null || isInsightTitleInvalid.value || savedInsightState.value === undefined) return;
+  const previouslyCreatedInsightId = insightId.value;
+  if (isInsightTitleInvalid.value || savedInsightState.value === undefined) return;
 
-  const currentlyAssignedQuestions = questionsList.value.filter((q) =>
-    q.linked_insights.includes(id)
-  );
+  const currentlyAssignedQuestions =
+    previouslyCreatedInsightId === null
+      ? []
+      : questionsList.value.filter((q) => q.linked_insights.includes(previouslyCreatedInsightId));
   const updatedAssignedQuestions = questionsList.value.filter((q) =>
     assignedQuestionIds.value.includes(q.id as string)
   );
@@ -108,82 +179,33 @@ const saveInsight = async () => {
     (q) => !updatedAssignedQuestions.includes(q)
   );
 
-  // TODO: new insights
-  // if (isNewModeActive.value) {
-  //   // saving a new insight
-  //   const url = route.fullPath;
-
-  //   let newInsight: FullInsight | ModelOrDatasetStateInsight = {
-  //     name: insightTitle.value,
-  //     description: insightDesc.value,
-  //     project_id: project.value,
-  //     context_id: contextId.value,
-  //     url,
-  //     is_default: true,
-  //     image: insightThumbnail.value ?? '',
-  //     annotation_state: annotationAndCropState.value,
-  //     view_state: viewState.value,
-  //     data_state: dataState.value,
-  //   };
-
-  //   // FIXME: HACK: determine whether we should use the new insight schema depending on the route
-  //   //  name that the new insight was taken from
-  //   if (['modelDrilldown', 'datasetDrilldown'].includes(route.name as string)) {
-  //     const newModelOrDatasetStateInsight: ModelOrDatasetStateInsight = {
-  //       schemaVersion: 2,
-  //       id: uuidv4(),
-  //       name: insightTitle.value,
-  //       description: insightDesc.value,
-  //       project_id: project.value,
-  //       image: insightThumbnail.value ?? '',
-  //       annotation_state: annotationAndCropState.value,
-  //       type: 'ModelOrDatasetStateInsight',
-  //       // ASSUMPTION: view is not null
-  //       view: getModelOrDatasetStateViewFromRoute(route) as ModelOrDatasetStateView,
-  //       context_id: contextId.value,
-  //       // ASSUMPTION: state has been set before the new insight flow began, so modelOrDatasetState
-  //       //  is not null
-  //       state: modelOrDatasetState.value as ModelOrDatasetState,
-  //     };
-  //     newInsight = newModelOrDatasetStateInsight;
-  //   }
-
-  //   addInsight(newInsight)
-  //     .then((result) => {
-  //       const message =
-  //         result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
-  //       if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
-  //         toaster(message, TYPE.SUCCESS, false);
-
-  //         // after the insight is created and have a valid id, we need to link that to the question
-  //         if (linkedQuestions) {
-  //           const insightId = result.data.id;
-  //           linkedQuestions.forEach((section) => {
-  //             addInsightToSection(insightId, section.id as string);
-  //           });
-  //         }
-  //       } else {
-  //         toaster(message, TYPE.INFO, true);
-  //       }
-  //       closeInsightReview();
-  //       setShouldRefetchInsights(true);
-  //     })
-  //     .catch(() => {
-  //       // just in case the call to the server fails
-  //       closeInsightReview();
-  //     });
-  // } else {
-  // saving an existing insight
-
   const updatedInsight = { ...(savedInsightState.value as FullInsight | NewInsight) };
   updatedInsight.name = insightTitle.value;
   updatedInsight.description = description.value;
   updatedInsight.image = insightThumbnail.value ?? '';
   updatedInsight.annotation_state = annotationAndCropState.value;
-  const result = await updateInsight(id, updatedInsight);
-  if (result.updated !== 'success') {
-    toaster(INSIGHTS.ERRONEOUS_UPDATE, TYPE.INFO, true);
-    return;
+
+  let id = '';
+  if (previouslyCreatedInsightId === null) {
+    // Create a new insight
+    const result = await addInsight(updatedInsight);
+    const message =
+      result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
+    if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
+      toaster(message, TYPE.SUCCESS, false);
+      id = result.data.id;
+    } else {
+      toaster(message, TYPE.INFO, true);
+    }
+  } else {
+    // Update an existing insight
+    const result = await updateInsight(id, updatedInsight);
+    if (result.updated !== 'success') {
+      toaster(INSIGHTS.ERRONEOUS_UPDATE, TYPE.INFO, true);
+      return;
+    }
+    toaster(INSIGHTS.SUCCESSFUL_UPDATE, TYPE.SUCCESS, false);
+    id = previouslyCreatedInsightId;
   }
   const promises = [
     // Add the insight to the questions it's now assigned to
@@ -199,10 +221,12 @@ const saveInsight = async () => {
   ];
   await Promise.all(promises);
   emit('refresh-questions-and-insights');
-  toaster(INSIGHTS.SUCCESSFUL_UPDATE, TYPE.SUCCESS, false);
-  stopEditingInsight();
+  if (previouslyCreatedInsightId === null) {
+    closeInsightReview();
+  } else {
+    stopEditingInsight();
+  }
 };
-// }
 </script>
 
 <template>
@@ -215,12 +239,17 @@ const saveInsight = async () => {
       <Button text label="Edit Insight" disabled severity="secondary" />
     </nav>
     <nav class="space-between" v-else>
-      <Button text label="Edit Insight" disabled severity="secondary" />
-      <Button icon="fa fa-fw fa-times" />
+      <Button text label="Save new insight" disabled severity="secondary" />
+      <Button icon="fa fa-fw fa-lg fa-times" text severity="secondary" />
     </nav>
     <main class="expanded-insight">
       <header>
-        <InputText v-model="insightTitle" />
+        <InputText
+          v-model="insightTitle"
+          :invalid="!insightTitle"
+          placeholder="Add a title"
+          autofocus
+        />
         <div class="right-half">
           <MultiSelect
             :options="questionDropdownItems"
@@ -241,7 +270,7 @@ const saveInsight = async () => {
           </div>
         </div>
       </header>
-      <div class="editable-image" v-if="slideImage !== null">
+      <div class="editable-image" v-if="savedInsightImage !== null">
         <div class="editable-image-controls">
           <Button
             @click="annotateImage"
@@ -265,8 +294,7 @@ const saveInsight = async () => {
           </div>
         </div>
         <div class="slide-image">
-          <!-- TODO: rename slideImage to savedInsightImage -->
-          <img :src="slideImage" ref="imageElementRef" />
+          <img :src="savedInsightImage" ref="imageElementRef" />
         </div>
       </div>
       <div v-else class="slide-image"><i class="fa fa-spin fa-spinner" /> Loading image ...</div>
@@ -302,6 +330,10 @@ nav {
   .crumb.clickable {
     cursor: pointer;
     color: var(--p-primary-500);
+  }
+
+  &.space-between {
+    justify-content: space-between;
   }
 }
 

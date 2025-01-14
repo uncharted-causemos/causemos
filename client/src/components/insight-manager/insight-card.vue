@@ -4,18 +4,7 @@
       <div class="insight-thumbnail">
         <img-lazy :src="`/api/insights/${props.insight.id}/thumbnail`" class="thumbnail" />
       </div>
-      <div
-        v-if="showDescription"
-        :class="{ 'private-insight-title': insight.visibility === 'private' }"
-      >
-        <span>{{ insight.name }}</span>
-        <span class="insight-description">{{ insight.description }}</span>
-      </div>
-      <div
-        v-else
-        class="insight-title"
-        :class="{ 'private-insight-title': insight.visibility === 'private' }"
-      >
+      <div class="insight-title">
         <h5>{{ insight.name }}</h5>
       </div>
       <div class="insight-footer">
@@ -74,10 +63,6 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  showDescription: {
-    type: Boolean,
-    default: false,
-  },
 });
 const emit = defineEmits([
   'remove-insight',
@@ -124,17 +109,7 @@ const updateCuration = () => {
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      color: gray;
-      font-style: italic;
-    }
-    .private-insight-title {
       color: black;
-      font-style: normal;
-    }
-    .insight-description {
-      flex: 1 1 auto;
-      color: gray;
-      font-style: italic;
     }
     .insight-footer {
       display: flex;

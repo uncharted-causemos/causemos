@@ -73,8 +73,6 @@ const currentQuestion = computed(
     )?.section.question ?? null
 );
 
-// TODO: extract to a composable?
-
 const slideImage = ref<string | null>(null);
 watch(
   selectedSlide,
@@ -91,26 +89,15 @@ watch(
 
     slideImage.value = null;
     // TODO: check for race conditions
-    // TODO: cache the image and annotation state like we do in review insight modal?
     const extras = await fetchPartialInsights({ id: insight.id }, [
       'id',
       'annotation_state',
       'image',
     ]);
-
-    // (updatedInsight.value as FullInsight | NewInsight).image = cache.image;
-    // (updatedInsight.value as FullInsight | NewInsight).annotation_state = cache.annotation_state;
-    // setAnnotation(cache.annotation_state);
     slideImage.value = extras[0].image;
   },
   { immediate: true }
 );
-// every time the user navigates to a new insight (or removes the current insight), re-fetch the image
-// NOTE: slideImage ideally could be a computed prop, but when in newMode the image is fetched differently
-//       plus once slideImage is assigned its watch will apply-annotation insight if any
-// watch(updatedInsight, (_updatedInsight) => {
-//   slideImage.value = _updatedInsight ? (_updatedInsight as FullInsight | NewInsight).image : null;
-// });
 
 const route = useRoute();
 const router = useRouter();

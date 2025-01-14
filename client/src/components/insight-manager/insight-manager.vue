@@ -45,16 +45,7 @@ const isOpen = computed(() => {
   return isPanelOpen.value === true;
 });
 
-const {
-  questionsList,
-  removeInsightFromSection,
-  // updateSectionTitle,
-  // addSection,
-  // deleteSection,
-  // moveSectionAboveSection,
-  // moveInsight,
-  reFetchQuestions,
-} = useQuestionsData();
+const { questionsList, removeInsightFromSection, reFetchQuestions } = useQuestionsData();
 const { insights, reFetchInsights } = useInsightsData();
 
 const refreshQuestionsAndInsights = () => {

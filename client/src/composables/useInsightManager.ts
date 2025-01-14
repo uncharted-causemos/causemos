@@ -11,14 +11,21 @@ const idOfInsightToEdit = ref<string | null>(null);
 
 export default function useInsightManager() {
   // TODO: remove dependence on store
-  const { setCurrentPane } = useInsightStore();
+  const { setCurrentPane, hideInsightPanel } = useInsightStore();
   const editInsight = (id: string) => {
     idOfInsightToEdit.value = id;
     setCurrentPane('review-edit-insight');
   };
   const cancelEditingInsight = () => {
+    // If idOfInsightToEdit is null we're creating a new insight,
+    //  so close the modal.
+    if (idOfInsightToEdit.value === null) {
+      hideInsightPanel();
+      setCurrentPane('');
+      return;
+    }
+    // Otherwise go back to the previous page.
     idOfInsightToEdit.value = null;
-    // TODO: if we're creating a new insight, close the modal. Otherwise go back to the previous page.
     setCurrentPane('review-insight');
   };
   const startCreatingInsight = () => {

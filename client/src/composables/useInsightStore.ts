@@ -10,12 +10,10 @@ export default function useInsightStore() {
   const modelOrDatasetState = computed<ModelOrDatasetState | null>(
     () => store.getters['insightPanel/modelOrDatasetState']
   );
-  const setSnapshotUrl = (url: any) => {
-    store.dispatch('insightPanel/setSnapshotUrl', url);
-  };
   const showInsightPanel = () => {
     store.dispatch('insightPanel/showInsightPanel');
   };
+  const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
   const setUpdatedInsight = (updatedInsight: Insight | NewInsight | AnalyticalQuestion | null) => {
     store.dispatch('insightPanel/setUpdatedInsight', updatedInsight);
   };
@@ -53,8 +51,8 @@ export default function useInsightStore() {
     getDataState,
     getViewState,
     modelOrDatasetState,
-    setSnapshotUrl,
     showInsightPanel,
+    hideInsightPanel,
     setUpdatedInsight,
     setCurrentPane,
     setInsightsBySection,

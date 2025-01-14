@@ -17,11 +17,9 @@ export default function useInsightAnnotation(
   const setCropState = (newState: CropAreaState | undefined) => {
     cropState.value = newState;
   };
-
   // The image element that is being annotated or cropped.
   const imageElementRef = ref<HTMLImageElement | null>(null);
-  const lastCroppedImage = ref('');
-
+  // The operation that is currently being performed on the image.
   const activeOperation = ref<'annotate' | 'crop' | null>(null);
 
   /**
@@ -99,6 +97,8 @@ export default function useInsightAnnotation(
 
   const cropImage = async (shouldReapplyAnnotations = true) => {
     const imageElement = imageElementRef.value as HTMLImageElement;
+    // save the current image src to restore if the user cancels the crop
+    const imageSrcBeforeCropping = imageElement.src;
     // Use the uncropped image as the source.
     imageElement.src = originalImagePreview.value;
     // Re-apply annotations to the uncropped image.
@@ -123,7 +123,7 @@ export default function useInsightAnnotation(
     // NOTE: Contrary to markerJS, this event does not fire when the
     //  "done"(check mark) button is clicked
     cropArea.addCloseEventListener(() => {
-      imageElement.src = lastCroppedImage.value;
+      imageElement.src = imageSrcBeforeCropping;
       activeOperation.value = null;
     });
 
@@ -131,7 +131,6 @@ export default function useInsightAnnotation(
     //  we update the image src with the cropped image and save the state.
     cropArea.addRenderEventListener((dataUrl, state) => {
       imageElement.src = dataUrl;
-      lastCroppedImage.value = dataUrl;
       cropState.value = state;
       // Remove reference to this CropArea object
       activeOperation.value = null;
