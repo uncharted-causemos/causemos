@@ -138,6 +138,22 @@ const deleteInsight = () => {
 
 // TODO: do we need to get this from the store? we have projectMetadata at home
 const projectMetadata = computed(() => store.getters['app/projectMetadata']);
+// const metadataDetails = computed<InsightMetadata>(() => {
+//   const _updatedInsight = updatedInsight.value;
+//   const dState: DataState | null =
+//     isNewModeActive.value ||
+//     !InsightUtil.instanceOfInsight(_updatedInsight) ||
+//     InsightUtil.instanceOfNewInsight(_updatedInsight)
+//       ? dataState.value
+//       : _updatedInsight.data_state;
+//   const insightLastUpdate =
+//     isNewModeActive.value || !InsightUtil.instanceOfInsight(_updatedInsight)
+//       ? undefined
+//       : _updatedInsight.modified_at;
+//   const insightSummary = extractMetadataDetails(dState, projectMetadata.value, insightLastUpdate);
+//   return insightSummary;
+// });
+
 const exportInsight = async (exportType: 'Powerpoint' | 'Word') => {
   // const bibliographyMap = await getBibiographyFromCagIds([]);
   // TODO: confirm that this isn't a question or null
