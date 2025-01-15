@@ -14,7 +14,7 @@ import {
   NewInsight,
 } from '@/types/Insight';
 import { getModelOrDatasetStateViewFromRoute, INSIGHT_CAPTURE_CLASS } from '@/utils/insight-util';
-import { INSIGHTS } from '@/utils/messages-util';
+import { INSIGHTS, QUESTIONS } from '@/utils/messages-util';
 import html2canvas from 'html2canvas';
 import _ from 'lodash';
 import Button from 'primevue/button';
@@ -26,6 +26,7 @@ import { TYPE } from 'vue-toastification';
 import { useRoute } from 'vue-router';
 import { ModelOrDatasetState } from '@/types/Datacube';
 import { useStore } from 'vuex';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 
 const props = defineProps<{
   insightId: string | null;
@@ -35,6 +36,12 @@ const { insightId, questionsList } = toRefs(props);
 const emit = defineEmits<{
   (e: 'cancel-editing-insight'): void;
   (e: 'refresh-questions-and-insights'): void;
+  (
+    e: 'add-question',
+    newQuestionText: string,
+    onSuccess: (newQuestionId: string) => void,
+    onFail: () => void
+  ): void;
 }>();
 
 const isCreatingInsight = computed(() => insightId.value === null);
@@ -51,15 +58,34 @@ const questionDropdownItems = computed(() => [
   ...questionsList.value.map((q) => ({ id: q.id as string, title: q.question })),
 ]);
 const assignedQuestionIds = ref<string[]>([]);
+// When questions are first loaded (previousQuestionsList is undefined),
+//  initialize the list of assigned questions to the questions that are linked
+//  to the current insight.
 watch(
   questionsList,
-  (questions) => {
+  (questions, previousQuestionsList) => {
+    if (previousQuestionsList !== undefined) {
+      return;
+    }
     assignedQuestionIds.value = questions
       .filter((question) => question.linked_insights.includes(insightId.value as string))
       .map((q) => q.id as string);
   },
   { immediate: true }
 );
+const isAddingNewQuestion = ref(false);
+const addNewQuestion = (newQuestionText: string) => {
+  isAddingNewQuestion.value = false;
+  const onSuccess = (newQuestionId: string) => {
+    // Append new question to the list of selected questions
+    assignedQuestionIds.value = [...assignedQuestionIds.value, newQuestionId];
+  };
+  const onFail = () => {
+    toaster(QUESTIONS.ERRONEOUS_ADDITION, TYPE.INFO, true);
+  };
+  emit('add-question', newQuestionText, onSuccess, onFail);
+};
+
 const savedInsightState = ref<FullInsight | NewInsight | null>(null);
 const insightTitle = ref<string>('');
 watch(
@@ -199,7 +225,7 @@ const saveInsight = async () => {
     }
   } else {
     // Update an existing insight
-    const result = await updateInsight(id, updatedInsight);
+    const result = await updateInsight(previouslyCreatedInsightId, updatedInsight);
     if (result.updated !== 'success') {
       toaster(INSIGHTS.ERRONEOUS_UPDATE, TYPE.INFO, true);
       return;
@@ -231,6 +257,13 @@ const saveInsight = async () => {
 
 <template>
   <div class="insight-presentation-modal-container">
+    <RenameModal
+      v-if="isAddingNewQuestion"
+      :current-name="''"
+      :modal-title="'Add a new question'"
+      @confirm="addNewQuestion"
+      @cancel="isAddingNewQuestion = false"
+    />
     <nav v-if="!isCreatingInsight">
       <Button text label="All Insights" @click="closeInsightReview" severity="secondary" />
       <i class="fa fa-caret-right" />
@@ -255,10 +288,23 @@ const saveInsight = async () => {
             :options="questionDropdownItems"
             option-value="id"
             option-label="title"
-            multiple="true"
+            display="chip"
+            :show-toggle-all="false"
             v-model="assignedQuestionIds"
             placeholder="Assign to one or more questions"
-          />
+          >
+            <template #footer>
+              <Button
+                class="new-question-button"
+                label="Add new question"
+                severity="secondary"
+                text
+                size="small"
+                icon="fa fa-fw fa-plus"
+                @click="isAddingNewQuestion = true"
+              />
+            </template>
+          </MultiSelect>
           <div class="actions">
             <Button label="Cancel" outlined severity="secondary" @click="stopEditingInsight" />
             <Button
@@ -371,6 +417,11 @@ header {
     display: flex;
     gap: 5px;
   }
+}
+
+.new-question-button {
+  margin-left: 5px;
+  margin-bottom: 5px;
 }
 
 .editable-image {

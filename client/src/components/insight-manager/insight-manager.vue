@@ -16,6 +16,7 @@
       :questions-list="questionsList"
       @cancel-editing-insight="cancelEditingInsight"
       @refresh-questions-and-insights="refreshQuestionsAndInsights"
+      @add-question="addSection"
     />
     <list-insights-modal
       v-if="isOpen && currentPane === 'list-insights'"
@@ -45,7 +46,8 @@ const isOpen = computed(() => {
   return isPanelOpen.value === true;
 });
 
-const { questionsList, removeInsightFromSection, reFetchQuestions } = useQuestionsData();
+const { questionsList, removeInsightFromSection, reFetchQuestions, addSection } =
+  useQuestionsData();
 const { insights, reFetchInsights } = useInsightsData();
 
 const refreshQuestionsAndInsights = () => {
