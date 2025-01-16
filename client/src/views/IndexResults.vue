@@ -1,8 +1,8 @@
 <template>
-  <teleport to="#navbar-trailing-teleport-destination" v-if="isMounted">
-    <analysis-options-button v-if="analysisName" :analysis-id="analysisId" />
-  </teleport>
   <div class="index-results-container flex" :class="[INSIGHT_CAPTURE_CLASS]">
+    <teleport to="#navbar-trailing-teleport-destination" v-if="isMounted">
+      <analysis-options-button v-if="analysisName" :analysis-id="analysisId" />
+    </teleport>
     <div class="flex-col structure-column">
       <header>
         <Button

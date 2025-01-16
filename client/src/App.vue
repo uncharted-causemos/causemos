@@ -50,6 +50,7 @@ export default defineComponent({
       overlayCancelFn: 'app/overlayCancelFn',
       project: 'app/project',
       projectType: 'app/projectType',
+      isInsightModalOpen: 'insightPanel/isPanelOpen',
     }),
   },
   watch: {
@@ -71,6 +72,13 @@ export default defineComponent({
         default:
           console.error('Unknown project type', this.projectType);
           break;
+      }
+    },
+    isInsightModalOpen: function () {
+      if (this.isInsightModalOpen) {
+        document.body.classList.add('hide-scrollbar');
+      } else {
+        document.body.classList.remove('hide-scrollbar');
       }
     },
   },
@@ -169,5 +177,11 @@ $fa-font-path: 'font-awesome/fonts';
   .insight-manager {
     z-index: 2;
   }
+}
+
+// When modals are open, we stop the underlying page from being scrollable.
+//  A side effect of this is that the underlying page scrolls to the top.
+body.hide-scrollbar {
+  overflow: hidden;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <div class="insight-manager-container" :class="{ 'panel-hidden': !isOpen }">
+  <div class="insight-manager-container" :class="{ 'panel-hidden': !isPanelOpen }">
     <InsightPresentationModal
       v-if="currentPane === 'review-insight'"
       class="insight-modal"
@@ -19,7 +19,7 @@
       @add-question="addSection"
     />
     <list-insights-modal
-      v-if="isOpen && currentPane === 'list-insights'"
+      v-if="isPanelOpen && currentPane === 'list-insights'"
       @set-review-position="setReviewPosition"
     />
   </div>
@@ -41,10 +41,6 @@ const { reviewPosition, setReviewPosition, idOfInsightToEdit, cancelEditingInsig
 const store = useStore();
 const isPanelOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
 const currentPane = computed(() => store.getters['insightPanel/currentPane']);
-
-const isOpen = computed(() => {
-  return isPanelOpen.value === true;
-});
 
 const { questionsList, removeInsightFromSection, reFetchQuestions, addSection } =
   useQuestionsData();
