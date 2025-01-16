@@ -350,7 +350,6 @@ watch(
 const updateStateFromInsight = async (insightId: string) => {
   const loadedInsight: Insight = await getInsightById(insightId);
   const dataState = loadedInsight?.data_state;
-  console.log('dataState', dataState, !dataState, !isIndexResultsDataState(dataState));
   if (!dataState || !isIndexResultsDataState(dataState)) {
     // This state can occur when we're jumping to the live context of an
     //  insight taken from a different page.

@@ -341,7 +341,7 @@ function instanceOfInsight(
 function instanceOfFullInsight(
   data: null | Insight | FullInsight | AnalyticalQuestion | NewInsight
 ): data is FullInsight {
-  return instanceOfInsight(data) && 'image' in data;
+  return instanceOfInsight(data) && 'image' in data && !instanceOfNewInsight(data);
 }
 
 function instanceOfNewInsight(insight: Insight | NewInsight): insight is NewInsight {
