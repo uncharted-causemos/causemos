@@ -201,7 +201,8 @@ const updateStateFromInsight = async (insightId: string) => {
   const loadedInsight: Insight = await getInsightById(insightId);
   const dataState = loadedInsight?.data_state;
   if (!dataState || !isIndexStructureDataState(dataState)) {
-    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
+    // This state can occur when we're jumping to the live context of an
+    //  insight taken from a different page.
     return;
   }
   if (
