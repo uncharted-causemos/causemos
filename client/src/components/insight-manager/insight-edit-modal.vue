@@ -3,17 +3,27 @@ import { v4 as uuidv4 } from 'uuid';
 import useInsightAnnotation from '@/composables/useInsightAnnotation';
 import useInsightStore from '@/composables/useInsightStore';
 import useToaster from '@/composables/useToaster';
-import { addInsight, fetchFullInsights, updateInsight } from '@/services/insight-service';
+import {
+  addInsight,
+  extractMetadataDetails,
+  fetchFullInsights,
+  updateInsight,
+} from '@/services/insight-service';
 import { updateQuestion } from '@/services/question-service';
 import {
   AnalyticalQuestion,
   AnnotationState,
+  DataState,
   FullInsight,
+  InsightMetadata,
   ModelOrDatasetStateInsight,
   ModelOrDatasetStateView,
   NewInsight,
 } from '@/types/Insight';
-import { getModelOrDatasetStateViewFromRoute, INSIGHT_CAPTURE_CLASS } from '@/utils/insight-util';
+import insightUtil, {
+  getModelOrDatasetStateViewFromRoute,
+  INSIGHT_CAPTURE_CLASS,
+} from '@/utils/insight-util';
 import { INSIGHTS, QUESTIONS } from '@/utils/messages-util';
 import html2canvas from 'html2canvas';
 import _ from 'lodash';
@@ -27,6 +37,7 @@ import { useRoute } from 'vue-router';
 import { ModelOrDatasetState } from '@/types/Datacube';
 import { useStore } from 'vuex';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
+import InsightSummary from './insight-summary.vue';
 
 const props = defineProps<{
   insightId: string | null;
@@ -253,6 +264,19 @@ const saveInsight = async () => {
     stopEditingInsight();
   }
 };
+
+const metadataDetails = computed<InsightMetadata | null>(() => {
+  if (savedInsightState.value === null) return null;
+  const insight = savedInsightState.value as FullInsight | NewInsight;
+  const dataState: DataState | null = insightUtil.instanceOfNewInsight(insight)
+    ? insight.state
+    : insight.data_state;
+  const insightLastUpdate = !insightUtil.instanceOfInsight(insight)
+    ? undefined
+    : insight.modified_at;
+  const insightSummary = extractMetadataDetails(dataState, insightLastUpdate);
+  return insightSummary;
+});
 </script>
 
 <template>
@@ -346,13 +370,11 @@ const saveInsight = async () => {
       <div v-else class="slide-image"><i class="fa fa-spin fa-spinner" /> Loading image ...</div>
       <div class="details">
         <Textarea placeholder="Add a description" v-model="description" class="description" />
-        <!-- TODO: -->
-        <!-- <insight-summary
-              v-if="metadataDetails"
-              :metadata-details="metadataDetails"
-              class="insight-summary"
-            /> -->
-        <!-- <img :src="selectedSlide.image" /> -->
+        <InsightSummary
+          v-if="metadataDetails !== null"
+          :metadata-details="metadataDetails"
+          class="insight-summary"
+        />
       </div>
     </main>
   </div>
@@ -472,17 +494,27 @@ header {
 }
 
 .details {
-  padding: 10px;
   border: 1px solid var(--p-surface-200);
   border-radius: 3px;
   background: var(--p-surface-50);
   display: flex;
-}
 
-.description {
-  min-height: 100px;
-  flex: 1;
-  min-width: 0;
-  max-width: 90ch;
+  & > * {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .description {
+    min-height: 100px;
+    flex: 1;
+    min-width: 0;
+    max-width: 90ch;
+    margin: 10px;
+  }
+
+  .insight-summary {
+    border-left: 1px solid var(--p-surface-200);
+    padding: 10px;
+  }
 }
 </style>

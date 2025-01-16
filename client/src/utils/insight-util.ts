@@ -277,7 +277,7 @@ function getMetadataSummary(projectMetadata: any) {
   const projectModifiedDate = new Date(projectMetadata.modified_at);
   return (
     `Project: ${projectMetadata.name} - Created: ${projectCreatedDate.toLocaleString()} - ` +
-    `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${projectMetadata.corpus_id}`
+    `Modified: ${projectModifiedDate.toLocaleString()}`
   );
 }
 

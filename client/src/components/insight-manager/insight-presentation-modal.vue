@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import {
   AnalyticalQuestion,
+  DataState,
   FullInsight,
   Insight,
+  InsightMetadata,
   NewInsight,
   ReviewPosition,
   SectionWithInsights,
@@ -10,13 +12,18 @@ import {
 import { computed, ref, toRefs, watch } from 'vue';
 import InsightPresentationThumbnails from './insight-presentation-thumbnails.vue';
 import insightUtil from '@/utils/insight-util';
-import { fetchPartialInsights, removeInsight } from '@/services/insight-service';
+import {
+  extractMetadataDetails,
+  fetchPartialInsights,
+  removeInsight,
+} from '@/services/insight-service';
 import Button from 'primevue/button';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import OptionsButton from '../widgets/options-button.vue';
 import useInsightStore from '@/composables/useInsightStore';
 import useInsightManager from '@/composables/useInsightManager';
+import InsightSummary from './insight-summary.vue';
 
 const props = defineProps<{
   reviewPosition: ReviewPosition | null;
@@ -136,28 +143,27 @@ const deleteInsight = () => {
   emit('set-review-position', null);
 };
 
-// TODO: do we need to get this from the store? we have projectMetadata at home
 const projectMetadata = computed(() => store.getters['app/projectMetadata']);
-// const metadataDetails = computed<InsightMetadata>(() => {
-//   const _updatedInsight = updatedInsight.value;
-//   const dState: DataState | null =
-//     isNewModeActive.value ||
-//     !InsightUtil.instanceOfInsight(_updatedInsight) ||
-//     InsightUtil.instanceOfNewInsight(_updatedInsight)
-//       ? dataState.value
-//       : _updatedInsight.data_state;
-//   const insightLastUpdate =
-//     isNewModeActive.value || !InsightUtil.instanceOfInsight(_updatedInsight)
-//       ? undefined
-//       : _updatedInsight.modified_at;
-//   const insightSummary = extractMetadataDetails(dState, projectMetadata.value, insightLastUpdate);
-//   return insightSummary;
-// });
+const metadataDetails = computed<InsightMetadata | null>(() => {
+  if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return null;
+  const insight = selectedSlide.value as FullInsight | NewInsight;
+  const dataState: DataState | null = insightUtil.instanceOfNewInsight(insight)
+    ? insight.state
+    : insight.data_state;
+  const insightLastUpdate = !insightUtil.instanceOfInsight(insight)
+    ? undefined
+    : insight.modified_at;
+  const insightSummary = extractMetadataDetails(dataState, insightLastUpdate);
+  return insightSummary;
+});
 
 const exportInsight = async (exportType: 'Powerpoint' | 'Word') => {
+  if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return;
   // const bibliographyMap = await getBibiographyFromCagIds([]);
-  // TODO: confirm that this isn't a question or null
-  const insight = selectedSlide.value as FullInsight | NewInsight;
+  const insight = {
+    ...(selectedSlide.value as FullInsight | NewInsight),
+    image: slideImage.value ?? '',
+  };
   if (exportType === 'Word') {
     insightUtil.exportDOCX([insight], projectMetadata.value, undefined, {});
   } else {
@@ -239,15 +245,13 @@ const closeInsightReview = () => {
           <img :src="slideImage" />
         </div>
         <div v-else class="slide-image"><i class="fa fa-spin fa-spinner" /> Loading image ...</div>
-        <!-- TODO: -->
-        <!-- <insight-summary
-            v-if="metadataDetails"
-            :metadata-details="metadataDetails"
-            class="insight-summary"
-          /> -->
-        <!-- <img :src="selectedSlide.image" /> -->
         <div class="details">
           <p>{{ selectedSlide.description || 'No description.' }}</p>
+          <InsightSummary
+            v-if="metadataDetails !== null"
+            :metadata-details="metadataDetails"
+            class="insight-summary"
+          />
         </div>
       </main>
     </div>
@@ -343,9 +347,19 @@ header {
 }
 
 .details {
-  padding: 10px;
   border: 1px solid var(--p-surface-200);
   border-radius: 3px;
   background: var(--p-surface-50);
+  display: flex;
+
+  & > * {
+    flex: 1;
+    min-width: 0;
+    padding: 10px;
+  }
+
+  .insight-summary {
+    border-left: 1px solid var(--p-surface-200);
+  }
 }
 </style>
