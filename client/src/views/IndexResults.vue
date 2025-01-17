@@ -1,8 +1,8 @@
 <template>
-  <teleport to="#navbar-trailing-teleport-destination" v-if="isMounted">
-    <analysis-options-button v-if="analysisName" :analysis-id="analysisId" />
-  </teleport>
   <div class="index-results-container flex" :class="[INSIGHT_CAPTURE_CLASS]">
+    <teleport to="#navbar-trailing-teleport-destination" v-if="isMounted">
+      <analysis-options-button v-if="analysisName" :analysis-id="analysisId" />
+    </teleport>
     <div class="flex-col structure-column">
       <header>
         <Button
@@ -79,8 +79,6 @@ import { AdminLevel, ProjectType } from '@/types/Enums';
 import useInsightStore from '@/composables/useInsightStore';
 import { IndexResultsDataState, Insight } from '@/types/Insight';
 import { getInsightById } from '@/services/insight-service';
-import useToaster from '@/composables/useToaster';
-import { TYPE } from 'vue-toastification';
 import { INSIGHT_CAPTURE_CLASS, isIndexResultsDataState } from '@/utils/insight-util';
 import { RegionalAggregation } from '@/types/Outputdata';
 import Button from 'primevue/button';
@@ -349,12 +347,12 @@ watch(
   },
   { immediate: true }
 );
-const toaster = useToaster();
 const updateStateFromInsight = async (insightId: string) => {
   const loadedInsight: Insight = await getInsightById(insightId);
   const dataState = loadedInsight?.data_state;
   if (!dataState || !isIndexResultsDataState(dataState)) {
-    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
+    // This state can occur when we're jumping to the live context of an
+    //  insight taken from a different page.
     return;
   }
   isShowingKeyDatasets.value = dataState.isShowingKeyDatasets;

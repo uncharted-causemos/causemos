@@ -6,11 +6,11 @@ export const EXPORT_MESSAGES = {
 
 export const INSIGHTS = {
   SUCCESSFUL_ADDITION: 'New insight succesfully added',
-  ERRONEOUS_ADDITION: 'There was an error in creating a new insight',
+  ERRONEOUS_ADDITION: 'An error occurred while creating the new insight',
   SUCCESSFUL_REMOVAL: 'Insight succesfully removed',
-  ERRONEOUS_REMOVAL: 'There was an error in removing the insight',
+  ERRONEOUS_REMOVAL: 'An error occurred while removing the insight',
   SUCCESSFUL_UPDATE: 'Insight succesfully updated',
-  ERRONEOUS_UPDATE: 'There was an error in updating the insight',
+  ERRONEOUS_UPDATE: 'An error occurred while updating the insight',
   NO_DATA: 'No insights have been saved',
 };
 

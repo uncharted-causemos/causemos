@@ -72,7 +72,6 @@ const { insights, reFetchInsights } = useInsightsData(undefined, true);
 const {
   showInsightPanel,
   setCurrentPane,
-  setSnapshotUrl,
   setUpdatedInsight,
   setInsightsBySection,
   setPositionInReview,
@@ -84,8 +83,6 @@ const openInsightsExplorer = () => {
 };
 const saveInsight = () => {
   emit('close');
-  // Snapshot URL is only used in datacube-card.vue/takeSnapshot.
-  setSnapshotUrl(undefined);
   // Open the fullscreen modal used for reviewing new insights.
   showInsightPanel();
   // Updated insight is used to modify an existing insight.

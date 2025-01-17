@@ -277,7 +277,7 @@ function getMetadataSummary(projectMetadata: any) {
   const projectModifiedDate = new Date(projectMetadata.modified_at);
   return (
     `Project: ${projectMetadata.name} - Created: ${projectCreatedDate.toLocaleString()} - ` +
-    `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${projectMetadata.corpus_id}`
+    `Modified: ${projectModifiedDate.toLocaleString()}`
   );
 }
 
@@ -341,7 +341,7 @@ function instanceOfInsight(
 function instanceOfFullInsight(
   data: null | Insight | FullInsight | AnalyticalQuestion | NewInsight
 ): data is FullInsight {
-  return instanceOfInsight(data) && 'image' in data;
+  return instanceOfInsight(data) && 'image' in data && !instanceOfNewInsight(data);
 }
 
 function instanceOfNewInsight(insight: Insight | NewInsight): insight is NewInsight {

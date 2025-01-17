@@ -1,45 +1,55 @@
 <template>
-  <div class="insight-manager-container" :class="{ 'panel-hidden': !isOpen }">
-    <review-insight-modal v-if="isReviewInsightModalOpen" />
-    <list-insights-modal v-if="isOpen && currentPane === 'list-insights'" />
+  <div class="insight-manager-container" :class="{ 'panel-hidden': !isPanelOpen }">
+    <InsightPresentationModal
+      v-if="currentPane === 'review-insight'"
+      class="insight-modal"
+      :review-position="reviewPosition"
+      :questions-list="questionsList"
+      :insights="insights"
+      @set-review-position="setReviewPosition"
+      @remove-insight-from-question="removeInsightFromSection"
+    />
+    <InsightEditModal
+      v-if="currentPane === 'review-edit-insight' || currentPane === 'review-new-insight'"
+      class="insight-modal"
+      :insight-id="idOfInsightToEdit"
+      :questions-list="questionsList"
+      @cancel-editing-insight="cancelEditingInsight"
+      @refresh-questions-and-insights="refreshQuestionsAndInsights"
+      @add-question="addSection"
+    />
+    <list-insights-modal
+      v-if="isPanelOpen && currentPane === 'list-insights'"
+      @set-review-position="setReviewPosition"
+    />
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { useStore } from 'vuex';
-import { defineComponent, computed } from 'vue';
+import { computed } from 'vue';
 import ListInsightsModal from '@/components/insight-manager/list-insights-modal.vue';
-import ReviewInsightModal from '@/components/insight-manager/review-insight-modal.vue';
+import InsightPresentationModal from './insight-presentation-modal.vue';
+import useInsightManager from '@/composables/useInsightManager';
+import InsightEditModal from './insight-edit-modal.vue';
+import useQuestionsData from '@/composables/useQuestionsData';
+import useInsightsData from '@/composables/useInsightsData';
 
-export default defineComponent({
-  name: 'InsightManager',
-  components: {
-    ListInsightsModal,
-    ReviewInsightModal,
-  },
-  setup() {
-    const store = useStore();
-    const isPanelOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
-    const currentPane = computed(() => store.getters['insightPanel/currentPane']);
+const { reviewPosition, setReviewPosition, idOfInsightToEdit, cancelEditingInsight } =
+  useInsightManager();
 
-    const isReviewInsightModalOpen = computed(() => {
-      return ['review-insight', 'review-edit-insight', 'review-new-insight'].includes(
-        currentPane.value
-      );
-    });
+const store = useStore();
+const isPanelOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
+const currentPane = computed(() => store.getters['insightPanel/currentPane']);
 
-    const isOpen = computed(() => {
-      return isPanelOpen.value === true;
-    });
+const { questionsList, removeInsightFromSection, reFetchQuestions, addSection } =
+  useQuestionsData();
+const { insights, reFetchInsights } = useInsightsData();
 
-    return {
-      isPanelOpen,
-      currentPane,
-      isReviewInsightModalOpen,
-      isOpen,
-    };
-  },
-});
+const refreshQuestionsAndInsights = () => {
+  reFetchQuestions();
+  reFetchInsights();
+};
 </script>
 
 <style lang="scss" scoped>
@@ -66,5 +76,13 @@ export default defineComponent({
 
 .insight-manager-container.panel-hidden {
   display: none;
+}
+
+.insight-modal {
+  position: absolute;
+  inset: 10px;
+  border-radius: 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.33);
+  overflow: hidden;
 }
 </style>

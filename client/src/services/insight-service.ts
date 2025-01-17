@@ -136,21 +136,12 @@ const _fetchParamsToFilters = (fetchParams: InsightFilterFields) => {
 
 export const extractMetadataDetails = (
   dataState: DataState | null,
-  projectMetadata: any,
   insightLastUpdate?: number
 ): InsightMetadata => {
   const summary: InsightMetadata = {
     insightLastUpdate: insightLastUpdate ?? Date.now(),
   };
-  if (!dataState || !projectMetadata) return summary;
-
-  // FIXME: Previously, analysisName came from 'app/analysisName'
-  //  It needs to be saved with the insight if we want to display it here
-  // if (quantitativeView) {
-  //   if (projectType === ProjectType.Analysis) {
-  //     summary.analysisName = analysisName;
-  //   }
-  // }
+  if (!dataState) return summary;
 
   if (isDataAnalysisState(dataState)) {
     const datacubes: {

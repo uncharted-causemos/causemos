@@ -6,6 +6,8 @@ import { FeatureConfig } from './Outputdata';
 import { IndexProjectionCountry, IndexProjectionScenario, SelectableIndexElementId } from './Index';
 import { ModelOrDatasetState } from '@/types/Datacube';
 import { Snippet } from '@/types/IndexDocuments';
+import { MarkerAreaState } from 'markerjs2';
+import { CropAreaState } from 'cropro';
 
 // view-specific values (no data dependency)
 export interface ViewState {
@@ -101,9 +103,10 @@ export interface Snapshot {
 }
 
 export interface AnnotationState {
-  markerAreaState: any;
-  cropAreaState: any;
+  markerAreaState: MarkerAreaState | undefined;
+  cropAreaState: CropAreaState | undefined;
   imagePreview: string;
+  originalImagePreview: string;
 }
 
 // @concrete type

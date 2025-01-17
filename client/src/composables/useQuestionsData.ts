@@ -284,5 +284,6 @@ export default function useQuestionsData() {
     removeInsightFromSection,
     moveInsight,
     getQuestionsThatIncludeInsight,
+    reFetchQuestions,
   };
 }

@@ -95,4 +95,10 @@ $layout-transition: 0.3s ease;
 
   // Should be used over --p-surface-0
   --border-0: var(--p-surface-200);
+
+  // Font sizes
+  --font-size-small: 1.2rem;
+  --font-size-medium: 1.4rem;
+  --font-size-large: 1.6rem;
+  --font-size-extra-large: 1.8rem;
 }

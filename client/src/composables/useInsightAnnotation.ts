@@ -1,259 +1,166 @@
+import { AnnotationState, FullInsight, NewInsight } from '@/types/Insight';
 import { CropArea, CropAreaState } from 'cropro';
 import { MarkerArea, MarkerAreaState } from 'markerjs2';
-import { Ref, computed, nextTick, ref, watch } from 'vue';
+import { Ref, computed, ref, watch } from 'vue';
 
-export default function useInsightAnnotation(imagePreview: Ref<string | null>) {
-  const markerArea = ref<MarkerArea | undefined>(undefined);
+export default function useInsightAnnotation(
+  savedInsightState: Ref<FullInsight | NewInsight | null>
+) {
+  // A record of the annotations that have been added, along with their
+  //  positions and appearance.
   const markerAreaState = ref<MarkerAreaState | undefined>(undefined);
-  const setMarkerAreaState = (newState: MarkerAreaState) => {
+  const setMarkerAreaState = (newState: MarkerAreaState | undefined) => {
     markerAreaState.value = newState;
   };
-
-  const cropArea = ref<CropArea | undefined>(undefined);
+  // A record of the crop dimensions that have been selected.
   const cropState = ref<CropAreaState | undefined>(undefined);
-  const setCropState = (newState: CropAreaState) => {
+  const setCropState = (newState: CropAreaState | undefined) => {
     cropState.value = newState;
   };
+  // The image element that is being annotated or cropped.
+  const imageElementRef = ref<HTMLImageElement | null>(null);
+  // The operation that is currently being performed on the image.
+  const activeOperation = ref<'annotate' | 'crop' | null>(null);
 
-  const annotation = ref<any>(null);
-  const setAnnotation = (newValue: any) => {
-    annotation.value = newValue;
-  };
+  /**
+   * The original image preview before any annotation or cropping.
+   * After annotation or cropping, this value is saved in
+   * annotationAndCropState.originalImagePreview so that the user can revert
+   * all changes should they wish to.
+   */
+  const originalImagePreview = computed(
+    () =>
+      savedInsightState.value?.annotation_state?.originalImagePreview ??
+      savedInsightState.value?.image ??
+      ''
+  );
 
-  const finalImagePreview = ref<HTMLImageElement | null>(null);
-  const lastCroppedImage = ref('');
-  const lastAnnotatedImage = ref('');
-  const showCropInfoMessage = ref(false);
+  // When saved insight state is loaded, apply the marker and crop state
+  watch(
+    savedInsightState,
+    (state) => {
+      if (state?.annotation_state?.markerAreaState || state?.annotation_state?.cropAreaState) {
+        setMarkerAreaState(state?.annotation_state?.markerAreaState);
+        setCropState(state?.annotation_state?.cropAreaState);
+      }
+    },
+    { immediate: true }
+  );
 
-  const originalImagePreview = ref('');
-  watch(imagePreview, (_imagePreview) => {
-    if (_imagePreview === null) {
-      originalImagePreview.value = '';
-      return;
-    }
-    // apply previously saved annotation, if any
-    if (!annotation.value) {
-      originalImagePreview.value = imagePreview.value ?? '';
-      return;
-    }
-
-    originalImagePreview.value = annotation.value.originalImagePreview;
-    // lastCroppedImage.value = annotation.value.previewImage;
-    if (annotation.value.markerAreaState || annotation.value.cropAreaState) {
-      setMarkerAreaState(annotation.value.markerAreaState);
-      setCropState(annotation.value.cropAreaState);
-      // NOTE: REVIEW: FIXME:
-      //  restoring both annotation and/or cropping is tricky since each one calls the other
-      // if (this.markerAreaState) {
-      //   nextTick(() => {
-      //     const refAnnotatedImage = this.$refs.finalImagePreview as HTMLImageElement;
-      //     refAnnotatedImage.src = this.originalImagePreview;
-      //     this.annotateImage();
-      //     (this.markerArea as MarkerArea).startRenderAndClose();
-      //   });
-      // }
-    }
-  });
-
-  const annotateImage = () => {
-    if (cropArea.value?.isOpen) {
-      cropArea.value.close();
-    }
-
-    if (markerArea.value?.isOpen) {
-      return;
-    }
-
-    const refAnnotatedImage = finalImagePreview.value as HTMLImageElement;
-
+  const annotateImage = async (shouldReapplyCrop = true) => {
+    const imageElement = imageElementRef.value as HTMLImageElement;
     // save the content of the annotated image to restore if the user cancels the annotation
-    lastAnnotatedImage.value = refAnnotatedImage.src;
+    const imageSrcBeforeAnnotations = imageElement.src;
+    // Use the uncropped image as the source.
+    imageElement.src = originalImagePreview.value;
 
-    // copy the cropped, non-annotated, image as the source of the annotation
-    refAnnotatedImage.src =
-      lastCroppedImage.value !== '' ? lastCroppedImage.value : originalImagePreview.value;
+    if (shouldReapplyCrop) {
+      const cropArea = await cropImage(false);
+      await cropArea.startRenderAndClose();
+    }
 
-    // create an instance of MarkerArea and pass the target image reference as a parameter
-    markerArea.value = new MarkerArea(refAnnotatedImage);
+    // Create an instance of MarkerArea from the imageElement
+    const markerArea = new MarkerArea(imageElement);
+    markerArea.renderAtNaturalSize = true;
+    markerArea.targetRoot = imageElement.parentElement as HTMLElement;
 
-    // attach the annotation UI to the parent of the image
-    markerArea.value.targetRoot = refAnnotatedImage.parentElement as HTMLElement;
-    markerArea.value.renderAtNaturalSize = true;
-
-    let annotationSaved = false;
-
-    // register an event listener for when user clicks Close in the marker.js UI
-    // NOTE: this event is also called when the user clicks OK/save in the marker.js UI
-    markerArea.value.addCloseEventListener(() => {
-      if (!annotationSaved) {
-        refAnnotatedImage.src = lastAnnotatedImage.value;
+    // Register event handlers for the "Done" and "Cancel" buttons in the
+    //  marker.js UI.
+    let isAnnotationSaved = false;
+    // When the user clicks the Done (checkmark) button in the marker.js UI,
+    //  we update the image src with the annotated image and save the state.
+    markerArea.addEventListener('render', ({ dataUrl, state }) => {
+      isAnnotationSaved = true;
+      imageElement.src = dataUrl;
+      setMarkerAreaState(state);
+    });
+    // This event is called when the user clicks either the Cancel (X) or
+    //  Done (checkmark) button in the marker.js UI.
+    // We revert the image src to the last saved state if the user didn't
+    //  trigger this event by clicking the Done button.
+    markerArea.addEventListener('close', () => {
+      if (!isAnnotationSaved) {
+        imageElement.src = imageSrcBeforeAnnotations;
       }
-      annotationSaved = false;
+      activeOperation.value = null;
     });
 
-    // register an event listener for when user clicks OK/save in the marker.js UI
-    markerArea.value.addRenderEventListener((dataUrl, state) => {
-      annotationSaved = true;
-
-      // we are setting the markup result to replace our original image on the page
-      // but you can set a different image or upload it to your server
-      refAnnotatedImage.src = dataUrl;
-
-      // save state
-      markerAreaState.value = state;
-    });
-
-    // finally, call the show() method and marker.js UI opens
-    markerArea.value.show();
-
-    // if previous state is present - restore it
+    // Open the marker.js UI
+    markerArea.show();
+    activeOperation.value = 'annotate';
+    // If previous state is present, restore it.
     if (markerAreaState.value) {
-      markerArea.value.restoreState(markerAreaState.value);
+      markerArea.restoreState(markerAreaState.value);
     }
+    return markerArea;
   };
 
-  const cropImage = () => {
-    if (markerArea.value?.isOpen) {
-      markerArea.value.close();
+  const cropImage = async (shouldReapplyAnnotations = true) => {
+    const imageElement = imageElementRef.value as HTMLImageElement;
+    // save the current image src to restore if the user cancels the crop
+    const imageSrcBeforeCropping = imageElement.src;
+    // Use the uncropped image as the source.
+    imageElement.src = originalImagePreview.value;
+    // Re-apply annotations to the uncropped image.
+    if (shouldReapplyAnnotations) {
+      const markerArea = await annotateImage(false);
+      await markerArea.startRenderAndClose();
     }
-    if (cropArea.value?.isOpen) {
-      return;
-    }
 
-    showCropInfoMessage.value = true;
-
-    const refCroppedImage = finalImagePreview.value as HTMLImageElement;
-
-    // create an instance of CropArea and pass the target image reference as a parameter
-    cropArea.value = new CropArea(refCroppedImage);
-    cropArea.value.renderAtNaturalSize = true;
-
-    // before beginning the crop mode,
-    //  we must ensure the full image is shown as the crop source
-    // @LIMITATION: we are not able to leverage a good preview of the full original image with annotations applied unless we invoke the annotate-tool and wait until it is done
-    refCroppedImage.src = originalImagePreview.value;
-
-    // attach the crop UI to the parent of the image
-    cropArea.value.targetRoot = refCroppedImage.parentElement as HTMLElement;
-
-    // ensure the whole image is visible all the time
-    cropArea.value.zoomToCropEnabled = false;
-
-    // do not allow rotation and image flipping
-    cropArea.value.styles.settings.hideBottomToolbar = true;
-
-    // hide alignment grid
-    cropArea.value.isGridVisible = false;
-
-    let croppedSaved = false;
+    // Create an instance of CropArea from the target element.
+    const cropArea = new CropArea(imageElement);
+    cropArea.renderAtNaturalSize = true;
+    // Attach the crop UI to the parent of the image.
+    cropArea.targetRoot = imageElement.parentElement as HTMLElement;
+    // Ensure the whole image is visible all the time.
+    cropArea.zoomToCropEnabled = false;
+    // Do not allow rotation and image flipping.
+    cropArea.styles.settings.hideBottomToolbar = true;
+    // Hide alignment grid.
+    cropArea.isGridVisible = false;
 
     // register an event listener for when user clicks Close in the marker.js UI
-    // NOTE: this event is also called when the user clicks OK/save in the marker.js UI
-    cropArea.value.addCloseEventListener(() => {
-      if (!croppedSaved) {
-        refCroppedImage.src = lastCroppedImage.value;
-
-        // hide the info message regarding the crop preview and the visibility of annotations
-        showCropInfoMessage.value = false;
-
-        // apply existing annotations, if any, after cancelling the image crop
-        nextTick(() => {
-          // note that this close event may be called if the user clicks Annotate while the crop mode was open
-          // so we should not request re-annotation (in the next tick)
-          //  or otherwise it would cancel the annotation mode that is being initiated
-          if (!markerArea.value?.isOpen) {
-            annotateImage();
-            (markerArea.value as MarkerArea).startRenderAndClose();
-          }
-        });
-      }
-      croppedSaved = false;
+    // NOTE: Contrary to markerJS, this event does not fire when the
+    //  "done"(check mark) button is clicked
+    cropArea.addCloseEventListener(() => {
+      imageElement.src = imageSrcBeforeCropping;
+      activeOperation.value = null;
     });
 
-    // register an event listener for when user clicks OK/save in the CROPRO UI
-    cropArea.value.addRenderEventListener((dataUrl, state) => {
-      // we are setting the cropping result to replace our original image on the page
-      // but you can set a different image or upload it to your server
-      refCroppedImage.src = dataUrl;
-
-      // save the cropped image (which would be used as the source of the annotation later on)
-      lastCroppedImage.value = dataUrl;
-
-      // hide the info message regarding the crop preview and the visibility of annotations
-      showCropInfoMessage.value = false;
-
-      // save state
+    // When the user clicks the Done (checkmark) button in the cropro UI,
+    //  we update the image src with the cropped image and save the state.
+    cropArea.addRenderEventListener((dataUrl, state) => {
+      imageElement.src = dataUrl;
       cropState.value = state;
-
-      // apply existing annotations, if any, after cropping the image
-      nextTick(() => {
-        annotateImage();
-        (markerArea.value as MarkerArea).startRenderAndClose();
-      });
+      // Remove reference to this CropArea object
+      activeOperation.value = null;
     });
 
-    // finally, call the show() method and CROPRO UI opens
-    cropArea.value.show();
+    // Show the Cropro UI
+    cropArea.show();
+    activeOperation.value = 'crop';
 
-    // handle previous state if present
+    // If the image has been cropped before, restore the crop rectangle
+    //  positions.
     if (cropState.value) {
-      //
-      // Do not restore the state and crop the image
-      // Instead, show the original image and the crop rect
-      //
-      const cropAreaTemp = cropArea.value as any;
-      cropAreaTemp.cropLayer.setCropRectangle(cropState.value.cropRect);
+      cropArea.restoreState(cropState.value);
     }
+    return cropArea;
   };
 
-  // const revertImage = () => {
-  //   if (markerArea.value?.isOpen) {
-  //     markerArea.value.close();
-  //   }
-  //   if (cropArea.value?.isOpen) {
-  //     cropArea.value.close();
-  //   }
-  //   markerAreaState.value = undefined;
-  //   cropState.value = undefined;
-  //   lastCroppedImage.value = '';
-  //   showCropInfoMessage.value = false;
-  //   // revert img reference to the original image
-  //   if (originalImagePreview.value && originalImagePreview.value !== '') {
-  //     const refFinalImage = $refs.finalImagePreview as HTMLImageElement;
-  //     refFinalImage.src = originalImagePreview.value;
-  //   }
-  // };
-  const onCancelEdit = () => {
-    // if annotation/cropping was enabled, we need to apply them
-    // FIXME: this call has been commented out for years (as of December 2023).
-    //  It's not clear why or whether it causes bugs.
-    // revertImage();
-    if (markerArea.value?.isOpen) {
-      markerArea.value.close();
-    }
-    if (cropArea.value?.isOpen) {
-      cropArea.value.close();
-    }
-  };
-
-  const insightThumbnail = computed(() => finalImagePreview.value?.src);
-
-  const annotationAndCropState = computed(() => ({
+  const annotationAndCropState = computed<AnnotationState>(() => ({
     markerAreaState: markerAreaState.value,
     cropAreaState: cropState.value,
-    imagePreview:
-      lastCroppedImage.value !== '' ? lastCroppedImage.value : originalImagePreview.value,
     originalImagePreview: originalImagePreview.value,
+    imagePreview: imageElementRef.value?.src ?? '',
   }));
 
   return {
-    finalImagePreview,
-    onCancelEdit,
+    imageElementRef,
     cropImage,
     annotateImage,
-    showCropInfoMessage,
     annotationAndCropState,
-    insightThumbnail,
-    setAnnotation,
+    insightThumbnail: computed(() => imageElementRef.value?.src),
+    activeOperation,
   };
 }

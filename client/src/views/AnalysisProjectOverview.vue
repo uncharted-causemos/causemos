@@ -1,19 +1,18 @@
 <template>
-  <RenameModal
-    v-if="showRenameModal"
-    :modal-title="'Rename Analysis'"
-    :current-name="selectedAnalysis?.title ?? ''"
-    @confirm="onRenameModalConfirm"
-    @cancel="showRenameModal = false"
-  />
-  <DuplicateModal
-    v-if="showDuplicateModal"
-    :current-name="selectedAnalysis?.title"
-    @confirm="onDuplicateConfirm"
-    @cancel="showDuplicateModal = false"
-  />
-
   <div class="project-overview-container">
+    <RenameModal
+      v-if="showRenameModal"
+      :modal-title="'Rename Analysis'"
+      :current-name="selectedAnalysis?.title ?? ''"
+      @confirm="onRenameModalConfirm"
+      @cancel="showRenameModal = false"
+    />
+    <DuplicateModal
+      v-if="showDuplicateModal"
+      :current-name="selectedAnalysis?.title"
+      @confirm="onDuplicateConfirm"
+      @cancel="showDuplicateModal = false"
+    />
     <header>
       <section class="project-metadata">
         <div class="title">

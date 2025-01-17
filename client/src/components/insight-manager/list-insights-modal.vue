@@ -47,10 +47,18 @@
             @update:model-value="setActiveExportOption"
           />
           as
-          <Button severity="secondary" outlined @click="() => exportInsights('Powerpoint')"
-            >PowerPoint</Button
-          >
-          <Button severity="secondary" outlined @click="() => exportInsights('Word')">Word</Button>
+          <Button
+            severity="secondary"
+            outlined
+            label="PowerPoint"
+            @click="() => exportInsights('Powerpoint')"
+          />
+          <Button
+            severity="secondary"
+            outlined
+            label="Word"
+            @click="() => exportInsights('Word')"
+          />
         </div>
         <div class="cards">
           <div v-if="searchedInsights.length > 0" class="pane-content">
@@ -358,7 +366,7 @@ export default defineComponent({
           : this.fullInsights.find((insight) => insight.id === _insightId);
 
       this.setUpdatedInsight(insightOrSection ?? null);
-      this.setPositionInReview({
+      this.$emit('set-review-position', {
         sectionId: _sectionId,
         insightId: _insightId as string,
       });

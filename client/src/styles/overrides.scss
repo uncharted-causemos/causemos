@@ -378,3 +378,9 @@ div.lex-assistant-box {
     color: $text-color-dark; // Override lex styles
   }
 }
+
+// PrimeVue overrides
+input.p-inputtext,
+textarea.p-textarea {
+  font-size: var(--font-size-medium);
+}

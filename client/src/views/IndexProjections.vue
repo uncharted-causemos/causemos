@@ -578,7 +578,8 @@ const tryToUpdateStateFromInsight = async (insightId: string) => {
   const loadedInsight: Insight = await getInsightById(insightId);
   const dataState = loadedInsight?.data_state;
   if (!dataState || !isIndexProjectionsDataState(dataState)) {
-    toaster('Unable to apply the insight you selected.', TYPE.ERROR, false);
+    // This state can occur when we're jumping to the live context of an
+    //  insight taken from a different page.
     return;
   }
   // Need to store dataState in the component's state since confirmUpdateStateFromInsight may be
