@@ -195,10 +195,22 @@ export interface SectionWithInsights {
   insights: (FullInsight | NewInsight)[];
 }
 
-export interface ReviewPosition {
-  sectionId: string;
-  insightId: string | null;
-}
+export type ReviewPosition =
+  // The question title slide should be visible
+  | {
+      sectionId: string;
+      insightId: null;
+    }
+  // We're reviewing an insight outside of the question list
+  | {
+      sectionId: null;
+      insightId: string;
+    }
+  // We're reviewing an insight within a question in the question list
+  | {
+      sectionId: string;
+      insightId: string;
+    };
 
 export interface InsightMetadata {
   insightLastUpdate: number;

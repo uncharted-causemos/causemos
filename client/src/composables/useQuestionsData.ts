@@ -30,11 +30,8 @@ export default function useQuestionsData() {
 
   const store = useStore();
   const route = useRoute();
-  const contextIds = computed(() => store.getters['insightPanel/contextId']);
   const project = computed(() => store.getters['app/project']);
   const projectType = computed(() => store.getters['app/projectType']);
-
-  const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
 
   watchEffect((onInvalidate) => {
     // This condition should always return true, it's just used to add
@@ -44,31 +41,11 @@ export default function useQuestionsData() {
     }
     let isCancelled = false;
     async function getQuestions() {
-      // if context-id is undefined, then it means no datacubes/CAGs are listed, so ignore fetch
-      if (contextIds.value === undefined) {
-        return;
-      }
-
-      // @HACK: ignore context-id(s) when the insight explorer is open
-      //  (i.e., when clicking 'Review All Insights')
-      // NOTE: this only makes sense for analysis projects
-      //
-      // a more proper solution would be to store all context-id(s) for an analysis project,
-      // and set those everytime prior to opening the insight explorer,
-      // and finally restore that specific context-id once the insight explorer is closed!
-      const ignoreContextId =
-        isInsightExplorerOpen.value === true && projectType.value === ProjectType.Analysis;
-
-      //
       // fetch context-specific questions
-      //
       const contextQuestionsSearchFields: InsightFilterFields = {};
       if (projectType.value === ProjectType.Analysis) {
         // when fetching project-specific insights, then project-id is relevant
         contextQuestionsSearchFields.project_id = project.value;
-      }
-      if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
-        contextQuestionsSearchFields.context_id = contextIds.value;
       }
       const contextQuestions = await fetchQuestions([contextQuestionsSearchFields]);
 

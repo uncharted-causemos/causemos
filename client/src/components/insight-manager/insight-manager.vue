@@ -1,7 +1,7 @@
 <template>
-  <div class="insight-manager-container" :class="{ 'panel-hidden': !isPanelOpen }">
+  <div class="insight-manager-container" :class="{ 'panel-hidden': !isInsightModalOpen }">
     <InsightPresentationModal
-      v-if="currentPane === 'review-insight'"
+      v-if="currentScreen === 'review-insight'"
       class="insight-modal"
       :review-position="reviewPosition"
       :questions-list="questionsList"
@@ -10,7 +10,7 @@
       @remove-insight-from-question="removeInsightFromSection"
     />
     <InsightEditModal
-      v-if="currentPane === 'review-edit-insight' || currentPane === 'review-new-insight'"
+      v-if="currentScreen === 'review-edit-insight' || currentScreen === 'review-new-insight'"
       class="insight-modal"
       :insight-id="idOfInsightToEdit"
       :questions-list="questionsList"
@@ -18,16 +18,11 @@
       @refresh-questions-and-insights="refreshQuestionsAndInsights"
       @add-question="addSection"
     />
-    <list-insights-modal
-      v-if="isPanelOpen && currentPane === 'list-insights'"
-      @set-review-position="setReviewPosition"
-    />
+    <ListInsightsModal v-if="isInsightModalOpen && currentScreen === 'list-insights'" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { useStore } from 'vuex';
-import { computed } from 'vue';
 import ListInsightsModal from '@/components/insight-manager/list-insights-modal.vue';
 import InsightPresentationModal from './insight-presentation-modal.vue';
 import useInsightManager from '@/composables/useInsightManager';
@@ -35,12 +30,14 @@ import InsightEditModal from './insight-edit-modal.vue';
 import useQuestionsData from '@/composables/useQuestionsData';
 import useInsightsData from '@/composables/useInsightsData';
 
-const { reviewPosition, setReviewPosition, idOfInsightToEdit, cancelEditingInsight } =
-  useInsightManager();
-
-const store = useStore();
-const isPanelOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
-const currentPane = computed(() => store.getters['insightPanel/currentPane']);
+const {
+  reviewPosition,
+  setReviewPosition,
+  idOfInsightToEdit,
+  cancelEditingInsight,
+  currentScreen,
+  isInsightModalOpen,
+} = useInsightManager();
 
 const { questionsList, removeInsightFromSection, reFetchQuestions, addSection } =
   useQuestionsData();

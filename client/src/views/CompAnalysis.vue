@@ -208,7 +208,6 @@ import Message from 'primevue/message';
 const isMounted = ref(false);
 onMounted(() => {
   isMounted.value = true;
-  store.dispatch('insightPanel/hideInsightPanel');
 });
 
 const store = useStore();

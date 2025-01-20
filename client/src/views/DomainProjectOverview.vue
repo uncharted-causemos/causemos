@@ -138,7 +138,6 @@ export default {
     ...mapGetters({
       project: 'app/project',
       projectMetadata: 'app/projectMetadata',
-      refreshDatacubes: 'insightPanel/refreshDatacubes',
     }),
     filteredDatacubeInstances() {
       return this.datacubeInstances
@@ -190,26 +189,15 @@ export default {
     projectMetadata: function () {
       this.fetchDatacubeInstances();
     },
-    refreshDatacubes: function () {
-      if (this.refreshDatacubes) {
-        this.fetchDatacubeInstances();
-      }
-    },
   },
   async mounted() {
     this.fetchDatacubeInstances();
-
-    // ensure the insight explorer panel is closed in case the user has
-    //  previously opened it and clicked the browser back button
-    this.hideInsightPanel();
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setContextId: 'insightPanel/setContextId',
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setRefreshDatacubes: 'insightPanel/setRefreshDatacubes',
     }),
     getDatacubeStatusInfo,
     updateDesc() {
@@ -248,9 +236,6 @@ export default {
       this.sortDatacubeInstancesByMostRecentDate();
 
       this.disableOverlay();
-
-      // reset the flag that is often needed to request a refresh when the last public insight is removed
-      this.setRefreshDatacubes(false);
     },
     unpublishInstance(instance) {
       unpublishDatacubeInstance(instance);

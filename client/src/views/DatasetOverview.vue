@@ -295,10 +295,6 @@ export default defineComponent({
   async mounted() {
     await this.fetchIndicators();
 
-    // ensure the insight explorer panel is closed in case the user has
-    //  previously opened it and clicked the browser back button
-    this.hideInsightPanel();
-
     if (this.$route.query.template_id) {
       this.showApplyToAllModal = true;
     }
@@ -307,7 +303,6 @@ export default defineComponent({
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
     }),
     addDomain() {
       if (!this.editedDataset.domains) {

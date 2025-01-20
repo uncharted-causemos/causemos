@@ -2,7 +2,6 @@
 import {
   AnalyticalQuestion,
   DataState,
-  FullInsight,
   Insight,
   InsightMetadata,
   NewInsight,
@@ -21,7 +20,6 @@ import Button from 'primevue/button';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import OptionsButton from '../widgets/options-button.vue';
-import useInsightStore from '@/composables/useInsightStore';
 import useInsightManager from '@/composables/useInsightManager';
 import InsightSummary from './insight-summary.vue';
 
@@ -58,20 +56,17 @@ watch(
   },
   { immediate: true }
 );
-const selectedSlide = computed<FullInsight | NewInsight | string | null>(() => {
+const selectedSlide = computed<Insight | NewInsight | string | null>(() => {
   if (reviewPosition.value === null) return null;
   const { sectionId, insightId } = reviewPosition.value;
+  // If insightId is null, the selected slide is a question
   if (reviewPosition.value.insightId === null) {
     return (
       insightsBySection.value.find((section) => section.section.id === sectionId)?.section
         .question ?? null
     );
   }
-  return (
-    insightsBySection.value
-      .find((section) => section.section.id === sectionId)
-      ?.insights.find((insight) => insight.id === insightId) ?? null
-  );
+  return insights.value.find((insight) => insight.id === insightId) ?? null;
 });
 const currentQuestion = computed(
   () =>
@@ -108,10 +103,10 @@ watch(
 
 const route = useRoute();
 const router = useRouter();
-const store = useStore();
+const { editInsight, showInsightList, hideInsightModal } = useInsightManager();
 const jumpToLiveContext = () => {
   // TODO: confirm that this isn't a question or null
-  const insight = selectedSlide.value as FullInsight | NewInsight;
+  const insight = selectedSlide.value as Insight | NewInsight;
   const currentURL = route.fullPath;
   const finalURL = insightUtil.jumpToInsightContext(insight, currentURL);
   if (finalURL) {
@@ -125,7 +120,7 @@ const jumpToLiveContext = () => {
       })
       .catch(() => {});
   }
-  store.dispatch('insightPanel/hideInsightPanel');
+  hideInsightModal();
 };
 const deleteInsight = () => {
   const insightId = reviewPosition.value?.insightId ?? null;
@@ -143,10 +138,11 @@ const deleteInsight = () => {
   emit('set-review-position', null);
 };
 
+const store = useStore();
 const projectMetadata = computed(() => store.getters['app/projectMetadata']);
 const metadataDetails = computed<InsightMetadata | null>(() => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return null;
-  const insight = selectedSlide.value as FullInsight | NewInsight;
+  const insight = selectedSlide.value as Insight | NewInsight;
   const dataState: DataState | null = insightUtil.instanceOfNewInsight(insight)
     ? insight.state
     : insight.data_state;
@@ -161,7 +157,7 @@ const exportInsight = async (exportType: 'Powerpoint' | 'Word') => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return;
   // const bibliographyMap = await getBibiographyFromCagIds([]);
   const insight = {
-    ...(selectedSlide.value as FullInsight | NewInsight),
+    ...(selectedSlide.value as Insight | NewInsight),
     image: slideImage.value ?? '',
   };
   if (exportType === 'Word') {
@@ -171,11 +167,8 @@ const exportInsight = async (exportType: 'Powerpoint' | 'Word') => {
   }
 };
 
-const { editInsight } = useInsightManager();
-// TODO: remove dependence on store
-const { setCurrentPane } = useInsightStore();
 const closeInsightReview = () => {
-  setCurrentPane('list-insights');
+  showInsightList();
 };
 </script>
 

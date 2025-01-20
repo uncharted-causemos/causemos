@@ -104,7 +104,7 @@
             severity="secondary"
           />
           <Button
-            @click="openInsightsExplorer"
+            @click="showInsightList"
             label="Review insights"
             icon="fa fa-fw fa-star"
             severity="secondary"
@@ -184,7 +184,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import _ from 'lodash';
 import {
@@ -220,11 +220,11 @@ import { findAllDatasets } from '@/utils/index-tree-util';
 import filtersUtil from '@/utils/filters-util';
 import { STATUS, TYPE as FILTERS_FIELD_TYPE, isIndicator } from '@/utils/datacube-util';
 import ToolCardWithAnalyses from '@/components/home/tool-card-with-analyses.vue';
-import useInsightStore from '@/composables/useInsightStore';
 import { getDatacubeById } from '@/services/datacube-service';
 import { getDatacubeId } from '@/utils/analysis-util';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
+import useInsightManager from '@/composables/useInsightManager';
 
 const router = useRouter();
 
@@ -304,16 +304,7 @@ const projectMetadata = computed(() => store.getters['app/projectMetadata']);
 const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
 const disableOverlay = () => store.dispatch('app/disableOverlay');
 
-const { showInsightPanel, setCurrentPane, clearContextId } = useInsightStore();
-onMounted(() => {
-  // clear the context to fetch all questions and insights
-  clearContextId();
-});
-
-const openInsightsExplorer = () => {
-  showInsightPanel();
-  setCurrentPane('list-insights');
-};
+const { showInsightList } = useInsightManager();
 
 const projectDescription = ref('');
 const isEditingProjectDescription = ref(false);

@@ -31,6 +31,7 @@ import 'vue3-resize/dist/vue3-resize.css';
 import 'flag-icons/css/flag-icons.min.css';
 import { getDataset } from '@/services/datacube-service';
 import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
+import useInsightManager from './composables/useInsightManager';
 
 export default defineComponent({
   name: 'App',
@@ -41,6 +42,8 @@ export default defineComponent({
   },
   setup() {
     useApplicationConfiguration();
+    const { isInsightModalOpen } = useInsightManager();
+    return { isInsightModalOpen };
   },
   computed: {
     ...mapGetters({
@@ -50,7 +53,6 @@ export default defineComponent({
       overlayCancelFn: 'app/overlayCancelFn',
       project: 'app/project',
       projectType: 'app/projectType',
-      isInsightModalOpen: 'insightPanel/isPanelOpen',
     }),
   },
   watch: {
