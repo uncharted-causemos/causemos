@@ -38,6 +38,7 @@ import { ModelOrDatasetState } from '@/types/Datacube';
 import { useStore } from 'vuex';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import InsightSummary from './insight-summary.vue';
+import useInsightManager from '@/composables/useInsightManager';
 
 const props = defineProps<{
   insightId: string | null;
@@ -122,7 +123,7 @@ const route = useRoute();
 const store = useStore();
 const project = computed(() => store.getters['app/project']);
 const contextId = computed(() => store.getters['insightPanel/contextId']);
-const { setCurrentPane, getDataState, getViewState, modelOrDatasetState } = useInsightStore();
+const { getDataState, getViewState, modelOrDatasetState } = useInsightStore();
 watch(
   insightId,
   async (id) => {
@@ -189,8 +190,9 @@ const {
   activeOperation,
 } = useInsightAnnotation(savedInsightState);
 
+const { showInsightList } = useInsightManager();
 const closeInsightReview = () => {
-  setCurrentPane('list-insights');
+  showInsightList();
 };
 const stopEditingInsight = () => {
   emit('cancel-editing-insight');
@@ -280,7 +282,7 @@ const metadataDetails = computed<InsightMetadata | null>(() => {
 </script>
 
 <template>
-  <div class="insight-presentation-modal-container">
+  <div class="insight-edit-modal-container">
     <RenameModal
       v-if="isAddingNewQuestion"
       :current-name="''"
@@ -297,7 +299,12 @@ const metadataDetails = computed<InsightMetadata | null>(() => {
     </nav>
     <nav class="space-between" v-else>
       <Button text label="Save new insight" disabled severity="secondary" />
-      <Button icon="fa fa-fw fa-lg fa-times" text severity="secondary" />
+      <Button
+        icon="fa fa-fw fa-lg fa-times"
+        text
+        severity="secondary"
+        @click="stopEditingInsight"
+      />
     </nav>
     <main class="expanded-insight">
       <header>
@@ -381,7 +388,7 @@ const metadataDetails = computed<InsightMetadata | null>(() => {
 </template>
 
 <style scoped>
-.insight-presentation-modal-container {
+.insight-edit-modal-container {
   display: flex;
   flex-direction: column;
   background: var(--p-surface-0);

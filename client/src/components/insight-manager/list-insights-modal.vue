@@ -70,7 +70,7 @@
               :key="insight.id"
               :insight="insight"
               @remove-insight="removeInsight(insight)"
-              @edit-insight="editInsight(insight)"
+              @edit-insight="startEditingInsight(insight)"
               @open-editor="openEditor(insight.id as string)"
               @select-insight="reviewInsight(insight)"
               @update-curation="updateCuration(insight.id as string)"
@@ -106,16 +106,14 @@ import { fetchFullInsights, removeInsight } from '@/services/insight-service';
 import { AnalyticalQuestion, Insight, NewInsight, SectionWithInsights } from '@/types/Insight';
 import useQuestionsData from '@/composables/useQuestionsData';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
-import useInsightStore from '@/composables/useInsightStore';
 import SelectButton from 'primevue/selectbutton';
 import Button from 'primevue/button';
+import useInsightManager from '@/composables/useInsightManager';
 
 const EXPORT_OPTIONS = {
   insights: 'insights',
   questions: 'questions',
 };
-
-// const NOT_READY_ERROR = 'Insights are still loading. Try again later.';
 
 export default defineComponent({
   name: 'ListInsightsModal',
@@ -165,13 +163,8 @@ export default defineComponent({
       });
     });
 
-    const {
-      setCurrentPane,
-      setInsightsBySection,
-      setRefreshDatacubes,
-      setPositionInReview,
-      setUpdatedInsight,
-    } = useInsightStore();
+    const { editInsight, setReviewPosition, reviewInsights, hideInsightModal } =
+      useInsightManager();
 
     return {
       fullInsights: insights,
@@ -186,11 +179,10 @@ export default defineComponent({
       questionsList,
       store,
       toaster,
-      setUpdatedInsight,
-      setCurrentPane,
-      setInsightsBySection,
-      setRefreshDatacubes,
-      setPositionInReview,
+      editInsight,
+      setReviewPosition,
+      reviewInsights,
+      hideInsightModal,
     };
   },
   computed: {
@@ -245,10 +237,9 @@ export default defineComponent({
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
     }),
     closeInsightPanel() {
-      this.hideInsightPanel();
+      this.hideInsightModal();
       this.activeInsightId = null;
     },
     startDrag(evt: DragEvent, insight: Insight | NewInsight) {
@@ -269,21 +260,8 @@ export default defineComponent({
     dragEnd(evt: DragEvent) {
       (evt.currentTarget as HTMLElement).style.border = 'none';
     },
-    editInsight(insight: Insight | NewInsight) {
-      this.setUpdatedInsight(insight);
-      const dummySection = InsightUtil.createEmptyChecklistSection();
-      this.setPositionInReview({
-        sectionId: dummySection.id as string,
-        insightId: insight.id as string,
-      });
-      this.setInsightsBySection([
-        {
-          section: dummySection,
-          insights: this.searchedInsights,
-        },
-      ]);
-      // open the preview in the edit mode
-      this.setCurrentPane('review-edit-insight');
+    startEditingInsight(insight: Insight | NewInsight) {
+      this.editInsight(insight.id as string);
     },
     async removeInsight(insight: Insight | NewInsight) {
       const id = insight.id as string;
@@ -335,20 +313,8 @@ export default defineComponent({
       this.curatedInsightIds = this.curatedInsightIds.filter((ci) => ci !== id);
     },
     reviewInsight(insight: Insight | NewInsight) {
-      // open review modal (i.e., insight gallery view)
-      this.setUpdatedInsight(insight);
-      const dummySection = InsightUtil.createEmptyChecklistSection();
-      this.setPositionInReview({
-        sectionId: dummySection.id as string,
-        insightId: insight.id as string,
-      });
-      this.setInsightsBySection([
-        {
-          section: dummySection,
-          insights: this.searchedInsights,
-        },
-      ]);
-      this.setCurrentPane('review-insight');
+      this.setReviewPosition({ insightId: insight.id as string, sectionId: null });
+      this.reviewInsights();
     },
     reviewChecklist(section: AnalyticalQuestion | null, insightId: string | null) {
       if (this.insightsBySection.length < 1) return;
@@ -360,18 +326,11 @@ export default defineComponent({
       const firstInsight = _section.linked_insights.length > 0 ? _section.linked_insights[0] : null;
       const _insightId = insightId ?? firstInsight;
 
-      const insightOrSection =
-        _insightId === null
-          ? _section
-          : this.fullInsights.find((insight) => insight.id === _insightId);
-
-      this.setUpdatedInsight(insightOrSection ?? null);
-      this.$emit('set-review-position', {
+      this.setReviewPosition({
         sectionId: _sectionId,
         insightId: _insightId as string,
       });
-      this.setInsightsBySection(this.insightsBySection);
-      this.setCurrentPane('review-insight');
+      this.reviewInsights();
     },
     setActiveExportOption(id: string) {
       this.activeExportOption = id;

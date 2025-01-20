@@ -20,7 +20,7 @@
           </div>
           <OptionsButton :dropdown-below="true">
             <template #content>
-              <div class="dropdown-option" @click="editInsight(insight)">
+              <div class="dropdown-option" @click="startEditingInsight(insight)">
                 <i class="fa fa-edit" />
                 Edit
               </div>
@@ -59,7 +59,7 @@ import { removeInsight } from '@/services/insight-service';
 import MessageDisplay from '../widgets/message-display.vue';
 import ImgLazy from '../widgets/img-lazy.vue';
 import OptionsButton from '../widgets/options-button.vue';
-import useInsightStore from '@/composables/useInsightStore';
+import useInsightManager from '@/composables/useInsightManager';
 
 const emit = defineEmits(['close']);
 
@@ -67,29 +67,17 @@ const store = useStore();
 const projectType = computed(() => store.getters['app/projectType']);
 const project = computed(() => store.getters['app/project']);
 
-const { insights, reFetchInsights } = useInsightsData(undefined, true);
+const contextIds = computed(() => store.getters['insightPanel/contextId']);
+const { insights, reFetchInsights } = useInsightsData(contextIds);
 
-const {
-  showInsightPanel,
-  setCurrentPane,
-  setUpdatedInsight,
-  setInsightsBySection,
-  setPositionInReview,
-} = useInsightStore();
+const { showInsightList, startCreatingInsight, editInsight } = useInsightManager();
 const openInsightsExplorer = () => {
   emit('close');
-  showInsightPanel();
-  setCurrentPane('list-insights');
+  showInsightList();
 };
 const saveInsight = () => {
   emit('close');
-  // Open the fullscreen modal used for reviewing new insights.
-  showInsightPanel();
-  // Updated insight is used to modify an existing insight.
-  setUpdatedInsight(null);
-  // 'review-new-insight' tells the modal that we're creating a new insight rather than modifying an
-  //  existing one.
-  setCurrentPane('review-new-insight');
+  startCreatingInsight();
 };
 const route = useRoute();
 const router = useRouter();
@@ -131,22 +119,11 @@ const applyInsight = (insight: Insight | NewInsight) => {
       .catch(() => {});
   }
 };
-const editInsight = (insight: Insight | NewInsight) => {
-  showInsightPanel();
-  setUpdatedInsight(insight);
-  const dummySection = InsightUtil.createEmptyChecklistSection();
-  const insightsBySection = [
-    {
-      section: dummySection,
-      insights: insights.value,
-    },
-  ];
-  setInsightsBySection(insightsBySection);
-  setPositionInReview({
-    sectionId: dummySection.id as string,
-    insightId: insight.id as string,
-  });
-  setCurrentPane('review-edit-insight');
+const startEditingInsight = (insight: Insight | NewInsight) => {
+  if (insight.id === undefined) {
+    return;
+  }
+  editInsight(insight.id);
 };
 
 const deleteInsight = async (insight: Insight | NewInsight) => {

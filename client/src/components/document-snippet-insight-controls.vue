@@ -9,7 +9,7 @@
     <div v-else>
       <div class="edit-btn-group">
         <label class="saved-label"><i class="fa fa-fw fa-check" /> Insight saved</label>
-        <button class="btn btn-default btn-sm" @click="editInsight">
+        <button class="btn btn-default btn-sm" @click="startEditingInsight">
           <i class="fa fa-fw fa-pencil" />
           Edit
         </button>
@@ -37,25 +37,17 @@ import { TYPE } from 'vue-toastification';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useToaster from '@/composables/useToaster';
 import useInsightStore from '@/composables/useInsightStore';
-import { createInsight, getInsightById } from '@/services/insight-service';
+import { createInsight } from '@/services/insight-service';
 import { addInsightToQuestion, removeInsightFromQuestion } from '@/services/question-service';
 import { INSIGHTS } from '@/utils/messages-util';
-import insightUtil from '@/utils/insight-util';
 import { Snippet } from '@/types/IndexDocuments';
 import { AnalyticalQuestion, FullInsight, Insight } from '@/types/Insight';
 import { InsightMetadataType } from '@/types/Enums';
+import useInsightManager from '@/composables/useInsightManager';
 
 const route = useRoute();
 const toaster = useToaster();
-const {
-  getDataState,
-  getViewState,
-  showInsightPanel,
-  setCurrentPane,
-  setUpdatedInsight,
-  setInsightsBySection,
-  setPositionInReview,
-} = useInsightStore();
+const { getDataState, getViewState } = useInsightStore();
 
 const props = defineProps<{
   snippetData: Snippet;
@@ -119,27 +111,10 @@ const saveInsight = async () => {
   }
 };
 
-const editInsight = async () => {
+const { editInsight } = useInsightManager();
+const startEditingInsight = async () => {
   if (!savedInsight.value?.id) return;
-  showInsightPanel();
-  setUpdatedInsight(null);
-  // Get the latest version of the insight from the server
-  const insight = await getInsightById(savedInsight.value.id);
-  setUpdatedInsight(insight);
-  // Get the latest version of the insight from the server
-  const dummySection = insightUtil.createEmptyChecklistSection();
-  const insightsBySection = [
-    {
-      section: dummySection,
-      insights: [insight as Insight],
-    },
-  ];
-  setInsightsBySection(insightsBySection);
-  setPositionInReview({
-    sectionId: dummySection.id as string,
-    insightId: savedInsight.value?.id as string,
-  });
-  setCurrentPane('review-edit-insight');
+  editInsight(savedInsight.value.id);
 };
 
 const dropdownActionDisabled = ref(false);

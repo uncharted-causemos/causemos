@@ -10,7 +10,7 @@ import { TYPE } from 'vue-toastification';
 export interface InsightFilterFields {
   id?: string | string[]; // allows searching by multiple IDs
   project_id?: string;
-  context_id?: string[];
+  context_id?: string | string[];
   analysis_id?: string;
 }
 
@@ -167,6 +167,7 @@ export const extractMetadataDetails = (
 
 export const removeInsight = async (id: string) => {
   const result = await deleteInsight(id);
+  // FIXME: This should also remove the insight from any questions it's linked to
   const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
   const toast = useToaster();
   if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
