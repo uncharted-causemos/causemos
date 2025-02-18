@@ -1,6 +1,7 @@
 <template>
   <div class="index-results-bar-chart-column-container flex-col">
     <header class="flex-col">
+      <InputText v-model="filterText" placeholder="Filter results" class="filter-input" />
       <label class="toggle-key-datasets">
         <Checkbox
           binary
@@ -39,9 +40,9 @@
         </div>
       </div>
     </header>
-    <div class="flex-col results-rows">
+    <div v-if="filteredIndexResultsData.length > 0" class="flex-col results-rows">
       <IndexResultsBarChartRow
-        v-for="(data, index) of indexResultsData"
+        v-for="(data, index) of filteredIndexResultsData"
         :key="index"
         :rank="index + 1"
         :row-data="data"
@@ -52,6 +53,9 @@
         @mouseover="emit('hover-row', data.regionId)"
         @mouseleave="emit('stop-hover-row')"
       />
+    </div>
+    <div v-else class="flex-col subdued">
+      <p>No results match filter text "{{ filterText }}".</p>
     </div>
     <div v-if="removedRegions.length > 0" class="removed-countries subdued">
       <p>
@@ -80,6 +84,7 @@ import { getIndexResultsColorConfig } from '@/utils/index-results-util';
 import ModalRemovedCountryReview from '@/components/modals/modal-removed-country-review.vue';
 import Checkbox from 'primevue/checkbox';
 import Button from 'primevue/button';
+import InputText from 'primevue/inputtext';
 import { getGadmNameToIso2Map } from '@/services/region-service';
 
 const props = defineProps<{
@@ -92,6 +97,7 @@ const props = defineProps<{
 }>();
 
 const showReview = ref<boolean>(false);
+const filterText = ref<string>('');
 
 const emit = defineEmits<{
   (e: 'toggle-is-showing-key-datasets'): void;
@@ -109,6 +115,11 @@ const getRegionIdToISO2Map = async () => {
   gadmNameToIso2CountryCodeMap.value = result;
 };
 onMounted(getRegionIdToISO2Map);
+
+const filteredIndexResultsData = computed(() => {
+  const filter = filterText.value.toLowerCase();
+  return props.indexResultsData.filter((data) => data.regionId.toLowerCase().includes(filter));
+});
 </script>
 
 <style lang="scss" scoped>
@@ -126,6 +137,10 @@ onMounted(getRegionIdToISO2Map);
 
 header {
   gap: 5px;
+}
+
+.filter-input {
+  margin-bottom: 10px;
 }
 
 .results-rows {
