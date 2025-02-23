@@ -92,6 +92,12 @@ const setSortColumnAndOrder = (
 const getHeaderCellSortState = (cell: SortOption) =>
   cell === columnToSortBy.value ? sortOrder.value : SortableTableHeaderState.None;
 const statefulData = ref<RootStatefulDataNode | null>(null);
+
+const getNameFromTimeseriesId = (timeseriesId: string): string => {
+  const timeseries = props.timeseriesData.find((ts) => ts.id === timeseriesId);
+  return timeseries ? timeseries.name : '';
+};
+
 watch(
   [
     rawData,
@@ -106,6 +112,7 @@ watch(
       ADMIN_LEVEL_KEYS,
       _rawData,
       _getColorFromTimeseriesId,
+      getNameFromTimeseriesId,
       _columnToSortBy,
       _sortOrder,
       _comparisonSettings

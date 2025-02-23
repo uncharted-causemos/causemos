@@ -12,9 +12,9 @@ export enum SortOption {
   Value,
 }
 
-// A helper function to allow TypeScript to distinguish between
-//  the the root node (that is missing several properties) and
-//  full nodes.
+/** A helper function to allow TypeScript to distinguish between the
+ *  root node (that is missing several properties) and full nodes.
+ */
 export function isStatefulDataNode(
   node: RootStatefulDataNode | StatefulDataNode
 ): node is StatefulDataNode {
@@ -151,6 +151,7 @@ export const sortHierarchy = (
  * @param orderedAggregationLevelKeys rawData's keys, in descending order (e.g. ['country', 'admin1', ...]).
  * @param rawData the data that will be restructured into a tree.
  * @param getColorFromTimeseriesId a function that determines which colour each bar should be.
+ * @param getNameFromTimeseriesId Function to determine a name / label for each bar.
  * @param sortValue determines which field the rows are sorted by.
  * @param sortDirection determines whether rows are sorted in ascending or descending order.
  * @returns the root node of the tree.
@@ -159,10 +160,11 @@ export const constructHierarchichalDataNodeTree = (
   orderedAggregationLevelKeys: string[],
   rawData: BreakdownData,
   getColorFromTimeseriesId: (timeseriesId: string) => string,
+  getNameFromTimeseriesId: (timeseriesId: string) => string,
   sortValue: SortOption,
   sortDirection: SortableTableHeaderState.Up | SortableTableHeaderState.Down,
   comparisonSettings: ComparisonSettings
-) => {
+): RootStatefulDataNode => {
   // Whenever the raw data changes, construct a hierarchical data structure
   //  out of it, augmented with a boolean 'expanded' property to keep
   //  track of the state of the component.
@@ -227,6 +229,7 @@ export const constructHierarchichalDataNodeTree = (
           return {
             color: getColorFromTimeseriesId(timeseriesId),
             value,
+            name: getNameFromTimeseriesId(timeseriesId),
           };
         });
       // Create stateful node and insert it into its place in the tree

@@ -20,7 +20,7 @@
         {{ itemData.name }}
       </span>
       <div v-for="(bar, index) in itemData.bars" :key="index" class="value-on-same-line">
-        <div class="histogram-bar-wrapper">
+        <div class="histogram-bar-wrapper" v-tooltip.top-end="bar.name">
           <AggregationChecklistBar
             :barColor="bar.color"
             :barValue="bar.value"
@@ -53,7 +53,7 @@ import { computed, toRefs } from 'vue';
 
 interface AggregationChecklistItemPropType {
   name: string;
-  bars: { color: string; value: number }[];
+  bars: { color: string; value: number; name: string }[];
   isSelectedAggregationLevel: boolean;
   showExpandToggle: boolean;
   isExpanded: boolean;
