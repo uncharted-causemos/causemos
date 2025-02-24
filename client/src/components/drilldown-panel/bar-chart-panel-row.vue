@@ -63,7 +63,7 @@ import { computed, toRefs } from 'vue';
 
 interface AggregationChecklistItemPropType {
   name: string;
-  bars: { color: string; value: number; name: string }[];
+  bars: { color: string; value: number; name?: string }[];
   isSelectedAggregationLevel: boolean;
   showExpandToggle: boolean;
   isExpanded: boolean;
