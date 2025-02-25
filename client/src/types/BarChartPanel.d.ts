@@ -1,7 +1,7 @@
 export interface StatefulDataNode {
   name: string;
   children: StatefulDataNode[];
-  bars: { color: string; value: number; name?: string }[];
+  bars: { color: string; value: number; name: string }[];
   path: string[];
   isExpanded: boolean;
 }
@@ -14,7 +14,7 @@ export interface RootStatefulDataNode {
 
 export interface ChecklistRowData {
   name: string;
-  bars: { color: string; value: number; name?: string }[];
+  bars: { color: string; value: number; name: string }[];
   isExpanded: boolean;
   isChecked: boolean;
   path: string[];
