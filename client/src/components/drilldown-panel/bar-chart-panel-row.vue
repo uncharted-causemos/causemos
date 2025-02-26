@@ -14,13 +14,23 @@
       }"
     />
     <div v-else class="unit-width" />
-    <div v-tooltip.top-start="ancestorTooltip" class="content--multiple-rows">
+    <div
+      class="content--multiple-rows"
+      v-tooltip="{
+        placement: 'top-start',
+        content: ancestorTooltip,
+        showGroup: 'bar-chart-ancestor-tip',
+      }"
+    >
       <span class="title un-font-small">
         <span class="faded">{{ ancestorPrefix }}</span>
         {{ itemData.name }}
       </span>
       <div v-for="(bar, index) in itemData.bars" :key="index" class="value-on-same-line">
-        <div class="histogram-bar-wrapper">
+        <div
+          class="histogram-bar-wrapper"
+          v-tooltip="{ placement: 'top-end', content: bar.name, showGroup: 'bar-chart-child-tip' }"
+        >
           <AggregationChecklistBar
             :barColor="bar.color"
             :barValue="bar.value"
@@ -53,7 +63,7 @@ import { computed, toRefs } from 'vue';
 
 interface AggregationChecklistItemPropType {
   name: string;
-  bars: { color: string; value: number }[];
+  bars: { color: string; value: number; name: string }[];
   isSelectedAggregationLevel: boolean;
   showExpandToggle: boolean;
   isExpanded: boolean;

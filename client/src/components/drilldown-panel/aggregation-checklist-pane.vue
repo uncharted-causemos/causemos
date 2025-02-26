@@ -382,6 +382,7 @@ export default defineComponent({
               return {
                 color: getColorFromTimeseriesId(timeseriesId),
                 value: values[timeseriesId],
+                name: '',
               };
             });
           // Create stateful node and insert it into its place in the tree

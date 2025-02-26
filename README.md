@@ -48,8 +48,6 @@ yarn install
 
 You need an environment configuration file to run the application. Copy `server/template.env` to `server/.env` and fill in the variables.
 
-If running against Uncharted's internal OpenStack, you can find a working environment file in the private `wm-env` repository.
-
 ### (Optional) Debugging
 
 The default development config includes some flags to facilitate debugging. To take advantage of these, install the Chrome Debugger Extension (https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome).
