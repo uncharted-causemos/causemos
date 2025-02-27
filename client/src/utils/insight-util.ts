@@ -305,16 +305,6 @@ function parseReportFromQuestionsAndInsights(
   return report;
 }
 
-function createEmptyChecklistSection(): AnalyticalQuestion {
-  return {
-    id: '',
-    question: '',
-    linked_insights: [],
-    view_state: {},
-    url: '',
-  };
-}
-
 function getSlideFromPosition(
   sections: SectionWithInsights[],
   position: ReviewPosition | null
@@ -758,7 +748,6 @@ export default {
   instanceOfFullInsight,
   instanceOfNewInsight,
   instanceOfQuestion,
-  createEmptyChecklistSection,
   getSlideFromPosition,
   getSourceUrlForExport,
   jumpToInsightContext,

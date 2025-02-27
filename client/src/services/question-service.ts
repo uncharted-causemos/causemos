@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import API from '@/api/api';
-import { AnalyticalQuestion } from '@/types/Insight';
+import { AnalyticalQuestion, UnpersistedAnalyticalQuestion } from '@/types/Insight';
 
 export const getQuestionById = async (question_id: string) => {
   const result = await API.get(`questions/${question_id}`);
@@ -16,7 +16,7 @@ export const updateQuestion = async (question_id: string, question: AnalyticalQu
   return result;
 };
 
-export const addQuestion = async (question: AnalyticalQuestion) => {
+export const addQuestion = async (question: UnpersistedAnalyticalQuestion) => {
   const result = await API.post('questions', question);
   return result;
 };

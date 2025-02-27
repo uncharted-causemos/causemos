@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { v4 as uuidv4 } from 'uuid';
 import useInsightAnnotation from '@/composables/useInsightAnnotation';
 import useInsightStore from '@/composables/useInsightStore';
 import useToaster from '@/composables/useToaster';
@@ -16,9 +15,9 @@ import {
   DataState,
   FullInsight,
   InsightMetadata,
-  ModelOrDatasetStateInsight,
   ModelOrDatasetStateView,
   NewInsight,
+  UnpersistedInsight,
 } from '@/types/Insight';
 import insightUtil, {
   getModelOrDatasetStateViewFromRoute,
@@ -98,7 +97,7 @@ const addNewQuestion = (newQuestionText: string) => {
   emit('add-question', newQuestionText, onSuccess, onFail);
 };
 
-const savedInsightState = ref<FullInsight | NewInsight | null>(null);
+const savedInsightState = ref<UnpersistedInsight | FullInsight | NewInsight | null>(null);
 const insightTitle = ref<string>('');
 watch(
   savedInsightState,
@@ -144,9 +143,8 @@ watch(
     // FIXME: HACK: determine whether we should use the new insight schema depending on the route
     //  name that the new insight was taken from
     if (['modelDrilldown', 'datasetDrilldown'].includes(route.name as string)) {
-      const newModelOrDatasetStateInsight: ModelOrDatasetStateInsight = {
+      const newModelOrDatasetStateInsight: UnpersistedInsight = {
         schemaVersion: 2,
-        id: uuidv4(),
         name: '',
         description: '',
         project_id: project.value,
@@ -163,13 +161,12 @@ watch(
       savedInsightState.value = newModelOrDatasetStateInsight;
     } else {
       // Old insight schema
-      const newInsight: FullInsight = {
+      const newInsight: UnpersistedInsight = {
         name: '',
         description: '',
         project_id: project.value,
         context_id: contextId.value,
         url,
-        is_default: true,
         image: snapshotImage,
         annotation_state: annotationState,
         view_state: getViewState(),

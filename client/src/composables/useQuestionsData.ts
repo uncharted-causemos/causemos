@@ -1,5 +1,5 @@
 import { ProjectType } from '@/types/Enums';
-import { AnalyticalQuestion, ViewState } from '@/types/Insight';
+import { AnalyticalQuestion, UnpersistedAnalyticalQuestion, ViewState } from '@/types/Insight';
 import { computed, ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { InsightFilterFields } from '@/services/insight-service';
@@ -10,7 +10,6 @@ import {
   fetchQuestions,
   updateQuestion,
 } from '../services/question-service';
-import { useRoute } from 'vue-router';
 
 const getOrderValueFromSection = (section: AnalyticalQuestion) => {
   return section.view_state.analyticalQuestionOrder;
@@ -29,7 +28,6 @@ export default function useQuestionsData() {
   };
 
   const store = useStore();
-  const route = useRoute();
   const project = computed(() => store.getters['app/project']);
   const projectType = computed(() => store.getters['app/projectType']);
 
@@ -87,12 +85,10 @@ export default function useQuestionsData() {
       }
     }
     view_state.analyticalQuestionOrder = newSectionOrderIndex;
-    const newSection: AnalyticalQuestion = {
+    const newSection: UnpersistedAnalyticalQuestion = {
       question: title,
-      description: '',
       project_id: store.getters['app/project'],
       context_id: store.getters['insightPanel/contextId'],
-      url: route.fullPath,
       linked_insights: [],
       view_state,
     };

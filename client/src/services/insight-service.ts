@@ -1,5 +1,12 @@
 import API from '@/api/api';
-import { FullInsight, Insight, InsightMetadata, DataState, NewInsight } from '@/types/Insight';
+import {
+  FullInsight,
+  Insight,
+  InsightMetadata,
+  DataState,
+  NewInsight,
+  UnpersistedInsight,
+} from '@/types/Insight';
 import { isDataAnalysisState } from '@/utils/insight-util';
 
 import { INSIGHTS } from '@/utils//messages-util';
@@ -19,13 +26,13 @@ export const getInsightById = async (insight_id: string, fieldAllowList?: string
   return result.data;
 };
 
-export const addInsight = async (insight: FullInsight | NewInsight) => {
+export const addInsight = async (insight: UnpersistedInsight) => {
   const result = await API.post('insights', insight);
   return result;
 };
 
 // Alias to addInsight but it returns the data
-export const createInsight = async (insight: FullInsight | NewInsight) => {
+export const createInsight = async (insight: UnpersistedInsight) => {
   const { data } = await API.post('insights', insight);
   return data as { id: string };
 };

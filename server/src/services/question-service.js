@@ -13,20 +13,7 @@ const RESOURCE = es.RESOURCE;
  * @param {string} description - question description
  * @param {string} url - saved state as URL
  */
-const createQuestion = async (
-  question,
-  description,
-  visibility,
-  projectId,
-  analysisId,
-  contextId,
-  url,
-  targetView,
-  preActions,
-  postActions,
-  linkedInsights,
-  viewState
-) => {
+const createQuestion = async (question, projectId, contextId, linkedInsights, viewState) => {
   const newId = uuid();
   Logger.info('Creating question entry: ' + newId);
   const questionsConnection = Adapter.get(RESOURCE.QUESTION);
@@ -37,16 +24,9 @@ const createQuestion = async (
     {
       id: newId,
       question,
-      description,
       modified_at: Date.now(),
-      visibility,
       project_id: projectId,
-      analysis_id: analysisId,
       context_id: contextId,
-      url,
-      target_view: targetView,
-      pre_actions: preActions,
-      post_actions: postActions,
       linked_insights: linkedInsights,
       view_state: viewState,
     },
@@ -85,7 +65,7 @@ const updateQuestion = async (id, question) => {
 /**
  * Returns a list of questions
  */
-const getAllQuestions = async (projectId, contextId, targetView, visibility) => {
+const getAllQuestions = async (projectId, contextId) => {
   const questionsConnection = Adapter.get(RESOURCE.QUESTION);
   const searchFilters = [];
   // FIXME: add support for analysisId field
@@ -99,18 +79,6 @@ const getAllQuestions = async (projectId, contextId, targetView, visibility) => 
     searchFilters.push({
       field: 'context_id',
       value: contextId,
-    });
-  }
-  if (targetView) {
-    searchFilters.push({
-      field: 'target_view',
-      value: targetView,
-    });
-  }
-  if (visibility) {
-    searchFilters.push({
-      field: 'visibility',
-      value: visibility,
     });
   }
   const results = await questionsConnection.find(searchFilters, { size: 50 });
@@ -131,7 +99,7 @@ const getQuestion = async (questionId) => {
  *
  * @param {string} projectId
  */
-const counts = async (projectId, contextId, targetView, visibility) => {
+const counts = async (projectId, contextId) => {
   const questionsConnection = Adapter.get(RESOURCE.QUESTION);
   const searchFilters = [];
   if (projectId) {
@@ -144,18 +112,6 @@ const counts = async (projectId, contextId, targetView, visibility) => {
     searchFilters.push({
       field: 'context_id',
       value: contextId,
-    });
-  }
-  if (targetView) {
-    searchFilters.push({
-      field: 'target_view',
-      value: targetView,
-    });
-  }
-  if (visibility) {
-    searchFilters.push({
-      field: 'visibility',
-      value: visibility,
     });
   }
   const count = await questionsConnection.count(searchFilters);
