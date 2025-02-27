@@ -286,6 +286,7 @@ export default function render(
     .attr('y', PADDING_TOP)
     .attr('fill', 'transparent');
 
+  const focusChartClippingMaskId = `clipping-mask-${Math.floor(Math.random() * 1001)}`;
   const renderFocusChart = (xScale: D3ScaleLinear, yScale: D3ScaleLinear) => {
     focusGroupElement.selectAll('*').remove();
 
@@ -355,7 +356,7 @@ export default function render(
     // Don't render anything outside the main graph area (except the axes)
     focusGroupElement
       .selectChildren('*:not(.xAxis):not(.yAxis)')
-      .attr('clip-path', 'url(#clipping-mask)');
+      .attr('clip-path', `url(#${focusChartClippingMaskId})`);
   };
 
   // Update mouse handlers when the user changes the xScale by moving the scrollbar.
@@ -468,7 +469,7 @@ export default function render(
   selection
     .append('defs')
     .append('clipPath')
-    .attr('id', 'clipping-mask')
+    .attr('id', focusChartClippingMaskId)
     .append('rect')
     .attr('width', chartWidth)
     .attr('height', focusChartHeight)
