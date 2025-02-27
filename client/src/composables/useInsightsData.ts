@@ -1,5 +1,5 @@
 import { ProjectType } from '@/types/Enums';
-import { Insight, NewInsight } from '@/types/Insight';
+import { FullInsight, NewInsight } from '@/types/Insight';
 import { computed, Ref, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import {
@@ -19,7 +19,7 @@ export default function useInsightsData(
   contextIds: Ref<string[] | string | undefined> = ref(undefined),
   fieldAllowList?: string[]
 ) {
-  const insights = ref<(Insight | NewInsight)[]>([]);
+  const insights = ref<(FullInsight | NewInsight)[]>([]);
 
   const store = useStore();
   const project = computed(() => store.getters['app/project']);

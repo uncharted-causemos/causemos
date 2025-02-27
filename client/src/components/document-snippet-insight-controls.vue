@@ -41,7 +41,7 @@ import { createInsight } from '@/services/insight-service';
 import { addInsightToQuestion, removeInsightFromQuestion } from '@/services/question-service';
 import { INSIGHTS } from '@/utils/messages-util';
 import { Snippet } from '@/types/IndexDocuments';
-import { AnalyticalQuestion, FullInsight, Insight } from '@/types/Insight';
+import { AnalyticalQuestion, FullInsight, UnpersistedInsight } from '@/types/Insight';
 import { InsightMetadataType } from '@/types/Enums';
 import useInsightManager from '@/composables/useInsightManager';
 
@@ -56,7 +56,7 @@ const props = defineProps<{
   questionsList: AnalyticalQuestion[];
 }>();
 
-const savedInsight = ref<Insight | null>(null);
+const savedInsight = ref<Omit<FullInsight, 'modified_at' | 'thumbnail'> | null>(null);
 const isSaveButtonDisabled = ref(false);
 
 const questionsDropdown = computed(() => {
@@ -79,13 +79,12 @@ const saveInsight = async () => {
   const insightName = `${documentTitle} (paragraph ${fragmentParagraphLocation + 1})`;
 
   // Save new insight
-  const newInsight: FullInsight = {
+  const newInsight: UnpersistedInsight = {
     name: insightName,
     description: '',
     project_id: route.params.project as string,
     context_id: [route.params.analysisId as string],
     url: route.fullPath,
-    is_default: true,
     image,
     // Note: data_state is already set globally using setDataState from `useInsightStore` in `indexStructure.vue` page.
     // So the value is available at this moment. This document snippet shares same viewState from the index structure page.

@@ -86,22 +86,6 @@ export type DataState =
   | IndexStructureResultsState
   | IndexProjectionsDataState;
 
-// @base/abstract type
-export interface Snapshot {
-  id?: string;
-  description?: string;
-  project_id?: string;
-
-  // e.g., datacube-id, index-structure-id, etc.
-  context_id?: string[];
-
-  url: string;
-
-  view_state?: ViewState;
-
-  modified_at?: number;
-}
-
 export interface AnnotationState {
   markerAreaState: MarkerAreaState | undefined;
   cropAreaState: CropAreaState | undefined;
@@ -109,38 +93,42 @@ export interface AnnotationState {
   originalImagePreview: string;
 }
 
-// @concrete type
-export interface Insight extends Snapshot {
+export interface Insight {
+  id: string;
+  description: string;
+  project_id: string;
+  // e.g., datacube-id, index-structure-id, etc.
+  context_id?: string[];
+  url: string;
+  view_state?: ViewState;
   name: string;
   data_state?: DataState;
-  is_default: boolean; // is this the default insight?
-  modified_at?: number;
+  modified_at: number;
   metadata?: {
     type: InsightMetadataType;
     [key: string]: any; // arbitrary json object for metadata
   };
 }
 
-// @concrete type
-export interface InsightImage {
-  id: string;
-  thumbnail?: string; // e.g., image url or base64 encoding
+export interface FullInsight extends Insight {
+  thumbnail: string; // e.g., image url or base64 encoding
   image: string; // e.g., image url or base64 encoding
-}
-
-// @concrete type
-export interface FullInsight extends Insight, InsightImage {
   annotation_state?: AnnotationState;
 }
 
-// @concrete type
-export interface AnalyticalQuestion extends Snapshot {
+export interface AnalyticalQuestion {
+  id: string;
+  project_id: string;
+  // e.g., datacube-id, index-structure-id, etc.
+  context_id?: string[];
   question: string;
-  linked_insights: string[]; // has some insight (using their names/IDs) been linked to satisfy/answer this question?
-  tour_name?: string;
-  modified_at?: number;
+  // A list of IDs of insights that have been associated with this question
+  linked_insights: string[];
+  modified_at: number;
   view_state: ViewState;
 }
+
+export type UnpersistedAnalyticalQuestion = Omit<AnalyticalQuestion, 'id' | 'modified_at'>;
 
 export interface DocumentSnippetInsightMetadata extends Snippet {
   type: InsightMetadataType.DocumentSnippet;
@@ -160,6 +148,7 @@ export interface NewInsightBase {
   modified_at?: number;
   metadata?: NewInsightMetadata;
   image: string; // e.g., image url or base64 encoding
+  thumbnail: string; // e.g., image url or base64 encoding
   annotation_state?: AnnotationState;
   // A list (usually with one item) of artifact IDs that is used to determine whether this insight
   //  should be displayed in the insight list for a particular analysis item, index, etc.
@@ -189,6 +178,13 @@ export interface ModelOrDatasetStateInsight extends NewInsightBase {
 }
 
 export type NewInsight = ModelOrDatasetStateInsight;
+
+type FieldsCreatedByBackend = 'id' | 'modified_at' | 'thumbnail';
+
+/** An insight that has been created but not yet saved to the backend data store. */
+export type UnpersistedInsight =
+  | Omit<FullInsight, FieldsCreatedByBackend>
+  | Omit<NewInsight, FieldsCreatedByBackend>;
 
 export interface SectionWithInsights {
   section: AnalyticalQuestion;

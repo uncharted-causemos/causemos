@@ -2,6 +2,7 @@
 import {
   AnalyticalQuestion,
   DataState,
+  FullInsight,
   Insight,
   InsightMetadata,
   NewInsight,
@@ -26,7 +27,7 @@ import InsightSummary from './insight-summary.vue';
 const props = defineProps<{
   reviewPosition: ReviewPosition | null;
   questionsList: AnalyticalQuestion[];
-  insights: (Insight | NewInsight)[];
+  insights: (FullInsight | NewInsight)[];
 }>();
 const { reviewPosition, questionsList, insights } = toRefs(props);
 const emit = defineEmits<{
@@ -56,7 +57,7 @@ watch(
   },
   { immediate: true }
 );
-const selectedSlide = computed<Insight | NewInsight | string | null>(() => {
+const selectedSlide = computed<FullInsight | NewInsight | string | null>(() => {
   if (reviewPosition.value === null) return null;
   const { sectionId, insightId } = reviewPosition.value;
   // If insightId is null, the selected slide is a question
@@ -156,8 +157,8 @@ const metadataDetails = computed<InsightMetadata | null>(() => {
 const exportInsight = async (exportType: 'Powerpoint' | 'Word') => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return;
   // const bibliographyMap = await getBibiographyFromCagIds([]);
-  const insight = {
-    ...(selectedSlide.value as Insight | NewInsight),
+  const insight: FullInsight | NewInsight = {
+    ...(selectedSlide.value as FullInsight | NewInsight),
     image: slideImage.value ?? '',
   };
   if (exportType === 'Word') {

@@ -123,9 +123,7 @@ const snippetRefs = ref<HTMLElement[]>([]);
 // fetch questions for insight controls
 const questionsList = ref<AnalyticalQuestion[]>([]);
 onMounted(async () => {
-  questionsList.value = await fetchQuestions([
-    { project_id: route.params.project, visibility: 'private' },
-  ]);
+  questionsList.value = await fetchQuestions([{ project_id: route.params.project }]);
 });
 </script>
 

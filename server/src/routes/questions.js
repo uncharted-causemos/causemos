@@ -16,30 +16,16 @@ router.post(
   asyncHandler(async (req, res) => {
     const {
       question,
-      description,
       // modified_at -> automatically added inside the function createQuestion()
-      visibility,
       project_id,
-      analysis_id,
       context_id,
-      url,
-      target_view,
-      pre_actions,
-      post_actions,
       linked_insights,
       view_state,
     } = req.body;
     const result = await questionService.createQuestion(
       question,
-      description,
-      visibility,
       project_id,
-      analysis_id,
       context_id,
-      url,
-      target_view,
-      pre_actions,
-      post_actions,
       linked_insights,
       view_state
     );
@@ -69,13 +55,8 @@ router.post(
   '/search',
   authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
-    const { project_id, context_id, target_view, visibility } = req.body;
-    const result = await questionService.getAllQuestions(
-      project_id,
-      context_id,
-      target_view,
-      visibility
-    );
+    const { project_id, context_id, visibility } = req.body;
+    const result = await questionService.getAllQuestions(project_id, context_id, visibility);
     res.json(result);
   })
 );
@@ -87,8 +68,8 @@ router.get(
   '/counts',
   authUtil.checkRole([authUtil.ROLES.USER]),
   asyncHandler(async (req, res) => {
-    const { project_id, context_id, target_view, visibility } = req.query;
-    const result = await questionService.counts(project_id, context_id, target_view, visibility);
+    const { project_id, context_id } = req.query;
+    const result = await questionService.counts(project_id, context_id);
     res.json(result);
   })
 );
