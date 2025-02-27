@@ -93,6 +93,7 @@
             @edit-question="onEditQuestion"
             @save-title="onSaveQuestionTitle"
             @stop-editing-question="questionBeingEdited = null"
+            @show-question-insights="onShowQuestionInsights"
           />
           <div v-if="questionsList.length === 0" class="un-font-small subdued">No questions.</div>
         </div>
@@ -304,7 +305,7 @@ const projectMetadata = computed(() => store.getters['app/projectMetadata']);
 const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
 const disableOverlay = () => store.dispatch('app/disableOverlay');
 
-const { showInsightList } = useInsightManager();
+const { showInsightList, reviewInsights, setReviewPosition } = useInsightManager();
 
 const projectDescription = ref('');
 const isEditingProjectDescription = ref(false);
@@ -506,6 +507,14 @@ const goToDocuments = () => {
       projectType: ProjectType.Analysis,
     },
   });
+};
+const onShowQuestionInsights = (questionId: string) => {
+  const question = questionsList.value.find((q) => q.id === questionId);
+  if (question) {
+    const firstInsight = question.linked_insights.length > 0 ? question.linked_insights[0] : null;
+    setReviewPosition({ sectionId: questionId, insightId: firstInsight });
+    reviewInsights();
+  }
 };
 </script>
 

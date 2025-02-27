@@ -38,7 +38,11 @@
         <i class="fa fa-trash" />
       </SmallIconButton>
     </div>
-    <p class="un-font-small subdued">
+    <p
+      class="un-font-small subdued"
+      :class="{ clickable: question.linked_insights.length > 0 }"
+      @click="showQuestionInsights(question)"
+    >
       <i class="fa fa-fw fa-star" />{{ getInsightsDisplayString(question.linked_insights) }}
     </p>
   </div>
@@ -50,12 +54,15 @@ import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { ref } from 'vue';
 
 const props = defineProps<{ question: AnalyticalQuestion; isEditingQuestion: boolean }>();
+
 const emit = defineEmits<{
   (e: 'delete-question', questionId: string): void;
   (e: 'edit-question', questionId: string): void;
+  (e: 'show-question-insights', questionId: string): void;
   (e: 'save-title', questionId: string, newTitle: string): void;
   (e: 'stop-editing-question'): void;
 }>();
+
 const deleteQuestion = () => {
   emit('delete-question', props.question.id ?? '');
   emit('stop-editing-question');
@@ -84,6 +91,13 @@ const getInsightsDisplayString = (insightIds: string[]) => {
   }
   return `${insightIds.length} insights.`;
 };
+
+const showQuestionInsights = (question: AnalyticalQuestion) => {
+  if (question.linked_insights.length === 0) {
+    return;
+  }
+  emit('show-question-insights', question.id ?? '');
+};
 </script>
 
 <style lang="scss" scoped>
@@ -103,6 +117,14 @@ const getInsightsDisplayString = (insightIds: string[]) => {
     background: $accent-lightest;
     .delete-button {
       display: inline-block;
+    }
+  }
+
+  .clickable {
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
     }
   }
 }

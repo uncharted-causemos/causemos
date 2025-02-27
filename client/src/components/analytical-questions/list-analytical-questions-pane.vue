@@ -174,16 +174,23 @@ const getInsightById = (insightId: string) => {
 
 const questionsExpanded = ref(true);
 
-const emit = defineEmits([
-  'item-click',
-  'update-section-title',
-  'add-section',
-  'delete-section',
-  'move-section-above-section',
-  'remove-insight-from-section',
-  'move-insight',
-  'refetch-insights',
-]);
+const emit = defineEmits<{
+  (e: 'item-click', section: AnalyticalQuestion, insightId: string | null): void;
+  (e: 'update-section-title', id: string, newTitle: string, onError: () => void): void;
+  (e: 'add-section', title: string, onSuccess: () => void, onError: () => void): void;
+  (e: 'delete-section', id: string, onSuccess: () => void, onError: () => void): void;
+  (e: 'move-section-above-section', fromId: string, toId: string): void;
+  (e: 'remove-insight-from-section', insightId: string, sectionId: string): void;
+  (
+    e: 'move-insight',
+    insightId: string,
+    fromSectionId: string,
+    toSectionId: string,
+    position: number
+  ): void;
+  (e: 'refetch-insights'): void;
+}>();
+
 const selectedQuestion = ref<AnalyticalQuestion | null>(null);
 const isEditModalOpen = ref(false);
 const editSection = (section: AnalyticalQuestion) => {
