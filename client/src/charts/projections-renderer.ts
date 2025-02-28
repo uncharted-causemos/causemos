@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
+import { v4 as uuidv4 } from 'uuid';
 import dateFormatter from '@/formatters/date-formatter';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { ProjectionTimeseries, TimeseriesPointProjected } from '@/types/Timeseries';
@@ -286,6 +287,7 @@ export default function render(
     .attr('y', PADDING_TOP)
     .attr('fill', 'transparent');
 
+  const focusChartClippingMaskId = `clipping-mask-${uuidv4()}`;
   const renderFocusChart = (xScale: D3ScaleLinear, yScale: D3ScaleLinear) => {
     focusGroupElement.selectAll('*').remove();
 
@@ -355,7 +357,7 @@ export default function render(
     // Don't render anything outside the main graph area (except the axes)
     focusGroupElement
       .selectChildren('*:not(.xAxis):not(.yAxis)')
-      .attr('clip-path', 'url(#clipping-mask)');
+      .attr('clip-path', `url(#${focusChartClippingMaskId})`);
   };
 
   // Update mouse handlers when the user changes the xScale by moving the scrollbar.
@@ -468,7 +470,7 @@ export default function render(
   selection
     .append('defs')
     .append('clipPath')
-    .attr('id', 'clipping-mask')
+    .attr('id', focusChartClippingMaskId)
     .append('rect')
     .attr('width', chartWidth)
     .attr('height', focusChartHeight)
