@@ -267,7 +267,7 @@ const saveInsight = async () => {
 const metadataDetails = computed<LegacyInsightMetadata | null>(() => {
   if (savedInsightState.value === null) return null;
   const insight = savedInsightState.value as FullLegacyInsight | Insight;
-  const dataState: DataState | null = insightUtil.instanceOfNewInsight(insight)
+  const dataState: DataState | null = insightUtil.instanceOfVersion2Insight(insight)
     ? insight.state
     : insight.data_state;
   const insightLastUpdate = !insightUtil.instanceOfInsight(insight)

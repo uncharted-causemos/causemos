@@ -144,7 +144,7 @@ const projectMetadata = computed(() => store.getters['app/projectMetadata']);
 const metadataDetails = computed<LegacyInsightMetadata | null>(() => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return null;
   const insight = selectedSlide.value as LegacyInsight | Insight;
-  const dataState: DataState | null = insightUtil.instanceOfNewInsight(insight)
+  const dataState: DataState | null = insightUtil.instanceOfVersion2Insight(insight)
     ? insight.state
     : insight.data_state;
   const insightLastUpdate = !insightUtil.instanceOfInsight(insight)

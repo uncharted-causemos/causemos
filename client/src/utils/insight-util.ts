@@ -161,7 +161,7 @@ function jumpToInsightContext(
   project?: string,
   projectType?: string
 ): string | RouteLocationRaw | undefined {
-  if (instanceOfNewInsight(insight)) {
+  if (instanceOfVersion2Insight(insight)) {
     if (insight.view.view === 'analysisItemDrilldown') {
       return {
         name: isModelDrilldownInsight(insight) ? 'modelDrilldown' : 'datasetDrilldown',
@@ -328,13 +328,13 @@ function instanceOfInsight(
   return data !== null && 'name' in data;
 }
 
-function instanceOfFullInsight(
+function instanceOfFullLegacyInsight(
   data: null | LegacyInsight | FullLegacyInsight | AnalyticalQuestion | Insight
 ): data is FullLegacyInsight {
-  return instanceOfInsight(data) && 'image' in data && !instanceOfNewInsight(data);
+  return instanceOfInsight(data) && 'image' in data && !instanceOfVersion2Insight(data);
 }
 
-function instanceOfNewInsight(insight: LegacyInsight | Insight): insight is Insight {
+function instanceOfVersion2Insight(insight: LegacyInsight | Insight): insight is Insight {
   return (insight as Insight).schemaVersion === 2;
 }
 
@@ -583,12 +583,12 @@ async function exportDOCX(
 
   const metadataSummary = getMetadataSummary(projectMetadata);
   const sections = allData.reduce((acc, item, index) => {
-    if (instanceOfFullInsight(item)) {
+    if (instanceOfFullLegacyInsight(item)) {
       const newPage = index > 0 && !instanceOfQuestion(allData[index - 1]);
       acc.push(generateInsightDOCX(item, metadataSummary, newPage));
     } else if (instanceOfQuestion(item)) {
       acc.push(generateQuestionDOCX(item, metadataSummary));
-    } else if (instanceOfNewInsight(item)) {
+    } else if (instanceOfVersion2Insight(item)) {
       // TODO: generate entry
     }
     return acc;
@@ -729,11 +729,11 @@ function exportPPTX(
   });
 
   allData.forEach((item) => {
-    if (instanceOfFullInsight(item)) {
+    if (instanceOfFullLegacyInsight(item)) {
       generateInsightPPTX(item, pres, metadataSummary);
     } else if (instanceOfQuestion(item)) {
       generateQuestionPPTX(item, pres);
-    } else if (instanceOfNewInsight(item)) {
+    } else if (instanceOfVersion2Insight(item)) {
       // TODO: generate entry
     }
   });
@@ -745,8 +745,8 @@ function exportPPTX(
 
 export default {
   instanceOfInsight,
-  instanceOfFullInsight,
-  instanceOfNewInsight,
+  instanceOfFullLegacyInsight,
+  instanceOfVersion2Insight,
   instanceOfQuestion,
   getSlideFromPosition,
   getSourceUrlForExport,
