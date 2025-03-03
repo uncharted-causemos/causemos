@@ -14,7 +14,7 @@ import {
   AnnotationState,
   DataState,
   FullLegacyInsight,
-  InsightMetadata,
+  LegacyInsightMetadata,
   ModelOrDatasetStateView,
   NewInsight,
   UnpersistedInsight,
@@ -264,7 +264,7 @@ const saveInsight = async () => {
   }
 };
 
-const metadataDetails = computed<InsightMetadata | null>(() => {
+const metadataDetails = computed<LegacyInsightMetadata | null>(() => {
   if (savedInsightState.value === null) return null;
   const insight = savedInsightState.value as FullLegacyInsight | NewInsight;
   const dataState: DataState | null = insightUtil.instanceOfNewInsight(insight)

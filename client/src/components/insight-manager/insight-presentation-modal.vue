@@ -4,7 +4,7 @@ import {
   DataState,
   FullLegacyInsight,
   LegacyInsight,
-  InsightMetadata,
+  LegacyInsightMetadata,
   NewInsight,
   ReviewPosition,
   SectionWithInsights,
@@ -141,7 +141,7 @@ const deleteInsight = () => {
 
 const store = useStore();
 const projectMetadata = computed(() => store.getters['app/projectMetadata']);
-const metadataDetails = computed<InsightMetadata | null>(() => {
+const metadataDetails = computed<LegacyInsightMetadata | null>(() => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return null;
   const insight = selectedSlide.value as LegacyInsight | NewInsight;
   const dataState: DataState | null = insightUtil.instanceOfNewInsight(insight)

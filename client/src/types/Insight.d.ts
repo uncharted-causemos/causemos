@@ -215,7 +215,7 @@ export type ReviewPosition =
       insightId: string;
     };
 
-export interface InsightMetadata {
+export interface LegacyInsightMetadata {
   insightLastUpdate: number;
 
   // Data space specific

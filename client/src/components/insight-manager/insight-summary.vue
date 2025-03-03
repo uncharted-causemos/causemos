@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts">
-import { InsightMetadata } from '@/types/Insight';
+import { LegacyInsightMetadata } from '@/types/Insight';
 import { defineComponent, PropType } from 'vue';
 import dateFormatter from '@/formatters/date-formatter';
 import { mapGetters } from 'vuex';
@@ -31,7 +31,7 @@ export default defineComponent({
   name: 'InsightSummary',
   props: {
     metadataDetails: {
-      type: Object as PropType<InsightMetadata>,
+      type: Object as PropType<LegacyInsightMetadata>,
       required: true,
     },
   },

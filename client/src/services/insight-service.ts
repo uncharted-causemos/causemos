@@ -2,7 +2,7 @@ import API from '@/api/api';
 import {
   FullLegacyInsight,
   LegacyInsight,
-  InsightMetadata,
+  LegacyInsightMetadata,
   DataState,
   NewInsight,
   UnpersistedInsight,
@@ -147,8 +147,8 @@ const _fetchParamsToFilters = (fetchParams: InsightFilterFields) => {
 export const extractMetadataDetails = (
   dataState: DataState | null,
   insightLastUpdate?: number
-): InsightMetadata => {
-  const summary: InsightMetadata = {
+): LegacyInsightMetadata => {
+  const summary: LegacyInsightMetadata = {
     insightLastUpdate: insightLastUpdate ?? Date.now(),
   };
   if (!dataState) return summary;
