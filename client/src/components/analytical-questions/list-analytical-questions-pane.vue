@@ -147,7 +147,12 @@ import { ref } from 'vue';
 import _ from 'lodash';
 
 import { updateInsight } from '@/services/insight-service';
-import { AnalyticalQuestion, FullInsight, NewInsight, SectionWithInsights } from '@/types/Insight';
+import {
+  AnalyticalQuestion,
+  FullLegacyInsight,
+  NewInsight,
+  SectionWithInsights,
+} from '@/types/Insight';
 import { QUESTIONS } from '@/utils/messages-util';
 import MessageDisplay from '../widgets/message-display.vue';
 import OptionsButton from '../widgets/options-button.vue';
@@ -322,7 +327,7 @@ const onDragLeave = (evt: DragEvent) => {
 };
 const startDraggingInsight = (
   event: DragEvent,
-  insight: FullInsight | NewInsight,
+  insight: FullLegacyInsight | NewInsight,
   sectionId: string
 ) => {
   event.stopPropagation();

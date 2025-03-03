@@ -4,7 +4,7 @@ import _ from 'lodash';
 import {
   AnalyticalQuestion,
   LegacyInsight,
-  FullInsight,
+  FullLegacyInsight,
   DataState,
   DataSpaceDataState,
   ReviewPosition,
@@ -308,7 +308,7 @@ function parseReportFromQuestionsAndInsights(
 function getSlideFromPosition(
   sections: SectionWithInsights[],
   position: ReviewPosition | null
-): FullInsight | NewInsight | AnalyticalQuestion | null {
+): FullLegacyInsight | NewInsight | AnalyticalQuestion | null {
   if (position === null) {
     return null;
   }
@@ -323,14 +323,14 @@ function getSlideFromPosition(
 }
 
 function instanceOfInsight(
-  data: null | LegacyInsight | FullInsight | AnalyticalQuestion | NewInsight
+  data: null | LegacyInsight | FullLegacyInsight | AnalyticalQuestion | NewInsight
 ): data is LegacyInsight | NewInsight {
   return data !== null && 'name' in data;
 }
 
 function instanceOfFullInsight(
-  data: null | LegacyInsight | FullInsight | AnalyticalQuestion | NewInsight
-): data is FullInsight {
+  data: null | LegacyInsight | FullLegacyInsight | AnalyticalQuestion | NewInsight
+): data is FullLegacyInsight {
   return instanceOfInsight(data) && 'image' in data && !instanceOfNewInsight(data);
 }
 
@@ -361,7 +361,7 @@ function generateFooterDOCX(metadataSummary: string) {
 }
 
 function generateInsightDOCX(
-  insight: FullInsight,
+  insight: FullLegacyInsight,
   metadataSummary: string,
   newPage: boolean
 ): ISectionOptions {
@@ -574,7 +574,7 @@ async function generateAppendixDOCX(
 }
 
 async function exportDOCX(
-  insights: (FullInsight | NewInsight)[],
+  insights: (FullLegacyInsight | NewInsight)[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[],
   bibliography?: any
@@ -608,7 +608,7 @@ async function exportDOCX(
   });
 }
 
-function generateInsightPPTX(insight: FullInsight, pres: pptxgen, metadataSummary: string) {
+function generateInsightPPTX(insight: FullLegacyInsight, pres: pptxgen, metadataSummary: string) {
   // some PPTX consts as powerpoint does everything in inches & has hard boundaries
   const widthLimitImage = 10;
   const heightLimitImage = 4.75;
@@ -709,7 +709,7 @@ function generateQuestionPPTX(question: AnalyticalQuestion, pres: pptxgen) {
 }
 
 function exportPPTX(
-  insights: (FullInsight | NewInsight)[],
+  insights: (FullLegacyInsight | NewInsight)[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[]
 ) {

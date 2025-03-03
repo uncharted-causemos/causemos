@@ -117,7 +117,7 @@ export interface LegacyInsight {
   };
 }
 
-export interface FullInsight extends LegacyInsight {
+export interface FullLegacyInsight extends LegacyInsight {
   thumbnail: string; // e.g., image url or base64 encoding
   image: string; // e.g., image url or base64 encoding
   annotation_state?: AnnotationState;
@@ -190,12 +190,12 @@ type FieldsCreatedByBackend = 'id' | 'modified_at' | 'thumbnail';
 
 /** An insight that has been created but not yet saved to the backend data store. */
 export type UnpersistedInsight =
-  | Omit<FullInsight, FieldsCreatedByBackend>
+  | Omit<FullLegacyInsight, FieldsCreatedByBackend>
   | Omit<NewInsight, FieldsCreatedByBackend>;
 
 export interface SectionWithInsights {
   section: AnalyticalQuestion;
-  insights: (FullInsight | NewInsight)[];
+  insights: (FullLegacyInsight | NewInsight)[];
 }
 
 export type ReviewPosition =

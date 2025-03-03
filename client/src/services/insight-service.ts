@@ -1,6 +1,6 @@
 import API from '@/api/api';
 import {
-  FullInsight,
+  FullLegacyInsight,
   LegacyInsight,
   InsightMetadata,
   DataState,
@@ -75,7 +75,7 @@ export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<L
 export const fetchFullInsights = async (
   fetchParams: InsightFilterFields,
   includeAnnotationState = false
-): Promise<(FullInsight | NewInsight)[]> => {
+): Promise<(FullLegacyInsight | NewInsight)[]> => {
   const excludes = ['thumbnail'];
   if (!includeAnnotationState) excludes.push('annotation_state');
   const options = {
