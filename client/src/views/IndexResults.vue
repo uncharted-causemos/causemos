@@ -77,7 +77,7 @@ import IndexResultsBarChartColumn from '@/components/index-results/index-results
 import IndexResultsMap from '@/components/index-results/index-results-map.vue';
 import { AdminLevel, ProjectType } from '@/types/Enums';
 import useInsightStore from '@/composables/useInsightStore';
-import { IndexResultsDataState, Insight } from '@/types/Insight';
+import { IndexResultsDataState, LegacyInsight } from '@/types/Insight';
 import { getInsightById } from '@/services/insight-service';
 import { INSIGHT_CAPTURE_CLASS, isIndexResultsDataState } from '@/utils/insight-util';
 import { RegionalAggregation } from '@/types/Outputdata';
@@ -348,7 +348,7 @@ watch(
   { immediate: true }
 );
 const updateStateFromInsight = async (insightId: string) => {
-  const loadedInsight: Insight = await getInsightById(insightId);
+  const loadedInsight: LegacyInsight = await getInsightById(insightId);
   const dataState = loadedInsight?.data_state;
   if (!dataState || !isIndexResultsDataState(dataState)) {
     // This state can occur when we're jumping to the live context of an

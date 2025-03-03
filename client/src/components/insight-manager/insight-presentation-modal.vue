@@ -3,7 +3,7 @@ import {
   AnalyticalQuestion,
   DataState,
   FullInsight,
-  Insight,
+  LegacyInsight,
   InsightMetadata,
   NewInsight,
   ReviewPosition,
@@ -107,7 +107,7 @@ const router = useRouter();
 const { editInsight, showInsightList, hideInsightModal } = useInsightManager();
 const jumpToLiveContext = () => {
   // TODO: confirm that this isn't a question or null
-  const insight = selectedSlide.value as Insight | NewInsight;
+  const insight = selectedSlide.value as LegacyInsight | NewInsight;
   const currentURL = route.fullPath;
   const finalURL = insightUtil.jumpToInsightContext(insight, currentURL);
   if (finalURL) {
@@ -143,7 +143,7 @@ const store = useStore();
 const projectMetadata = computed(() => store.getters['app/projectMetadata']);
 const metadataDetails = computed<InsightMetadata | null>(() => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return null;
-  const insight = selectedSlide.value as Insight | NewInsight;
+  const insight = selectedSlide.value as LegacyInsight | NewInsight;
   const dataState: DataState | null = insightUtil.instanceOfNewInsight(insight)
     ? insight.state
     : insight.data_state;

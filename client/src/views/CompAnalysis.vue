@@ -166,7 +166,7 @@ import router from '@/router';
 
 import { ComparativeAnalysisMode } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
-import { Insight } from '@/types/Insight';
+import { LegacyInsight } from '@/types/Insight';
 import { AnalysisItem, DataAnalysisState } from '@/types/Analysis';
 
 import DatacubeComparativeCard from '@/components/comp-analysis/datacube-comparative-card.vue';
@@ -312,7 +312,7 @@ const setSelectedGlobalTimestamp = (value: number) => {
 };
 
 const updateStateFromInsight = async (insight_id: string) => {
-  const loadedInsight: Insight = await getInsightById(insight_id);
+  const loadedInsight: LegacyInsight = await getInsightById(insight_id);
   // FIXME: before applying the insight, which will overwrite current state,
   //  consider pushing current state to the url to support browser hsitory
   //  in case the user wants to navigate to the original state using back button

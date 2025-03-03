@@ -3,7 +3,7 @@ import _ from 'lodash';
 
 import {
   AnalyticalQuestion,
-  Insight,
+  LegacyInsight,
   FullInsight,
   DataState,
   DataSpaceDataState,
@@ -156,7 +156,7 @@ export function getModelOrDatasetStateViewFromRoute(
 }
 
 function jumpToInsightContext(
-  insight: Insight | NewInsight,
+  insight: LegacyInsight | NewInsight,
   currentURL: string,
   project?: string,
   projectType?: string
@@ -285,13 +285,13 @@ function getMetadataSummary(projectMetadata: any) {
 // the function that can be used to export something in the order expected from
 // analysis checklist.
 function parseReportFromQuestionsAndInsights(
-  insights: (Insight | NewInsight)[],
+  insights: (LegacyInsight | NewInsight)[],
   questions: AnalyticalQuestion[]
-): (AnalyticalQuestion | Insight | NewInsight)[] {
+): (AnalyticalQuestion | LegacyInsight | NewInsight)[] {
   if (questions.length === 0) return insights;
 
-  const report: (Insight | NewInsight | AnalyticalQuestion)[] = [];
-  const insightMap = new Map<string, Insight | NewInsight>();
+  const report: (LegacyInsight | NewInsight | AnalyticalQuestion)[] = [];
+  const insightMap = new Map<string, LegacyInsight | NewInsight>();
   insights.forEach((i) => insightMap.set(i.id ?? '', i));
 
   questions.forEach((question) => {
@@ -323,18 +323,18 @@ function getSlideFromPosition(
 }
 
 function instanceOfInsight(
-  data: null | Insight | FullInsight | AnalyticalQuestion | NewInsight
-): data is Insight | NewInsight {
+  data: null | LegacyInsight | FullInsight | AnalyticalQuestion | NewInsight
+): data is LegacyInsight | NewInsight {
   return data !== null && 'name' in data;
 }
 
 function instanceOfFullInsight(
-  data: null | Insight | FullInsight | AnalyticalQuestion | NewInsight
+  data: null | LegacyInsight | FullInsight | AnalyticalQuestion | NewInsight
 ): data is FullInsight {
   return instanceOfInsight(data) && 'image' in data && !instanceOfNewInsight(data);
 }
 
-function instanceOfNewInsight(insight: Insight | NewInsight): insight is NewInsight {
+function instanceOfNewInsight(insight: LegacyInsight | NewInsight): insight is NewInsight {
   return (insight as NewInsight).schemaVersion === 2;
 }
 
@@ -514,7 +514,7 @@ function generateQuestionDOCX(
 // }
 
 async function generateAppendixDOCX(
-  insights: (Insight | NewInsight)[],
+  insights: (LegacyInsight | NewInsight)[],
   metadataSummary: string,
   bibliography: any
 ) {

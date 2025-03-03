@@ -682,7 +682,7 @@ import {
   ProjectType,
 } from '@/types/Enums';
 import { Indicator, Model, ModelParameter } from '@/types/Datacube';
-import { DataSpaceDataState, Insight, ViewState } from '@/types/Insight';
+import { DataSpaceDataState, LegacyInsight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 
 import { colorFromIndex, ColorScaleType, validateColorScaleType } from '@/utils/colors-util';
@@ -1627,7 +1627,7 @@ export default defineComponent({
     };
 
     const updateStateFromInsight = async (insight_id: string) => {
-      const loadedInsight: Insight = await getInsightById(insight_id);
+      const loadedInsight: LegacyInsight = await getInsightById(insight_id);
       // FIXME: before applying the insight, which will overwrite current state,
       //  consider pushing current state to the url to support browser history
       //  in case the user wants to navigate to the original state using back button

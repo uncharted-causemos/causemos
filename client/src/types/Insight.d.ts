@@ -93,7 +93,14 @@ export interface AnnotationState {
   originalImagePreview: string;
 }
 
-export interface Insight {
+/**
+ * When this type was created, it contained many optional fields, some of which
+ *  were required for certain insight types, and always undefined for others.
+ * We've since moved to a more structured approach where each insight type has
+ *  its own interface, and the fields that are relevant to that type are
+ *  specified explicitly.
+ */
+export interface LegacyInsight {
   id: string;
   description: string;
   project_id: string;
@@ -110,7 +117,7 @@ export interface Insight {
   };
 }
 
-export interface FullInsight extends Insight {
+export interface FullInsight extends LegacyInsight {
   thumbnail: string; // e.g., image url or base64 encoding
   image: string; // e.g., image url or base64 encoding
   annotation_state?: AnnotationState;

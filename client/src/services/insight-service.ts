@@ -1,7 +1,7 @@
 import API from '@/api/api';
 import {
   FullInsight,
-  Insight,
+  LegacyInsight,
   InsightMetadata,
   DataState,
   NewInsight,
@@ -37,7 +37,10 @@ export const createInsight = async (insight: UnpersistedInsight) => {
   return data as { id: string };
 };
 
-export const updateInsight = async (insight_id: string, insight: Partial<Insight | NewInsight>) => {
+export const updateInsight = async (
+  insight_id: string,
+  insight: Partial<LegacyInsight | NewInsight>
+) => {
   const result = await API.put(`insights/${insight_id}`, insight, {
     headers: {
       'Content-Type': 'application/json',
@@ -57,7 +60,7 @@ export const deleteInsight = async (id: string) => {
  * Fetch insights using the specified filter parameters
  * @param fetchParams an object of field-value pairs to filter by
  */
-export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<Insight[]> => {
+export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<LegacyInsight[]> => {
   const options = {
     excludes: ['thumbnail', 'image', 'annotation_state'],
     sort: [{ modified_at: { order: 'desc' } }],
@@ -105,7 +108,7 @@ export const fetchPartialInsights = async (
  */
 export const getFirstInsight = async (
   fetchParams: InsightFilterFields
-): Promise<Insight | undefined> => {
+): Promise<LegacyInsight | undefined> => {
   const options = {
     excludes: ['image', 'annotation_state'],
     size: 1,
