@@ -16,7 +16,7 @@ import {
   FullLegacyInsight,
   LegacyInsightMetadata,
   ModelOrDatasetStateView,
-  NewInsight,
+  Insight,
   UnpersistedInsight,
 } from '@/types/Insight';
 import insightUtil, {
@@ -97,7 +97,7 @@ const addNewQuestion = (newQuestionText: string) => {
   emit('add-question', newQuestionText, onSuccess, onFail);
 };
 
-const savedInsightState = ref<UnpersistedInsight | FullLegacyInsight | NewInsight | null>(null);
+const savedInsightState = ref<UnpersistedInsight | FullLegacyInsight | Insight | null>(null);
 const insightTitle = ref<string>('');
 watch(
   savedInsightState,
@@ -215,7 +215,7 @@ const saveInsight = async () => {
     (q) => !updatedAssignedQuestions.includes(q)
   );
 
-  const updatedInsight = { ...(savedInsightState.value as FullLegacyInsight | NewInsight) };
+  const updatedInsight = { ...(savedInsightState.value as FullLegacyInsight | Insight) };
   updatedInsight.name = insightTitle.value;
   updatedInsight.description = description.value;
   updatedInsight.image = insightThumbnail.value ?? '';
@@ -266,7 +266,7 @@ const saveInsight = async () => {
 
 const metadataDetails = computed<LegacyInsightMetadata | null>(() => {
   if (savedInsightState.value === null) return null;
-  const insight = savedInsightState.value as FullLegacyInsight | NewInsight;
+  const insight = savedInsightState.value as FullLegacyInsight | Insight;
   const dataState: DataState | null = insightUtil.instanceOfNewInsight(insight)
     ? insight.state
     : insight.data_state;

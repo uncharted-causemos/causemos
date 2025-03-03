@@ -150,7 +150,7 @@ import { updateInsight } from '@/services/insight-service';
 import {
   AnalyticalQuestion,
   FullLegacyInsight,
-  NewInsight,
+  Insight,
   SectionWithInsights,
 } from '@/types/Insight';
 import { QUESTIONS } from '@/utils/messages-util';
@@ -327,7 +327,7 @@ const onDragLeave = (evt: DragEvent) => {
 };
 const startDraggingInsight = (
   event: DragEvent,
-  insight: FullLegacyInsight | NewInsight,
+  insight: FullLegacyInsight | Insight,
   sectionId: string
 ) => {
   event.stopPropagation();

@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 import useInsightsData from '@/composables/useInsightsData';
-import { LegacyInsight, NewInsight } from '@/types/Insight';
+import { LegacyInsight, Insight } from '@/types/Insight';
 import InsightUtil from '@/utils/insight-util';
 import { INSIGHTS } from '@/utils/messages-util';
 import { computed } from 'vue';
@@ -81,7 +81,7 @@ const saveInsight = () => {
 };
 const route = useRoute();
 const router = useRouter();
-const applyInsight = (insight: LegacyInsight | NewInsight) => {
+const applyInsight = (insight: LegacyInsight | Insight) => {
   emit('close');
 
   const finalURL = InsightUtil.jumpToInsightContext(
@@ -119,14 +119,14 @@ const applyInsight = (insight: LegacyInsight | NewInsight) => {
       .catch(() => {});
   }
 };
-const startEditingInsight = (insight: LegacyInsight | NewInsight) => {
+const startEditingInsight = (insight: LegacyInsight | Insight) => {
   if (insight.id === undefined) {
     return;
   }
   editInsight(insight.id);
 };
 
-const deleteInsight = async (insight: LegacyInsight | NewInsight) => {
+const deleteInsight = async (insight: LegacyInsight | Insight) => {
   const id = insight.id as string;
   await removeInsight(id);
   // refresh the latest list from the server

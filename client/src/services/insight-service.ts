@@ -4,7 +4,7 @@ import {
   LegacyInsight,
   LegacyInsightMetadata,
   DataState,
-  NewInsight,
+  Insight,
   UnpersistedInsight,
 } from '@/types/Insight';
 import { isDataAnalysisState } from '@/utils/insight-util';
@@ -39,7 +39,7 @@ export const createInsight = async (insight: UnpersistedInsight) => {
 
 export const updateInsight = async (
   insight_id: string,
-  insight: Partial<LegacyInsight | NewInsight>
+  insight: Partial<LegacyInsight | Insight>
 ) => {
   const result = await API.put(`insights/${insight_id}`, insight, {
     headers: {
@@ -75,7 +75,7 @@ export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<L
 export const fetchFullInsights = async (
   fetchParams: InsightFilterFields,
   includeAnnotationState = false
-): Promise<(FullLegacyInsight | NewInsight)[]> => {
+): Promise<(FullLegacyInsight | Insight)[]> => {
   const excludes = ['thumbnail'];
   if (!includeAnnotationState) excludes.push('annotation_state');
   const options = {

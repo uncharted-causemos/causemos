@@ -184,18 +184,18 @@ export interface ModelOrDatasetStateInsight extends InsightBase {
   state: ModelOrDatasetState;
 }
 
-export type NewInsight = ModelOrDatasetStateInsight;
+export type Insight = ModelOrDatasetStateInsight;
 
 type FieldsCreatedByBackend = 'id' | 'modified_at' | 'thumbnail';
 
 /** An insight that has been created but not yet saved to the backend data store. */
 export type UnpersistedInsight =
   | Omit<FullLegacyInsight, FieldsCreatedByBackend>
-  | Omit<NewInsight, FieldsCreatedByBackend>;
+  | Omit<Insight, FieldsCreatedByBackend>;
 
 export interface SectionWithInsights {
   section: AnalyticalQuestion;
-  insights: (FullLegacyInsight | NewInsight)[];
+  insights: (FullLegacyInsight | Insight)[];
 }
 
 export type ReviewPosition =

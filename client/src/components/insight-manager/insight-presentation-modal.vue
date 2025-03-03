@@ -5,7 +5,7 @@ import {
   FullLegacyInsight,
   LegacyInsight,
   LegacyInsightMetadata,
-  NewInsight,
+  Insight,
   ReviewPosition,
   SectionWithInsights,
 } from '@/types/Insight';
@@ -27,7 +27,7 @@ import InsightSummary from './insight-summary.vue';
 const props = defineProps<{
   reviewPosition: ReviewPosition | null;
   questionsList: AnalyticalQuestion[];
-  insights: (FullLegacyInsight | NewInsight)[];
+  insights: (FullLegacyInsight | Insight)[];
 }>();
 const { reviewPosition, questionsList, insights } = toRefs(props);
 const emit = defineEmits<{
@@ -57,7 +57,7 @@ watch(
   },
   { immediate: true }
 );
-const selectedSlide = computed<FullLegacyInsight | NewInsight | string | null>(() => {
+const selectedSlide = computed<FullLegacyInsight | Insight | string | null>(() => {
   if (reviewPosition.value === null) return null;
   const { sectionId, insightId } = reviewPosition.value;
   // If insightId is null, the selected slide is a question
@@ -107,7 +107,7 @@ const router = useRouter();
 const { editInsight, showInsightList, hideInsightModal } = useInsightManager();
 const jumpToLiveContext = () => {
   // TODO: confirm that this isn't a question or null
-  const insight = selectedSlide.value as LegacyInsight | NewInsight;
+  const insight = selectedSlide.value as LegacyInsight | Insight;
   const currentURL = route.fullPath;
   const finalURL = insightUtil.jumpToInsightContext(insight, currentURL);
   if (finalURL) {
@@ -143,7 +143,7 @@ const store = useStore();
 const projectMetadata = computed(() => store.getters['app/projectMetadata']);
 const metadataDetails = computed<LegacyInsightMetadata | null>(() => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return null;
-  const insight = selectedSlide.value as LegacyInsight | NewInsight;
+  const insight = selectedSlide.value as LegacyInsight | Insight;
   const dataState: DataState | null = insightUtil.instanceOfNewInsight(insight)
     ? insight.state
     : insight.data_state;
@@ -157,8 +157,8 @@ const metadataDetails = computed<LegacyInsightMetadata | null>(() => {
 const exportInsight = async (exportType: 'Powerpoint' | 'Word') => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return;
   // const bibliographyMap = await getBibiographyFromCagIds([]);
-  const insight: FullLegacyInsight | NewInsight = {
-    ...(selectedSlide.value as FullLegacyInsight | NewInsight),
+  const insight: FullLegacyInsight | Insight = {
+    ...(selectedSlide.value as FullLegacyInsight | Insight),
     image: slideImage.value ?? '',
   };
   if (exportType === 'Word') {

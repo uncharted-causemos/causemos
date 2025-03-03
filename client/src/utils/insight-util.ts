@@ -12,7 +12,7 @@ import {
   IndexStructureDataState,
   IndexResultsDataState,
   IndexProjectionsDataState,
-  NewInsight,
+  Insight,
   ModelOrDatasetStateView,
 } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
@@ -121,7 +121,7 @@ export function isIndexAnalysisState(
   return (dataState as IndexAnalysisState | undefined)?.index !== undefined;
 }
 
-export function isModelDrilldownInsight(insight: NewInsight) {
+export function isModelDrilldownInsight(insight: Insight) {
   const breakdownState = insight.state.breakdownState;
   if (isBreakdownStateNone(breakdownState)) {
     return breakdownState.modelRunIds.length !== 1 || breakdownState.modelRunIds[0] !== 'indicator';
@@ -156,7 +156,7 @@ export function getModelOrDatasetStateViewFromRoute(
 }
 
 function jumpToInsightContext(
-  insight: LegacyInsight | NewInsight,
+  insight: LegacyInsight | Insight,
   currentURL: string,
   project?: string,
   projectType?: string
@@ -285,13 +285,13 @@ function getMetadataSummary(projectMetadata: any) {
 // the function that can be used to export something in the order expected from
 // analysis checklist.
 function parseReportFromQuestionsAndInsights(
-  insights: (LegacyInsight | NewInsight)[],
+  insights: (LegacyInsight | Insight)[],
   questions: AnalyticalQuestion[]
-): (AnalyticalQuestion | LegacyInsight | NewInsight)[] {
+): (AnalyticalQuestion | LegacyInsight | Insight)[] {
   if (questions.length === 0) return insights;
 
-  const report: (LegacyInsight | NewInsight | AnalyticalQuestion)[] = [];
-  const insightMap = new Map<string, LegacyInsight | NewInsight>();
+  const report: (LegacyInsight | Insight | AnalyticalQuestion)[] = [];
+  const insightMap = new Map<string, LegacyInsight | Insight>();
   insights.forEach((i) => insightMap.set(i.id ?? '', i));
 
   questions.forEach((question) => {
@@ -308,7 +308,7 @@ function parseReportFromQuestionsAndInsights(
 function getSlideFromPosition(
   sections: SectionWithInsights[],
   position: ReviewPosition | null
-): FullLegacyInsight | NewInsight | AnalyticalQuestion | null {
+): FullLegacyInsight | Insight | AnalyticalQuestion | null {
   if (position === null) {
     return null;
   }
@@ -323,19 +323,19 @@ function getSlideFromPosition(
 }
 
 function instanceOfInsight(
-  data: null | LegacyInsight | FullLegacyInsight | AnalyticalQuestion | NewInsight
-): data is LegacyInsight | NewInsight {
+  data: null | LegacyInsight | FullLegacyInsight | AnalyticalQuestion | Insight
+): data is LegacyInsight | Insight {
   return data !== null && 'name' in data;
 }
 
 function instanceOfFullInsight(
-  data: null | LegacyInsight | FullLegacyInsight | AnalyticalQuestion | NewInsight
+  data: null | LegacyInsight | FullLegacyInsight | AnalyticalQuestion | Insight
 ): data is FullLegacyInsight {
   return instanceOfInsight(data) && 'image' in data && !instanceOfNewInsight(data);
 }
 
-function instanceOfNewInsight(insight: LegacyInsight | NewInsight): insight is NewInsight {
-  return (insight as NewInsight).schemaVersion === 2;
+function instanceOfNewInsight(insight: LegacyInsight | Insight): insight is Insight {
+  return (insight as Insight).schemaVersion === 2;
 }
 
 function instanceOfQuestion(data: any): data is AnalyticalQuestion {
@@ -514,7 +514,7 @@ function generateQuestionDOCX(
 // }
 
 async function generateAppendixDOCX(
-  insights: (LegacyInsight | NewInsight)[],
+  insights: (LegacyInsight | Insight)[],
   metadataSummary: string,
   bibliography: any
 ) {
@@ -574,7 +574,7 @@ async function generateAppendixDOCX(
 }
 
 async function exportDOCX(
-  insights: (FullLegacyInsight | NewInsight)[],
+  insights: (FullLegacyInsight | Insight)[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[],
   bibliography?: any
@@ -709,7 +709,7 @@ function generateQuestionPPTX(question: AnalyticalQuestion, pres: pptxgen) {
 }
 
 function exportPPTX(
-  insights: (FullLegacyInsight | NewInsight)[],
+  insights: (FullLegacyInsight | Insight)[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[]
 ) {
