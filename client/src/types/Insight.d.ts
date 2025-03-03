@@ -141,19 +141,19 @@ export interface DocumentSnippetInsightMetadata extends Snippet {
   type: InsightMetadataType.DocumentSnippet;
 }
 
-export type NewInsightMetadata = DocumentSnippetInsightMetadata;
+export type InsightMetadata = DocumentSnippetInsightMetadata;
 
 /**
  * Abstract interface that should only be used as a base for other insight interfaces.
  */
-export interface NewInsightBase {
+export interface InsightBase {
   schemaVersion: number;
   id: string;
   name: string;
   description: string;
   project_id: string;
   modified_at?: number;
-  metadata?: NewInsightMetadata;
+  metadata?: InsightMetadata;
   image: string; // e.g., image url or base64 encoding
   thumbnail: string; // e.g., image url or base64 encoding
   annotation_state?: AnnotationState;
@@ -178,7 +178,7 @@ export type ModelOrDatasetStateView =
       analysisId: string;
       nodeId: string;
     };
-export interface ModelOrDatasetStateInsight extends NewInsightBase {
+export interface ModelOrDatasetStateInsight extends InsightBase {
   type: 'ModelOrDatasetStateInsight';
   view: ModelOrDatasetStateView;
   state: ModelOrDatasetState;
