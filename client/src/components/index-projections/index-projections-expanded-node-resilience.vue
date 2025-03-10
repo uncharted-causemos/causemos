@@ -23,6 +23,8 @@
         }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
+        :focus-start-timestamp="focusStartTimestamp"
+        :focus-end-timestamp="focusEndTimestamp"
         :timeseries="item.timeseries"
         :show-data-outside-norm="true"
         :is-weighted-sum-node="false"
@@ -68,6 +70,8 @@ const props = defineProps<{
     | TemporalResolutionOption.Year;
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
+  focusStartTimestamp: number;
+  focusEndTimestamp: number;
   projectionTimeseries: ProjectionTimeseries[];
   weightingBehaviour: IndexWeightingBehaviour;
 }>();
