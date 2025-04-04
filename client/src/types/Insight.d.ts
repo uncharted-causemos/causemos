@@ -98,7 +98,7 @@ export interface AnnotationState {
  *  were required for certain insight types, and always undefined for others.
  * We've since moved to a more structured approach where each insight type has
  *  its own interface, and the fields that are relevant to that type are
- *  specified explicitly.
+ *  specified explicitly ( see {@link Insight} ).
  */
 export interface LegacyInsight {
   id: string;
