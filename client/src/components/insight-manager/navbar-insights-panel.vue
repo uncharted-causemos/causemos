@@ -104,7 +104,7 @@ const applyInsight = (insight: LegacyInsight | Insight) => {
     //  need/understand a specific datacube_id,
     //  and setting it regardless may have a negative side effect
     const datacubeId =
-      InsightUtil.instanceOfVersion2Insight(insight) ||
+      InsightUtil.instanceOfInsight(insight) ||
       insight.url.includes('/dataComparative/') ||
       insight.context_id === undefined
         ? undefined

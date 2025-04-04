@@ -85,7 +85,7 @@ watch(
     const insight = selectedSlide.value;
     if (
       typeof insight === 'string' ||
-      !insightUtil.instanceOfInsight(insight) ||
+      !insightUtil.instanceOfInsightOrLegacyInsight(insight) ||
       insight.id === undefined
     )
       return;
@@ -144,10 +144,10 @@ const projectMetadata = computed(() => store.getters['app/projectMetadata']);
 const metadataDetails = computed<LegacyInsightMetadata | null>(() => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return null;
   const insight = selectedSlide.value as LegacyInsight | Insight;
-  const dataState: DataState | null = insightUtil.instanceOfVersion2Insight(insight)
+  const dataState: DataState | null = insightUtil.instanceOfInsight(insight)
     ? insight.state
     : insight.data_state;
-  const insightLastUpdate = !insightUtil.instanceOfInsight(insight)
+  const insightLastUpdate = !insightUtil.instanceOfInsightOrLegacyInsight(insight)
     ? undefined
     : insight.modified_at;
   const insightSummary = extractMetadataDetails(dataState, insightLastUpdate);

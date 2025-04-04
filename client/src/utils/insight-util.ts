@@ -161,7 +161,7 @@ function jumpToInsightContext(
   project?: string,
   projectType?: string
 ): string | RouteLocationRaw | undefined {
-  if (instanceOfVersion2Insight(insight)) {
+  if (instanceOfInsight(insight)) {
     if (insight.view.view === 'analysisItemDrilldown') {
       return {
         name: isModelDrilldownInsight(insight) ? 'modelDrilldown' : 'datasetDrilldown',
@@ -322,7 +322,7 @@ function getSlideFromPosition(
   return section.insights.find((insight) => insight.id === position.insightId) ?? null;
 }
 
-function instanceOfInsight(
+function instanceOfInsightOrLegacyInsight(
   data: null | LegacyInsight | FullLegacyInsight | AnalyticalQuestion | Insight
 ): data is LegacyInsight | Insight {
   return data !== null && 'name' in data;
@@ -331,10 +331,10 @@ function instanceOfInsight(
 function instanceOfFullLegacyInsight(
   data: null | LegacyInsight | FullLegacyInsight | AnalyticalQuestion | Insight
 ): data is FullLegacyInsight {
-  return instanceOfInsight(data) && 'image' in data && !instanceOfVersion2Insight(data);
+  return instanceOfInsightOrLegacyInsight(data) && 'image' in data && !instanceOfInsight(data);
 }
 
-function instanceOfVersion2Insight(insight: LegacyInsight | Insight): insight is Insight {
+function instanceOfInsight(insight: LegacyInsight | Insight): insight is Insight {
   return (insight as Insight).schemaVersion === 2;
 }
 
@@ -588,7 +588,7 @@ async function exportDOCX(
       acc.push(generateInsightDOCX(item, metadataSummary, newPage));
     } else if (instanceOfQuestion(item)) {
       acc.push(generateQuestionDOCX(item, metadataSummary));
-    } else if (instanceOfVersion2Insight(item)) {
+    } else if (instanceOfInsight(item)) {
       // TODO: generate entry
     }
     return acc;
@@ -742,7 +742,7 @@ function exportPPTX(
       generateInsightPPTX(item, pres, metadataSummary);
     } else if (instanceOfQuestion(item)) {
       generateQuestionPPTX(item, pres);
-    } else if (instanceOfVersion2Insight(item)) {
+    } else if (instanceOfInsight(item)) {
       // TODO: generate entry
     }
   });
@@ -753,9 +753,9 @@ function exportPPTX(
 }
 
 export default {
-  instanceOfInsight,
+  instanceOfInsightOrLegacyInsight,
   instanceOfFullLegacyInsight,
-  instanceOfVersion2Insight,
+  instanceOfInsight,
   instanceOfQuestion,
   getSlideFromPosition,
   getSourceUrlForExport,
