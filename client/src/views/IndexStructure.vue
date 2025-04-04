@@ -54,7 +54,7 @@ import { createNewConceptNode, isEdge } from '@/utils/index-tree-util';
 import { SelectableIndexElementId } from '@/types/Index';
 import useIndexTree from '@/composables/useIndexTree';
 import { INSIGHT_CAPTURE_CLASS, isIndexStructureDataState } from '@/utils/insight-util';
-import { IndexStructureDataState, Insight } from '@/types/Insight';
+import { IndexStructureDataState, LegacyInsight } from '@/types/Insight';
 import { getInsightById } from '@/services/insight-service';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
@@ -198,7 +198,7 @@ const doesSelectedElementExist = (id: SelectableIndexElementId) =>
 
 const toaster = useToaster();
 const updateStateFromInsight = async (insightId: string) => {
-  const loadedInsight: Insight = await getInsightById(insightId);
+  const loadedInsight: LegacyInsight = await getInsightById(insightId);
   const dataState = loadedInsight?.data_state;
   if (!dataState || !isIndexStructureDataState(dataState)) {
     // This state can occur when we're jumping to the live context of an

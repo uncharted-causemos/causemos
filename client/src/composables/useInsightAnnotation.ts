@@ -1,10 +1,10 @@
-import { AnnotationState, FullInsight, NewInsight, UnpersistedInsight } from '@/types/Insight';
+import { AnnotationState, FullLegacyInsight, Insight, UnpersistedInsight } from '@/types/Insight';
 import { CropArea, CropAreaState } from 'cropro';
 import { MarkerArea, MarkerAreaState } from 'markerjs2';
 import { Ref, computed, ref, watch } from 'vue';
 
 export default function useInsightAnnotation(
-  savedInsightState: Ref<UnpersistedInsight | FullInsight | NewInsight | null>
+  savedInsightState: Ref<UnpersistedInsight | FullLegacyInsight | Insight | null>
 ) {
   // A record of the annotations that have been added, along with their
   //  positions and appearance.

@@ -269,7 +269,7 @@ import IndexProjectionsSettingsScenarios from '@/components/index-projections/in
 import useInsightStore from '@/composables/useInsightStore';
 import useToaster from '@/composables/useToaster';
 import { getInsightById } from '@/services/insight-service';
-import { Insight, IndexProjectionsDataState } from '@/types/Insight';
+import { LegacyInsight, IndexProjectionsDataState } from '@/types/Insight';
 import { INSIGHT_CAPTURE_CLASS, isIndexProjectionsDataState } from '@/utils/insight-util';
 import { TYPE } from 'vue-toastification';
 import IndexProjectionsSettingsCountries from '@/components/index-projections/index-projections-settings-countries.vue';
@@ -575,7 +575,7 @@ const toaster = useToaster();
 const isShowingConfirmInsightModal = ref(false);
 const insightDataState = ref<IndexProjectionsDataState | null>(null);
 const tryToUpdateStateFromInsight = async (insightId: string) => {
-  const loadedInsight: Insight = await getInsightById(insightId);
+  const loadedInsight: LegacyInsight = await getInsightById(insightId);
   const dataState = loadedInsight?.data_state;
   if (!dataState || !isIndexProjectionsDataState(dataState)) {
     // This state can occur when we're jumping to the live context of an

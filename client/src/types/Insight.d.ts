@@ -93,7 +93,14 @@ export interface AnnotationState {
   originalImagePreview: string;
 }
 
-export interface Insight {
+/**
+ * When this type was created, it contained many optional fields, some of which
+ *  were required for certain insight types, and always undefined for others.
+ * We've since moved to a more structured approach where each insight type has
+ *  its own interface, and the fields that are relevant to that type are
+ *  specified explicitly ( see {@link Insight} ).
+ */
+export interface LegacyInsight {
   id: string;
   description: string;
   project_id: string;
@@ -110,7 +117,7 @@ export interface Insight {
   };
 }
 
-export interface FullInsight extends Insight {
+export interface FullLegacyInsight extends LegacyInsight {
   thumbnail: string; // e.g., image url or base64 encoding
   image: string; // e.g., image url or base64 encoding
   annotation_state?: AnnotationState;
@@ -134,19 +141,19 @@ export interface DocumentSnippetInsightMetadata extends Snippet {
   type: InsightMetadataType.DocumentSnippet;
 }
 
-export type NewInsightMetadata = DocumentSnippetInsightMetadata;
+export type InsightMetadata = DocumentSnippetInsightMetadata;
 
 /**
  * Abstract interface that should only be used as a base for other insight interfaces.
  */
-export interface NewInsightBase {
+export interface InsightBase {
   schemaVersion: number;
   id: string;
   name: string;
   description: string;
   project_id: string;
   modified_at?: number;
-  metadata?: NewInsightMetadata;
+  metadata?: InsightMetadata;
   image: string; // e.g., image url or base64 encoding
   thumbnail: string; // e.g., image url or base64 encoding
   annotation_state?: AnnotationState;
@@ -171,24 +178,24 @@ export type ModelOrDatasetStateView =
       analysisId: string;
       nodeId: string;
     };
-export interface ModelOrDatasetStateInsight extends NewInsightBase {
+export interface ModelOrDatasetStateInsight extends InsightBase {
   type: 'ModelOrDatasetStateInsight';
   view: ModelOrDatasetStateView;
   state: ModelOrDatasetState;
 }
 
-export type NewInsight = ModelOrDatasetStateInsight;
+export type Insight = ModelOrDatasetStateInsight;
 
 type FieldsCreatedByBackend = 'id' | 'modified_at' | 'thumbnail';
 
 /** An insight that has been created but not yet saved to the backend data store. */
 export type UnpersistedInsight =
-  | Omit<FullInsight, FieldsCreatedByBackend>
-  | Omit<NewInsight, FieldsCreatedByBackend>;
+  | Omit<FullLegacyInsight, FieldsCreatedByBackend>
+  | Omit<Insight, FieldsCreatedByBackend>;
 
 export interface SectionWithInsights {
   section: AnalyticalQuestion;
-  insights: (FullInsight | NewInsight)[];
+  insights: (FullLegacyInsight | Insight)[];
 }
 
 export type ReviewPosition =
@@ -208,7 +215,7 @@ export type ReviewPosition =
       insightId: string;
     };
 
-export interface InsightMetadata {
+export interface LegacyInsightMetadata {
   insightLastUpdate: number;
 
   // Data space specific

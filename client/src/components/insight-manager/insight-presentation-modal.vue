@@ -2,10 +2,10 @@
 import {
   AnalyticalQuestion,
   DataState,
-  FullInsight,
+  FullLegacyInsight,
+  LegacyInsight,
+  LegacyInsightMetadata,
   Insight,
-  InsightMetadata,
-  NewInsight,
   ReviewPosition,
   SectionWithInsights,
 } from '@/types/Insight';
@@ -27,7 +27,7 @@ import InsightSummary from './insight-summary.vue';
 const props = defineProps<{
   reviewPosition: ReviewPosition | null;
   questionsList: AnalyticalQuestion[];
-  insights: (FullInsight | NewInsight)[];
+  insights: (FullLegacyInsight | Insight)[];
 }>();
 const { reviewPosition, questionsList, insights } = toRefs(props);
 const emit = defineEmits<{
@@ -57,7 +57,7 @@ watch(
   },
   { immediate: true }
 );
-const selectedSlide = computed<FullInsight | NewInsight | string | null>(() => {
+const selectedSlide = computed<FullLegacyInsight | Insight | string | null>(() => {
   if (reviewPosition.value === null) return null;
   const { sectionId, insightId } = reviewPosition.value;
   // If insightId is null, the selected slide is a question
@@ -85,7 +85,7 @@ watch(
     const insight = selectedSlide.value;
     if (
       typeof insight === 'string' ||
-      !insightUtil.instanceOfInsight(insight) ||
+      !insightUtil.instanceOfInsightOrLegacyInsight(insight) ||
       insight.id === undefined
     )
       return;
@@ -107,7 +107,7 @@ const router = useRouter();
 const { editInsight, showInsightList, hideInsightModal } = useInsightManager();
 const jumpToLiveContext = () => {
   // TODO: confirm that this isn't a question or null
-  const insight = selectedSlide.value as Insight | NewInsight;
+  const insight = selectedSlide.value as LegacyInsight | Insight;
   const currentURL = route.fullPath;
   const finalURL = insightUtil.jumpToInsightContext(insight, currentURL);
   if (finalURL) {
@@ -141,13 +141,13 @@ const deleteInsight = () => {
 
 const store = useStore();
 const projectMetadata = computed(() => store.getters['app/projectMetadata']);
-const metadataDetails = computed<InsightMetadata | null>(() => {
+const metadataDetails = computed<LegacyInsightMetadata | null>(() => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return null;
-  const insight = selectedSlide.value as Insight | NewInsight;
-  const dataState: DataState | null = insightUtil.instanceOfNewInsight(insight)
+  const insight = selectedSlide.value as LegacyInsight | Insight;
+  const dataState: DataState | null = insightUtil.instanceOfInsight(insight)
     ? insight.state
     : insight.data_state;
-  const insightLastUpdate = !insightUtil.instanceOfInsight(insight)
+  const insightLastUpdate = !insightUtil.instanceOfInsightOrLegacyInsight(insight)
     ? undefined
     : insight.modified_at;
   const insightSummary = extractMetadataDetails(dataState, insightLastUpdate);
@@ -157,8 +157,8 @@ const metadataDetails = computed<InsightMetadata | null>(() => {
 const exportInsight = async (exportType: 'Powerpoint' | 'Word') => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return;
   // const bibliographyMap = await getBibiographyFromCagIds([]);
-  const insight: FullInsight | NewInsight = {
-    ...(selectedSlide.value as FullInsight | NewInsight),
+  const insight: FullLegacyInsight | Insight = {
+    ...(selectedSlide.value as FullLegacyInsight | Insight),
     image: slideImage.value ?? '',
   };
   if (exportType === 'Word') {

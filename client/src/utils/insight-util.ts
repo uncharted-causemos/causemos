@@ -3,8 +3,8 @@ import _ from 'lodash';
 
 import {
   AnalyticalQuestion,
-  Insight,
-  FullInsight,
+  LegacyInsight,
+  FullLegacyInsight,
   DataState,
   DataSpaceDataState,
   ReviewPosition,
@@ -12,7 +12,7 @@ import {
   IndexStructureDataState,
   IndexResultsDataState,
   IndexProjectionsDataState,
-  NewInsight,
+  Insight,
   ModelOrDatasetStateView,
 } from '@/types/Insight';
 import dateFormatter from '@/formatters/date-formatter';
@@ -121,7 +121,7 @@ export function isIndexAnalysisState(
   return (dataState as IndexAnalysisState | undefined)?.index !== undefined;
 }
 
-export function isModelDrilldownInsight(insight: NewInsight) {
+export function isModelDrilldownInsight(insight: Insight) {
   const breakdownState = insight.state.breakdownState;
   if (isBreakdownStateNone(breakdownState)) {
     return breakdownState.modelRunIds.length !== 1 || breakdownState.modelRunIds[0] !== 'indicator';
@@ -156,12 +156,12 @@ export function getModelOrDatasetStateViewFromRoute(
 }
 
 function jumpToInsightContext(
-  insight: Insight | NewInsight,
+  insight: LegacyInsight | Insight,
   currentURL: string,
   project?: string,
   projectType?: string
 ): string | RouteLocationRaw | undefined {
-  if (instanceOfNewInsight(insight)) {
+  if (instanceOfInsight(insight)) {
     if (insight.view.view === 'analysisItemDrilldown') {
       return {
         name: isModelDrilldownInsight(insight) ? 'modelDrilldown' : 'datasetDrilldown',
@@ -285,13 +285,13 @@ function getMetadataSummary(projectMetadata: any) {
 // the function that can be used to export something in the order expected from
 // analysis checklist.
 function parseReportFromQuestionsAndInsights(
-  insights: (Insight | NewInsight)[],
+  insights: (LegacyInsight | Insight)[],
   questions: AnalyticalQuestion[]
-): (AnalyticalQuestion | Insight | NewInsight)[] {
+): (AnalyticalQuestion | LegacyInsight | Insight)[] {
   if (questions.length === 0) return insights;
 
-  const report: (Insight | NewInsight | AnalyticalQuestion)[] = [];
-  const insightMap = new Map<string, Insight | NewInsight>();
+  const report: (LegacyInsight | Insight | AnalyticalQuestion)[] = [];
+  const insightMap = new Map<string, LegacyInsight | Insight>();
   insights.forEach((i) => insightMap.set(i.id ?? '', i));
 
   questions.forEach((question) => {
@@ -308,7 +308,7 @@ function parseReportFromQuestionsAndInsights(
 function getSlideFromPosition(
   sections: SectionWithInsights[],
   position: ReviewPosition | null
-): FullInsight | NewInsight | AnalyticalQuestion | null {
+): FullLegacyInsight | Insight | AnalyticalQuestion | null {
   if (position === null) {
     return null;
   }
@@ -322,20 +322,20 @@ function getSlideFromPosition(
   return section.insights.find((insight) => insight.id === position.insightId) ?? null;
 }
 
-function instanceOfInsight(
-  data: null | Insight | FullInsight | AnalyticalQuestion | NewInsight
-): data is Insight | NewInsight {
+function instanceOfInsightOrLegacyInsight(
+  data: null | LegacyInsight | FullLegacyInsight | AnalyticalQuestion | Insight
+): data is LegacyInsight | Insight {
   return data !== null && 'name' in data;
 }
 
-function instanceOfFullInsight(
-  data: null | Insight | FullInsight | AnalyticalQuestion | NewInsight
-): data is FullInsight {
-  return instanceOfInsight(data) && 'image' in data && !instanceOfNewInsight(data);
+function instanceOfFullLegacyInsight(
+  data: null | LegacyInsight | FullLegacyInsight | AnalyticalQuestion | Insight
+): data is FullLegacyInsight {
+  return instanceOfInsightOrLegacyInsight(data) && 'image' in data && !instanceOfInsight(data);
 }
 
-function instanceOfNewInsight(insight: Insight | NewInsight): insight is NewInsight {
-  return (insight as NewInsight).schemaVersion === 2;
+function instanceOfInsight(insight: LegacyInsight | Insight): insight is Insight {
+  return (insight as Insight).schemaVersion === 2;
 }
 
 function instanceOfQuestion(data: any): data is AnalyticalQuestion {
@@ -361,7 +361,7 @@ function generateFooterDOCX(metadataSummary: string) {
 }
 
 function generateInsightDOCX(
-  insight: FullInsight,
+  insight: FullLegacyInsight,
   metadataSummary: string,
   newPage: boolean
 ): ISectionOptions {
@@ -514,7 +514,7 @@ function generateQuestionDOCX(
 // }
 
 async function generateAppendixDOCX(
-  insights: (Insight | NewInsight)[],
+  insights: (LegacyInsight | Insight)[],
   metadataSummary: string,
   bibliography: any
 ) {
@@ -574,7 +574,7 @@ async function generateAppendixDOCX(
 }
 
 async function exportDOCX(
-  insights: (FullInsight | NewInsight)[],
+  insights: (FullLegacyInsight | Insight)[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[],
   bibliography?: any
@@ -583,12 +583,12 @@ async function exportDOCX(
 
   const metadataSummary = getMetadataSummary(projectMetadata);
   const sections = allData.reduce((acc, item, index) => {
-    if (instanceOfFullInsight(item)) {
+    if (instanceOfFullLegacyInsight(item)) {
       const newPage = index > 0 && !instanceOfQuestion(allData[index - 1]);
       acc.push(generateInsightDOCX(item, metadataSummary, newPage));
     } else if (instanceOfQuestion(item)) {
       acc.push(generateQuestionDOCX(item, metadataSummary));
-    } else if (instanceOfNewInsight(item)) {
+    } else if (instanceOfInsight(item)) {
       // TODO: generate entry
     }
     return acc;
@@ -608,7 +608,12 @@ async function exportDOCX(
   });
 }
 
-function generateInsightPPTX(insight: FullInsight, pres: pptxgen, metadataSummary: string) {
+/** Builds a power point slide for the specified insight and adds it to an existing ppt presentation.
+ * @param insight The insight.
+ * @param pres    The presentation the slide will be added to.
+ * @param metadataSummary A description of the insight that will be displayed on the slide.
+ */
+function generateInsightPPTX(insight: FullLegacyInsight, pres: pptxgen, metadataSummary: string) {
   // some PPTX consts as powerpoint does everything in inches & has hard boundaries
   const widthLimitImage = 10;
   const heightLimitImage = 4.75;
@@ -695,6 +700,10 @@ function generateInsightPPTX(insight: FullInsight, pres: pptxgen, metadataSummar
   );
 }
 
+/** Builds a power point slide for the specified question and adds it to an existing ppt presentation.
+ * @param question The question.
+ * @param pres    The presentation the slide will be added to.
+ */
 function generateQuestionPPTX(question: AnalyticalQuestion, pres: pptxgen) {
   const slide = pres.addSlide();
   slide.addText(question.question, {
@@ -709,7 +718,7 @@ function generateQuestionPPTX(question: AnalyticalQuestion, pres: pptxgen) {
 }
 
 function exportPPTX(
-  insights: (FullInsight | NewInsight)[],
+  insights: (FullLegacyInsight | Insight)[],
   projectMetadata: any,
   questions?: AnalyticalQuestion[]
 ) {
@@ -729,11 +738,11 @@ function exportPPTX(
   });
 
   allData.forEach((item) => {
-    if (instanceOfFullInsight(item)) {
+    if (instanceOfFullLegacyInsight(item)) {
       generateInsightPPTX(item, pres, metadataSummary);
     } else if (instanceOfQuestion(item)) {
       generateQuestionPPTX(item, pres);
-    } else if (instanceOfNewInsight(item)) {
+    } else if (instanceOfInsight(item)) {
       // TODO: generate entry
     }
   });
@@ -744,9 +753,9 @@ function exportPPTX(
 }
 
 export default {
+  instanceOfInsightOrLegacyInsight,
+  instanceOfFullLegacyInsight,
   instanceOfInsight,
-  instanceOfFullInsight,
-  instanceOfNewInsight,
   instanceOfQuestion,
   getSlideFromPosition,
   getSourceUrlForExport,

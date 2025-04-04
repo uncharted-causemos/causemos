@@ -41,7 +41,7 @@ import { createInsight } from '@/services/insight-service';
 import { addInsightToQuestion, removeInsightFromQuestion } from '@/services/question-service';
 import { INSIGHTS } from '@/utils/messages-util';
 import { Snippet } from '@/types/IndexDocuments';
-import { AnalyticalQuestion, FullInsight, UnpersistedInsight } from '@/types/Insight';
+import { AnalyticalQuestion, FullLegacyInsight, UnpersistedInsight } from '@/types/Insight';
 import { InsightMetadataType } from '@/types/Enums';
 import useInsightManager from '@/composables/useInsightManager';
 
@@ -56,7 +56,7 @@ const props = defineProps<{
   questionsList: AnalyticalQuestion[];
 }>();
 
-const savedInsight = ref<Omit<FullInsight, 'modified_at' | 'thumbnail'> | null>(null);
+const savedInsight = ref<Omit<FullLegacyInsight, 'modified_at' | 'thumbnail'> | null>(null);
 const isSaveButtonDisabled = ref(false);
 
 const questionsDropdown = computed(() => {

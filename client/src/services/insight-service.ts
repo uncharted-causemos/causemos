@@ -1,10 +1,10 @@
 import API from '@/api/api';
 import {
-  FullInsight,
-  Insight,
-  InsightMetadata,
+  FullLegacyInsight,
+  LegacyInsight,
+  LegacyInsightMetadata,
   DataState,
-  NewInsight,
+  Insight,
   UnpersistedInsight,
 } from '@/types/Insight';
 import { isDataAnalysisState } from '@/utils/insight-util';
@@ -37,7 +37,10 @@ export const createInsight = async (insight: UnpersistedInsight) => {
   return data as { id: string };
 };
 
-export const updateInsight = async (insight_id: string, insight: Partial<Insight | NewInsight>) => {
+export const updateInsight = async (
+  insight_id: string,
+  insight: Partial<LegacyInsight | Insight>
+) => {
   const result = await API.put(`insights/${insight_id}`, insight, {
     headers: {
       'Content-Type': 'application/json',
@@ -57,7 +60,7 @@ export const deleteInsight = async (id: string) => {
  * Fetch insights using the specified filter parameters
  * @param fetchParams an object of field-value pairs to filter by
  */
-export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<Insight[]> => {
+export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<LegacyInsight[]> => {
   const options = {
     excludes: ['thumbnail', 'image', 'annotation_state'],
     sort: [{ modified_at: { order: 'desc' } }],
@@ -72,7 +75,7 @@ export const fetchInsights = async (fetchParams: InsightFilterFields): Promise<I
 export const fetchFullInsights = async (
   fetchParams: InsightFilterFields,
   includeAnnotationState = false
-): Promise<(FullInsight | NewInsight)[]> => {
+): Promise<(FullLegacyInsight | Insight)[]> => {
   const excludes = ['thumbnail'];
   if (!includeAnnotationState) excludes.push('annotation_state');
   const options = {
@@ -105,7 +108,7 @@ export const fetchPartialInsights = async (
  */
 export const getFirstInsight = async (
   fetchParams: InsightFilterFields
-): Promise<Insight | undefined> => {
+): Promise<LegacyInsight | undefined> => {
   const options = {
     excludes: ['image', 'annotation_state'],
     size: 1,
@@ -144,8 +147,8 @@ const _fetchParamsToFilters = (fetchParams: InsightFilterFields) => {
 export const extractMetadataDetails = (
   dataState: DataState | null,
   insightLastUpdate?: number
-): InsightMetadata => {
-  const summary: InsightMetadata = {
+): LegacyInsightMetadata => {
+  const summary: LegacyInsightMetadata = {
     insightLastUpdate: insightLastUpdate ?? Date.now(),
   };
   if (!dataState) return summary;

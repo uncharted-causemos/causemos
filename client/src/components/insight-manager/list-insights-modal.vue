@@ -103,7 +103,7 @@ import useToaster from '@/composables/useToaster';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import InsightUtil from '@/utils/insight-util';
 import { fetchFullInsights, removeInsight } from '@/services/insight-service';
-import { AnalyticalQuestion, Insight, NewInsight, SectionWithInsights } from '@/types/Insight';
+import { AnalyticalQuestion, LegacyInsight, Insight, SectionWithInsights } from '@/types/Insight';
 import useQuestionsData from '@/composables/useQuestionsData';
 import { getBibiographyFromCagIds } from '@/services/bibliography-service';
 import SelectButton from 'primevue/selectbutton';
@@ -206,7 +206,7 @@ export default defineComponent({
         },
       ];
     },
-    searchedInsights(): (Insight | NewInsight)[] {
+    searchedInsights(): (LegacyInsight | Insight)[] {
       if (this.search.length > 0) {
         const result = this.fullInsights.filter((insight) => {
           return insight.name.toLowerCase().includes(this.search.toLowerCase());
@@ -216,7 +216,7 @@ export default defineComponent({
         return this.fullInsights;
       }
     },
-    selectedInsights(): (Insight | NewInsight)[] {
+    selectedInsights(): (LegacyInsight | Insight)[] {
       if (this.curatedInsightIds.length > 0) {
         const curatedSet = this.fullInsights.filter((i) =>
           this.curatedInsightIds.find((e) => e === i.id)
@@ -242,7 +242,7 @@ export default defineComponent({
       this.hideInsightModal();
       this.activeInsightId = null;
     },
-    startDrag(evt: DragEvent, insight: Insight | NewInsight) {
+    startDrag(evt: DragEvent, insight: LegacyInsight | Insight) {
       if (evt.dataTransfer === null || !(evt.currentTarget instanceof HTMLElement)) {
         return;
       }
@@ -260,10 +260,10 @@ export default defineComponent({
     dragEnd(evt: DragEvent) {
       (evt.currentTarget as HTMLElement).style.border = 'none';
     },
-    startEditingInsight(insight: Insight | NewInsight) {
+    startEditingInsight(insight: LegacyInsight | Insight) {
       this.editInsight(insight.id as string);
     },
-    async removeInsight(insight: Insight | NewInsight) {
+    async removeInsight(insight: LegacyInsight | Insight) {
       const id = insight.id as string;
       // remove the insight from the server
       await removeInsight(id);
@@ -312,7 +312,7 @@ export default defineComponent({
     removeCuration(id: string) {
       this.curatedInsightIds = this.curatedInsightIds.filter((ci) => ci !== id);
     },
-    reviewInsight(insight: Insight | NewInsight) {
+    reviewInsight(insight: LegacyInsight | Insight) {
       this.setReviewPosition({ insightId: insight.id as string, sectionId: null });
       this.reviewInsights();
     },
