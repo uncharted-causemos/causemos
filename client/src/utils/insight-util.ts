@@ -608,6 +608,11 @@ async function exportDOCX(
   });
 }
 
+/** Builds a power point slide for the specified insight and adds it to an existing ppt presentation.
+  * @param insight The insight.
+  * @param pres    The presentation the slide will be added to.
+  * @param metadataSummary A description of the insight that will be displayed on the slide.
+  */ 
 function generateInsightPPTX(insight: FullLegacyInsight, pres: pptxgen, metadataSummary: string) {
   // some PPTX consts as powerpoint does everything in inches & has hard boundaries
   const widthLimitImage = 10;
