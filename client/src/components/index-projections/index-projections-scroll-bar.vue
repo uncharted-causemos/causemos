@@ -18,7 +18,7 @@
  */
 
 import * as d3 from 'd3';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { D3GElementSelection } from '@/types/D3';
 import dateFormatter from '@/formatters/date-formatter';
 import { translate } from '@/utils/svg-util';
@@ -153,6 +153,7 @@ function renderBarTimeseries(): void {
 
   // cause linter won't recognize below these can't be null anymore
   const sbGroupSel = scrollbarGroupSelection as D3GElementSelection;
+  sbGroupSel.selectAll('*').remove();
   const xScaleSB = xScaleScrollbar as d3.ScaleLinear<number, number>;
 
   const tsList = props.isInverted
@@ -178,6 +179,8 @@ function renderBarTimeseries(): void {
     .selectAll('.segment-line, .circle, .square')
     .attr('opacity', SCROLL_BAR_TIMESERIES_OPACITY);
 }
+
+const debouncedRenderBarTimeseries = _.debounce(renderBarTimeseries, 100);
 
 const handleScrollBarChange = (brushEvent: D3BrushEvent<any>) => {
   if (brushEvent?.selection == null || xScaleScrollbar == null || brushElement == null) {
@@ -249,6 +252,21 @@ onMounted(() => {
 
   render();
 });
+
+watch(
+  () => ({
+    timeseries: props.timeseries,
+    isInverted: props.isInverted,
+    showDataOutsideNorm: props.showDataOutsideNorm,
+    isWeightedSumNode: props.isWeightedSumNode,
+    projectionStartTimestamp: props.projectionStartTimestamp,
+    projectionEndTimestamp: props.projectionEndTimestamp,
+  }),
+  () => {
+    debouncedRenderBarTimeseries();
+  },
+  { deep: true }
+);
 </script>
 
 <template>
