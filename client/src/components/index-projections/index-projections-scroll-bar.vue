@@ -200,7 +200,6 @@ function render(): void {
   if (scrollbarGroupSelection == null || xScaleScrollbar == null) {
     return;
   }
-  // const scrollbarGroupSelection = d3.select(scrollbarGroupRef.value) as D3GElementSelection;
   scrollbarGroupSelection.selectAll('*').remove();
   const scrollBarBackground = scrollbarGroupSelection
     .append('rect')
