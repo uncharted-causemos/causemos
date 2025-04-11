@@ -153,7 +153,7 @@ function renderBarTimeseries(): void {
 
   // cause linter won't recognize below these can't be null anymore
   const sbGroupSel = scrollbarGroupSelection as D3GElementSelection;
-  sbGroupSel.selectAll('*').remove();
+  sbGroupSel.selectAll('.timeseries').remove();
   const xScaleSB = xScaleScrollbar as d3.ScaleLinear<number, number>;
 
   const tsList = props.isInverted
