@@ -10,8 +10,6 @@ import { ref, toRefs, watch } from 'vue';
 import renderChart, {
   Y_AXIS_WIDTH,
   PADDING_TOP,
-  SCROLL_BAR_HEIGHT,
-  SCROLL_BAR_TOP_MARGIN,
   X_AXIS_HEIGHT,
 } from '@/charts/projections-renderer';
 import { ProjectionTimeseries } from '@/types/Timeseries';
@@ -20,6 +18,8 @@ import { timeseriesExtrema } from '@/utils/timeseries-util';
 const props = defineProps<{
   projectionStartTimestamp: number;
   projectionEndTimestamp: number;
+  focusStartTimestamp: number;
+  focusEndTimestamp: number;
   timeseries: ProjectionTimeseries[];
   showDataOutsideNorm: boolean;
   isWeightedSumNode: boolean;
@@ -33,6 +33,8 @@ const emit = defineEmits<{
 const {
   projectionStartTimestamp,
   projectionEndTimestamp,
+  focusStartTimestamp,
+  focusEndTimestamp,
   timeseries,
   isWeightedSumNode,
   isInverted,
@@ -51,8 +53,7 @@ const calculateSvgHeight = (svgWidth: number, showDataOutsideNorm: boolean) => {
   //  its width
   const chartWidth = svgWidth - Y_AXIS_WIDTH;
   const defaultChartHeight = (1 / 4) * chartWidth;
-  const heightOutsideChart =
-    PADDING_TOP + SCROLL_BAR_HEIGHT + SCROLL_BAR_TOP_MARGIN + X_AXIS_HEIGHT;
+  const heightOutsideChart = PADDING_TOP + X_AXIS_HEIGHT;
   if (!showDataOutsideNorm) {
     return defaultChartHeight + heightOutsideChart;
   }
@@ -72,6 +73,8 @@ watch(
   [
     projectionStartTimestamp,
     projectionEndTimestamp,
+    focusStartTimestamp,
+    focusEndTimestamp,
     chartRef,
     timeseries,
     isWeightedSumNode,
@@ -94,8 +97,8 @@ watch(
       timeseries.value,
       width,
       svgHeight,
-      projectionStartTimestamp.value,
-      projectionEndTimestamp.value,
+      focusStartTimestamp.value,
+      focusEndTimestamp.value,
       isWeightedSumNode.value,
       onChartClick,
       isInverted.value,

@@ -1,9 +1,9 @@
 <template>
   <div class="index-projections-expanded-node-container">
     <p class="add-horizontal-margin un-font-large">{{ props.nodeData.name ?? 'none' }}</p>
-    <span v-if="props.nodeData.name.length === 0" class="subdued add-horizontal-margin"
-      >(Missing name)</span
-    >
+    <span v-if="props.nodeData.name.length === 0" class="subdued add-horizontal-margin">
+      (Missing name)
+    </span>
     <div v-if="isConceptNodeWithDatasetAttached(props.nodeData)">
       <div
         class="dataset-info add-horizontal-margin"
@@ -61,13 +61,25 @@
         }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
+        :focus-start-timestamp="focusStartTimestamp"
+        :focus-end-timestamp="focusEndTimestamp"
         :timeseries="timeseries"
         :show-data-outside-norm="showDataOutsideNorm"
         @click-chart="(...params) => emit('click-chart', ...params)"
         :is-weighted-sum-node="false"
         :is-inverted="isInvertedData"
       />
-
+      <div class="add-horizontal-margin">
+        <IndexProjectionsScrollBar
+          :projection-start-timestamp="projectionStartTimestamp"
+          :projection-end-timestamp="projectionEndTimestamp"
+          :timeseries="timeseries"
+          :show-data-outside-norm="showDataOutsideNorm"
+          :is-weighted-sum-node="false"
+          :is-inverted="isInvertedData"
+          @focused-time-range-change="onFocusedTimeRangeChange"
+        />
+      </div>
       <MinMaxInfo
         class="add-horizontal-margin min-max-info"
         :message="'What do 0 and 1 represent?'"
@@ -88,6 +100,8 @@
         :projection-temporal-resolution-option="(projectionTemporalResolutionOption as TemporalResolutionOption.Month | TemporalResolutionOption.Year)"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
+        :focus-start-timestamp="focusStartTimestamp"
+        :focus-end-timestamp="focusEndTimestamp"
         :projection-timeseries="timeseries"
         :weighting-behaviour="weightingBehaviour"
       />
@@ -113,6 +127,8 @@
         }"
         :projection-start-timestamp="projectionStartTimestamp"
         :projection-end-timestamp="projectionEndTimestamp"
+        :focus-start-timestamp="focusStartTimestamp"
+        :focus-end-timestamp="focusEndTimestamp"
         :timeseries="timeseries"
         :show-data-outside-norm="showDataOutsideNorm"
         @click-chart="(...params) => emit('click-chart', ...params)"
@@ -139,6 +155,7 @@ import {
 } from '@/utils/index-tree-util';
 import { computed, ref } from 'vue';
 import IndexProjectionsExpandedNodeTimeseries from './index-projections-expanded-node-timeseries.vue';
+import IndexProjectionsScrollBar from './index-projections-scroll-bar.vue';
 import { ProjectionTimeseries, TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadataSimple from '@/composables/useModelMetadataSimple';
 import InvertedDatasetLabel from '@/components/widgets/inverted-dataset-label.vue';
@@ -165,6 +182,9 @@ const props = defineProps<{
   dataWarnings?: IndexProjectionNodeDataWarning[];
   weightingBehaviour: IndexWeightingBehaviour;
 }>();
+
+const focusStartTimestamp = ref(props.projectionStartTimestamp);
+const focusEndTimestamp = ref(props.projectionEndTimestamp);
 
 const emit = defineEmits<{
   (e: 'click-chart', timestamp: number, value: number): void;
@@ -203,6 +223,11 @@ const navigateToDataset = () => {
   } else {
     throw new Error('Dataset metadata not assigned.  Drill-down aborted.');
   }
+};
+
+const onFocusedTimeRangeChange = (focusedTimeRange: [number, number]) => {
+  focusStartTimestamp.value = focusedTimeRange[0];
+  focusEndTimestamp.value = focusedTimeRange[1];
 };
 </script>
 
