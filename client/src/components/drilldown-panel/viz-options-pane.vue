@@ -160,7 +160,8 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
-import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 import { AggregationOption, TemporalResolutionOption, DataTransform } from '@/types/Enums';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';

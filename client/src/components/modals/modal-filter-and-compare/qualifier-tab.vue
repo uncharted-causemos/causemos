@@ -92,7 +92,8 @@
 </template>
 
 <script setup lang="ts">
-import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 import ComparisonSettingsVue from './comparison-settings.vue';
 import { useAvailableRegions } from '@/composables/useAvailableRegions';
 import { useRegionalDropdownOptions } from '@/composables/useRegionalDropdownOptions';

@@ -202,3 +202,10 @@ export interface MapBoundsWithOptions {
 }
 
 export type MapBounds = BoundingBox | MapBoundsWithOptions;
+
+export interface DropdownItem {
+  displayName: string;
+  value: any;
+  selected?: boolean;
+  color?: string;
+}

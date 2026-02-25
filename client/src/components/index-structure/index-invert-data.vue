@@ -18,7 +18,8 @@
 
 <script setup lang="ts">
 import { ConceptNodeWithDatasetAttached } from '@/types/Index';
-import DropdownButton, { DropdownItem } from '../dropdown-button.vue';
+import DropdownButton from '../dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 import InvertedDatasetLabel from '../widgets/inverted-dataset-label.vue';
 
 const dropdownItems: DropdownItem[] = [

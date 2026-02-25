@@ -24,7 +24,8 @@
 import moment from 'moment';
 import _ from 'lodash';
 import { defineComponent } from 'vue';
-import dropdownButton, { DropdownItem } from '../dropdown-button.vue';
+import dropdownButton from '../dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 
 const MONTHS: DropdownItem[] = [
   { value: 0, displayName: 'Jan' },

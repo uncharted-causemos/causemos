@@ -257,7 +257,7 @@ import useProjectionDates from '@/composables/useProjectionDates';
 import IndexProjectionsGraphView from '@/components/index-projections/index-projections-graph-view.vue';
 import IndexProjectionsNodeView from '@/components/index-projections/index-projections-node-view.vue';
 import { SelectableIndexElementId } from '@/types/Index';
-import { DropdownItem } from '@/components/dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 import IndexLegend from '@/components/index-legend.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import timestampFormatter from '@/formatters/timestamp-formatter';
