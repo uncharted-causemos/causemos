@@ -43,6 +43,7 @@ services:
     volumes:
       - ./keycloak/realm/:/data/
       - keycloak-themes:/opt/keycloak/themes
+      - ../keycloak-themes/causemos:/opt/keycloak/themes/causemos
     ports:
       - '8081:8081'
 
