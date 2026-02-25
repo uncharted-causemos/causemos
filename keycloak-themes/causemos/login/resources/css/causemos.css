@@ -1,0 +1,23 @@
+:root {
+  --un-color-accent-darker: hsl(245, 40%, 24%);
+  --un-color-accent-dark: hsl(250, 39%, 43%);
+  --un-color-accent: hsl(260, 77%, 63%);
+  --un-color-accent-light: hsl(262, 85%, 78%);
+  --un-color-accent-lighter: hsl(265, 100%, 99%);
+
+  --un-alert-highlight: hsl(260, 77%, 63%);
+
+  --un-color-button-primary: hsl(260, 77%, 63%);
+  --un-color-button-hover: hsl(250, 39%, 43%);
+  --un-color-button-secondary: hsl(265, 100%, 99%);
+  --un-color-button-secondary-hover: hsl(262, 85%, 78%);
+
+  --un-background-color-left: hsl(265, 100%, 99%);
+  --un-background-color-right: hsl(262, 85%, 78%);
+
+  --un-color-font-dark: #1c2127;
+  --un-color-font-light: #fdfafd;
+  --un-color-body-text-disabled: #747576ff;
+  --un-color-body-text-secondary: #9da5af;
+  --un-color-body-text-primary: #1c2127;
+}
