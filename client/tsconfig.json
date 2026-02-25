@@ -15,7 +15,8 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "keycloak-js": ["../node_modules/keycloak-js/lib/keycloak"]
     },
     "sourceMap": true,
     "types": ["vite/client", "vitest/globals"]
