@@ -31,6 +31,7 @@ const datacubeRouter = require('#@/routes/datacubes.js');
 const gadmRouter = require('#@/routes/gadm.js');
 const pipelineReportingRouter = require('#@/routes/pipeline-reporting.js');
 const sessionLogRouter = require('#@/routes/session-log.js');
+const keycloakRouter = require('#@/routes/keycloak.js');
 const asyncHandler = require('express-async-handler');
 
 const projectsRouter = require('#@/routes/projects.js');
@@ -94,12 +95,26 @@ app.use(function (req, res, next) {
   next();
 });
 
-const res = request('GET', `${process.env.KC_FQDN}/realms/${process.env.KC_REALM}`);
-const response = JSON.parse(res.getBody().toString());
-const publicKey = `-----BEGIN PUBLIC KEY-----\r\n${response.public_key}\r\n-----END PUBLIC KEY-----`;
+let publicKey = '';
+try {
+  const res = request('GET', `${process.env.KC_FQDN}/realms/${process.env.KC_REALM}`);
+  const response = JSON.parse(res.getBody().toString());
+  publicKey = `-----BEGIN PUBLIC KEY-----\r\n${response.public_key}\r\n-----END PUBLIC KEY-----`;
+} catch (e) {
+  Logger.error('Failed to fetch Keycloak public key. JWT validation will be disabled or fail.');
+  Logger.error(e);
+}
 app.use(
-  jwt({ secret: publicKey, algorithms: ['RS256'] }).unless({
+  jwt({
+    secret: (req, token) => {
+      if (!publicKey) throw new Error('Public key not initialized');
+      return publicKey;
+    },
+    algorithms: ['RS256'],
+  }).unless({
     path: [
+      // Keycloak endpoints are accessed without token
+      { url: /\/api\/keycloak\/.+/, methods: ['GET'] },
       // This endpoint is accessed by the `src` attribute on an `img` element
       //  in the frontend. Those requests do not have any keycloak auth
       //  information, so we don't  for a valid Keycloak bearer token.
@@ -124,6 +139,8 @@ app.use(
 );
 
 app.use('/api', [settingsRouter]);
+
+app.use('/api/keycloak', [keycloakRouter]);
 
 app.use('/api/insights', [insightsRouter]);
 

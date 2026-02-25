@@ -26,7 +26,8 @@ const checkRole = (roles) => {
         next();
       }
 
-      const roleIntersection = roles.filter((value) => req.auth.realm_access.roles.includes(value));
+      const rolesInToken = req.auth.realm_access?.roles || [];
+      const roleIntersection = roles.filter((value) => rolesInToken.includes(value));
       if (!roleIntersection.length) {
         // role is not authorized
         return res.status(401).json({ message: 'Unauthorized' });
