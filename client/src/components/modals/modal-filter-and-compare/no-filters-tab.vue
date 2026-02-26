@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { DropdownItem } from '@/components/dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 import useDatacubeDimensions from '@/composables/useDatacubeDimensions';
 import useScenarioData from '@/composables/useScenarioData';
 import { BreakdownStateNone, ComparisonSettings, Indicator, Model } from '@/types/Datacube';

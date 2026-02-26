@@ -144,7 +144,8 @@
 <script lang="ts">
 import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
-import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import {
   AdminRegionSets,

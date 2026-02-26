@@ -220,7 +220,8 @@ import ModalEditParamChoices from '@/components/modals/modal-edit-param-choices.
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
 import { getOutputs } from '@/utils/datacube-util';
 import { scrollToElement } from '@/utils/dom-util';
-import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 import { useRoute } from 'vue-router';
 import useActiveDatacubeFeature from '@/composables/useActiveDatacubeFeature';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';

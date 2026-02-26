@@ -25,12 +25,12 @@ export class FIFOCache<T> {
 
     if (!this.retentionPolicy) {
       while (this._map.size > maxSize) {
-        const key = this._map.keys().next().value;
+        const key = this._map.keys().next().value!;
         this._map.delete(key);
       }
     } else {
       while (this._map.size / maxSize > this.retentionPolicy) {
-        const key = this._map.keys().next().value;
+        const key = this._map.keys().next().value!;
         this._map.delete(key);
       }
     }

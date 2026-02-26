@@ -1,0 +1,40 @@
+---
+services:
+  setup-snapshot-volume:
+    image: alpine
+    user: '0:0' # Run as root to fix permissions
+    volumes:
+      - elasticsearch-snapshots:/backups
+    command: chown -R 1000:0 /backups
+
+  elasticsearch:
+    image: ghcr.io/unchartedsoftware/uncharted-shipyard/uncharted-es:9.2.2
+    depends_on:
+      setup-snapshot-volume:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD', 'curl', '0.0.0.0:9200/_cluster/health']
+      interval: '3s'
+      timeout: '3s'
+      retries: 30
+    ports:
+      - '9200:9200'
+    environment:
+      - cluster.name=elasticsearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - 'ES_JAVA_OPTS=-Xms1024m -Xmx1024m'
+      - xpack.security.enabled=false
+      - path.repo=/usr/share/elasticsearch/snapshots
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data:rw
+      - elasticsearch-snapshots:/usr/share/elasticsearch/snapshots
+volumes:
+  elasticsearch-data:
+    driver: local
+  elasticsearch-snapshots:
+    driver: local

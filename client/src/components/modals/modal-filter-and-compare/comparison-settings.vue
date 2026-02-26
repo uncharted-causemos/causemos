@@ -44,7 +44,8 @@
 </template>
 
 <script setup lang="ts">
-import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 import { ComparisonSettings } from '@/types/Datacube';
 import SelectButton from 'primevue/selectbutton';
 import { computed, toRefs } from 'vue';

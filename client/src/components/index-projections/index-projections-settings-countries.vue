@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { IndexProjectionCountry } from '@/types/Index';
 import { NO_COUNTRY_SELECTED_VALUE } from '@/utils/index-projection-util';
-import { DropdownItem } from '../dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 import Select from 'primevue/select';
 import Button from 'primevue/button';
 

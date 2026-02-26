@@ -56,5 +56,5 @@ app.directive('focus', {
   },
 });
 
-await store.dispatch('auth/fetchSSO');
+await store.dispatch('auth/initKeycloak');
 app.mount('#app');
