@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 import _ from 'lodash';
-import { useStore } from 'vuex';
+import { useDataSearchStore } from '@/stores/data-search-store';
 import { ref, computed, onMounted, watch } from 'vue';
 
 import { Datacube } from '@/types/Datacube';
@@ -69,7 +69,7 @@ const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const store = useStore();
+const dataSearchStore = useDataSearchStore();
 const overlay = useOverlay();
 
 const pageSize = 100;
@@ -101,7 +101,7 @@ const omitModelType = (baseFilters: Filters) => {
 
 const filters = computed<Filters>(() => {
   // filters set by lex search bar, url or facets ui
-  const baseFilter = store.getters['dataSearch/filters'];
+  const baseFilter = dataSearchStore.filters;
   return omitModelType(baseFilter);
 });
 

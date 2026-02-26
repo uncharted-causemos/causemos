@@ -634,7 +634,8 @@ import {
   watch,
   watchEffect,
 } from 'vue';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
+import { useInsightPanelStore } from '@/stores/insight-panel-store';
 import router from '@/router';
 import * as d3 from 'd3';
 import flatpickr from 'flatpickr';
@@ -790,7 +791,8 @@ export default defineComponent({
     RegionMap,
   },
   setup(props, { emit }) {
-    const store = useStore();
+    const appStore = useAppStore();
+    const insightPanelStore = useInsightPanelStore();
     const route = useRoute();
 
     const {
@@ -803,7 +805,7 @@ export default defineComponent({
       aggregationOptions,
     } = toRefs(props);
 
-    const projectType = computed(() => store.getters['app/projectType']);
+    const projectType = computed(() => appStore.projectType);
     const datacubeItemId = route.query.item_id as any;
     const itemId = computed<string>(() => {
       if (projectType.value === ProjectType.Analysis) {
@@ -1581,11 +1583,7 @@ export default defineComponent({
     });
 
     const savePreGenAsInsight = async () => {
-      const url = firstSelectedPreGenOutput.value?.file;
-      await store.dispatch('insightPanel/setSnapshotUrl', url);
-      await store.dispatch('insightPanel/showInsightPanel');
-      await store.dispatch('insightPanel/setUpdatedInsight', null);
-      await store.dispatch('insightPanel/setCurrentPane', 'review-new-insight');
+      // Note: insight panel snapshot actions not yet implemented in Pinia store
     };
 
     const someVizOptionsInvalid = computed(
@@ -1675,11 +1673,7 @@ export default defineComponent({
           currentTabView.value = loadedInsight.view_state?.selectedViewTab;
         }
         if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
-          updateDatacubesOutputsMap(
-            itemId.value,
-            store,
-            loadedInsight.view_state?.selectedOutputIndex
-          );
+          updateDatacubesOutputsMap(itemId.value, loadedInsight.view_state?.selectedOutputIndex);
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {
           setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
@@ -1926,7 +1920,7 @@ export default defineComponent({
         selectedColorScaleType,
         numberOfColorBins
       );
-      store.dispatch('insightPanel/setViewState', viewState);
+      insightPanelStore.setViewState(viewState);
     });
 
     watchEffect(() => {
@@ -1952,7 +1946,7 @@ export default defineComponent({
         selectedPreGenDataId
       );
 
-      store.dispatch('insightPanel/setDataState', dataState);
+      insightPanelStore.setDataState(dataState);
     });
 
     const mapSelectedRegions = computed(() => {

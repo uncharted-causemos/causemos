@@ -119,7 +119,8 @@
 
 <script lang="ts">
 import { defineComponent, ref, PropType, Ref } from 'vue';
-import { mapGetters } from 'vuex';
+import { mapState } from 'pinia';
+import { useAppStore } from '@/stores/app-store';
 
 import MultilineDescription from '@/components/widgets/multiline-description.vue';
 import dateFormatter from '@/formatters/date-formatter';
@@ -148,10 +149,7 @@ export default defineComponent({
     },
   },
   computed: {
-    ...mapGetters({
-      project: 'app/project',
-      projectType: 'app/projectType',
-    }),
+    ...mapState(useAppStore, ['project', 'projectType']),
     visibleQualifiers(): FeatureQualifier[] {
       return this.datacube?.qualifier_outputs?.filter((q) => isBreakdownQualifier(q)) ?? [];
     },

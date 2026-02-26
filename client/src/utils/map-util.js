@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import mapboxgl from 'maplibre-gl';
 import { BASE_LAYER, colorExpr } from '@/utils/map-util-new';
-import authStore from '@/store/modules/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
 
 // import { FIFOCache } from '@/utils/fifo-cache';
 
@@ -45,7 +45,7 @@ export function resolveBaseMapTileUrl(url) {
 
   return {
     url: resolvedUrl,
-    headers: { Authorization: `Bearer ${authStore.state.userToken}` },
+    headers: { Authorization: `Bearer ${useAuthStore().userToken}` },
   };
 }
 

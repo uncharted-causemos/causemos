@@ -1,22 +1,19 @@
 import { createApp } from 'vue';
+import { createPinia } from 'pinia';
 import App from './App.vue';
 import router from './router';
-import store from './store';
-import { sync } from 'vuex-router-sync';
 import FloatingVue from 'floating-vue';
 import Toast, { useToast, TYPE } from 'vue-toastification';
-
 import Vue3Resize from 'vue3-resize';
-
 import PrimeVue from 'primevue/config';
 import PrimeVueStylePreset from '@/styles/PrimeVueStylePreset';
+import { useAuthStore } from '@/stores/auth-store';
 
 import 'vue-toastification/dist/index.css';
 import 'floating-vue/dist/style.css';
 
-sync(store, router);
-
-const app = createApp(App).use(store).use(router).use(Vue3Resize);
+const pinia = createPinia();
+const app = createApp(App).use(pinia).use(router).use(Vue3Resize);
 
 app.use(PrimeVue, {
   theme: {
@@ -56,5 +53,5 @@ app.directive('focus', {
   },
 });
 
-await store.dispatch('auth/initKeycloak');
+await useAuthStore(pinia).initKeycloak();
 app.mount('#app');

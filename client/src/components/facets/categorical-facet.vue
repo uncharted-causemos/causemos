@@ -38,7 +38,8 @@
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex';
+import { mapState, mapActions } from 'pinia';
+import { useQueryStore } from '@/stores/query-store';
 import _ from 'lodash';
 
 import '@uncharted.software/facets-core';
@@ -89,9 +90,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters({
-      filters: 'query/filters',
-    }),
+    ...mapState(useQueryStore, ['filters']),
     facetData() {
       const values = [];
       for (let i = 0; i < this.numToDisplay; ++i) {
@@ -193,10 +192,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions({
-      setSearchClause: 'query/setSearchClause',
-      removeSearchTerm: 'query/removeSearchTerm',
-    }),
+    ...mapActions(useQueryStore, ['setSearchClause', 'removeSearchTerm']),
     updateSelection(event) {
       const facet = event.currentTarget;
       if (

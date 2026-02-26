@@ -1,10 +1,10 @@
 import { AnalysisItem } from '@/types/Analysis';
 import _ from 'lodash';
-import { computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { ModelOrDatasetState } from '@/types/Datacube';
 import { ProjectType } from '@/types/Enums';
 import { Router } from 'vue-router';
+import { useAppStore } from '@/stores/app-store';
 
 export const MAX_ANALYSIS_DATACUBES_COUNT = 9;
 
@@ -33,12 +33,12 @@ export const duplicate = (analysisItem: AnalysisItem) => {
 
 export const getState = (analysisItem: AnalysisItem) => analysisItem.state;
 
-export function updateDatacubesOutputsMap(itemId: string, store: any, newOutputIndex: number) {
-  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-  const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+export function updateDatacubesOutputsMap(itemId: string, newOutputIndex: number) {
+  const appStore = useAppStore();
+  const updatedCurrentOutputsMap = _.cloneDeep(appStore.datacubeCurrentOutputsMap);
   const datacubeKey = itemId;
   updatedCurrentOutputsMap[datacubeKey] = newOutputIndex;
-  store.dispatch('app/setDatacubeCurrentOutputsMap', updatedCurrentOutputsMap);
+  appStore.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
 }
 
 export const openDatacubeDrilldown = async (

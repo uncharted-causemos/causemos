@@ -9,7 +9,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent, computed, ref } from 'vue';
-import { useStore } from 'vuex';
+import { useQueryStore } from '@/stores/query-store';
 
 export default defineComponent({
   name: 'SortIndicator',
@@ -20,12 +20,12 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const store = useStore();
+    const queryStore = useQueryStore();
     const sort = computed(() => {
-      return store.getters['query/statements'].sort;
+      return queryStore.statements.sort;
     });
-    const view = computed(() => store.getters['query/view']);
-    const currentSort = ref(null);
+    const view = computed(() => queryStore.view);
+    const currentSort = ref<string | null>(null);
 
     return {
       sort,
@@ -33,7 +33,7 @@ export default defineComponent({
       currentSort,
 
       changeSort: (order: string) => {
-        store.dispatch('query/setOrderBy', {
+        queryStore.setOrderBy({
           view: view.value,
           field: props.field,
           sortOrder: order,

@@ -1,7 +1,7 @@
 import { ProjectType } from '@/types/Enums';
 import { FullLegacyInsight, Insight } from '@/types/Insight';
 import { computed, Ref, ref, watch } from 'vue';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
 import {
   fetchInsights,
   fetchPartialInsights,
@@ -21,9 +21,9 @@ export default function useInsightsData(
 ) {
   const insights = ref<(FullLegacyInsight | Insight)[]>([]);
 
-  const store = useStore();
-  const project = computed(() => store.getters['app/project']);
-  const projectType = computed(() => store.getters['app/projectType']);
+  const appStore = useAppStore();
+  const project = computed(() => appStore.project);
+  const projectType = computed(() => appStore.projectType);
 
   const triggerInsightFetch = async (
     contextIds: string[] | string | undefined,
@@ -52,8 +52,8 @@ export default function useInsightsData(
   const reFetchInsights = async () => {
     const fetchedInsights = await triggerInsightFetch(
       contextIds.value,
-      projectType.value,
-      project.value,
+      projectType.value as ProjectType,
+      project.value ?? '',
       fieldAllowList
     );
     if (fetchedInsights === undefined) {
@@ -75,8 +75,8 @@ export default function useInsightsData(
       });
       const fetchedInsights = await triggerInsightFetch(
         contextIds.value,
-        projectType.value,
-        project.value,
+        projectType.value as ProjectType,
+        project.value ?? '',
         fieldAllowList
       );
       if (fetchedInsights === undefined || isCancelled) {

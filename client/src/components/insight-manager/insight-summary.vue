@@ -21,7 +21,8 @@
 import { LegacyInsightMetadata } from '@/types/Insight';
 import { defineComponent, PropType } from 'vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { mapGetters } from 'vuex';
+import { mapState } from 'pinia';
+import { useAppStore } from '@/stores/app-store';
 
 const formatDate = (date: number) => {
   return dateFormatter(date, 'MMM DD, YYYY, h:mm a');
@@ -36,9 +37,7 @@ export default defineComponent({
     },
   },
   computed: {
-    ...mapGetters({
-      projectMetadata: 'app/projectMetadata',
-    }),
+    ...mapState(useAppStore, ['projectMetadata']),
     insightLastUpdate(): string | null {
       if (this.metadataDetails.insightLastUpdate !== undefined) {
         return formatDate(this.metadataDetails.insightLastUpdate);

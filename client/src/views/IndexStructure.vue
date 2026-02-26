@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeMount, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
 import { useRoute, useRouter } from 'vue-router';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import IndexActionBar from '@/components/index-structure/index-action-bar.vue';
@@ -61,7 +61,7 @@ import { TYPE } from 'vue-toastification';
 import useInsightStore from '@/composables/useInsightStore';
 import IndexLegend from '@/components/index-legend.vue';
 
-const store = useStore();
+const appStore = useAppStore();
 const route = useRoute();
 const router = useRouter();
 
@@ -150,9 +150,9 @@ onBeforeMount(() => {
 });
 // Set analysis name on the navbar
 onMounted(async () => {
-  await store.dispatch('app/setAnalysisName', '');
+  await appStore.setAnalysisName('');
   await refresh();
-  await store.dispatch('app/setAnalysisName', analysisName.value);
+  await appStore.setAnalysisName(analysisName.value);
   isStateLoaded.value = true;
 });
 

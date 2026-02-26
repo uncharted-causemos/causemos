@@ -62,7 +62,8 @@
 import { ProjectType } from '@/types/Enums';
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
+import { useAuthStore } from '@/stores/auth-store';
 import NavbarInsightsPanel from '@/components/insight-manager/navbar-insights-panel.vue';
 import useApplicationConfiguration from '@/composables/useApplicationConfiguration';
 import useModelOrDatasetName from '@/composables/useModelOrDatasetName';
@@ -75,16 +76,17 @@ interface NavBarItem {
   text: string;
 }
 
-const store = useStore();
-const project = computed(() => store.getters['app/project']);
-const projectMetadata = computed(() => store.getters['app/projectMetadata']);
+const appStore = useAppStore();
+const authStore = useAuthStore();
+const project = computed(() => appStore.project);
+const projectMetadata = computed(() => appStore.projectMetadata);
 const route = useRoute();
 // New data space pages use `route.query.analysis_id`, while other existing pages use
 //  `route.params.analysisId`.
 const analysisId = computed(
   () => (route.query.analysis_id as string) ?? (route.params.analysisId as string)
 );
-const analysisName = computed(() => store.getters['app/analysisName']);
+const analysisName = computed(() => appStore.analysisName);
 
 const datacubeId = computed(() => (route.params.datacubeId as string) ?? null);
 const modelOrDatasetName = useModelOrDatasetName(datacubeId);
@@ -217,7 +219,7 @@ const siteMap = computed<{ [key: string]: NavBarItem[] }>(() => ({
   ],
 }));
 
-const currentView = computed(() => store.getters['app/currentView']);
+const currentView = computed(() => appStore.currentView);
 const navItems = computed(() => siteMap.value[currentView.value] ?? null);
 const isNavbarVisible = computed(() => navItems.value !== null);
 const VIEWS_WITH_NAVBAR_INSIGHTS_PANEL = [
@@ -235,9 +237,9 @@ const showNavbarInsightsPanel = ref(false);
 
 const { applicationConfiguration } = useApplicationConfiguration();
 
-const accountName = computed(() => store.getters['auth/name']);
+const accountName = computed(() => authStore.name);
 const logout = () => {
-  store.dispatch('auth/logout');
+  authStore.logout();
 };
 
 const accountMenu = ref<typeof Menu>();

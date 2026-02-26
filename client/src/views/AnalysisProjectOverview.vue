@@ -186,7 +186,7 @@
 
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
 import _ from 'lodash';
 import {
   getAnalysesByProjectId,
@@ -298,12 +298,12 @@ const onDeleteQuestion = (questionId: string) => {
   );
 };
 
-const store = useStore();
-const project = computed<string>(() => store.getters['app/project']);
-const projectMetadata = computed(() => store.getters['app/projectMetadata']);
+const appStore = useAppStore();
+const project = computed(() => appStore.project);
+const projectMetadata = computed(() => appStore.projectMetadata);
 
-const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
-const disableOverlay = () => store.dispatch('app/disableOverlay');
+const enableOverlay = (message: string) => appStore.enableOverlay(message);
+const disableOverlay = () => appStore.disableOverlay();
 
 const { showInsightList, reviewInsights, setReviewPosition } = useInsightManager();
 
@@ -318,6 +318,7 @@ const discardProjectDescription = () => {
   isEditingProjectDescription.value = false;
 };
 const saveDesc = () => {
+  if (!project.value) return;
   // we may have just modified the desc text, so update the server value
   projectService.updateProjectMetadata(project.value, {
     description: projectMetadata.value.description,
@@ -340,6 +341,7 @@ const editTitle = () => {
   isEditingTitle.value = true;
 };
 const saveTitle = () => {
+  if (!project.value) return;
   projectService.updateProjectMetadata(project.value, {
     name: projectMetadata.value.name,
   });
@@ -359,7 +361,7 @@ watch(isEditingTitle, async (value) => {
 
 const analyses = ref<Analysis[]>([]);
 const fetchAnalyses = async () => {
-  if (_.isEmpty(projectMetadata.value)) {
+  if (_.isEmpty(projectMetadata.value) || !project.value) {
     return;
   }
   enableOverlay('Loading analyses...');
@@ -452,6 +454,7 @@ const onOpen = (analysis: Analysis) => {
   }
 };
 const onCreateIndexAnalysis = async () => {
+  if (!project.value) return;
   const analysis = await createAnalysis(
     `untitled at ${dateFormatter(Date.now())}`,
     '',
@@ -479,6 +482,7 @@ const onDelete = async (analysis: Analysis) => {
   }
 };
 const onCreateDataAnalysis = async (isIndicatorAnalysis: boolean) => {
+  if (!project.value) return;
   const analysis = await createAnalysis(
     `untitled at ${dateFormatter(Date.now())}`,
     '',

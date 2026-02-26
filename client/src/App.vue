@@ -4,7 +4,7 @@
       v-if="overlayActivated"
       :message="overlayMessage"
       :messageSecondary="overlayMessageSecondary"
-      :cancel-fn="overlayCancelFn"
+      :cancel-fn="overlayCancelFn ?? undefined"
     />
     <nav-bar class="nav-bar" />
     <insight-manager class="insight-manager" />
@@ -15,7 +15,8 @@
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent } from 'vue';
-import { mapActions, mapGetters } from 'vuex';
+import { mapState, mapActions } from 'pinia';
+import { useAppStore } from '@/stores/app-store';
 
 import NavBar from '@/components/nav-bar.vue';
 import Overlay from '@/components/overlay.vue';
@@ -46,14 +47,14 @@ export default defineComponent({
     return { isInsightModalOpen };
   },
   computed: {
-    ...mapGetters({
-      overlayMessage: 'app/overlayMessage',
-      overlayMessageSecondary: 'app/overlayMessageSecondary',
-      overlayActivated: 'app/overlayActivated',
-      overlayCancelFn: 'app/overlayCancelFn',
-      project: 'app/project',
-      projectType: 'app/projectType',
-    }),
+    ...mapState(useAppStore, [
+      'overlayMessage',
+      'overlayMessageSecondary',
+      'overlayActivated',
+      'overlayCancelFn',
+      'project',
+      'projectType',
+    ]),
   },
   watch: {
     project: function () {
@@ -108,15 +109,12 @@ export default defineComponent({
     }
   },
   methods: {
-    ...mapActions({
-      setProjectMetadata: 'app/setProjectMetadata',
-    }),
+    ...mapActions(useAppStore, ['setProjectMetadata']),
     async refreshDomainProject() {
-      if (_.isEmpty(this.project)) {
+      let projectId = this.project;
+      if (!projectId) {
         return;
       }
-
-      let projectId = this.project;
 
       // TODO: an ideal solution would be to have some sort of dispatcher page
       //  that just takes the datacubeId and sends the domain-modeler user to the proper place
@@ -129,7 +127,7 @@ export default defineComponent({
       const domainProjectNames = existingProjects.map((p: any) => p.name);
       if (domainProjectNames.includes(this.project)) {
         // this is a special case where Jataware has redirected to a given domain-project page
-        projectId = existingProjects.find((p: any) => p.name === this.project).id;
+        projectId = existingProjects.find((p: any) => p.name === this.project).id as string;
       }
 
       domainProjectService.getProject(projectId).then((project) => {
@@ -137,16 +135,16 @@ export default defineComponent({
       });
     },
     async refreshDatasetProject() {
-      if (_.isEmpty(this.project)) {
+      const dataId = this.project;
+      if (!dataId) {
         return;
       }
 
-      const dataId = this.project;
       const dataset = await getDataset(dataId);
       this.setProjectMetadata(dataset);
     },
     refresh() {
-      if (_.isEmpty(this.project)) {
+      if (!this.project) {
         this.setProjectMetadata({});
         return;
       }

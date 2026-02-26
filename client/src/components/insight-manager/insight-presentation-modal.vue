@@ -19,7 +19,7 @@ import {
 } from '@/services/insight-service';
 import Button from 'primevue/button';
 import { useRoute, useRouter } from 'vue-router';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
 import OptionsButton from '../widgets/options-button.vue';
 import useInsightManager from '@/composables/useInsightManager';
 import InsightSummary from './insight-summary.vue';
@@ -139,8 +139,8 @@ const deleteInsight = () => {
   emit('set-review-position', null);
 };
 
-const store = useStore();
-const projectMetadata = computed(() => store.getters['app/projectMetadata']);
+const appStore = useAppStore();
+const projectMetadata = computed(() => appStore.projectMetadata);
 const metadataDetails = computed<LegacyInsightMetadata | null>(() => {
   if (selectedSlide.value === null || typeof selectedSlide.value === 'string') return null;
   const insight = selectedSlide.value as LegacyInsight | Insight;

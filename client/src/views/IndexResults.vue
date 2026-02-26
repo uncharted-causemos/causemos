@@ -62,7 +62,7 @@ import useIndexAnalysis from '@/composables/useIndexAnalysis';
 import AnalysisOptionsButton from '@/components/analysis-options-button.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
 import useIndexTree from '@/composables/useIndexTree';
 import {
   findAllDatasets,
@@ -98,7 +98,7 @@ onMounted(() => {
   isMounted.value = true;
 });
 
-const store = useStore();
+const appStore = useAppStore();
 const route = useRoute();
 const router = useRouter();
 
@@ -106,7 +106,7 @@ const analysisId = computed(() => route.params.analysisId as string);
 const { analysisName, indexResultsSettings, refresh, weightingBehaviour } =
   useIndexAnalysis(analysisId);
 
-const project = computed(() => store.getters['app/project']);
+const project = computed(() => appStore.project);
 const modifyStructure = () => {
   router.push({
     name: 'indexStructure',
@@ -120,9 +120,9 @@ const modifyStructure = () => {
 
 // Set analysis name on the navbar
 onMounted(async () => {
-  store.dispatch('app/setAnalysisName', '');
+  appStore.setAnalysisName('');
   await refresh();
-  store.dispatch('app/setAnalysisName', analysisName.value);
+  appStore.setAnalysisName(analysisName.value);
 });
 
 const { tree } = useIndexTree();

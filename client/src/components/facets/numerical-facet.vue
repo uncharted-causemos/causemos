@@ -32,7 +32,8 @@
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex';
+import { mapState, mapActions } from 'pinia';
+import { useQueryStore } from '@/stores/query-store';
 import _ from 'lodash';
 
 import '@uncharted.software/facets-core';
@@ -70,9 +71,7 @@ export default {
     },
   },
   computed: {
-    ...mapGetters({
-      filters: 'query/filters',
-    }),
+    ...mapState(useQueryStore, ['filters']),
     max() {
       const values = this.baseData.map((b) => b.value);
       return Math.max(...values);
@@ -121,9 +120,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions({
-      setSearchClause: 'query/setSearchClause',
-    }),
+    ...mapActions(useQueryStore, ['setSearchClause']),
     updateSelection(event) {
       const facet = event.currentTarget;
       if (

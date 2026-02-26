@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
 import { ProjectType } from '@/types/Enums';
 import { indexNodeTreeContainsDataset } from '@/utils/index-tree-util';
 import useIndexTree from '@/composables/useIndexTree';
@@ -26,8 +26,8 @@ const indexTree = useIndexTree();
 const canViewResults = computed(() => indexNodeTreeContainsDataset(indexTree.tree.value));
 
 const router = useRouter();
-const store = useStore();
-const project = computed(() => store.getters['app/project']);
+const appStore = useAppStore();
+const project = computed(() => appStore.project);
 const seeResults = () => {
   router.push({
     name: 'indexResults',

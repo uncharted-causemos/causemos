@@ -178,7 +178,8 @@
 </template>
 
 <script lang="ts">
-import { mapActions, mapGetters } from 'vuex';
+import { mapState, mapActions } from 'pinia';
+import { useAppStore } from '@/stores/app-store';
 import IndicatorCard from '@/components/indicator-card.vue';
 import filtersUtil from '@/utils/filters-util';
 import {
@@ -235,9 +236,7 @@ export default defineComponent({
     // ]
   }),
   computed: {
-    ...mapGetters({
-      dataId: 'app/project',
-    }),
+    ...mapState(useAppStore, { dataId: 'project' }),
     filteredIndicators(): Indicator[] {
       const filtered = this.indicators.filter((indicator) =>
         indicator.outputs[0].display_name.toLowerCase().includes(this.searchTerm.toLowerCase())
@@ -300,10 +299,7 @@ export default defineComponent({
     }
   },
   methods: {
-    ...mapActions({
-      enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay',
-    }),
+    ...mapActions(useAppStore, ['enableOverlay', 'disableOverlay']),
     addDomain() {
       if (!this.editedDataset.domains) {
         this.editedDataset.domains = [];
@@ -330,7 +326,7 @@ export default defineComponent({
         ],
       };
       const newFilters = filtersUtil.newFilters();
-      filtersUtil.addSearchTerm(newFilters, 'dataId', this.dataId, 'and', false);
+      filtersUtil.addSearchTerm(newFilters, 'dataId', this.dataId ?? '', 'and', false);
       filtersUtil.addSearchTerm(newFilters, 'type', 'indicator', 'and', false);
       this.indicators = (await getDatacubes(newFilters, options)) as Indicator[];
 

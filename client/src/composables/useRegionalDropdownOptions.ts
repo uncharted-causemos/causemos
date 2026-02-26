@@ -1,5 +1,4 @@
-import { DropdownItem } from '@/components/dropdown-button.vue';
-import { DatacubeGeography } from '@/types/Common';
+import { DatacubeGeography, DropdownItem } from '@/types/Common';
 import { AdminLevel, DatacubeGeoAttributeVariableType, SpatialAggregation } from '@/types/Enums';
 import { ADMIN_LEVEL_TITLES, getRegionIdDisplayName } from '@/utils/admin-level-util';
 import { Ref, computed } from 'vue';

@@ -31,7 +31,9 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
-import { mapGetters } from 'vuex';
+import { mapState } from 'pinia';
+import { useAppStore } from '@/stores/app-store';
+import { useQueryStore } from '@/stores/query-store';
 
 import CategoricalFacet from '@/components/facets/categorical-facet.vue';
 import NumericalFacet from '@/components/facets/numerical-facet.vue';
@@ -62,11 +64,8 @@ export default defineComponent({
     },
   },
   computed: {
-    ...mapGetters({
-      filters: 'query/filters',
-      updateToken: 'app/updateToken',
-      project: 'app/project',
-    }),
+    ...mapState(useQueryStore, ['filters']),
+    ...mapState(useAppStore, ['updateToken', 'project']),
     formattedFacets() {
       const keys = Object.keys(this.facets);
 

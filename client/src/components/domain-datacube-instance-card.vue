@@ -147,7 +147,9 @@
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent, ref, PropType, toRefs } from 'vue';
-import { mapActions, mapGetters } from 'vuex';
+import { mapState, mapActions } from 'pinia';
+import { useAppStore } from '@/stores/app-store';
+import { useQueryStore } from '@/stores/query-store';
 
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import Sparkline from '@/components/widgets/charts/sparkline.vue';
@@ -180,10 +182,7 @@ export default defineComponent({
     },
   },
   computed: {
-    ...mapGetters({
-      project: 'app/project',
-      projectMetadata: 'app/projectMetadata',
-    }),
+    ...mapState(useAppStore, ['project', 'projectMetadata']),
     breakdownParameters(): any[] {
       if (isIndicator(this.datacube)) return [];
       return (this.datacube as Model).parameters.filter((p) => p.is_drilldown);
@@ -248,9 +247,7 @@ export default defineComponent({
     };
   },
   methods: {
-    ...mapActions({
-      clearLastQuery: 'query/clearLastQuery',
-    }),
+    ...mapActions(useQueryStore, ['clearLastQuery']),
     dateFormatter,
     addDomain() {
       const newDomains = this.datacubeDomains ? _.cloneDeep(this.datacubeDomains) : [];

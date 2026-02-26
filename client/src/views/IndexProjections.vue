@@ -248,7 +248,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
 import { computed, onMounted, ref, watch } from 'vue';
 import { ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import IndexResultsStructurePreview from '@/components/index-results/index-results-structure-preview.vue';
@@ -300,7 +300,7 @@ const MONTHS: DropdownItem[] = [
   { value: 11, displayName: 'December' },
 ];
 
-const store = useStore();
+const appStore = useAppStore();
 const route = useRoute();
 const router = useRouter();
 
@@ -324,13 +324,13 @@ const selectElement = (id: SelectableIndexElementId) => {
 const deselectNode = () => {
   selectedNodeId.value = null;
 };
-const project = computed(() => store.getters['app/project']);
+const project = computed(() => appStore.project);
 
 // Set analysis name on the navbar
 onMounted(async () => {
-  store.dispatch('app/setAnalysisName', '');
+  appStore.setAnalysisName('');
   await refresh();
-  store.dispatch('app/setAnalysisName', analysisName.value);
+  appStore.setAnalysisName(analysisName.value);
 
   const projectionDateRange = getProjectionDateRange();
   projectionEndMonth.value = projectionDateRange.endMonth;

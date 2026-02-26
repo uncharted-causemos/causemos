@@ -47,7 +47,8 @@
 
 <script lang="ts">
 import { defineComponent, ref, PropType } from 'vue';
-import { mapActions } from 'vuex';
+import { mapActions } from 'pinia';
+import { useQueryStore } from '@/stores/query-store';
 
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
@@ -82,9 +83,7 @@ export default defineComponent({
     };
   },
   methods: {
-    ...mapActions({
-      clearLastQuery: 'query/clearLastQuery',
-    }),
+    ...mapActions(useQueryStore, ['clearLastQuery']),
     dateFormatter,
     toggleShowMore() {
       this.showMore = !this.showMore;

@@ -44,8 +44,9 @@
 
 <script setup lang="ts">
 import _ from 'lodash';
-import { computed, ComputedRef, nextTick, ref, watch, watchEffect } from 'vue';
-import { useStore } from 'vuex';
+import { computed, nextTick, ref, watch, watchEffect } from 'vue';
+import { useAppStore } from '@/stores/app-store';
+import { useInsightPanelStore } from '@/stores/insight-panel-store';
 import router from '@/router';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
@@ -82,20 +83,21 @@ import {
 } from '@/utils/legacy-data-space-state-util';
 import { isBreakdownQualifier } from '@/utils/qualifier-util';
 
-const store = useStore();
+const appStore = useAppStore();
+const insightPanelStore = useInsightPanelStore();
 const route = useRoute();
 const toast = useToaster();
-const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
-const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-const dataState = computed<DataState | null>(() => store.getters['insightPanel/dataState']);
+const projectId = computed(() => appStore.project);
+const datacubeCurrentOutputsMap = computed(() => appStore.datacubeCurrentOutputsMap);
+const dataState = computed<DataState | null>(() => insightPanelStore.dataState);
 
-const viewState = computed(() => store.getters['insightPanel/viewState']);
+const viewState = computed(() => insightPanelStore.viewState);
 const selectedSpatialAggregation = computed(() => viewState.value.spatialAggregation);
 const selectedTemporalAggregation = computed(() => viewState.value.temporalAggregation);
 const selectedTemporalResolution = computed(() => viewState.value.temporalResolution);
 
-const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
-const disableOverlay = () => store.dispatch('app/disableOverlay');
+const enableOverlay = (message: string) => appStore.enableOverlay(message);
+const disableOverlay = () => appStore.disableOverlay();
 
 const tabState = ref('');
 const jumpToPublishingStep = (step: ModelPublishingStepID) => {
@@ -208,7 +210,7 @@ const selectedScenarioIds = computed(() =>
 
 watchEffect(() => {
   if (metadata.value) {
-    store.dispatch('insightPanel/setContextId', [metadata.value.id]);
+    insightPanelStore.setContextId([metadata.value.id]);
 
     let initialOutputIndex = 0;
     const datacubeKey = selectedModelId.value; // i.e., datacube_id
@@ -223,7 +225,7 @@ watchEffect(() => {
         ) ?? 0;
 
       // update the store
-      updateDatacubesOutputsMap(datacubeKey, store, initialOutputIndex);
+      updateDatacubesOutputsMap(datacubeKey, initialOutputIndex);
     }
   }
 });

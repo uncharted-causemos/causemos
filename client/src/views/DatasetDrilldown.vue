@@ -170,7 +170,7 @@ import useModelDrilldownState from '@/composables/useModelOrDatasetDrilldownStat
 import useInsightStore from '@/composables/useInsightStore';
 import ModelOrDatasetMetadata from '@/components/model-drilldown/model-or-dataset-metadata.vue';
 import useModelOrDatasetUnits from '@/composables/useModelOrDatasetUnits';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
 import { getAnalysis } from '@/services/analysis-service';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 
@@ -194,14 +194,14 @@ onMounted(() => {
     setContextId((route.query.index_projections_node_id as string) + '--projections');
 });
 
-const store = useStore();
+const appStore = useAppStore();
 onMounted(async () => {
-  store.dispatch('app/setAnalysisName', '');
+  appStore.setAnalysisName('');
   const analysisId = route.query.analysis_id as string | undefined;
   if (analysisId === undefined) return;
   const result = await getAnalysis(analysisId);
   if (result) {
-    store.dispatch('app/setAnalysisName', result.title);
+    appStore.setAnalysisName(result.title);
   }
 });
 

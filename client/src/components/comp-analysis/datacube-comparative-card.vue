@@ -7,7 +7,7 @@
         @click="
           openDatacubeDrilldown(
             router,
-            project,
+            project ?? '',
             analysisId,
             analysisItem,
             metadata?.type === 'model'
@@ -100,7 +100,7 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import { computed, ref, toRefs, watchEffect } from 'vue';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
 
 import router from '@/router';
 
@@ -157,8 +157,8 @@ const { datacubeId, analysisId, analysisItem, itemId, itemIndex, selectedTimesta
 
 const emit = defineEmits(['select-timestamp', 'remove-analysis-item', 'duplicate-analysis-item']);
 
-const store = useStore();
-const project = computed(() => store.getters['app/project']);
+const appStore = useAppStore();
+const project = computed(() => appStore.project);
 
 // =========== Datacube metadata ===========
 
