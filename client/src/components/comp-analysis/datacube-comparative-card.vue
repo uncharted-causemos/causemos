@@ -7,7 +7,7 @@
         @click="
           openDatacubeDrilldown(
             router,
-            project,
+            project ?? '',
             analysisId,
             analysisItem,
             metadata?.type === 'model'

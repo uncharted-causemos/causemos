@@ -25,7 +25,7 @@ export default defineComponent({
       return queryStore.statements.sort;
     });
     const view = computed(() => queryStore.view);
-    const currentSort = ref(null);
+    const currentSort = ref<string | null>(null);
 
     return {
       sort,

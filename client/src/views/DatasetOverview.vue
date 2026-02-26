@@ -326,7 +326,7 @@ export default defineComponent({
         ],
       };
       const newFilters = filtersUtil.newFilters();
-      filtersUtil.addSearchTerm(newFilters, 'dataId', this.dataId, 'and', false);
+      filtersUtil.addSearchTerm(newFilters, 'dataId', this.dataId ?? '', 'and', false);
       filtersUtil.addSearchTerm(newFilters, 'type', 'indicator', 'and', false);
       this.indicators = (await getDatacubes(newFilters, options)) as Indicator[];
 

@@ -89,8 +89,8 @@ const applyInsight = (insight: LegacyInsight | Insight) => {
   const finalURL = InsightUtil.jumpToInsightContext(
     insight,
     route.fullPath,
-    project.value,
-    projectType.value
+    project.value ?? undefined,
+    projectType.value ?? undefined
   );
 
   if (finalURL) {

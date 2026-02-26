@@ -2,9 +2,11 @@ import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useRoute } from 'vue-router';
 
+type CancelFn = ((payload: MouseEvent) => void) | null;
+
 type MsgCancel = {
   message: string;
-  cancelFn: Function;
+  cancelFn: CancelFn;
 };
 
 export const useAppStore = defineStore('app', () => {
@@ -23,7 +25,7 @@ export const useAppStore = defineStore('app', () => {
   const overlayActivated = ref(false);
   const overlayMessage = ref('Loading...');
   const overlayMessageSecondary = ref('Loading...');
-  const overlayCancelFn = ref<Function | null>(null);
+  const overlayCancelFn = ref<CancelFn>(null);
   const updateToken = ref('');
   const projectMetadata = ref<any>({});
   const analysisName = ref('');

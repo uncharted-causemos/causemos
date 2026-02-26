@@ -62,7 +62,7 @@ export default defineComponent({
     ...mapActions(useDataSearchStore, ['setSearchFilters']),
     syncStateFromRoute() {
       const filters = _.get(this.$route, 'query.filters', {});
-      this.setSearchFilters(filters);
+      this.setSearchFilters(filters as any);
     },
     toggleDatacubeSelected(item: { datacubeId: string; id: string }) {
       this.$emit('toggle-datacube-selected', item);

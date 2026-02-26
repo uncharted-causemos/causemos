@@ -149,7 +149,7 @@ watch(
         schemaVersion: 2,
         name: '',
         description: '',
-        project_id: project.value,
+        project_id: project.value ?? '',
         image: snapshotImage,
         annotation_state: annotationState,
         type: 'ModelOrDatasetStateInsight',
@@ -166,7 +166,7 @@ watch(
       const newInsight: UnpersistedInsight = {
         name: '',
         description: '',
-        project_id: project.value,
+        project_id: project.value ?? '',
         context_id: contextId.value,
         url,
         image: snapshotImage,
