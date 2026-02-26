@@ -56,7 +56,8 @@
 </template>
 
 <script setup lang="ts">
-import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 import { BreakdownStateOutputs, ComparisonSettings, Indicator, Model } from '@/types/Datacube';
 import {
   ensureBaselineFoundInTimeseriesIds,

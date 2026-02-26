@@ -38,7 +38,7 @@ export const hasChildren = (indexNode: ConceptNode): indexNode is ConceptNodeWit
   return isConceptNodeWithoutDataset(indexNode) && indexNode.components.length > 0;
 };
 
-export const isEmptyNode = (indexNode: ConceptNode) => {
+export const isEmptyNode = (indexNode: ConceptNode): boolean => {
   return !isConceptNodeWithDatasetAttached(indexNode) && !hasChildren(indexNode);
 };
 

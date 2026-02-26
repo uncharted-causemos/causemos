@@ -48,13 +48,9 @@
 import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import _ from 'lodash';
+import type { DropdownItem } from '@/types/Common';
 
-export interface DropdownItem {
-  displayName: string;
-  value: any;
-  selected?: boolean;
-  color?: string;
-}
+export type { DropdownItem };
 
 const DEFAULT_TEXT_COLOR = 'black';
 

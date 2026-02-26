@@ -72,7 +72,8 @@
 </template>
 
 <script setup lang="ts">
-import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { DropdownItem } from '@/types/Common';
 import { BreakdownStateRegions, ComparisonSettings, Indicator, Model } from '@/types/Datacube';
 import { SpatialAggregation } from '@/types/Enums';
 import { getRegionIdDisplayName } from '@/utils/admin-level-util';
