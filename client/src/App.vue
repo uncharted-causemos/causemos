@@ -15,7 +15,8 @@
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent } from 'vue';
-import { mapActions, mapGetters } from 'vuex';
+import { mapState, mapActions } from 'pinia';
+import { useAppStore } from '@/stores/app-store';
 
 import NavBar from '@/components/nav-bar.vue';
 import Overlay from '@/components/overlay.vue';
@@ -46,14 +47,14 @@ export default defineComponent({
     return { isInsightModalOpen };
   },
   computed: {
-    ...mapGetters({
-      overlayMessage: 'app/overlayMessage',
-      overlayMessageSecondary: 'app/overlayMessageSecondary',
-      overlayActivated: 'app/overlayActivated',
-      overlayCancelFn: 'app/overlayCancelFn',
-      project: 'app/project',
-      projectType: 'app/projectType',
-    }),
+    ...mapState(useAppStore, [
+      'overlayMessage',
+      'overlayMessageSecondary',
+      'overlayActivated',
+      'overlayCancelFn',
+      'project',
+      'projectType',
+    ]),
   },
   watch: {
     project: function () {
@@ -108,9 +109,7 @@ export default defineComponent({
     }
   },
   methods: {
-    ...mapActions({
-      setProjectMetadata: 'app/setProjectMetadata',
-    }),
+    ...mapActions(useAppStore, ['setProjectMetadata']),
     async refreshDomainProject() {
       if (_.isEmpty(this.project)) {
         return;

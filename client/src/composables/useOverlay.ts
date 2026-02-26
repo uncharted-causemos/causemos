@@ -1,9 +1,9 @@
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
 
 export default function useOverlay() {
-  const store = useStore();
-  const enable = (title?: string) => store.dispatch('app/enableOverlay', title);
-  const disable = () => store.dispatch('app/disableOverlay');
+  const appStore = useAppStore();
+  const enable = (title?: string) => appStore.enableOverlay(title);
+  const disable = () => appStore.disableOverlay();
   return {
     enable,
     disable,

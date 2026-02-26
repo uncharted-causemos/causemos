@@ -8,7 +8,8 @@
 <script>
 import _ from 'lodash';
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
-import { mapActions, mapGetters } from 'vuex';
+import { mapState, mapActions } from 'pinia';
+import { useDataSearchStore } from '@/stores/data-search-store';
 
 import TextPill from '@/search/pills/text-pill';
 import RangePill from '@/search/pills/range-pill';
@@ -32,9 +33,7 @@ export default {
     },
   },
   computed: {
-    ...mapGetters({
-      filters: 'dataSearch/filters',
-    }),
+    ...mapState(useDataSearchStore, ['filters']),
   },
   watch: {
     filters: function filterChanged(n, o) {
@@ -134,9 +133,7 @@ export default {
     this.setQuery();
   },
   methods: {
-    ...mapActions({
-      setSearchFilters: 'dataSearch/setSearchFilters',
-    }),
+    ...mapActions(useDataSearchStore, ['setSearchFilters']),
     setQuery() {
       if (!this.lexRef) return;
       const lexQuery = [];

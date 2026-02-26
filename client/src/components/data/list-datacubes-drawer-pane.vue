@@ -26,7 +26,6 @@
 import _ from 'lodash';
 import { computed, defineComponent, PropType, toRefs, ref, watchEffect } from 'vue';
 
-import { useStore } from 'vuex';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { AnalysisItem } from '@/types/Analysis';
 import {
@@ -57,7 +56,6 @@ export default defineComponent({
   }),
   setup(props) {
     const { analysisItems } = toRefs(props);
-    const store = useStore();
 
     const metadataMap = ref<{ [datacubeId: string]: Partial<Datacube> }>({});
     watchEffect(async () => {
@@ -86,7 +84,6 @@ export default defineComponent({
     };
 
     return {
-      store,
       canSelectItem,
       getDisplayName,
     };

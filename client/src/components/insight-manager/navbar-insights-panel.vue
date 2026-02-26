@@ -54,7 +54,8 @@ import InsightUtil from '@/utils/insight-util';
 import { INSIGHTS } from '@/utils/messages-util';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
+import { useInsightPanelStore } from '@/stores/insight-panel-store';
 import { removeInsight } from '@/services/insight-service';
 import MessageDisplay from '../widgets/message-display.vue';
 import ImgLazy from '../widgets/img-lazy.vue';
@@ -63,11 +64,12 @@ import useInsightManager from '@/composables/useInsightManager';
 
 const emit = defineEmits(['close']);
 
-const store = useStore();
-const projectType = computed(() => store.getters['app/projectType']);
-const project = computed(() => store.getters['app/project']);
+const appStore = useAppStore();
+const insightPanelStore = useInsightPanelStore();
+const projectType = computed(() => appStore.projectType);
+const project = computed(() => appStore.project);
 
-const contextIds = computed(() => store.getters['insightPanel/contextId']);
+const contextIds = computed(() => insightPanelStore.contextId);
 const { insights, reFetchInsights } = useInsightsData(contextIds);
 
 const { showInsightList, startCreatingInsight, editInsight } = useInsightManager();

@@ -166,7 +166,6 @@ import { AggregationOption, TemporalResolutionOption, DataTransform } from '@/ty
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, DATA_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { Datacube, DatacubeFeature } from '@/types/Datacube';
-import { useStore } from 'vuex';
 import {
   COLOR_SCHEME,
   ColorScaleType,
@@ -289,7 +288,6 @@ export default defineComponent({
       selectedDataLayer,
     } = toRefs(props);
 
-    const store = useStore();
     const route = useRoute();
 
     const resolutionGroupButtons = ref(
@@ -396,7 +394,6 @@ export default defineComponent({
       TemporalResolutionOption,
       AggregationOption,
       setResolutionSelection,
-      store,
       route,
     };
   },
@@ -447,7 +444,7 @@ export default defineComponent({
     setOutputVariable(variable: string) {
       const selectedOutputIndex = this.modelOutputsDisplayNames.indexOf(variable);
       // update the store so that other components can sync
-      updateDatacubesOutputsMap(this.itemId, this.store, selectedOutputIndex);
+      updateDatacubesOutputsMap(this.itemId, selectedOutputIndex);
     },
     setSpatialAggregationSelection(aggregation: string) {
       this.$emit('set-spatial-aggregation-selection', aggregation);

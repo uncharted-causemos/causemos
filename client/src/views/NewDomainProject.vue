@@ -58,7 +58,9 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { mapActions } from 'vuex';
+import { mapActions } from 'pinia';
+import { useAppStore } from '@/stores/app-store';
+import { useQueryStore } from '@/stores/query-store';
 import { defineComponent } from 'vue';
 import { ProjectType } from '@/types/Enums';
 import domainProjectService from '@/services/domain-project-service';
@@ -108,12 +110,8 @@ export default defineComponent({
     this.existingDomainProjectNames = existingProjects.map((p) => p.name.toLowerCase());
   },
   methods: {
-    ...mapActions({
-      enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay',
-      clearLastQuery: 'query/clearLastQuery',
-      setProjectMetadata: 'app/setProjectMetadata',
-    }),
+    ...mapActions(useAppStore, ['enableOverlay', 'disableOverlay', 'setProjectMetadata']),
+    ...mapActions(useQueryStore, ['clearLastQuery']),
     removeMaintainer(maintainerName: string) {
       this.maintainers = this.maintainers.filter((m) => m.name !== maintainerName);
     },

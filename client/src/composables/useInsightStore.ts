@@ -1,29 +1,27 @@
 import { ModelOrDatasetState } from '@/types/Datacube';
 import { DataState } from '@/types/Insight';
 import { computed } from 'vue';
-import { useStore } from 'vuex';
+import { useInsightPanelStore } from '@/stores/insight-panel-store';
 
 export default function useInsightStore() {
-  const store = useStore();
-  const getDataState = () => store.getters['insightPanel/dataState'];
-  const getViewState = () => store.getters['insightPanel/viewState'];
-  const modelOrDatasetState = computed<ModelOrDatasetState | null>(
-    () => store.getters['insightPanel/modelOrDatasetState']
-  );
+  const store = useInsightPanelStore();
+  const getDataState = () => store.dataState;
+  const getViewState = () => store.viewState;
+  const modelOrDatasetState = computed<ModelOrDatasetState | null>(() => store.modelOrDatasetState);
   const setContextId = (contextId: string) => {
-    store.dispatch('insightPanel/setContextId', [contextId]);
+    store.setContextId([contextId]);
   };
   const clearContextId = () => {
-    store.dispatch('insightPanel/setContextId', []);
+    store.setContextId([]);
   };
   const setDataState = (newDataState: DataState | null) => {
-    store.dispatch('insightPanel/setDataState', newDataState);
+    store.setDataState(newDataState);
   };
   const setViewState = (newViewState: object) => {
-    store.dispatch('insightPanel/setViewState', newViewState);
+    store.setViewState(newViewState);
   };
   const setModelOrDatasetState = (newDataState: ModelOrDatasetState) => {
-    store.dispatch('insightPanel/setModelOrDatasetState', newDataState);
+    store.setModelOrDatasetState(newDataState);
   };
 
   return {

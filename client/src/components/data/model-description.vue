@@ -210,7 +210,8 @@
 import { computed, defineComponent, PropType, ComputedRef, toRefs, Ref, ref } from 'vue';
 import _ from 'lodash';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
-import { mapActions, useStore } from 'vuex';
+import { mapActions } from 'pinia';
+import { useAppStore } from '@/stores/app-store';
 import {
   DatacubeAttributeVariableType,
   DatacubeGenericAttributeVariableType,
@@ -246,7 +247,7 @@ export default defineComponent({
   emits: ['refresh-metadata'],
   setup(props, { emit }) {
     const { metadata, itemId } = toRefs(props);
-    const store = useStore();
+    const appStore = useAppStore();
     const route = useRoute();
 
     const getDataTypeDisplayName = (name: string) => {
@@ -364,9 +365,7 @@ export default defineComponent({
 
     // NOTE: this index is mostly driven from the component 'datacube-model-header'
     //       which may list either all outputs or only the validated ones
-    const datacubeCurrentOutputsMap = computed(
-      () => store.getters['app/datacubeCurrentOutputsMap']
-    );
+    const datacubeCurrentOutputsMap = computed(() => appStore.datacubeCurrentOutputsMap);
     const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
     const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
@@ -399,7 +398,6 @@ export default defineComponent({
       canChangeType,
       setParamType,
       getValidDataTypesForParam,
-      store,
       route,
     };
   },
@@ -417,9 +415,7 @@ export default defineComponent({
     },
   },
   methods: {
-    ...mapActions({
-      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
-    }),
+    ...mapActions(useAppStore, ['setDatacubeCurrentOutputsMap']),
     isDateParam(param: ModelParameter) {
       return (
         param.type === DatacubeGenericAttributeVariableType.Date ||

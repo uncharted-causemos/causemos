@@ -14,7 +14,8 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { mapActions, mapGetters } from 'vuex';
+import { mapState, mapActions } from 'pinia';
+import { useDataSearchStore } from '@/stores/data-search-store';
 import SearchBar from '@/components/data-explorer/search-bar.vue';
 import SearchListview from '@/components/data-explorer/search-listview.vue';
 import { defineComponent, PropType } from 'vue';
@@ -45,9 +46,7 @@ export default defineComponent({
     },
   },
   computed: {
-    ...mapGetters({
-      filters: 'dataSearch/filters',
-    }),
+    ...mapState(useDataSearchStore, ['filters']),
   },
   emits: ['toggle-datacube-selected', 'set-datacube-selected'],
   created() {
@@ -60,9 +59,7 @@ export default defineComponent({
     );
   },
   methods: {
-    ...mapActions({
-      setSearchFilters: 'dataSearch/setSearchFilters',
-    }),
+    ...mapActions(useDataSearchStore, ['setSearchFilters']),
     syncStateFromRoute() {
       const filters = _.get(this.$route, 'query.filters', {});
       this.setSearchFilters(filters);

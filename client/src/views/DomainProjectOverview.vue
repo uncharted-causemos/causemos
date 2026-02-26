@@ -99,7 +99,9 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex';
+import { mapState, mapActions } from 'pinia';
+import { useAppStore } from '@/stores/app-store';
+import { useInsightPanelStore } from '@/stores/insight-panel-store';
 import DomainDatacubeInstanceCard from '@/components/domain-datacube-instance-card.vue';
 import filtersUtil from '@/utils/filters-util';
 import { getDatacubes } from '@/services/datacube-service';
@@ -135,10 +137,7 @@ export default {
     ],
   }),
   computed: {
-    ...mapGetters({
-      project: 'app/project',
-      projectMetadata: 'app/projectMetadata',
-    }),
+    ...mapState(useAppStore, ['project', 'projectMetadata']),
     filteredDatacubeInstances() {
       return this.datacubeInstances
         .filter(
@@ -194,11 +193,8 @@ export default {
     this.fetchDatacubeInstances();
   },
   methods: {
-    ...mapActions({
-      enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay',
-      setContextId: 'insightPanel/setContextId',
-    }),
+    ...mapActions(useAppStore, ['enableOverlay', 'disableOverlay']),
+    ...mapActions(useInsightPanelStore, ['setContextId']),
     getDatacubeStatusInfo,
     updateDesc() {
       if (this.isEditingDesc) {

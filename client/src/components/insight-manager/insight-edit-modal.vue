@@ -34,7 +34,8 @@ import { computed, ref, toRefs, watch } from 'vue';
 import { TYPE } from 'vue-toastification';
 import { useRoute } from 'vue-router';
 import { ModelOrDatasetState } from '@/types/Datacube';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
+import { useInsightPanelStore } from '@/stores/insight-panel-store';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import InsightSummary from './insight-summary.vue';
 import useInsightManager from '@/composables/useInsightManager';
@@ -119,9 +120,10 @@ const savedInsightImage = computed(() => savedInsightState.value?.image ?? null)
 
 const route = useRoute();
 // TODO: remove dependence on store
-const store = useStore();
-const project = computed(() => store.getters['app/project']);
-const contextId = computed(() => store.getters['insightPanel/contextId']);
+const appStore = useAppStore();
+const insightPanelStore = useInsightPanelStore();
+const project = computed(() => appStore.project);
+const contextId = computed(() => insightPanelStore.contextId);
 const { getDataState, getViewState, modelOrDatasetState } = useInsightStore();
 watch(
   insightId,

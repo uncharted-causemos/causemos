@@ -26,7 +26,6 @@
 <script lang="ts">
 import { Model } from '@/types/Datacube';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { useStore } from 'vuex';
 import { getOutputs } from '@/utils/datacube-util';
 import { updateDatacubesOutputsMap } from '@/utils/analysis-util';
 import { useRoute } from 'vue-router';
@@ -64,7 +63,6 @@ export default defineComponent({
       }
     }
 
-    const store = useStore();
     const route = useRoute();
     const { currentOutputIndex } = useActiveDatacubeFeature(metadata, itemId);
 
@@ -73,7 +71,6 @@ export default defineComponent({
       maintainer,
       modelOutputs,
       currentOutputIndex,
-      store,
       route,
     };
   },
@@ -81,7 +78,7 @@ export default defineComponent({
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      updateDatacubesOutputsMap(this.itemId, this.store, selectedOutputIndex);
+      updateDatacubesOutputsMap(this.itemId, selectedOutputIndex);
     },
   },
 });

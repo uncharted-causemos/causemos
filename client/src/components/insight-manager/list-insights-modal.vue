@@ -88,7 +88,8 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { mapGetters, mapActions, useStore } from 'vuex';
+import { mapState, mapActions } from 'pinia';
+import { useAppStore } from '@/stores/app-store';
 
 import { INSIGHTS } from '@/utils/messages-util';
 
@@ -133,7 +134,6 @@ export default defineComponent({
     search: '',
   }),
   setup() {
-    const store = useStore();
     const toaster = useToaster();
     const { insights, reFetchInsights } = useInsightsData();
     const {
@@ -177,7 +177,6 @@ export default defineComponent({
       moveInsight,
       insightsBySection,
       questionsList,
-      store,
       toaster,
       editInsight,
       setReviewPosition,
@@ -186,10 +185,8 @@ export default defineComponent({
     };
   },
   computed: {
-    ...mapGetters({
-      projectMetadata: 'app/projectMetadata',
-      projectId: 'app/project',
-    }),
+    ...mapState(useAppStore, ['projectMetadata']),
+    ...mapState(useAppStore, { projectId: 'project' }),
     exportOptions() {
       const insightLabel =
         `Export ${this.insightsToExport.length}` +
@@ -234,10 +231,7 @@ export default defineComponent({
     },
   },
   methods: {
-    ...mapActions({
-      enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay',
-    }),
+    ...mapActions(useAppStore, ['enableOverlay', 'disableOverlay']),
     closeInsightPanel() {
       this.hideInsightModal();
       this.activeInsightId = null;

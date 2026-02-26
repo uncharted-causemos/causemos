@@ -10,7 +10,7 @@
 <script lang="ts">
 import { computed, defineComponent, toRefs } from 'vue';
 import { deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
 import useToaster from '@/composables/useToaster';
 import { TYPE } from 'vue-toastification';
 import { ANALYSIS } from '@/utils/messages-util';
@@ -31,20 +31,20 @@ export default defineComponent({
   setup(props) {
     const { analysisId } = toRefs(props);
     const toast = useToaster();
-    const store = useStore();
+    const appStore = useAppStore();
     const router = useRouter();
-    const analysisName = computed(() => store.getters['app/analysisName']);
-    const project = computed(() => store.getters['app/project']);
+    const analysisName = computed(() => appStore.analysisName);
+    const project = computed(() => appStore.project);
 
     const onRenameAnalysis = async (newName: string) => {
       const previousName = analysisName.value;
       try {
         // Optimistically set the new name
-        store.dispatch('app/setAnalysisName', newName);
+        appStore.setAnalysisName(newName);
         await updateAnalysis(analysisId.value, { title: newName });
       } catch (e) {
         // Update failed, so undo name change
-        store.dispatch('app/setAnalysisName', previousName);
+        appStore.setAnalysisName(previousName);
         toast(ANALYSIS.ERRONEOUS_RENAME, TYPE.INFO, true);
       }
     };
@@ -79,7 +79,7 @@ export default defineComponent({
       duplicateAnalysis(analysisId.value, newName)
         .then((analysis) => {
           toast(ANALYSIS.SUCCESSFUL_DUPLICATE, TYPE.SUCCESS, false);
-          store.dispatch('app/setAnalysisName', newName);
+          appStore.setAnalysisName(newName);
           router.push({
             name: isIndexAnalysisState(analysis.state) ? 'indexStructure' : 'dataComparative',
             params: {

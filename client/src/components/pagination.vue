@@ -14,7 +14,8 @@
 
 <script lang="ts">
 import { defineComponent, computed, PropType } from 'vue';
-import { mapActions, useStore } from 'vuex';
+import { mapActions } from 'pinia';
+import { useQueryStore } from '@/stores/query-store';
 import numberFormatter from '@/formatters/number-formatter';
 
 export default defineComponent({
@@ -30,12 +31,12 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const store = useStore();
+    const queryStore = useQueryStore();
 
-    const view = store.getters['query/view'];
+    const view = queryStore.view;
 
-    const pageFrom = computed(() => store.getters['query/query'][view].from);
-    const pageSize = computed(() => store.getters['query/query'][view].size);
+    const pageFrom = computed(() => queryStore.query[view].from);
+    const pageSize = computed(() => queryStore.query[view].size);
     const incrementedPageLimit = computed(() => pageFrom.value + pageSize.value);
     const pageSizeCount = computed(() =>
       props.total < incrementedPageLimit.value ? props.total : incrementedPageLimit.value
@@ -50,9 +51,7 @@ export default defineComponent({
     };
   },
   methods: {
-    ...mapActions({
-      setPagination: 'query/setPagination',
-    }),
+    ...mapActions(useQueryStore, ['setPagination']),
     numberFormatter,
     prev() {
       this.setPagination({

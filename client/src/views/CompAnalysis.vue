@@ -159,7 +159,8 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import { computed, onMounted, Ref, ref, watch, watchEffect } from 'vue';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
+import { useInsightPanelStore } from '@/stores/insight-panel-store';
 import { useRoute } from 'vue-router';
 
 import router from '@/router';
@@ -210,7 +211,8 @@ onMounted(() => {
   isMounted.value = true;
 });
 
-const store = useStore();
+const appStore = useAppStore();
+const insightPanelStore = useInsightPanelStore();
 const route = useRoute();
 const analysisId = computed(() => route.params.analysisId as string);
 const {
@@ -270,10 +272,10 @@ const initialSelectedTimestamp = computed(() => {
 });
 
 onMounted(async () => {
-  store.dispatch('app/setAnalysisName', '');
+  appStore.setAnalysisName('');
   const result = await getAnalysis(analysisId.value);
   if (result) {
-    store.dispatch('app/setAnalysisName', result.title);
+    appStore.setAnalysisName(result.title);
   }
 });
 
@@ -284,10 +286,10 @@ watch(
       // set context-ids to fetch insights correctly for all datacubes
       //  (even the non-selected ones) in this analysis
       const contextIDs = analysisItems.map((item) => getId(item));
-      store.dispatch('insightPanel/setContextId', contextIDs);
+      insightPanelStore.setContextId(contextIDs);
     } else {
       // no datacubes in this analysis, so do not fetch any insights/questions
-      store.dispatch('insightPanel/setContextId', undefined);
+      insightPanelStore.setContextId(undefined);
     }
     allTimeseriesMap.value = {};
     allTimestampRangeMap.value = {};
@@ -357,11 +359,11 @@ watchEffect(() => {
   // Only save the selected timestamp when overlap mode is active
   newDataState.selectedTimestamp =
     activeTab.value === ComparativeAnalysisMode.Overlay ? globalTimestamp.value : null;
-  store.dispatch('insightPanel/setDataState', newDataState);
+  insightPanelStore.setDataState(newDataState);
   // No view state for this page. Set it to an empty object so that any view
   //  state from previous pages is cleared and not associated with insights
   //  taken from this page.
-  store.dispatch('insightPanel/setViewState', {});
+  insightPanelStore.setViewState({});
 });
 
 const onLoadedTimeseries = (

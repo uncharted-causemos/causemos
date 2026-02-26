@@ -39,8 +39,9 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, ComputedRef, defineComponent, Ref, ref, watch } from 'vue';
-import { useStore } from 'vuex';
+import { computed, defineComponent, Ref, ref, watch } from 'vue';
+import { useAppStore } from '@/stores/app-store';
+import { useInsightPanelStore } from '@/stores/insight-panel-store';
 import router from '@/router';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import useModelMetadata from '@/composables/useModelMetadata';
@@ -79,13 +80,14 @@ export default defineComponent({
     DatacubeDescription,
   },
   setup() {
-    const store = useStore();
+    const appStore = useAppStore();
+    const insightPanelStore = useInsightPanelStore();
     const toast = useToaster();
-    const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
-    const projectType = computed(() => store.getters['app/projectType']);
+    const projectId = computed(() => appStore.project);
+    const projectType = computed(() => appStore.projectType);
 
-    const enableOverlay = (message: string) => store.dispatch('app/enableOverlay', message);
-    const disableOverlay = () => store.dispatch('app/disableOverlay');
+    const enableOverlay = (message: string) => appStore.enableOverlay(message);
+    const disableOverlay = () => appStore.disableOverlay();
 
     const initialViewConfig = ref<ViewState | null>({
       temporalAggregation: AggregationOption.Mean,
@@ -93,7 +95,7 @@ export default defineComponent({
       temporalResolution: TemporalResolutionOption.Month,
     });
 
-    const viewState = computed(() => store.getters['insightPanel/viewState']);
+    const viewState = computed(() => insightPanelStore.viewState);
 
     const selectedIndicatorId = ref('');
     const metadata = useModelMetadata(selectedIndicatorId);

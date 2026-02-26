@@ -1,7 +1,8 @@
 import { ProjectType } from '@/types/Enums';
 import { AnalyticalQuestion, UnpersistedAnalyticalQuestion, ViewState } from '@/types/Insight';
 import { computed, ref, watchEffect } from 'vue';
-import { useStore } from 'vuex';
+import { useAppStore } from '@/stores/app-store';
+import { useInsightPanelStore } from '@/stores/insight-panel-store';
 import { InsightFilterFields } from '@/services/insight-service';
 import _ from 'lodash';
 import {
@@ -27,9 +28,10 @@ export default function useQuestionsData() {
     questionsFetchedAt.value = Date.now();
   };
 
-  const store = useStore();
-  const project = computed(() => store.getters['app/project']);
-  const projectType = computed(() => store.getters['app/projectType']);
+  const appStore = useAppStore();
+  const insightPanelStore = useInsightPanelStore();
+  const project = computed(() => appStore.project);
+  const projectType = computed(() => appStore.projectType);
 
   watchEffect((onInvalidate) => {
     // This condition should always return true, it's just used to add
@@ -43,7 +45,7 @@ export default function useQuestionsData() {
       const contextQuestionsSearchFields: InsightFilterFields = {};
       if (projectType.value === ProjectType.Analysis) {
         // when fetching project-specific insights, then project-id is relevant
-        contextQuestionsSearchFields.project_id = project.value;
+        contextQuestionsSearchFields.project_id = project.value ?? undefined;
       }
       const contextQuestions = await fetchQuestions([contextQuestionsSearchFields]);
 
@@ -75,7 +77,7 @@ export default function useQuestionsData() {
     handleSuccessfulUpdate: (newSectionId: string) => void,
     handleFailedUpdate: () => void
   ) => {
-    const view_state: ViewState = _.cloneDeep(store.getters['insightPanel/viewState']);
+    const view_state: ViewState = _.cloneDeep(insightPanelStore.viewState);
     const lastSection = _.last(sortedQuestionsList.value);
     let newSectionOrderIndex = sortedQuestionsList.value.length;
     if (lastSection) {
@@ -87,8 +89,8 @@ export default function useQuestionsData() {
     view_state.analyticalQuestionOrder = newSectionOrderIndex;
     const newSection: UnpersistedAnalyticalQuestion = {
       question: title,
-      project_id: store.getters['app/project'],
-      context_id: store.getters['insightPanel/contextId'],
+      project_id: appStore.project ?? '',
+      context_id: insightPanelStore.contextId,
       linked_insights: [],
       view_state,
     };
