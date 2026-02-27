@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import 'dotenv/config'; // Load .env before any other module reads process.env
+
 /**
  * Module dependencies.
  */

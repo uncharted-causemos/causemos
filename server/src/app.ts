@@ -1,7 +1,4 @@
 import path from 'path';
-
-const dotenvConfigResult = require('dotenv').config(); // This line of code reads the contents of the .env file in root into the process.env variable.
-
 import createError from 'http-errors';
 import proxy from 'express-http-proxy';
 import express from 'express';
@@ -41,11 +38,6 @@ import jatawareFeaturesRouter from '#@/routes/jataware-features.js';
 import jatawareRecommenderRouter from '#@/routes/jataware-recommender.js';
 
 const app = express();
-
-// This code block is for handling issues with setting up the .env file for environment variables.
-if (dotenvConfigResult.error) {
-  Logger.warn('No .env file found or has initialization errors - will use default environment');
-}
 
 // TODO: selectively add cache busting header for performance
 app.use(nocache());
