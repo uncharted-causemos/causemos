@@ -8,7 +8,7 @@ Understand complex multi-domain issues by leveraging integrated knowledge, data,
 
 The following need to be installed
 
-- NodeJS version 18
+- NodeJS version 20
 - Yarn 1.22+
 
 ## Auth Setup
