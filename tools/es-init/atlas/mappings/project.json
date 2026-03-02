@@ -1,0 +1,41 @@
+{
+  "dynamic": "strict",
+  "properties": {
+    "corpus_id": {
+      "type": "keyword"
+    },
+    "corpus_index": {
+      "type": "keyword"
+    },
+    "created_at": {
+      "format": "epoch_millis",
+      "type": "date"
+    },
+    "description": {
+      "type": "text"
+    },
+    "extended_at": {
+      "format": "epoch_millis",
+      "type": "date"
+    },
+    "id": {
+      "type": "keyword"
+    },
+    "kb_id": {
+      "type": "keyword"
+    },
+    "tenant_id": {
+      "type": "keyword"
+    },
+    "modified_at": {
+      "format": "epoch_millis",
+      "type": "date"
+    },
+    "name": {
+      "type": "keyword"
+    },
+    "ontology": {
+      "type": "keyword"
+    }
+  }
+}

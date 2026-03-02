@@ -1,0 +1,21 @@
+{
+  "dynamic": "strict",
+  "properties": {
+    "parameters": {
+      "enabled": "false"
+    },
+    "request_method": {
+      "type": "keyword"
+    },
+    "request_path": {
+      "type": "keyword"
+    },
+    "session": {
+      "type": "keyword"
+    },
+    "timestamp": {
+      "format": "epoch_millis",
+      "type": "date"
+    }
+  }
+}

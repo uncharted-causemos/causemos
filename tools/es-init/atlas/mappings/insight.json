@@ -1,0 +1,102 @@
+{
+  "dynamic": "true",
+  "properties": {
+    "id": {
+      "type": "keyword"
+    },
+    "name": {
+      "type": "text"
+    },
+    "description": {
+      "type": "text"
+    },
+    "modified_at": {
+      "type": "date",
+      "format": "epoch_millis"
+    },
+    "visibility": {
+      "type": "keyword"
+    },
+    "project_id": {
+      "type": "keyword"
+    },
+    "analysis_id": {
+      "type": "keyword"
+    },
+    "context_id": {
+      "type": "keyword"
+    },
+    "url": {
+      "type": "text"
+    },
+    "target_view": {
+      "type": "keyword"
+    },
+    "pre_actions": {
+      "type": "object",
+      "enabled": false
+    },
+    "post_actions": {
+      "type": "object",
+      "enabled": false
+    },
+    "is_default": {
+      "type": "boolean"
+    },
+    "analytical_question": {
+      "type": "keyword"
+    },
+    "image": {
+      "type": "object",
+      "enabled": false
+    },
+    "thumbnail": {
+      "type": "object",
+      "enabled": false
+    },
+    "view_state": {
+      "type": "object",
+      "dynamic": "true",
+      "enabled": false,
+      "properties": {}
+    },
+    "data_state": {
+      "type": "object",
+      "dynamic": "true",
+      "enabled": false,
+      "properties": {}
+    },
+    "annotation_state": {
+      "type": "object",
+      "dynamic": "true",
+      "enabled": false,
+      "properties": {}
+    },
+    "metadata": {
+      "type": "object",
+      "dynamic": "true",
+      "properties": {
+        "type": {
+          "type": "keyword"
+        }
+      }
+    },
+    "schemaVersion": {
+      "type": "long"
+    },
+    "type": {
+      "type": "keyword"
+    },
+    "view": {
+      "type": "object",
+      "dynamic": "true",
+      "properties": {}
+    },
+    "state": {
+      "type": "object",
+      "dynamic": "true",
+      "enabled": false,
+      "properties": {}
+    }
+  }
+}

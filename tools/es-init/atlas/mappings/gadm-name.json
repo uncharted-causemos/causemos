@@ -1,0 +1,50 @@
+{
+  "dynamic": "strict",
+  "properties": {
+    "country": {
+      "type": "text",
+      "fields": {
+        "raw": {
+          "type": "keyword"
+        }
+      }
+    },
+    "admin1": {
+      "type": "text",
+      "fields": {
+        "raw": {
+          "type": "keyword"
+        }
+      }
+    },
+    "admin2": {
+      "type": "text",
+      "fields": {
+        "raw": {
+          "type": "keyword"
+        }
+      }
+    },
+    "admin3": {
+      "type": "text",
+      "fields": {
+        "raw": {
+          "type": "keyword"
+        }
+      }
+    },
+    "level": {
+      "type": "keyword"
+    },
+    "full_path": {
+      "type": "keyword"
+    },
+    "bbox": {
+      "type": "geo_shape",
+      "doc_values": true
+    },
+    "code": {
+      "type": "keyword"
+    }
+  }
+}

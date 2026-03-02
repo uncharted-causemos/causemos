@@ -1,0 +1,17 @@
+{
+  "dynamic": "strict",
+  "properties": {
+    "geo_id": {
+      "type": "keyword"
+    },
+    "lat": {
+      "type": "double"
+    },
+    "lon": {
+      "type": "double"
+    },
+    "name": {
+      "type": "keyword"
+    }
+  }
+}

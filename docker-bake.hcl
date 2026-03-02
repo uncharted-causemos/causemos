@@ -26,7 +26,7 @@ function "check_suffix" {
 
 # ---------------------------------
 group "causemos" {
-  targets = ["causemos"]
+  targets = ["causemos", "es-init"]
 }
 
 group "ci" {
@@ -41,6 +41,12 @@ target "_platforms" {
 target "causemos" {
 	context = "."
 	tags = tag("causemos", "", "")
+	dockerfile = "Dockerfile"
+}
+
+target "es-init" {
+	context = "./tools/es-init"
+	tags = tag("es-init", "", "")
 	dockerfile = "Dockerfile"
 }
 
