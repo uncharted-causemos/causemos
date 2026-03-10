@@ -106,22 +106,15 @@ export const updateInsight = async (id: string, insight: any) => {
   }
 };
 
-export const getAllInsights = async (projectId?: string, contextId?: string) => {
+/**
+ * Returns a list of insights that match a filter
+ */
+export const getAllInsights = async (filterParams, options) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
-  const searchFilters: any[] = [];
-  if (projectId) {
-    searchFilters.push({
-      field: 'project_id',
-      value: projectId,
-    });
+  if (!options.size) {
+    options.size = MAX_INSIGHTS;
   }
-  if (contextId !== undefined) {
-    searchFilters.push({
-      field: 'context_id',
-      value: contextId,
-    });
-  }
-  const results = await insightsConnection.find(searchFilters, { size: MAX_INSIGHTS });
+  const results = await insightsConnection.find(filterParams, options);
   return results;
 };
 
