@@ -1,0 +1,38 @@
+---
+include:
+  - ./docker-compose-utils.yaml
+
+services:
+  wm-go:
+    container_name: wm-processor
+    image: docker.uncharted.software/worldmodeler/wm-go:latest
+    deploy:
+      update_config:
+        parallelism: 1
+        delay: 60s
+        failure_action: rollback
+      replicas: 1
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          memory: 2048M
+          cpus: '2'
+    environment:
+      WM_ADDR: :4200
+      WM_MODE: dev
+      AWS_S3_BUCKET: tiles-v3
+      AWS_S3_URL: http://minio:9000
+      AWS_S3_ID: admin
+      AWS_S3_SECRET: admin123
+      AWS_S3_TOKEN: ''
+      VECTORTILE_BUCKET: vector-tiles
+      MODELS_BUCKET: new-models
+      INDICATORS_BUCKET: new-indicators
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '400k'
+        max-file: '2'
+    ports:
+      - '4200:4200'

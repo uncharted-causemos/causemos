@@ -1,0 +1,49 @@
+{
+  "dynamic": "strict",
+  "properties": {
+    "description": {
+      "type": "text"
+    },
+    "id": {
+      "type": "keyword"
+    },
+    "modified_at": {
+      "type": "date",
+      "format": "epoch_millis"
+    },
+    "name": {
+      "type": "keyword"
+    },
+    "ready_instances": {
+      "type": "keyword"
+    },
+    "draft_instances": {
+      "type": "keyword"
+    },
+    "source": {
+      "type": "keyword"
+    },
+    "type": {
+      "type": "keyword"
+    },
+    "website": {
+      "type": "keyword"
+    },
+    "maintainer": {
+      "properties": {
+        "name": {
+          "type": "keyword"
+        },
+        "organization": {
+          "type": "keyword"
+        },
+        "email": {
+          "type": "keyword"
+        },
+        "website": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}

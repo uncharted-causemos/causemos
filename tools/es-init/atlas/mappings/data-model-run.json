@@ -1,0 +1,173 @@
+{
+  "dynamic": "false",
+  "properties": {
+    "id": {
+      "type": "keyword"
+    },
+    "name": {
+      "type": "keyword"
+    },
+    "model_name": {
+      "type": "keyword"
+    },
+    "model_id": {
+      "type": "keyword"
+    },
+    "created_at": {
+      "format": "epoch_millis",
+      "type": "date"
+    },
+    "runtimes": {
+      "properties": {
+        "execution": {
+          "properties": {
+            "start_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            },
+            "end_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            }
+          }
+        },
+        "queued": {
+          "properties": {
+            "start_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            },
+            "end_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            }
+          }
+        },
+        "post_processing": {
+          "properties": {
+            "start_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            },
+            "end_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            }
+          }
+        }
+      }
+    },
+    "flow_id": {
+      "type": "keyword"
+    },
+    "use_case_id": {
+      "type": "keyword"
+    },
+    "data_paths": {
+      "type": "keyword"
+    },
+    "pre_gen_output_paths": {
+      "properties": {
+        "file": {
+          "type": "keyword"
+        },
+        "type": {
+          "type": "keyword"
+        },
+        "timestamp": {
+          "type": "long"
+        },
+        "target": {
+          "type": "keyword"
+        },
+        "description": {
+          "type": "text"
+        },
+        "coords": {
+          "properties": {
+            "lat": {
+              "type": "float"
+            },
+            "long": {
+              "type": "float"
+            }
+          }
+        }
+      }
+    },
+    "is_default_run": {
+      "type": "boolean"
+    },
+    "parameters": {
+      "properties": {
+        "name": {
+          "type": "keyword"
+        },
+        "value": {
+          "type": "keyword"
+        }
+      }
+    },
+    "tags": {
+      "type": "keyword"
+    },
+    "status": {
+      "type": "keyword"
+    },
+    "output_agg_values": {
+      "enabled": "false",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "keyword"
+        }
+      }
+    },
+    "data_info": {
+      "properties": {
+        "num_rows": {
+          "type": "long"
+        },
+        "num_missing_ts": {
+          "type": "long"
+        },
+        "num_invalid_ts": {
+          "type": "long"
+        },
+        "num_missing_val": {
+          "type": "long"
+        },
+        "region_levels": {
+          "type": "keyword"
+        },
+        "features": {
+          "type": "keyword"
+        },
+        "raw_count_threshold": {
+          "type": "long"
+        },
+        "has_tiles": {
+          "type": "boolean"
+        },
+        "has_monthly": {
+          "type": "boolean"
+        },
+        "has_annual": {
+          "type": "boolean"
+        },
+        "month_timeseries_size": {
+          "enabled": "false",
+          "type": "object"
+        },
+        "year_timeseries_size": {
+          "enabled": "false",
+          "type": "object"
+        },
+        "num_rows_per_feature": {
+          "enabled": "false",
+          "type": "object"
+        }
+      }
+    }
+  }
+}

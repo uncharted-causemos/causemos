@@ -1,0 +1,53 @@
+{
+  "dynamic": "true",
+  "properties": {
+    "id": {
+      "type": "keyword"
+    },
+    "question": {
+      "type": "text"
+    },
+    "description": {
+      "type": "text"
+    },
+    "modified_at": {
+      "type": "date",
+      "format": "epoch_millis"
+    },
+    "visibility": {
+      "type": "keyword"
+    },
+    "project_id": {
+      "type": "keyword"
+    },
+    "analysis_id": {
+      "type": "keyword"
+    },
+    "context_id": {
+      "type": "keyword"
+    },
+    "url": {
+      "type": "text"
+    },
+    "target_view": {
+      "type": "keyword"
+    },
+    "pre_actions": {
+      "type": "object",
+      "enabled": false
+    },
+    "post_actions": {
+      "type": "object",
+      "enabled": false
+    },
+    "linked_insights": {
+      "type": "keyword"
+    },
+    "view_state": {
+      "type": "object",
+      "dynamic": "true",
+      "enabled": false,
+      "properties": {}
+    }
+  }
+}

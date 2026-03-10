@@ -1,0 +1,570 @@
+{
+  "dynamic": "false",
+  "properties": {
+    "id": {
+      "type": "keyword"
+    },
+    "data_id": {
+      "type": "keyword"
+    },
+    "name": {
+      "type": "text",
+      "fields": {
+        "raw": {
+          "type": "keyword"
+        }
+      }
+    },
+    "description": {
+      "type": "text"
+    },
+    "family_name": {
+      "type": "text",
+      "fields": {
+        "raw": {
+          "type": "keyword"
+        }
+      }
+    },
+    "created_at": {
+      "format": "epoch_millis",
+      "type": "date"
+    },
+    "type": {
+      "type": "keyword"
+    },
+    "category": {
+      "type": "text",
+      "fields": {
+        "raw": {
+          "type": "keyword"
+        }
+      }
+    },
+    "domains": {
+      "type": "text",
+      "fields": {
+        "raw": {
+          "type": "keyword"
+        }
+      }
+    },
+    "sparkline": {
+      "type": "float"
+    },
+    "data_sensitivity": {
+      "type": "text"
+    },
+    "data_quality": {
+      "type": "text"
+    },
+    "maintainer": {
+      "properties": {
+        "name": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "organization": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "email": {
+          "type": "keyword"
+        },
+        "website": {
+          "type": "keyword"
+        }
+      }
+    },
+    "is_hidden": {
+      "type": "boolean"
+    },
+    "flow_id": {
+      "type": "keyword"
+    },
+    "data_paths": {
+      "type": "keyword"
+    },
+    "pre_gen_output_paths": {
+      "properties": {
+        "file": {
+          "type": "keyword"
+        },
+        "type": {
+          "type": "keyword"
+        },
+        "timestamp": {
+          "type": "long"
+        },
+        "target": {
+          "type": "keyword"
+        },
+        "description": {
+          "type": "text"
+        },
+        "coords": {
+          "properties": {
+            "lat": {
+              "type": "float"
+            },
+            "long": {
+              "type": "float"
+            }
+          }
+        }
+      }
+    },
+    "observed_data": {
+      "type": "keyword"
+    },
+    "is_stochastic": {
+      "type": "boolean"
+    },
+    "tags": {
+      "type": "text",
+      "fields": {
+        "raw": {
+          "type": "keyword"
+        }
+      }
+    },
+    "default_feature": {
+      "type": "keyword"
+    },
+    "default_view": {
+      "type": "object",
+      "dynamic": "true",
+      "enabled": "false",
+      "properties": {}
+    },
+    "default_state": {
+      "type": "object",
+      "enabled": false,
+      "dynamic": "true"
+    },
+    "geography": {
+      "properties": {
+        "country": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "admin1": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "admin2": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "admin3": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    },
+    "period": {
+      "properties": {
+        "gte": {
+          "type": "long"
+        },
+        "lte": {
+          "type": "long"
+        }
+      }
+    },
+    "ontology_matches": {
+      "type": "nested",
+      "properties": {
+        "name": {
+          "type": "text",
+          "analyzer": "concept-text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "score": {
+          "type": "float"
+        }
+      }
+    },
+    "parameters": {
+      "properties": {
+        "name": {
+          "type": "keyword"
+        },
+        "display_name": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "description": {
+          "type": "text"
+        },
+        "type": {
+          "type": "keyword"
+        },
+        "unit": {
+          "type": "keyword"
+        },
+        "unit_description": {
+          "type": "text"
+        },
+        "ontologies": {
+          "properties": {
+            "concepts": {
+              "properties": {
+                "name": {
+                  "type": "keyword"
+                },
+                "score": {
+                  "type": "float"
+                }
+              }
+            },
+            "processes": {
+              "properties": {
+                "name": {
+                  "type": "keyword"
+                },
+                "score": {
+                  "type": "float"
+                }
+              }
+            },
+            "properties": {
+              "properties": {
+                "name": {
+                  "type": "keyword"
+                },
+                "score": {
+                  "type": "float"
+                }
+              }
+            }
+          }
+        },
+        "is_drilldown": {
+          "type": "boolean"
+        },
+        "is_visible": {
+          "type": "boolean"
+        },
+        "data_type": {
+          "type": "keyword"
+        },
+        "default": {
+          "type": "keyword"
+        },
+        "choices": {
+          "type": "keyword"
+        },
+        "choices_labels": {
+          "type": "keyword"
+        },
+        "min": {
+          "type": "float"
+        },
+        "max": {
+          "type": "float"
+        },
+        "additional_options": {
+          "type": "object",
+          "enabled": "false"
+        },
+        "tags": {
+          "type": "keyword"
+        }
+      }
+    },
+    "outputs": {
+      "properties": {
+        "name": {
+          "type": "keyword"
+        },
+        "display_name": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "description": {
+          "type": "text"
+        },
+        "type": {
+          "type": "keyword"
+        },
+        "unit": {
+          "type": "keyword"
+        },
+        "unit_description": {
+          "type": "text"
+        },
+        "ontologies": {
+          "properties": {
+            "concepts": {
+              "properties": {
+                "name": {
+                  "type": "keyword"
+                },
+                "score": {
+                  "type": "float"
+                }
+              }
+            },
+            "processes": {
+              "properties": {
+                "name": {
+                  "type": "keyword"
+                },
+                "score": {
+                  "type": "float"
+                }
+              }
+            },
+            "properties": {
+              "properties": {
+                "name": {
+                  "type": "keyword"
+                },
+                "score": {
+                  "type": "float"
+                }
+              }
+            }
+          }
+        },
+        "data_resolution": {
+          "properties": {
+            "temporal_resolution": {
+              "type": "keyword"
+            },
+            "spatial_resolution": {
+              "type": "float"
+            }
+          }
+        },
+        "choices": {
+          "type": "keyword"
+        },
+        "choices_labels": {
+          "type": "keyword"
+        },
+        "min": {
+          "type": "float"
+        },
+        "max": {
+          "type": "float"
+        },
+        "additional_options": {
+          "type": "object",
+          "enabled": "false"
+        },
+        "is_primary": {
+          "type": "boolean"
+        },
+        "is_visible": {
+          "type": "boolean"
+        },
+        "tags": {
+          "type": "keyword"
+        }
+      }
+    },
+    "qualifier_outputs": {
+      "properties": {
+        "name": {
+          "type": "keyword"
+        },
+        "display_name": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "description": {
+          "type": "text"
+        },
+        "type": {
+          "type": "keyword"
+        },
+        "unit": {
+          "type": "keyword"
+        },
+        "unit_description": {
+          "type": "text"
+        },
+        "is_visible": {
+          "type": "boolean"
+        },
+        "ontologies": {
+          "properties": {
+            "concepts": {
+              "properties": {
+                "name": {
+                  "type": "keyword"
+                },
+                "score": {
+                  "type": "float"
+                }
+              }
+            },
+            "processes": {
+              "properties": {
+                "name": {
+                  "type": "keyword"
+                },
+                "score": {
+                  "type": "float"
+                }
+              }
+            },
+            "properties": {
+              "properties": {
+                "name": {
+                  "type": "keyword"
+                },
+                "score": {
+                  "type": "float"
+                }
+              }
+            }
+          }
+        },
+        "related_features": {
+          "type": "keyword"
+        },
+        "roles": {
+          "type": "keyword"
+        },
+        "qualifier_role": {
+          "type": "keyword"
+        }
+      }
+    },
+    "status": {
+      "type": "keyword"
+    },
+    "new_version_data_id": {
+      "type": "keyword"
+    },
+    "runtimes": {
+      "properties": {
+        "execution": {
+          "properties": {
+            "start_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            },
+            "end_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            }
+          }
+        },
+        "queued": {
+          "properties": {
+            "start_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            },
+            "end_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            }
+          }
+        },
+        "post_processing": {
+          "properties": {
+            "start_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            },
+            "end_time": {
+              "format": "epoch_millis",
+              "type": "date"
+            }
+          }
+        }
+      }
+    },
+    "data_info": {
+      "properties": {
+        "num_rows": {
+          "type": "long"
+        },
+        "num_missing_ts": {
+          "type": "long"
+        },
+        "num_invalid_ts": {
+          "type": "long"
+        },
+        "num_missing_val": {
+          "type": "long"
+        },
+        "region_levels": {
+          "type": "keyword"
+        },
+        "features": {
+          "type": "keyword"
+        },
+        "raw_count_threshold": {
+          "type": "long"
+        },
+        "has_tiles": {
+          "type": "boolean"
+        },
+        "has_monthly": {
+          "type": "boolean"
+        },
+        "has_annual": {
+          "type": "boolean"
+        },
+        "month_timeseries_size": {
+          "enabled": "false",
+          "type": "object"
+        },
+        "year_timeseries_size": {
+          "enabled": "false",
+          "type": "object"
+        },
+        "num_rows_per_feature": {
+          "enabled": "false",
+          "type": "object"
+        }
+      }
+    }
+  }
+}

@@ -433,7 +433,7 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     //  here to manually ensure the result doesn't have properties from both node types.
 
     Object.assign(node, datasetNode);
-    // @ts-ignore
+    // @ts-expect-error -- node is typed as ConceptNode union; deleting components after Object.assign to strip the old type's property
     delete node.components;
 
     // Parent should never be null unless we found a disconnected node.
@@ -469,7 +469,7 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     //  here to manually ensure the result doesn't have properties from both node types.
     Object.assign(node, nodeWithoutDataset);
 
-    // @ts-ignore
+    // @ts-expect-error -- node is typed as ConceptNode union; deleting dataset after Object.assign to strip the old type's property
     delete node.dataset;
 
     // Parent should never be null unless we found a disconnected node.
@@ -505,7 +505,7 @@ export function createIndexTreeActions(base: IndexTreeActionsBase) {
     //  here to manually ensure the result doesn't have properties from both node types.
     Object.assign(node, nodeWithoutDataset);
 
-    // @ts-ignore
+    // @ts-expect-error -- node is typed as ConceptNode union; deleting dataset after Object.assign to strip the old type's property
     delete node.dataset;
 
     // Parent should never be null unless we found a disconnected node.

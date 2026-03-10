@@ -17,7 +17,7 @@
     "lint": "yarn workspaces run lint",
     "lint:ci": "yarn workspaces run lint:ci",
     "prettier": "prettier --write .",
-    "prettier:ci": "prettier --check .",
+    "prettier:ci": "NODE_OPTIONS=--max-old-space-size=4096 prettier --check .",
     "format": "yarn lint && yarn prettier",
     "postinstall": "husky install"
   },

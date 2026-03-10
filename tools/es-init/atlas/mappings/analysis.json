@@ -1,0 +1,31 @@
+{
+  "properties": {
+    "created_at": {
+      "format": "epoch_millis",
+      "type": "date"
+    },
+    "description": {
+      "type": "text"
+    },
+    "id": {
+      "type": "keyword"
+    },
+    "modified_at": {
+      "format": "epoch_millis",
+      "type": "date"
+    },
+    "project_id": {
+      "type": "keyword"
+    },
+    "state": {
+      "enabled": false,
+      "type": "object"
+    },
+    "thumbnail_source": {
+      "enabled": "false"
+    },
+    "title": {
+      "type": "text"
+    }
+  }
+}

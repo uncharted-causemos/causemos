@@ -1,9 +1,10 @@
 ---
 include:
-  - ./docker-compose.yaml
+  - ./docker-compose-causemos.yaml
 
 services:
   keycloak:
+    container_name: keycloak
     image: docker.uncharted.software/it-ops/uncharted_keycloak:26.3.2-1
     restart: always
     healthcheck:
