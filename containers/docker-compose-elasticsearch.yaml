@@ -35,17 +35,6 @@ services:
       - elasticsearch-data:/usr/share/elasticsearch/data:rw
       - elasticsearch-snapshots:/usr/share/elasticsearch/snapshots
 
-  es-init:
-    container_name: es-init
-    build:
-      context: ../tools/es-init
-      dockerfile: Dockerfile
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    environment:
-      - ES_URL=http://elasticsearch:9200
-
 volumes:
   elasticsearch-data:
     driver: local

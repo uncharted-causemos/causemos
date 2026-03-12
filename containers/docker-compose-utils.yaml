@@ -41,6 +41,24 @@ services:
     volumes:
       - causemos-minio:/data
 
+  es-init:
+    container_name: es-init
+    build:
+      context: ../tools/es-init
+      dockerfile: Dockerfile
+    restart: 'no'
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      - ES_URL=http://elasticsearch:9200
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS=admin
+      - MINIO_SECRET=admin123
+      - MINIO_BUCKET=indicators
+
   redis:
     container_name: redis
     image: ghcr.io/unchartedsoftware/uncharted-shipyard/uncharted-redis:7.2.5-alpine

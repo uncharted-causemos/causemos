@@ -47,7 +47,7 @@ import { toRefs, computed, watch, ref } from 'vue';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import useMapRegionSelection from '@/composables/useMapRegionSelection';
 import useMapSyncBounds from '@/composables/useMapSyncBounds';
-import { BASE_MAP_OPTIONS, ETHIOPIA_BOUNDING_BOX, STYLE_URL_PREFIX } from '@/utils/map-util';
+import { BASE_MAP_OPTIONS, COLORADO_BOUNDING_BOX, STYLE_URL_PREFIX } from '@/utils/map-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
 import { BASE_LAYER, SOURCE_LAYERS } from '@/utils/map-util-new';
 import { getFullRegionIdDisplayName } from '@/utils/admin-level-util';
@@ -145,8 +145,8 @@ const props = withDefaults(
     minZoom: 1,
     // initial map bounds; default bounds to the bbox of the model country/countries
     mapBounds: () => [
-      [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-      [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
+      [COLORADO_BOUNDING_BOX.LEFT, COLORADO_BOUNDING_BOX.BOTTOM],
+      [COLORADO_BOUNDING_BOX.RIGHT, COLORADO_BOUNDING_BOX.TOP],
     ],
     hoveredRegionId: null,
     selectedAdminLevel: 0,

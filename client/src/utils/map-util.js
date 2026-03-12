@@ -5,11 +5,11 @@ import { useAuthStore } from '@/stores/auth-store';
 
 // import { FIFOCache } from '@/utils/fifo-cache';
 
-export const ETHIOPIA_BOUNDING_BOX = {
-  TOP: 18,
-  LEFT: 31,
-  BOTTOM: 0,
-  RIGHT: 51,
+export const COLORADO_BOUNDING_BOX = {
+  TOP: 41,
+  LEFT: -109,
+  BOTTOM: 37,
+  RIGHT: -102,
 };
 
 const ORIGINAL_WORKER_URL = mapboxgl.workerUrl;

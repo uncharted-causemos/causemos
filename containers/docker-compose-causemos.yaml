@@ -27,8 +27,8 @@ services:
       AWS_S3_SECRET: admin123
       AWS_S3_TOKEN: ''
       VECTORTILE_BUCKET: vector-tiles
-      MODELS_BUCKET: new-models
-      INDICATORS_BUCKET: new-indicators
+      MODELS_BUCKET: models
+      INDICATORS_BUCKET: indicators
     logging:
       driver: 'json-file'
       options:

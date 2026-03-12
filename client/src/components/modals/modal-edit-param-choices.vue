@@ -224,7 +224,7 @@ import {
 import flatpickr from 'flatpickr';
 import { DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import DropdownButton from '@/components/dropdown-button.vue';
-import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
+import { COLORADO_BOUNDING_BOX } from '@/utils/map-util';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 export default defineComponent({
@@ -281,10 +281,10 @@ export default defineComponent({
         this.updatedParameter.additional_options.geo_region_format ===
         GeoAttributeFormat.Bounding_Box
       ) {
-        formatStr = formatStr.replace('{left}', ETHIOPIA_BOUNDING_BOX.LEFT.toString());
-        formatStr = formatStr.replace('{top}', ETHIOPIA_BOUNDING_BOX.TOP.toString());
-        formatStr = formatStr.replace('{right}', ETHIOPIA_BOUNDING_BOX.RIGHT.toString());
-        formatStr = formatStr.replace('{bottom}', ETHIOPIA_BOUNDING_BOX.BOTTOM.toString());
+        formatStr = formatStr.replace('{left}', COLORADO_BOUNDING_BOX.LEFT.toString());
+        formatStr = formatStr.replace('{top}', COLORADO_BOUNDING_BOX.TOP.toString());
+        formatStr = formatStr.replace('{right}', COLORADO_BOUNDING_BOX.RIGHT.toString());
+        formatStr = formatStr.replace('{bottom}', COLORADO_BOUNDING_BOX.BOTTOM.toString());
         return formatStr;
       }
       if (

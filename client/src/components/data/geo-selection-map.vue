@@ -19,7 +19,7 @@
 <script>
 import _ from 'lodash';
 import { WmMap, WmMapVector, WmMapBoundingBox } from '@/wm-map';
-import { BASE_MAP_OPTIONS, ETHIOPIA_BOUNDING_BOX, STYLE_URL_PREFIX } from '@/utils/map-util';
+import { BASE_MAP_OPTIONS, COLORADO_BOUNDING_BOX, STYLE_URL_PREFIX } from '@/utils/map-util';
 import { BASE_LAYER } from '@/utils/map-util-new';
 import { adminLevelToString } from '@/utils/admin-level-util';
 
@@ -73,8 +73,8 @@ export default {
       // initial map bounds; default bounds to the bbox of the model country/countries
       type: Array,
       default: () => [
-        [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-        [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
+        [COLORADO_BOUNDING_BOX.LEFT, COLORADO_BOUNDING_BOX.BOTTOM],
+        [COLORADO_BOUNDING_BOX.RIGHT, COLORADO_BOUNDING_BOX.TOP],
       ],
     },
   },
