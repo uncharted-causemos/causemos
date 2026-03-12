@@ -1,0 +1,22 @@
+{
+  "id": "4e7cddf0-d330-417d-9e38-542c1832fbfb",
+  "geo_column": "County Name",
+  "geoid_column": "County GEOID",
+  "geo_type": "admin2",
+  "gadm_level": "admin2",
+  "resolve_to_gadm": true,
+  "fixed_date": "2023-01-01",
+  "date_column": "_date",
+  "name": "Colorado EnviroScreen v2 (County)",
+  "description": "Colorado EnviroScreen version 2 county-level environmental and demographic screening data.",
+  "family_name": "Colorado EnviroScreen",
+  "category": ["Environment", "Health"],
+  "domains": ["Environmental Justice"],
+  "tags": ["colorado", "environment", "health", "county"],
+  "maintainer_name": "Colorado Department of Public Health and Environment",
+  "maintainer_org": "CDPHE",
+  "maintainer_email": "",
+  "maintainer_website": "https://cdphe.colorado.gov",
+  "temporal_resolution": "annual",
+  "spatial_resolution": 0.0
+}

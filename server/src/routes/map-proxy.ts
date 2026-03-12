@@ -99,7 +99,7 @@ router.get(
      **/
     const tileJson = await requestAsPromise({ url: stylesheet.sources.carto.url, method: 'GET' });
     stylesheet.sources.carto = {
-      ...JSON.parse(tileJson),
+      ...tileJson,
       type: 'vector',
       tiles: ['wmmap://vector-tiles/{z}/{x}/{y}'],
     };

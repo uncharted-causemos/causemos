@@ -71,7 +71,7 @@ import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
   createPointsLayerStyle,
-  ETHIOPIA_BOUNDING_BOX,
+  COLORADO_BOUNDING_BOX,
   STYLE_URL_PREFIX,
 } from '@/utils/map-util';
 import { convertRawDataToGeoJson, pickQualifiers } from '@/utils/outputdata-util';
@@ -186,9 +186,9 @@ export default defineComponent({
     mapBounds: {
       type: [Array, Object],
       default: () => [
-        // Default bounds to Ethiopia
-        [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-        [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
+        // Default bounds to Colorado
+        [COLORADO_BOUNDING_BOX.LEFT, COLORADO_BOUNDING_BOX.BOTTOM],
+        [COLORADO_BOUNDING_BOX.RIGHT, COLORADO_BOUNDING_BOX.TOP],
       ],
     },
     regionData: {

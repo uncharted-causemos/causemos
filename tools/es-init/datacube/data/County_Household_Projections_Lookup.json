@@ -1,0 +1,23 @@
+{
+  "id": "56f7053d-8621-47b1-97c9-f5f4704ae06d",
+  "geo_column": "County Name",
+  "geoid_column": "County FIPS",
+  "geo_type": "admin2",
+  "gadm_level": "admin2",
+  "resolve_to_gadm": true,
+  "date_column": "Year",
+  "date_format": "%Y",
+  "feature_columns": ["Total Households"],
+  "name": "Colorado County Household Projections",
+  "description": "Colorado county-level household projections by household type and age group.",
+  "family_name": "Colorado Household Projections",
+  "category": ["Demographics"],
+  "domains": ["Population"],
+  "tags": ["colorado", "households", "demographics", "county", "projections"],
+  "maintainer_name": "Colorado State Demography Office",
+  "maintainer_org": "Colorado Department of Local Affairs",
+  "maintainer_email": "",
+  "maintainer_website": "https://demography.dola.colorado.gov",
+  "temporal_resolution": "annual",
+  "spatial_resolution": 0.0
+}

@@ -94,7 +94,7 @@ import {
   REGION_ID_DELIMETER,
   stringToAdminLevel,
 } from '@/utils/admin-level-util';
-import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
+import { COLORADO_BOUNDING_BOX } from '@/utils/map-util';
 
 export default defineComponent({
   name: 'ModalGeoSelection',
@@ -176,8 +176,8 @@ export default defineComponent({
     DatacubeGenericAttributeVariableType,
     allRegions: {} as { [key: string]: GeoRegionDetail },
     mapBounds: [
-      [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-      [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
+      [COLORADO_BOUNDING_BOX.LEFT, COLORADO_BOUNDING_BOX.BOTTOM],
+      [COLORADO_BOUNDING_BOX.RIGHT, COLORADO_BOUNDING_BOX.TOP],
     ],
   }),
   async mounted() {

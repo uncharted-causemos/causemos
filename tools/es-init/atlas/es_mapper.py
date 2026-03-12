@@ -1,14 +1,7 @@
 import os
 import sys
-import logging
-from elasticsearch import Elasticsearch
 import json
-
-FORMAT = "%(asctime)-25s %(levelname)-8s %(message)s"
-logging.basicConfig(format=FORMAT)
-logger = logging.getLogger("es_mapper")
-logger.setLevel(20)
-
+from common import get_es_client, logger
 
 def scan_directory(directory):
     """
@@ -16,7 +9,7 @@ def scan_directory(directory):
     """
     mapping_files = []
     for f in os.listdir(directory):
-        if not f.endswith("json"):
+        if not f.endswith(".json"):
             continue
         mapping_files.append(os.path.join(directory, f))
     return mapping_files
@@ -40,42 +33,42 @@ def create_index(client, index_name, index_mappings):
         },
     }
 
-    response = client.indices.create(
-        index=index_name,
-        body={"mappings": index_mappings, "settings": settings},
-        ignore=400,
-    )
-    if "error" in response:
-        status = response["status"]
-        logger.info(f"\t{status}")
-    else:
-        logger.info(f"\t{response}")
+    try:
+        response = client.indices.create(
+            index=index_name,
+            body={"mappings": index_mappings, "settings": settings},
+            ignore=400,
+        )
+        if "error" in response:
+            status = response["status"]
+            if status == 400:
+                logger.info(f"Index {index_name} already exists.")
+            else:
+                logger.error(f"Error creating index {index_name}: {response}")
+        else:
+            logger.info(f"Created index {index_name}: {response}")
+    except Exception as e:
+        logger.error(f"Failed to create index {index_name}: {e}")
 
+
+def map_indices():
+    client = get_es_client()
+    mappings_dir = os.path.join(os.path.dirname(__file__), "mappings")
+    mapping_files = scan_directory(mappings_dir)
+
+    for mapping_file in mapping_files:
+        index_name = os.path.basename(mapping_file).split(".")[0]
+        logger.info(f"Processing mapping: {index_name}")
+
+        try:
+            with open(mapping_file, "r") as f:
+                content = json.load(f)
+                create_index(client, index_name, content)
+        except Exception as e:
+            logger.error(f"Error processing mapping file {mapping_file}: {e}")
 
 if __name__ == "__main__":
-    esURL = os.environ.get("ES")
-    esUsername = os.environ.get("ES_USERNAME")
-    esPassword = os.environ.get("ES_PASSWORD")
-
-    mappings = [mapping.split("/")[-1] for mapping in scan_directory("./mappings")]
-
-    if esURL == None:
-        logger.error("ES URL not specified")
-        exit(-1)
-
-    client = None
-    if esUsername == None or esPassword == None:
-        client = Elasticsearch([esURL])
-    else:
-        client = Elasticsearch(
-            [esURL], http_auth=(esUsername, esPassword), verify_certs=False
-        )
-
-    for mapping_file in mappings:
-        index_name = mapping_file.split(".")[0]
-        logger.info(f"Creating index {index_name}")
-
-        with open("./mappings/" + mapping_file, "r") as F:
-            content = F.read()
-            content = json.loads(content)
-            create_index(client, index_name, content)
+    # Add parent directory to sys.path so we can import common
+    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+    from common import get_es_client, logger
+    map_indices()

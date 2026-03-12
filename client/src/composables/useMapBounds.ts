@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { ref } from '@vue/reactivity';
-import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
+import { COLORADO_BOUNDING_BOX } from '@/utils/map-util';
 import { RegionalAggregations } from '@/types/Outputdata';
 import { Ref, watchEffect } from 'vue';
 import { getBboxFromRegionIds } from '@/services/geo-service';
@@ -14,8 +14,8 @@ export default function useMapBounds(
   //  places and it's unclear why mapBounds can be set to two different possible
   //  values.
   const mapBounds = ref<MapBounds>([
-    [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-    [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP],
+    [COLORADO_BOUNDING_BOX.LEFT, COLORADO_BOUNDING_BOX.BOTTOM],
+    [COLORADO_BOUNDING_BOX.RIGHT, COLORADO_BOUNDING_BOX.TOP],
   ]);
 
   const onSyncMapBounds = (bounds: BoundingBox) => {

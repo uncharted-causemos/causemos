@@ -24,6 +24,9 @@ router.get('/init-options', (req, res) => {
     // Standard init options for keycloak-js
     pkceMethod: 'S256',
     checkLoginIframe: false,
+    // Use query string for OAuth redirect params so they don't get appended
+    // after the hash fragment (which breaks hash-based routing)
+    responseMode: 'query',
   });
 });
 
